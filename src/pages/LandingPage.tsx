@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import HeroSection from "@/components/HeroSection";
 import PricingSection from "@/components/PricingSection";
+import BackgroundDecorations from "@/components/BackgroundDecorations";
 import { 
   Users, 
   Star, 
@@ -78,7 +79,10 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {/* Background Decorations for entire page */}
+      <BackgroundDecorations />
+      
       {/* Hero Section */}
       <HeroSection />
 

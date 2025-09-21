@@ -1,10 +1,14 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Upload, Brain, Gamepad2 } from "lucide-react";
+import BackgroundDecorations from "./BackgroundDecorations";
 
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Background Decorations */}
+      <BackgroundDecorations />
+      
       {/* Background decoration */}
       <div className="absolute inset-0 bg-gradient-hero opacity-10"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(280_100%_85%/0.1),transparent_70%)]"></div>
