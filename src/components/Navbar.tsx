@@ -10,23 +10,41 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, LogOut, CreditCard, Star } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import promjumLogo from "@/assets/promjum-logo.png";
 
-interface NavbarProps {
-  user?: {
-    id: string;
-    email: string;
-    full_name?: string;
-    role: string;
-  } | null;
-  onLogout?: () => void;
-}
-
-const Navbar = ({ user, onLogout }: NavbarProps) => {
+const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Get user profile data from user metadata or default values
+  const userProfile = user ? {
+    id: user.id,
+    email: user.email,
+    full_name: user.user_metadata?.full_name || null,
+    role: user.app_metadata?.role || 'user'
+  } : null;
+
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: "ออกจากระบบไม่สำเร็จ",
+        description: "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "ออกจากระบบสำเร็จ",
+        description: "แล้วพบกันใหม่",
+      });
+    }
+  };
 
   const publicNavItems = [
     { href: "/", label: "หน้าหลัก" },
@@ -49,7 +67,7 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
     { href: "/admin/stats", label: "สถิติ" },
   ];
 
-  const navItems = user?.role === "admin" ? adminNavItems : user ? userNavItems : publicNavItems;
+  const navItems = userProfile?.role === "admin" ? adminNavItems : userProfile ? userNavItems : publicNavItems;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -84,14 +102,14 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
 
           {/* Right side */}
           <div className="hidden md:flex items-center space-x-4">
-            {user ? (
+            {userProfile ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="" alt={user.full_name || user.email} />
+                      <AvatarImage src="" alt={userProfile.full_name || userProfile.email} />
                       <AvatarFallback>
-                        {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                        {userProfile.full_name?.charAt(0) || userProfile.email.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -99,10 +117,10 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user.full_name || user.email}</p>
+                      <p className="font-medium">{userProfile.full_name || userProfile.email}</p>
                       <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground">{user.email}</span>
-                        {user.role === "admin" && (
+                        <span className="text-xs text-muted-foreground">{userProfile.email}</span>
+                        {userProfile.role === "admin" && (
                           <Star className="h-3 w-3 text-yellow-500" />
                         )}
                       </div>
@@ -110,7 +128,7 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="cursor-pointer">
+                    <Link to="/profile" className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       โปรไฟล์
                     </Link>
@@ -122,7 +140,7 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
                     ออกจากระบบ
                   </DropdownMenuItem>
@@ -170,7 +188,7 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
                   {item.label}
                 </Link>
               ))}
-              {!user && (
+              {!userProfile && (
                 <div className="space-y-2 pt-4">
                   <Button variant="ghost" asChild className="w-full">
                     <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
