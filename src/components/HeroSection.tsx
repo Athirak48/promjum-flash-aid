@@ -1,22 +1,12 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Upload, Brain, Gamepad2 } from "lucide-react";
-import heroImage from "@/assets/hero-image.jpg";
 
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background hero image */}
-      <div className="absolute inset-0">
-        <img 
-          src={heroImage} 
-          alt="Promjum - เปลี่ยนเอกสารให้เป็นแฟลชการ์ด" 
-          className="w-full h-full object-cover opacity-20"
-        />
-        <div className="absolute inset-0 bg-gradient-hero opacity-30"></div>
-      </div>
-      
-      {/* Additional decorative overlays */}
+      {/* Background decoration */}
+      <div className="absolute inset-0 bg-gradient-hero opacity-10"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(280_100%_85%/0.1),transparent_70%)]"></div>
       
       <div className="container mx-auto px-4 py-20 text-center relative z-10">

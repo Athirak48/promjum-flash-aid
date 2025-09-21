@@ -17,6 +17,7 @@ import {
   Heart
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import promjumLogo from "@/assets/promjum-logo.png";
 
 const LandingPage = () => {
   const features = [
@@ -262,9 +263,11 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary">
-                <span className="text-lg font-bold text-primary-foreground">P</span>
-              </div>
+              <img 
+                src={promjumLogo} 
+                alt="Promjum Logo" 
+                className="h-10 w-10 object-contain"
+              />
               <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 Promjum
               </span>

@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, LogOut, CreditCard, Star } from "lucide-react";
+import promjumLogo from "@/assets/promjum-logo.png";
 
 interface NavbarProps {
   user?: {
@@ -56,9 +57,11 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary">
-              <span className="text-lg font-bold text-primary-foreground">P</span>
-            </div>
+            <img 
+              src={promjumLogo} 
+              alt="Promjum Logo" 
+              className="h-10 w-10 object-contain"
+            />
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Promjum
             </span>

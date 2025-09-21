@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Mail, Lock, User } from "lucide-react";
+import promjumLogo from "@/assets/promjum-logo.png";
 
 const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -54,9 +55,11 @@ const AuthPage = () => {
         <Card className="bg-gradient-card shadow-large border-0">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary">
-                <span className="text-xl font-bold text-primary-foreground">P</span>
-              </div>
+              <img 
+                src={promjumLogo} 
+                alt="Promjum Logo" 
+                className="h-12 w-12 object-contain"
+              />
               <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 Promjum
               </span>
