@@ -8,6 +8,9 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
+import FlashcardsPage from "./pages/FlashcardsPage";
+import MarketcardPage from "./pages/MarketcardPage";
+import FeedbackPage from "./pages/FeedbackPage";
 import Profile from "./pages/Profile";
 import NotFoundPage from "./pages/NotFoundPage";
 import Navbar from "./components/Navbar";
@@ -31,6 +34,30 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/flashcards" 
+                element={
+                  <ProtectedRoute>
+                    <FlashcardsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/marketcard" 
+                element={
+                  <ProtectedRoute>
+                    <MarketcardPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/feedback" 
+                element={
+                  <ProtectedRoute>
+                    <FeedbackPage />
                   </ProtectedRoute>
                 } 
               />
