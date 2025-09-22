@@ -12,6 +12,9 @@ import {
 import { Menu, X, User, LogOut, CreditCard, Star } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import promjumLogo from "@/assets/promjum-logo.png";
 
 const Navbar = () => {
@@ -19,6 +22,7 @@ const Navbar = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -47,17 +51,17 @@ const Navbar = () => {
   };
 
   const publicNavItems = [
-    { href: "/", label: "หน้าหลัก" },
-    { href: "/#features", label: "คุณสมบัติ" },
-    { href: "/#pricing", label: "ราคา" },
-    { href: "/#about", label: "เกี่ยวกับเรา" },
+    { href: "/", label: t('nav.home') },
+    { href: "/#features", label: t('nav.features') },
+    { href: "/#pricing", label: t('nav.pricing') },
+    { href: "/#about", label: t('nav.about') },
   ];
 
   const userNavItems = [
-    { href: "/dashboard", label: "แดชบอร์ด" },
-    { href: "/flashcards", label: "แฟลชการ์ด" },
-    { href: "/marketcard", label: "ตลาดการ์ด" },
-    { href: "/feedback", label: "ความคิดเห็น" },
+    { href: "/dashboard", label: t('nav.dashboard') },
+    { href: "/flashcards", label: t('nav.flashcards') },
+    { href: "/marketcard", label: t('nav.marketcard') },
+    { href: "/feedback", label: t('nav.feedback') },
   ];
 
   const adminNavItems = [
@@ -101,7 +105,7 @@ const Navbar = () => {
           </div>
 
           {/* Right side */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2">
             {userProfile ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -130,7 +134,7 @@ const Navbar = () => {
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
-                      โปรไฟล์
+                      {t('nav.profile')}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -142,20 +146,26 @@ const Navbar = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
-                    ออกจากระบบ
+                    {t('nav.logout')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
                 <Button variant="ghost" asChild>
-                  <Link to="/auth">เข้าสู่ระบบ</Link>
+                  <Link to="/auth">{t('nav.login')}</Link>
                 </Button>
                 <Button variant="hero" asChild>
-                  <Link to="/auth">เริ่มใช้งานฟรี</Link>
+                  <Link to="/auth">{t('nav.signup')}</Link>
                 </Button>
               </div>
             )}
+            
+            {/* Theme and Language toggles */}
+            <div className="flex items-center space-x-1 ml-2">
+              <ThemeToggle />
+              <LanguageToggle />
+            </div>
           </div>
 
           {/* Mobile menu button */}
@@ -192,16 +202,22 @@ const Navbar = () => {
                 <div className="space-y-2 pt-4">
                   <Button variant="ghost" asChild className="w-full">
                     <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                      เข้าสู่ระบบ
+                      {t('nav.login')}
                     </Link>
                   </Button>
                   <Button variant="hero" asChild className="w-full">
                     <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                      เริ่มใช้งานฟรี
+                      {t('nav.signup')}
                     </Link>
                   </Button>
                 </div>
               )}
+              
+              {/* Mobile Theme and Language toggles */}
+              <div className="flex items-center justify-center space-x-2 pt-4 border-t border-border/40">
+                <ThemeToggle />
+                <LanguageToggle />
+              </div>
             </div>
           </div>
         )}
