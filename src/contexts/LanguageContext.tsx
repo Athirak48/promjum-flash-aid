@@ -9,6 +9,7 @@ interface Translations {
   };
 }
 
+// Add missing translation keys
 const translations: Translations = {
   // Navigation
   'nav.home': { th: 'หน้าหลัก', en: 'Home' },
@@ -74,6 +75,13 @@ const translations: Translations = {
   'common.name': { th: 'ชื่อ', en: 'Name' },
   'common.date': { th: 'วันที่', en: 'Date' },
   'common.type': { th: 'ประเภท', en: 'Type' },
+  'common.edit': { th: 'แก้ไข', en: 'Edit' },
+  'common.move': { th: 'ย้าย', en: 'Move' },
+  'common.delete': { th: 'ลบ', en: 'Delete' },
+  'common.rename': { th: 'เปลี่ยนชื่อ', en: 'Rename' },
+  'common.folders': { th: 'โฟลเดอร์', en: 'Folders' },
+  'common.sets': { th: 'ชุด', en: 'Sets' },
+  'common.unorganized': { th: 'ยังไม่ได้จัดเรียง', en: 'Unorganized' }
 };
 
 interface LanguageContextType {
