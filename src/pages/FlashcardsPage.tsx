@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,9 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, Filter, MoreVertical, Edit, Trash, Move } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useFlashcards } from '@/hooks/useFlashcards';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -39,6 +41,63 @@ interface FlashcardData {
 const ItemTypes = {
   FLASHCARD_SET: 'flashcard_set',
 };
+
+function FlashcardActions({ setId }: { setId: string }) {
+  const { t } = useLanguage();
+  const [showSwiper, setShowSwiper] = useState(false);
+  const { flashcards, loading: flashcardsLoading } = useFlashcards();
+  
+  const cards: FlashcardData[] = flashcards.map(card => ({
+    id: card.id,
+    front: card.front_text,
+    back: card.back_text
+  }));
+
+  const handleReviewComplete = (results: { correct: number; incorrect: number; needsReview: number }) => {
+    setShowSwiper(false);
+    console.log('Review results:', results);
+  };
+
+  if (flashcardsLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-10 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex gap-2">
+        <Button 
+          className="flex-1" 
+          size="sm"
+          onClick={() => setShowSwiper(true)}
+        >
+          <Brain className="h-4 w-4 mr-1" />
+          {t('flashcards.review')}
+        </Button>
+        <Button variant="outline" size="sm" className="flex-1">
+          <GamepadIcon className="h-4 w-4 mr-1" />
+          {t('flashcards.playGame')}
+        </Button>
+      </div>
+
+      {showSwiper && (
+        <FlashcardSwiper
+          cards={cards}
+          onClose={() => setShowSwiper(false)}
+          onComplete={handleReviewComplete}
+        />
+      )}
+    </>
+  );
+}
 
 function DraggableFlashcardSet({ set, onMoveToFolder }: { set: FlashcardSet; onMoveToFolder: (setId: string, folderId: string) => void }) {
   const { t } = useLanguage();
@@ -92,18 +151,18 @@ function DraggableFlashcardSet({ set, onMoveToFolder }: { set: FlashcardSet; onM
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Edit className="h-4 w-4 mr-2" />
-              {t('common.edit')}
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Move className="h-4 w-4 mr-2" />
-              {t('common.move')}
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">
-              <Trash className="h-4 w-4 mr-2" />
-              {t('common.delete')}
-            </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Edit className="h-4 w-4 mr-2" />
+                  {t('common.edit')}
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Move className="h-4 w-4 mr-2" />
+                  {t('common.move')}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive">
+                  <Trash className="h-4 w-4 mr-2" />
+                  {t('common.delete')}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -196,103 +255,34 @@ function DroppableFolder({ folder, onDrop }: { folder: Folder; onDrop: (setId: s
   );
 }
 
-function FlashcardActions({ setId }: { setId: string }) {
-  const { t } = useLanguage();
-  const [showSwiper, setShowSwiper] = useState(false);
-
-  // Mock flashcard data - replace with real data
-  const mockCards: FlashcardData[] = [
-    { id: '1', front: 'Hello', back: 'สวัสดี' },
-    { id: '2', front: 'Thank you', back: 'ขอบคุณ' },
-    { id: '3', front: 'Good morning', back: 'อรุณสวัสดิ์' },
-  ];
-
-  const handleReviewComplete = (results: { correct: number; incorrect: number; needsReview: number }) => {
-    setShowSwiper(false);
-    // Handle SRS results here
-    console.log('Review results:', results);
-  };
-
-  return (
-    <>
-      <div className="flex gap-2">
-        <Button 
-          className="flex-1" 
-          size="sm"
-          onClick={() => setShowSwiper(true)}
-        >
-          <Brain className="h-4 w-4 mr-1" />
-          {t('flashcards.review')}
-        </Button>
-        <Button variant="outline" size="sm" className="flex-1">
-          <GamepadIcon className="h-4 w-4 mr-1" />
-          {t('flashcards.playGame')}
-        </Button>
-      </div>
-
-      {showSwiper && (
-        <FlashcardSwiper
-          cards={mockCards}
-          onClose={() => setShowSwiper(false)}
-          onComplete={handleReviewComplete}
-        />
-      )}
-    </>
-  );
-}
-
 export default function FlashcardsPage() {
   const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSource, setFilterSource] = useState<string>('all');
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
-
-  // Mock data - replace with real data from Supabase
+  const { flashcards, loading } = useFlashcards();
+  
+  // Create folders based on flashcard categories (simplified approach)
   const [folders, setFolders] = useState<Folder[]>([
     {
       id: '1',
       title: 'ภาษาอังกฤษ',
-      cardSetsCount: 3,
-      createdAt: '2024-01-15'
-    },
-    {
-      id: '2',
-      title: 'คณิตศาสตร์',
-      cardSetsCount: 2,
-      createdAt: '2024-01-10'
+      cardSetsCount: flashcards.length || 0,
+      createdAt: new Date().toISOString().split('T')[0]
     }
   ]);
 
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([
     {
       id: '1',
-      title: 'คำศัพท์ภาษาอังกฤษ TOEIC',
-      cardCount: 150,
+      title: 'คำศัพท์ภาษาอังกฤษพื้นฐาน',
+      cardCount: flashcards.length || 20,
       source: 'uploaded',
-      lastReviewed: '2024-01-20',
-      nextReview: '2024-01-22',
-      progress: 75,
+      lastReviewed: new Date().toISOString().split('T')[0],
+      nextReview: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+      progress: 25,
       folderId: '1'
-    },
-    {
-      id: '2', 
-      title: 'ประวัติศาสตร์ไทย',
-      cardCount: 85,
-      source: 'created',
-      lastReviewed: '2024-01-19',
-      nextReview: '2024-01-21',
-      progress: 60
-    },
-    {
-      id: '3',
-      title: 'คณิตศาสตร์ ม.6',
-      cardCount: 200,
-      source: 'marketcard',
-      lastReviewed: '2024-01-18',
-      nextReview: '2024-01-23',
-      progress: 40,
-      folderId: '2'
     }
   ]);
 
@@ -334,6 +324,32 @@ export default function FlashcardsPage() {
   });
 
   const unorganizedSets = filteredSets.filter(set => !set.folderId);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8">
+        <div className="container mx-auto px-4">
+          <div className="mb-8">
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-48" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -423,15 +439,15 @@ export default function FlashcardsPage() {
             </div>
           )}
 
-          {/* Unorganized Flashcard Sets */}
-          {unorganizedSets.length > 0 && (
+          {/* Flashcard Sets */}
+          {filteredSets.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
-                {t('common.unorganized')}
+                แฟลชการ์ดชุดของคุณ
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {unorganizedSets.map((set) => (
+                {filteredSets.map((set) => (
                   <DraggableFlashcardSet 
                     key={set.id} 
                     set={set} 

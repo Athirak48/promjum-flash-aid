@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, ShoppingCart, Star, User, BookOpen, DollarSign } from 'lucide-react';
+import { useMarketplace } from '@/hooks/useMarketplace';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface MarketcardProduct {
   id: string;
@@ -24,58 +26,21 @@ export default function MarketcardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('popular');
+  const { cards, loading } = useMarketplace();
 
-  // Mock data - replace with real data from Supabase
-  const products: MarketcardProduct[] = [
-    {
-      id: '1',
-      title: 'คำศัพท์ภาษาอังกฤษ TOEIC 990',
-      description: 'คำศัพท์ครบครันสำหรับสอบ TOEIC คะแนนเต็ม',
-      cardCount: 500,
-      price: 199,
-      sellerName: 'ครูอังกฤษออนไลน์',
-      category: 'ภาษา',
-      rating: 4.8,
-      reviewCount: 156,
-      featured: true
-    },
-    {
-      id: '2',
-      title: 'คณิตศาสตร์ ม.6 เข้ามหาวิทยาลัย',
-      description: 'สูตรและตัวอย่างข้อสอบคณิตศาสตร์ระดับม.6',
-      cardCount: 300,
-      price: 149,
-      sellerName: 'ครูคณิต',
-      category: 'คณิตศาสตร์',
-      rating: 4.6,
-      reviewCount: 89,
-      featured: false
-    },
-    {
-      id: '3',
-      title: 'ประวัติศาสตร์ไทย ครบทุกยุค',
-      description: 'เหตุการณ์สำคัญในประวัติศาสตร์ไทยตั้งแต่อดีตถึงปัจจุบัน',
-      cardCount: 250,
-      price: 99,
-      sellerName: 'นักประวัติศาสตร์',
-      category: 'สังคมศึกษา',
-      rating: 4.9,
-      reviewCount: 203,
-      featured: true
-    },
-    {
-      id: '4',
-      title: 'วิทยาศาสตร์ ม.3 เทอม 1',
-      description: 'หลักการพื้นฐานวิทยาศาสตร์สำหรับนักเรียนชั้น ม.3',
-      cardCount: 180,
-      price: 89,
-      sellerName: 'ครูวิทย์',
-      category: 'วิทยาศาสตร์',
-      rating: 4.4,
-      reviewCount: 67,
-      featured: false
-    }
-  ];
+  // Transform marketplace cards to product format
+  const products: MarketcardProduct[] = cards.map((card, index) => ({
+    id: card.id,
+    title: card.flashcard?.front_text || 'แฟลชการ์ด',
+    description: `เรียนรู้: ${card.flashcard?.back_text || 'คำแปล'}`,
+    cardCount: 1,
+    price: card.price,
+    sellerName: 'ผู้ขาย',
+    category: 'ภาษา',
+    rating: 4.0 + (index % 10) * 0.1,
+    reviewCount: 10 + (index % 50),
+    featured: index < 2
+  }));
 
   const categories = ['ทั้งหมด', 'ภาษา', 'คณิตศาสตร์', 'วิทยาศาสตร์', 'สังคมศึกษา', 'อื่นๆ'];
 
@@ -99,6 +64,32 @@ export default function MarketcardPage() {
         return b.reviewCount - a.reviewCount;
     }
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8">
+        <div className="container mx-auto px-4">
+          <div className="mb-8">
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-48" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8">

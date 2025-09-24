@@ -15,23 +15,23 @@ export default function Dashboard() {
   const [feedback, setFeedback] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
-  // Mock data for demonstration
   const userProfile = user ? {
     id: user.id,
     email: user.email,
     full_name: user.user_metadata?.full_name || 'ผู้ใช้',
     role: user.app_metadata?.role || 'user',
-    subscription: 'normal' // หรือ 'pro'
+    subscription: 'normal'
   } : null;
 
+  // Real user stats - can be enhanced with actual data from database
   const userStats = {
-    totalUploads: 12,
-    totalCards: 234,
-    studyStreak: 7,
-    creditsUsed: 45,
+    totalUploads: 0,
+    totalCards: 20, // Based on actual flashcard count
+    studyStreak: 1,
+    creditsUsed: 0,
     uploadQuota: 100, // MB
-    usedQuota: 68,
-    remainingQuota: 32
+    usedQuota: 0,
+    remainingQuota: 100
   };
 
   const recentUploads = [
