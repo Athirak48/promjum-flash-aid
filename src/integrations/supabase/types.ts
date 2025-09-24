@@ -14,13 +14,239 @@ export type Database = {
   }
   public: {
     Tables: {
+      flashcards: {
+        Row: {
+          back_text: string
+          created_at: string | null
+          front_text: string
+          id: string
+          upload_id: string | null
+        }
+        Insert: {
+          back_text: string
+          created_at?: string | null
+          front_text: string
+          id?: string
+          upload_id?: string | null
+        }
+        Update: {
+          back_text?: string
+          created_at?: string | null
+          front_text?: string
+          id?: string
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcards_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_data: {
+        Row: {
+          created_at: string | null
+          flashcard_id: string | null
+          id: string
+          last_reviewed: string | null
+          srs_level: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          flashcard_id?: string | null
+          id?: string
+          last_reviewed?: string | null
+          srs_level?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          flashcard_id?: string | null
+          id?: string
+          last_reviewed?: string | null
+          srs_level?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_data_flashcard_id_fkey"
+            columns: ["flashcard_id"]
+            isOneToOne: false
+            referencedRelation: "flashcards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_data_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      marketplace_cards: {
+        Row: {
+          created_at: string | null
+          flashcard_id: string | null
+          id: string
+          price: number
+          status: string
+          updated_at: string | null
+          uploader_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          flashcard_id?: string | null
+          id?: string
+          price: number
+          status?: string
+          updated_at?: string | null
+          uploader_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          flashcard_id?: string | null
+          id?: string
+          price?: number
+          status?: string
+          updated_at?: string | null
+          uploader_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_cards_flashcard_id_fkey"
+            columns: ["flashcard_id"]
+            isOneToOne: false
+            referencedRelation: "flashcards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_cards_uploader_id_fkey"
+            columns: ["uploader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          payment_method: string | null
+          payment_session_id: string | null
+          status: string
+          updated_at: string | null
+          upload_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_session_id?: string | null
+          status?: string
+          updated_at?: string | null
+          upload_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_session_id?: string | null
+          status?: string
+          updated_at?: string | null
+          upload_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "uploads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      pricing_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          price_per_mb: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          price_per_mb: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          price_per_mb?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
+          phone: string | null
+          role: string
           updated_at: string
           user_id: string
         }
@@ -28,8 +254,11 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
+          phone?: string | null
+          role?: string
           updated_at?: string
           user_id: string
         }
@@ -37,12 +266,98 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
+          phone?: string | null
+          role?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      sales: {
+        Row: {
+          amount: number
+          buyer_id: string | null
+          card_id: string | null
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          amount: number
+          buyer_id?: string | null
+          card_id?: string | null
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string | null
+          card_id?: string | null
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "sales_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      uploads: {
+        Row: {
+          created_at: string | null
+          file_size_mb: number
+          id: string
+          original_file_name: string
+          original_file_url: string
+          payment_status: string
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_size_mb: number
+          id?: string
+          original_file_name: string
+          original_file_url: string
+          payment_status?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_size_mb?: number
+          id?: string
+          original_file_name?: string
+          original_file_url?: string
+          payment_status?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uploads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Views: {
