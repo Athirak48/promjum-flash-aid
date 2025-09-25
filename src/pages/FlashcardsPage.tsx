@@ -514,6 +514,51 @@ export default function FlashcardsPage() {
                     </Button>
                   </div>
 
+                  {/* Folder Selection Section */}
+                  <div className="border-t pt-4 mt-6">
+                    <Label className="text-sm font-medium mb-3 block">จัดเก็บในโฟลเดอร์</Label>
+                    <div className="flex gap-3">
+                      {/* Create New Folder Button */}
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowNewFolderDialog(true)}
+                        className="flex items-center gap-2 flex-shrink-0"
+                      >
+                        <FolderPlus className="h-4 w-4" />
+                        สร้างโฟลเดอร์ใหม่
+                      </Button>
+
+                      {/* Folder Dropdown with Search */}
+                      <div className="flex-1">
+                        <Select>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="เลือกโฟลเดอร์ (ไม่บังคับ)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <div className="p-2">
+                              <div className="relative">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                  placeholder="ค้นหาโฟลเดอร์..."
+                                  className="pl-8"
+                                />
+                              </div>
+                            </div>
+                            <SelectItem value="none">ไม่เลือกโฟลเดอร์</SelectItem>
+                            {folders.map((folder) => (
+                              <SelectItem key={folder.id} value={folder.id}>
+                                <div className="flex items-center gap-2">
+                                  <Folder className="h-4 w-4" />
+                                  {folder.title}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Create Button */}
                   <div className="flex justify-end pt-4">
                     <Button
