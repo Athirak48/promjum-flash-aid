@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, Filter, MoreVertical, Edit, Trash, Move } from 'lucide-react';
+import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, Filter, MoreVertical, Edit, Trash, Move, Type, Upload } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFlashcards } from '@/hooks/useFlashcards';
@@ -150,7 +150,15 @@ function DraggableFlashcardSet({ set, onMoveToFolder }: { set: FlashcardSet; onM
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+               <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <Type className="h-4 w-4 mr-2" />
+                  แก้ไขข้อความ
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Upload className="h-4 w-4 mr-2" />
+                  อัปโหลดรูปภาพ
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Edit className="h-4 w-4 mr-2" />
                   {t('common.edit')}
@@ -170,14 +178,14 @@ function DraggableFlashcardSet({ set, onMoveToFolder }: { set: FlashcardSet; onM
         <CardDescription className="flex items-center gap-4 text-sm">
           <span>{set.cardCount} {t('flashcards.cards')}</span>
           <span>•</span>
-          <span>{t('flashcards.progress')} {set.progress}%</span>
+          <span>Mastery {set.progress}%</span>
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{t('flashcards.progress')}</span>
+            <span>Mastery Level</span>
             <span>{set.progress}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
@@ -385,6 +393,12 @@ export default function FlashcardsPage() {
               </SelectContent>
             </Select>
 
+            {/* Primary CTA - Create Flashcard */}
+            <Button className="w-full md:w-auto bg-gradient-primary text-primary-foreground shadow-elegant hover:shadow-glow">
+              <Plus className="h-4 w-4 mr-2" />
+              {t('flashcards.createFlashcard')}
+            </Button>
+
             <Dialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full md:w-auto">
@@ -413,11 +427,6 @@ export default function FlashcardsPage() {
                 </div>
               </DialogContent>
             </Dialog>
-
-            <Button className="w-full md:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              {t('flashcards.createFlashcard')}
-            </Button>
           </div>
 
           {/* Folders Section */}
