@@ -16,6 +16,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useNavigate } from 'react-router-dom';
 
 interface FlashcardSet {
   id: string;
@@ -50,6 +51,7 @@ function FlashcardActions({ setId }: { setId: string }) {
   const [showSwiper, setShowSwiper] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const { flashcards, loading: flashcardsLoading } = useFlashcards();
+  const navigate = useNavigate();
   
   const cards: FlashcardData[] = flashcards.map(card => ({
     id: card.id,
@@ -84,7 +86,7 @@ function FlashcardActions({ setId }: { setId: string }) {
           size="sm"
           onClick={() => {
             console.log('Review button clicked');
-            setShowReview(true);
+            navigate('/flashcards/review', { state: { setId } });
           }}
         >
           <Brain className="h-4 w-4 mr-1" />

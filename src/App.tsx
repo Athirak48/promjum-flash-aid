@@ -16,6 +16,7 @@ import FeedbackPage from "./pages/FeedbackPage";
 import Profile from "./pages/Profile";
 import NotFoundPage from "./pages/NotFoundPage";
 import Navbar from "./components/Navbar";
+import FlashcardsReview from "./pages/FlashcardsReview";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,14 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <Profile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/flashcards/review" 
+                element={
+                  <ProtectedRoute>
+                    <FlashcardsReview />
                   </ProtectedRoute>
                 } 
               />
