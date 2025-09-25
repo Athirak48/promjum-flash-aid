@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, CreditCard, FileText, CheckCircle } from "lucide-react";
+import { Upload, CreditCard, FileText, CheckCircle, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface FileUploadSectionProps {
@@ -132,10 +132,22 @@ export default function FileUploadSection({ onUpload }: FileUploadSectionProps) 
         ) : showPricing ? (
           // Pricing Summary for Normal Users
           <div className="space-y-4">
-            <div className="bg-gradient-secondary rounded-lg p-6 border border-primary/20">
+            <div className="bg-gradient-secondary rounded-lg p-6 border border-primary/20 relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                onClick={() => {
+                  setSelectedFile(null);
+                  setShowPricing(false);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              
               <div className="flex items-center gap-3 mb-4">
                 <FileText className="h-5 w-5 text-primary" />
-                <div className="flex-1">
+                <div className="flex-1 pr-8">
                   <p className="font-medium text-foreground">{selectedFile.name}</p>
                   <p className="text-sm text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
                 </div>
