@@ -7,7 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUpDown, Clock, FileText, Plus, Upload, TrendingUp, Bell, Star, CreditCard, MessageSquare, Send, Calendar, BarChart3, Zap } from "lucide-react";
+import { ArrowUpDown, Clock, FileText, Plus, Upload, TrendingUp, Bell, Star, CreditCard, MessageSquare, Send, Calendar, BarChart3, Zap, Target } from "lucide-react";
+import BackgroundDecorations from "@/components/BackgroundDecorations";
+import StatsChart from "@/components/StatsChart";
+import FileUploadSection from "@/components/FileUploadSection";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -119,8 +122,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 relative overflow-hidden">
+      <BackgroundDecorations />
+      <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header with User Info */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -148,21 +152,43 @@ export default function Dashboard() {
           </div>
           
           {/* Quota Information */}
-          <Card className="mb-6">
+          <Card className="mb-6 bg-gradient-card backdrop-blur-sm shadow-soft border border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">โควตาการอัปโหลด</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Upload className="h-5 w-5 text-primary" />
+                โควตาการอัปโหลด
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>ใช้แล้ว {userStats.usedQuota} MB</span>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">การใช้งาน</span>
+                  <span className="text-lg font-bold text-primary">
+                    {Math.round((userStats.usedQuota / userStats.uploadQuota) * 100)}%
+                  </span>
+                </div>
+                
+                <div className="relative">
+                  <Progress 
+                    value={(userStats.usedQuota / userStats.uploadQuota) * 100} 
+                    className="w-full h-3 bg-muted/50"
+                  />
+                  <div className="absolute inset-0 bg-gradient-primary opacity-75 rounded-full" 
+                       style={{ width: `${(userStats.usedQuota / userStats.uploadQuota) * 100}%` }} />
+                </div>
+                
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{userStats.usedQuota} MB ใช้แล้ว</span>
                   <span>เหลือ {userStats.remainingQuota} MB</span>
                 </div>
-                <Progress value={(userStats.usedQuota / userStats.uploadQuota) * 100} className="w-full" />
-                <p className="text-xs text-muted-foreground">
-                  โควตาทั้งหมด: {userStats.uploadQuota} MB
-                  {userProfile?.subscription === 'normal' && ' • อัปเกรดเป็น Pro เพื่อโควตาไม่จำกัด'}
-                </p>
+                
+                {userProfile?.subscription === 'normal' && (
+                  <div className="bg-gradient-primary/10 rounded-lg p-3 text-center">
+                    <p className="text-xs text-primary font-medium">
+                      อัปเกรดเป็น Pro เพื่อโควตาไม่จำกัด
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -170,49 +196,39 @@ export default function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">ไฟล์ที่อัปโหลด</CardTitle>
-              <Upload className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{userStats.totalUploads}</div>
-              <p className="text-xs text-muted-foreground">ไฟล์ทั้งหมด</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">แฟลชการ์ดที่สร้าง</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{userStats.totalCards}</div>
-              <p className="text-xs text-muted-foreground">การ์ดทั้งหมด</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">สตรีคการเรียน</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{userStats.studyStreak}</div>
-              <p className="text-xs text-muted-foreground">วันติดต่อกัน</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">เครดิตที่ใช้</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{userStats.creditsUsed}</div>
-              <p className="text-xs text-muted-foreground">เครดิต</p>
-            </CardContent>
-          </Card>
+          <StatsChart
+            title="ไฟล์ที่อัปโหลด"
+            value={userStats.totalUploads}
+            unit="ไฟล์ทั้งหมด"
+            icon="chart"
+            color="primary"
+          />
+          
+          <StatsChart
+            title="แฟลชการ์ดที่สร้าง"
+            value={userStats.totalCards}
+            unit="การ์ดทั้งหมด"
+            percentage={85}
+            icon="trending"
+            color="primary"
+          />
+          
+          <StatsChart
+            title="สตรีคการเรียน"
+            value={userStats.studyStreak}
+            unit="วันติดต่อกัน"
+            percentage={20}
+            icon="target"
+            color="primary"
+          />
+          
+          <StatsChart
+            title="เครดิตที่ใช้"
+            value={userStats.creditsUsed}
+            unit="เครดิต"
+            icon="clock"
+            color="primary"
+          />
         </div>
 
         {/* Main Content */}
@@ -220,41 +236,10 @@ export default function Dashboard() {
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
             {/* Upload Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>อัปโหลดไฟล์</CardTitle>
-                <CardDescription>
-                  รองรับไฟล์ PDF, DOCX, TXT และอื่นๆ เพื่อสร้างแฟลชการ์ดอัตโนมัติ
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center space-y-4">
-                  <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
-                  <div>
-                    <h3 className="font-medium mb-2">เลือกไฟล์หรือลากมาวางที่นี่</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      รองรับ PDF, DOCX, TXT, PPTX (ขนาดสูงสุด 20MB)
-                    </p>
-                    
-                    {/* Cost Calculator for Normal Users */}
-                    {userProfile?.subscription === 'normal' && (
-                      <div className="bg-muted/50 rounded-lg p-4 mb-4">
-                        <p className="text-sm font-medium mb-2">ราคาการอัปโหลด</p>
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <div>• ไฟล์ขนาด 1 MB = 2 บาท</div>
-                          <div>• ตัวอย่าง: ไฟล์ 5.1 MB = 10.2 บาท</div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <Button>
-                      <Upload className="h-4 w-4 mr-2" />
-                      เลือกไฟล์
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <FileUploadSection onUpload={(file) => {
+              console.log('File uploaded:', file);
+              // Handle file upload logic here
+            }} />
 
             {/* Recent Uploads */}
             <Card>
@@ -310,10 +295,10 @@ export default function Dashboard() {
             </Card>
 
             {/* Feedback Section */}
-            <Card>
+            <Card className="bg-gradient-card backdrop-blur-sm shadow-soft border border-border/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
+                  <MessageSquare className="h-5 w-5 text-primary" />
                   ข้อเสนอแนะ
                 </CardTitle>
                 <CardDescription>ช่วยเราพัฒนา Promjum ให้ดีขึ้น</CardDescription>
@@ -324,11 +309,12 @@ export default function Dashboard() {
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
                   rows={3}
+                  className="bg-background/50 border-border/50 focus:border-primary"
                 />
                 <Button 
                   onClick={submitFeedback}
                   disabled={isSubmittingFeedback}
-                  className="w-full"
+                  className="w-full bg-gradient-primary hover:shadow-glow transition-all"
                 >
                   {isSubmittingFeedback ? (
                     <>
@@ -348,37 +334,69 @@ export default function Dashboard() {
 
           {/* Right Sidebar */}
           <div className="space-y-8">
-            {/* Learning Stats */}
-            <Card>
+            {/* Learning Stats - Updated with Charts */}
+            <Card className="bg-gradient-card backdrop-blur-sm shadow-soft border border-border/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  สถิติการเรียนวันนี้
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  สถิติความจำ
                 </CardTitle>
+                <CardDescription>ผลลัพธ์การทบทวนวันนี้</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-sm">การ์ดที่ทบทวน</span>
-                  <span className="font-medium">{learningStats.cardsReviewed} การ์ด</span>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">การ์ดที่ทบทวน</span>
+                      <span className="text-sm font-bold text-primary">{learningStats.cardsReviewed}</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div className="bg-gradient-primary h-2 rounded-full transition-all" 
+                           style={{ width: `${(learningStats.cardsReviewed / 200) * 100}%` }} />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">คำที่จำได้</span>
+                      <span className="text-sm font-bold text-primary">{learningStats.wordsLearned}</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div className="bg-gradient-primary h-2 rounded-full transition-all" 
+                           style={{ width: `${(learningStats.wordsLearned / 100) * 100}%` }} />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">คำที่จำได้</span>
-                  <span className="font-medium">{learningStats.wordsLearned} คำ</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">เวลาเรียน</span>
-                  <span className="font-medium">{learningStats.studyTime} นาที</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">ความแม่นยำ</span>
-                  <span className="font-medium">{learningStats.accuracy}%</span>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">เวลาเรียน</span>
+                      <span className="text-sm font-bold text-primary">{learningStats.studyTime}น</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div className="bg-gradient-primary h-2 rounded-full transition-all" 
+                           style={{ width: `${(learningStats.studyTime / 60) * 100}%` }} />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">ความแม่นยำ</span>
+                      <span className="text-sm font-bold text-primary">{learningStats.accuracy}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div className="bg-gradient-primary h-2 rounded-full transition-all" 
+                           style={{ width: `${learningStats.accuracy}%` }} />
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Upgrade CTA for Normal Users */}
             {userProfile?.subscription === 'normal' && (
-              <Card className="border-primary/50 bg-gradient-to-br from-primary/10 to-primary/5">
+              <Card className="border-primary/30 bg-gradient-primary/10 backdrop-blur-sm shadow-glow">
                 <CardHeader>
                   <CardTitle className="text-primary flex items-center gap-2">
                     <Zap className="h-5 w-5" />
@@ -389,21 +407,27 @@ export default function Dashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <ul className="text-sm space-y-2">
+                  <ul className="text-sm space-y-3">
                     <li className="flex items-center">
-                      <Plus className="h-4 w-4 mr-2 text-primary" />
+                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center mr-3">
+                        <Plus className="h-3 w-3 text-primary" />
+                      </div>
                       อัปโหลดไฟล์ไม่จำกัด
                     </li>
                     <li className="flex items-center">
-                      <Plus className="h-4 w-4 mr-2 text-primary" />
+                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center mr-3">
+                        <Plus className="h-3 w-3 text-primary" />
+                      </div>
                       AI ประมวลผลเร็วขึ้น
                     </li>
                     <li className="flex items-center">
-                      <Plus className="h-4 w-4 mr-2 text-primary" />
+                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center mr-3">
+                        <Plus className="h-3 w-3 text-primary" />
+                      </div>
                       ไม่มีโฆษณา
                     </li>
                   </ul>
-                  <Button className="w-full">
+                  <Button className="w-full bg-gradient-primary hover:shadow-glow transition-all">
                     <Star className="h-4 w-4 mr-2" />
                     อัปเกรดตอนนี้
                   </Button>
