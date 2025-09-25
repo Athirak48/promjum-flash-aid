@@ -13,19 +13,62 @@ export default function FileUploadSection({ onUpload }: FileUploadSectionProps) 
   const { user } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showPricing, setShowPricing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   const userProfile = user ? {
     subscription: 'normal' // This would come from actual user data
   } : null;
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    if (userProfile?.subscription === 'normal') {
+      setShowPricing(true);
+    } else {
+      onUpload?.(file);
+    }
+  };
+
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      if (userProfile?.subscription === 'normal') {
-        setShowPricing(true);
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const file = files[0];
+    
+    if (file) {
+      // Check file type
+      const allowedTypes = ['.pdf', '.docx', '.txt', '.pptx'];
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      
+      if (allowedTypes.includes(fileExtension)) {
+        // Check file size (20MB limit)
+        if (file.size <= 20 * 1024 * 1024) {
+          handleFileSelect(file);
+        } else {
+          alert('ขนาดไฟล์เกิน 20MB โปรดเลือกไฟล์ที่เล็กกว่า');
+        }
       } else {
-        onUpload?.(file);
+        alert('รองรับเฉพาะไฟล์ PDF, DOCX, TXT, PPTX เท่านั้น');
       }
     }
   };
@@ -53,7 +96,17 @@ export default function FileUploadSection({ onUpload }: FileUploadSectionProps) 
       </CardHeader>
       <CardContent className="space-y-6">
         {!selectedFile ? (
-          <div className="border-2 border-dashed border-primary/30 rounded-lg p-8 text-center space-y-4 bg-gradient-primary/5 hover:bg-gradient-primary/10 transition-all">
+          <div 
+            className={`border-2 border-dashed rounded-lg p-8 text-center space-y-4 transition-all cursor-pointer ${
+              isDragOver 
+                ? 'border-primary bg-primary/20 scale-105' 
+                : 'border-primary/30 bg-gradient-primary/5 hover:bg-gradient-primary/10'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => document.getElementById('file-upload')?.click()}
+          >
             <Upload className="h-12 w-12 mx-auto text-primary animate-float" />
             <div>
               <h3 className="font-medium mb-2">เลือกไฟล์หรือลากมาวางที่นี่</h3>
@@ -66,7 +119,7 @@ export default function FileUploadSection({ onUpload }: FileUploadSectionProps) 
                 id="file-upload"
                 className="hidden"
                 accept=".pdf,.docx,.txt,.pptx"
-                onChange={handleFileSelect}
+                onChange={handleFileInputChange}
               />
               <label htmlFor="file-upload">
                 <Button size="lg" className="cursor-pointer">
