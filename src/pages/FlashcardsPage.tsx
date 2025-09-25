@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -272,7 +272,7 @@ export default function FlashcardsPage() {
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [showCreateFlashcardDialog, setShowCreateFlashcardDialog] = useState(false);
-  const [flashcardRows, setFlashcardRows] = useState([{ id: 1, front: '', back: '' }]);
+  const [flashcardRows, setFlashcardRows] = useState([{ id: 1, front: '', back: '', frontImage: null as File | null, backImage: null as File | null }]);
   const { flashcards, loading } = useFlashcards();
   
   // Create folders based on flashcard categories (simplified approach)
@@ -330,7 +330,7 @@ export default function FlashcardsPage() {
   };
 
   const handleAddFlashcardRow = () => {
-    const newRow = { id: Date.now(), front: '', back: '' };
+    const newRow = { id: Date.now(), front: '', back: '', frontImage: null as File | null, backImage: null as File | null };
     setFlashcardRows([...flashcardRows, newRow]);
   };
 
@@ -348,11 +348,28 @@ export default function FlashcardsPage() {
     );
   };
 
+  const handleImageUpload = (id: number, side: 'front' | 'back') => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        setFlashcardRows(rows => 
+          rows.map(row => 
+            row.id === id ? { ...row, [`${side}Image`]: file } : row
+          )
+        );
+      }
+    };
+    input.click();
+  };
+
   const handleCreateFlashcards = () => {
     // TODO: Implement flashcard creation logic
     console.log('Creating flashcards:', flashcardRows);
     setShowCreateFlashcardDialog(false);
-    setFlashcardRows([{ id: 1, front: '', back: '' }]);
+    setFlashcardRows([{ id: 1, front: '', back: '', frontImage: null, backImage: null }]);
   };
 
   const filteredSets = flashcardSets.filter(set => {
@@ -434,6 +451,9 @@ export default function FlashcardsPage() {
               <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-xl font-bold">สร้างแฟลชการ์ดใหม่</DialogTitle>
+                  <DialogDescription>
+                    สร้างแฟลชการ์ดใหม่สำหรับการเรียนรู้ของคุณ
+                  </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-6">
@@ -507,9 +527,15 @@ export default function FlashcardsPage() {
                             variant="ghost" 
                             size="sm" 
                             className="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                            onClick={() => handleImageUpload(row.id, 'front')}
                           >
                             <ImagePlus className="h-4 w-4" />
                           </Button>
+                          {row.frontImage && (
+                            <div className="absolute top-2 left-2 text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
+                              รูปภาพแนบแล้ว
+                            </div>
+                          )}
                         </div>
 
                         {/* Back Side */}
@@ -524,9 +550,15 @@ export default function FlashcardsPage() {
                             variant="ghost" 
                             size="sm" 
                             className="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                            onClick={() => handleImageUpload(row.id, 'back')}
                           >
                             <ImagePlus className="h-4 w-4" />
                           </Button>
+                          {row.backImage && (
+                            <div className="absolute top-2 left-2 text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
+                              รูปภาพแนบแล้ว
+                            </div>
+                          )}
                         </div>
 
                         {/* Delete Button */}
