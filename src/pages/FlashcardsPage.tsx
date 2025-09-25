@@ -59,6 +59,7 @@ function FlashcardActions({ setId }: { setId: string }) {
 
   const handleReviewComplete = (results: { correct: number; incorrect: number; needsReview: number }) => {
     setShowSwiper(false);
+    setShowReview(false);
     console.log('Review results:', results);
   };
 
@@ -81,7 +82,10 @@ function FlashcardActions({ setId }: { setId: string }) {
         <Button 
           className="flex-1" 
           size="sm"
-          onClick={() => setShowReview(true)}
+          onClick={() => {
+            console.log('Review button clicked');
+            setShowReview(true);
+          }}
         >
           <Brain className="h-4 w-4 mr-1" />
           {t('flashcards.review')}
@@ -101,11 +105,17 @@ function FlashcardActions({ setId }: { setId: string }) {
       )}
       
       {showReview && (
-        <FlashcardReviewPage
-          cards={cards}
-          onClose={() => setShowReview(false)}
-          onComplete={handleReviewComplete}
-        />
+        <>
+          {console.log('Rendering FlashcardReviewPage with cards:', cards)}
+          <FlashcardReviewPage
+            cards={cards}
+            onClose={() => {
+              console.log('Closing review page');
+              setShowReview(false);
+            }}
+            onComplete={handleReviewComplete}
+          />
+        </>
       )}
     </>
   );
