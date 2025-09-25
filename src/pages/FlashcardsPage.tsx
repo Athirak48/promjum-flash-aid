@@ -6,8 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, Filter, MoreVertical, Edit, Trash, Move, Type, Upload } from 'lucide-react';
+import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, Filter, MoreVertical, Edit, Trash, Move, Type, Upload, ImagePlus, X } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFlashcards } from '@/hooks/useFlashcards';
@@ -269,6 +271,8 @@ export default function FlashcardsPage() {
   const [filterSource, setFilterSource] = useState<string>('all');
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
+  const [showCreateFlashcardDialog, setShowCreateFlashcardDialog] = useState(false);
+  const [flashcardRows, setFlashcardRows] = useState([{ id: 1, front: '', back: '' }]);
   const { flashcards, loading } = useFlashcards();
   
   // Create folders based on flashcard categories (simplified approach)
@@ -323,6 +327,32 @@ export default function FlashcardsPage() {
         return { ...folder, cardSetsCount: setsInFolder };
       })
     );
+  };
+
+  const handleAddFlashcardRow = () => {
+    const newRow = { id: Date.now(), front: '', back: '' };
+    setFlashcardRows([...flashcardRows, newRow]);
+  };
+
+  const handleRemoveFlashcardRow = (id: number) => {
+    if (flashcardRows.length > 1) {
+      setFlashcardRows(flashcardRows.filter(row => row.id !== id));
+    }
+  };
+
+  const handleFlashcardTextChange = (id: number, field: 'front' | 'back', value: string) => {
+    setFlashcardRows(rows => 
+      rows.map(row => 
+        row.id === id ? { ...row, [field]: value } : row
+      )
+    );
+  };
+
+  const handleCreateFlashcards = () => {
+    // TODO: Implement flashcard creation logic
+    console.log('Creating flashcards:', flashcardRows);
+    setShowCreateFlashcardDialog(false);
+    setFlashcardRows([{ id: 1, front: '', back: '' }]);
   };
 
   const filteredSets = flashcardSets.filter(set => {
@@ -394,10 +424,108 @@ export default function FlashcardsPage() {
             </Select>
 
             {/* Primary CTA - Create Flashcard */}
-            <Button className="w-full md:w-auto bg-gradient-primary text-primary-foreground shadow-elegant hover:shadow-glow">
-              <Plus className="h-4 w-4 mr-2" />
-              {t('flashcards.createFlashcard')}
-            </Button>
+            <Dialog open={showCreateFlashcardDialog} onOpenChange={setShowCreateFlashcardDialog}>
+              <DialogTrigger asChild>
+                <Button className="w-full md:w-auto bg-gradient-primary text-primary-foreground shadow-elegant hover:shadow-glow">
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('flashcards.createFlashcard')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-bold">สร้างแฟลชการ์ดใหม่</DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-6">
+                  {/* Headers */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">ด้านหน้า</Label>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">ด้านหลัง</Label>
+                    </div>
+                  </div>
+
+                  {/* Flashcard Rows */}
+                  <div className="space-y-4">
+                    {flashcardRows.map((row, index) => (
+                      <div key={row.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                        {/* Front Side */}
+                        <div className="relative">
+                          <Textarea
+                            placeholder="ใส่ข้อความด้านหน้า…"
+                            value={row.front}
+                            onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
+                            className="min-h-[100px] pr-10 resize-none focus:ring-2 focus:ring-primary/20 border-muted-foreground/20 rounded-lg"
+                          />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                          >
+                            <ImagePlus className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {/* Back Side */}
+                        <div className="relative">
+                          <Textarea
+                            placeholder="ใส่ข้อความด้านหลัง…"
+                            value={row.back}
+                            onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
+                            className="min-h-[100px] pr-10 resize-none focus:ring-2 focus:ring-primary/20 border-muted-foreground/20 rounded-lg"
+                          />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                          >
+                            <ImagePlus className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {/* Delete Button */}
+                        {flashcardRows.length > 1 && (
+                          <div className="md:col-span-2 flex justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveFlashcardRow(row.id)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add Row Button */}
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={handleAddFlashcardRow}
+                      className="text-pink-600 border-pink-200 hover:bg-pink-50 hover:border-pink-300"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      เพิ่มแถว
+                    </Button>
+                  </div>
+
+                  {/* Create Button */}
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      onClick={handleCreateFlashcards}
+                      className="bg-gradient-primary text-primary-foreground hover:shadow-glow px-8 py-2"
+                    >
+                      สร้าง
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <Dialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog}>
               <DialogTrigger asChild>
