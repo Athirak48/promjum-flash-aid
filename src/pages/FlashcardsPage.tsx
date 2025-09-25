@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, Filter, MoreVertical, Edit, Trash, Move, Type, Upload, ImagePlus, X } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
+import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
@@ -47,6 +48,7 @@ const ItemTypes = {
 function FlashcardActions({ setId }: { setId: string }) {
   const { t } = useLanguage();
   const [showSwiper, setShowSwiper] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const { flashcards, loading: flashcardsLoading } = useFlashcards();
   
   const cards: FlashcardData[] = flashcards.map(card => ({
@@ -79,7 +81,7 @@ function FlashcardActions({ setId }: { setId: string }) {
         <Button 
           className="flex-1" 
           size="sm"
-          onClick={() => setShowSwiper(true)}
+          onClick={() => setShowReview(true)}
         >
           <Brain className="h-4 w-4 mr-1" />
           {t('flashcards.review')}
@@ -94,6 +96,14 @@ function FlashcardActions({ setId }: { setId: string }) {
         <FlashcardSwiper
           cards={cards}
           onClose={() => setShowSwiper(false)}
+          onComplete={handleReviewComplete}
+        />
+      )}
+      
+      {showReview && (
+        <FlashcardReviewPage
+          cards={cards}
+          onClose={() => setShowReview(false)}
           onComplete={handleReviewComplete}
         />
       )}
