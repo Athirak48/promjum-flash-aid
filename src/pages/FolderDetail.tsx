@@ -5,10 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, Archive } from 'lucide-react';
+import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, Archive, ImagePlus, X } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 
@@ -51,6 +53,7 @@ export function FolderDetail() {
   const [showNewCardDialog, setShowNewCardDialog] = useState(false);
   const [selectedSet, setSelectedSet] = useState<FlashcardSet | null>(null);
   const [gameMode, setGameMode] = useState<'swiper' | 'review' | null>(null);
+  const [flashcardRows, setFlashcardRows] = useState([{ id: 1, front: '', back: '', frontImage: null as File | null, backImage: null as File | null }]);
 
   // Mock data - replace with real data fetching based on folderId
   useEffect(() => {
@@ -137,6 +140,49 @@ export function FolderDetail() {
     setGameMode(null);
   };
 
+  const handleAddFlashcardRow = () => {
+    const newRow = { id: Date.now(), front: '', back: '', frontImage: null as File | null, backImage: null as File | null };
+    setFlashcardRows([...flashcardRows, newRow]);
+  };
+
+  const handleRemoveFlashcardRow = (id: number) => {
+    if (flashcardRows.length > 1) {
+      setFlashcardRows(flashcardRows.filter(row => row.id !== id));
+    }
+  };
+
+  const handleFlashcardTextChange = (id: number, field: 'front' | 'back', value: string) => {
+    setFlashcardRows(rows => 
+      rows.map(row => 
+        row.id === id ? { ...row, [field]: value } : row
+      )
+    );
+  };
+
+  const handleImageUpload = (id: number, side: 'front' | 'back') => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        setFlashcardRows(rows => 
+          rows.map(row => 
+            row.id === id ? { ...row, [`${side}Image`]: file } : row
+          )
+        );
+      }
+    };
+    input.click();
+  };
+
+  const handleCreateFlashcards = () => {
+    // TODO: Implement flashcard creation logic
+    console.log('Creating flashcards:', flashcardRows);
+    setShowNewCardDialog(false);
+    setFlashcardRows([{ id: 1, front: '', back: '', frontImage: null, backImage: null }]);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950">
@@ -212,15 +258,125 @@ export function FolderDetail() {
                 สร้างแฟลชการ์ดใหม่
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>สร้างแฟลชการ์ดใหม่</DialogTitle>
+                <DialogTitle className="text-xl font-bold">สร้างแฟลชการ์ดใหม่</DialogTitle>
+                <DialogDescription>
+                  สร้างแฟลชการ์ดใหม่ในโฟลเดอร์ "{folder.title}"
+                </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  สร้างชุดแฟลชการ์ดใหม่ในโฟลเดอร์ "{folder.title}"
-                </p>
-                {/* Add form fields here */}
+              
+              <div className="space-y-6">
+                {/* Current Folder Display */}
+                <div className="border-t pt-4">
+                  <Label className="text-sm font-medium mb-3 block">จัดเก็บในโฟลเดอร์</Label>
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border border-muted">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium">{folder.title}</p>
+                      <p className="text-sm text-muted-foreground">โฟลเดอร์ปัจจุบัน</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Headers */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">ด้านหน้า</Label>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">ด้านหลัง</Label>
+                  </div>
+                </div>
+
+                {/* Flashcard Rows */}
+                <div className="space-y-4">
+                  {flashcardRows.map((row, index) => (
+                    <div key={row.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                      {/* Front Side */}
+                      <div className="relative">
+                        <Textarea
+                          placeholder="ใส่ข้อความด้านหน้า…"
+                          value={row.front}
+                          onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
+                          className="min-h-[100px] pr-10 resize-none focus:ring-2 focus:ring-primary/20 border-muted-foreground/20 rounded-lg"
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                          onClick={() => handleImageUpload(row.id, 'front')}
+                        >
+                          <ImagePlus className="h-4 w-4" />
+                        </Button>
+                        {row.frontImage && (
+                          <div className="absolute top-2 left-2 text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
+                            รูปภาพแนบแล้ว
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Back Side */}
+                      <div className="relative">
+                        <Textarea
+                          placeholder="ใส่ข้อความด้านหลัง…"
+                          value={row.back}
+                          onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
+                          className="min-h-[100px] pr-10 resize-none focus:ring-2 focus:ring-primary/20 border-muted-foreground/20 rounded-lg"
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                          onClick={() => handleImageUpload(row.id, 'back')}
+                        >
+                          <ImagePlus className="h-4 w-4" />
+                        </Button>
+                        {row.backImage && (
+                          <div className="absolute top-2 left-2 text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
+                            รูปภาพแนบแล้ว
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Delete Button */}
+                      {flashcardRows.length > 1 && (
+                        <div className="md:col-span-2 flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveFlashcardRow(row.id)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Row Button */}
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={handleAddFlashcardRow}
+                    className="text-pink-600 border-pink-200 hover:bg-pink-50 hover:border-pink-300"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    เพิ่มแถว
+                  </Button>
+                </div>
+
+                {/* Create Button */}
+                <div className="flex justify-end pt-4">
+                  <Button
+                    onClick={handleCreateFlashcards}
+                    className="bg-gradient-primary text-primary-foreground hover:shadow-glow px-8 py-2"
+                  >
+                    สร้าง
+                  </Button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
