@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, Archive, ImagePlus, X } from 'lucide-react';
+import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, Archive, ImagePlus, X, GamepadIcon } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 
@@ -490,8 +490,8 @@ export function FolderDetail() {
                       className="flex-1"
                       onClick={() => handlePlayGame(set)}
                     >
-                      <Play className="h-3 w-3 mr-1" />
-                      เล่น
+                      <GamepadIcon className="h-3 w-3 mr-1" />
+                      เล่นเกม
                     </Button>
                   </div>
                 </CardContent>
