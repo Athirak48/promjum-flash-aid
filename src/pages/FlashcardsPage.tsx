@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +17,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { useNavigate } from 'react-router-dom';
 
 interface FlashcardSet {
   id: string;
@@ -248,10 +248,17 @@ function DroppableFolder({ folder, onDrop }: { folder: Folder; onDrop: (setId: s
     }),
   }));
 
+  const navigate = useNavigate();
+  
+  const handleFolderClick = () => {
+    navigate(`/flashcards/${folder.id}`);
+  };
+
   return (
     <Card 
       ref={drop}
       className={`transition-all cursor-pointer ${isOver ? 'ring-2 ring-primary shadow-glow' : 'hover:shadow-medium'}`}
+      onClick={handleFolderClick}
     >
       <CardContent className="p-6">
         <div className="flex items-center gap-3">
