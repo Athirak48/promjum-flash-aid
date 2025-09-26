@@ -40,6 +40,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [progress, setProgress] = useState({ correct: 0, incorrect: 0 });
+  const [showSwipeFeedback, setShowSwipeFeedback] = useState<'left' | 'right' | null>(null);
   const isMobile = useIsMobile();
 
   const currentCard = cards[currentIndex];
@@ -96,6 +97,9 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
   };
 
   const handleKnow = (knows: boolean) => {
+    // Show feedback first
+    setShowSwipeFeedback(knows ? 'right' : 'left');
+    
     if (trackProgress) {
       setProgress(prev => ({
         ...prev,
@@ -105,7 +109,12 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
     }
     
     setSwipeDirection(knows ? 'right' : 'left');
-    setTimeout(() => handleNext(), 300);
+    
+    // Hide feedback and move to next card after delay
+    setTimeout(() => {
+      setShowSwipeFeedback(null);
+      handleNext();
+    }, 800);
   };
 
   const handleSwipe = (direction: 'left' | 'right') => {
@@ -113,7 +122,8 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
   };
 
   const handleCardTap = () => {
-    if (isMobile) {
+    // Only flip on mobile, not on tablet/desktop
+    if (isMobile && window.innerWidth < 768) {
       setIsFlipped(!isFlipped);
     }
   };
@@ -135,18 +145,56 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
       </div>
 
       {/* Main Card */}
-      <div className="flex items-center justify-center min-h-screen p-6">
-        <div className="w-full max-w-2xl">
+      <div className="flex items-center justify-center min-h-screen p-3 sm:p-6">
+        <div className="w-full max-w-2xl relative">
+          {/* Swipe Feedback Overlay */}
+          <AnimatePresence>
+            {showSwipeFeedback && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute inset-0 z-20 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl"
+              >
+                <div className={`text-4xl sm:text-6xl font-bold px-6 py-4 rounded-2xl ${
+                  showSwipeFeedback === 'left' 
+                    ? 'text-red-500 bg-red-50/90' 
+                    : 'text-green-500 bg-green-50/90'
+                }`}>
+                  {showSwipeFeedback === 'left' ? 'จำไม่ได้' : 'จำได้แล้ว'}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
-              initial={{ opacity: 0, x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0 }}
-              transition={{ duration: 0.3 }}
+              initial={{ 
+                opacity: 0, 
+                scale: 0.9,
+                x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0,
+                rotateY: swipeDirection === 'left' ? -15 : swipeDirection === 'right' ? 15 : 0
+              }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1,
+                x: 0,
+                rotateY: 0
+              }}
+              exit={{ 
+                opacity: 0, 
+                scale: 0.9,
+                x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0,
+                rotateY: swipeDirection === 'left' ? -15 : swipeDirection === 'right' ? 15 : 0
+              }}
+              transition={{ 
+                duration: 0.4,
+                ease: "easeInOut"
+              }}
             >
               <Card 
-                className="relative min-h-[400px] bg-white/95 backdrop-blur-sm border-0 shadow-2xl cursor-pointer"
+                className="relative min-h-[350px] sm:min-h-[400px] bg-white/95 backdrop-blur-sm border-0 shadow-2xl cursor-pointer overflow-hidden"
                 onClick={handleCardTap}
                 onTouchStart={(e) => {
                   const touch = e.touches[0];
@@ -167,20 +215,20 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 }}
               >
                 {/* Card Actions */}
-                <div className="absolute top-4 right-4 flex gap-2">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-2 z-10">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/50 hover:bg-white/70">
                     <Edit3 className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/50 hover:bg-white/70">
                     <Star className={`h-4 w-4 ${currentCard.isFavorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
                   </Button>
                 </div>
 
-                <CardContent className="flex items-center justify-center min-h-[400px] p-8">
+                <CardContent className="flex items-center justify-center min-h-[350px] sm:min-h-[400px] p-4 sm:p-8">
                   <motion.div
                     initial={{ rotateY: 0 }}
                     animate={{ rotateY: isFlipped ? 180 : 0 }}
-                    transition={{ duration: 0.6 }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
                     className="text-center w-full"
                     style={{ transformStyle: 'preserve-3d' }}
                   >
@@ -188,20 +236,32 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                       className={`${isFlipped ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
                       style={{ transform: 'rotateY(0deg)', backfaceVisibility: 'hidden' }}
                     >
-                      <h2 className="text-4xl font-bold text-gray-800 mb-4">
+                      <motion.h2 
+                        className="text-2xl sm:text-4xl font-bold text-gray-800 mb-4 leading-tight"
+                        initial={{ y: 10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                      >
                         {currentCard.front}
-                      </h2>
-                      <p className="text-gray-500">กดเพื่อดูคำตอบ</p>
+                      </motion.h2>
+                      <p className="text-gray-500 text-sm sm:text-base">
+                        {isMobile && window.innerWidth < 768 ? 'กดเพื่อดูคำตอบ' : 'คลิกปุ่มพลิกเพื่อดูคำตอบ'}
+                      </p>
                     </div>
                     
                     <div 
                       className={`${isFlipped ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300 absolute inset-0 flex flex-col justify-center`}
                       style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}
                     >
-                      <h2 className="text-3xl font-semibold text-purple-700 mb-4">
+                      <motion.h2 
+                        className="text-xl sm:text-3xl font-semibold text-purple-700 mb-4 leading-tight"
+                        initial={{ y: 10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                      >
                         {currentCard.back}
-                      </h2>
-                      <p className="text-gray-500">จำได้หรือไม่?</p>
+                      </motion.h2>
+                      <p className="text-gray-500 text-sm sm:text-base">จำได้หรือไม่?</p>
                     </div>
                   </motion.div>
                 </CardContent>
@@ -212,100 +272,175 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
       </div>
 
       {/* Bottom Controls */}
-      <div className="absolute bottom-6 left-6 right-6">
-        <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
-          {/* Left: Track Progress Toggle */}
-          <div className="flex items-center gap-3">
-            <Switch
-              checked={trackProgress}
-              onCheckedChange={setTrackProgress}
-              id="track-progress"
-            />
-            <label htmlFor="track-progress" className="text-sm font-medium">
-              Track progress
-            </label>
-          </div>
-
-          {/* Center: Card Counter & Navigation */}
-          <div className="flex items-center gap-4">
-            {!isMobile && (
-              <>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handlePrevious}
-                  disabled={currentIndex === 0}
-                  className="bg-red-100 hover:bg-red-200 border-red-200"
-                  title="จำไม่ได้ (←)"
-                >
-                  <ChevronLeft className="h-4 w-4 text-red-600" />
+      <div className="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between bg-white/90 backdrop-blur-sm rounded-2xl p-3 sm:p-4 shadow-lg gap-3 sm:gap-0">
+          
+          {/* Mobile: Stacked layout */}
+          <div className="w-full sm:hidden">
+            {/* Card Counter */}
+            <div className="text-center mb-3">
+              <div className="text-lg font-semibold">
+                {currentIndex + 1} / {cards.length}
+              </div>
+            </div>
+            
+            {/* Main Controls */}
+            <div className="flex items-center justify-center gap-4 mb-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleKnow(false)}
+                className="bg-red-100 hover:bg-red-200 border-red-200 flex-1"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1 text-red-600" />
+                จำไม่ได้
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsFlipped(!isFlipped)}
+                title="พลิกการ์ด"
+                className="bg-blue-100 hover:bg-blue-200"
+              >
+                <RotateCcw className="h-4 w-4 text-blue-600" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleKnow(true)}
+                className="bg-green-100 hover:bg-green-200 border-green-200 flex-1"
+              >
+                จำได้แล้ว
+                <ChevronRight className="h-4 w-4 ml-1 text-green-600" />
+              </Button>
+            </div>
+            
+            {/* Secondary Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={trackProgress}
+                  onCheckedChange={setTrackProgress}
+                  id="track-progress-mobile"
+                />
+                <label htmlFor="track-progress-mobile" className="text-xs font-medium">
+                  Track
+                </label>
+              </div>
+              
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} className="h-8 w-8">
+                  <SkipBack className="h-3 w-3" />
+                </Button>
+                
+                <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === cards.length - 1} className="h-8 w-8">
+                  <SkipForward className="h-3 w-3" />
                 </Button>
                 
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
-                  onClick={handleKnow.bind(null, true)}
-                  className="bg-green-100 hover:bg-green-200 border-green-200"
-                  title="จำได้ (→)"
+                  onClick={() => setIsAutoPlay(!isAutoPlay)}
+                  className={`h-8 w-8 ${isAutoPlay ? 'bg-purple-100' : ''}`}
                 >
-                  <ChevronRight className="h-4 w-4 text-green-600" />
+                  {isAutoPlay ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                 </Button>
-              </>
-            )}
-            
-            <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0}>
-              <SkipBack className="h-4 w-4" />
-            </Button>
-            
-            <div className="text-lg font-semibold px-4">
-              {currentIndex + 1} / {cards.length}
+              </div>
             </div>
-            
-            <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === cards.length - 1}>
-              <SkipForward className="h-4 w-4" />
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setIsFlipped(!isFlipped)}
-              title="พลิกการ์ด (Tab)"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
           </div>
 
-          {/* Right: Control Buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsAutoPlay(!isAutoPlay)}
-              className={isAutoPlay ? 'bg-purple-100' : ''}
-            >
-              {isAutoPlay ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </Button>
-            
-            <Button variant="ghost" size="icon">
-              <Maximize className="h-4 w-4" />
-            </Button>
-            
-            <Button variant="ghost" size="icon">
-              <Settings className="h-4 w-4" />
-            </Button>
+          {/* Desktop: Horizontal layout */}
+          <div className="hidden sm:flex items-center justify-between w-full">
+            {/* Left: Track Progress Toggle */}
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={trackProgress}
+                onCheckedChange={setTrackProgress}
+                id="track-progress"
+              />
+              <label htmlFor="track-progress" className="text-sm font-medium">
+                Track progress
+              </label>
+            </div>
+
+            {/* Center: Card Counter & Navigation */}
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleKnow(false)}
+                className="bg-red-100 hover:bg-red-200 border-red-200"
+                title="จำไม่ได้ (←)"
+              >
+                <ChevronLeft className="h-4 w-4 text-red-600" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleKnow(true)}
+                className="bg-green-100 hover:bg-green-200 border-green-200"
+                title="จำได้ (→)"
+              >
+                <ChevronRight className="h-4 w-4 text-green-600" />
+              </Button>
+              
+              <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0}>
+                <SkipBack className="h-4 w-4" />
+              </Button>
+              
+              <div className="text-lg font-semibold px-4">
+                {currentIndex + 1} / {cards.length}
+              </div>
+              
+              <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === cards.length - 1}>
+                <SkipForward className="h-4 w-4" />
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsFlipped(!isFlipped)}
+                title="พลิกการ์ด (Tab)"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Right: Control Buttons */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsAutoPlay(!isAutoPlay)}
+                className={isAutoPlay ? 'bg-purple-100' : ''}
+              >
+                {isAutoPlay ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </Button>
+              
+              <Button variant="ghost" size="icon">
+                <Maximize className="h-4 w-4" />
+              </Button>
+              
+              <Button variant="ghost" size="icon">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Mobile Swipe Instructions */}
-        {isMobile && !isFlipped && (
-          <div className="text-center mt-4 text-sm text-gray-600">
-            <p>ปัดซ้าย = จำไม่ได้ | ปัดขวา = จำได้ | กดการ์ด = พลิก</p>
+        {isMobile && window.innerWidth < 768 && !isFlipped && (
+          <div className="text-center mt-3 text-xs text-gray-600 bg-white/70 backdrop-blur-sm rounded-lg px-3 py-2">
+            <p>ปัดซ้าย = จำไม่ได้ | ปัดขวา = จำได้แล้ว | กดการ์ด = พลิก</p>
           </div>
         )}
 
         {/* Progress Display */}
         {trackProgress && (
-          <div className="text-center mt-2 text-sm text-gray-600">
+          <div className="text-center mt-2 text-sm text-gray-600 bg-white/70 backdrop-blur-sm rounded-lg px-3 py-1">
             จำได้: {progress.correct} | จำไม่ได้: {progress.incorrect}
           </div>
         )}
