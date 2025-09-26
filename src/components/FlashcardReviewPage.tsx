@@ -121,11 +121,11 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
     handleKnow(direction === 'right');
   };
 
-  const handleCardTap = () => {
-    // Only flip on mobile, not on tablet/desktop
-    if (isMobile && window.innerWidth < 768) {
-      setIsFlipped(!isFlipped);
-    }
+  const handleCardTap = (e?: React.MouseEvent | React.TouchEvent) => {
+    // Flip on all devices; ignore clicks on action buttons inside the card
+    const target = (e?.target as HTMLElement | null);
+    if (target && target.closest('button,[role="button"]')) return;
+    setIsFlipped((prev) => !prev);
   };
 
   if (!currentCard) return null;
@@ -245,7 +245,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                         {currentCard.front}
                       </motion.h2>
                       <p className="text-gray-500 text-sm sm:text-base">
-                        {isMobile && window.innerWidth < 768 ? 'กดเพื่อดูคำตอบ' : 'คลิกปุ่มพลิกเพื่อดูคำตอบ'}
+                        {isMobile && window.innerWidth < 768 ? 'กดเพื่อดูคำตอบ' : 'คลิกการ์ดหรือกด Tab เพื่อพลิก'}
                       </p>
                     </div>
                     
