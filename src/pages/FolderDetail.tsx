@@ -479,19 +479,19 @@ export function FolderDetail() {
                       size="sm" 
                       variant="outline" 
                       className="flex-1"
-                      onClick={() => handlePlayGame(set)}
+                      onClick={() => handleReviewCards(set)}
                     >
-                      <Play className="h-3 w-3 mr-1" />
-                      เล่น
+                      <BookOpen className="h-3 w-3 mr-1" />
+                      ทบทวน
                     </Button>
                     <Button 
                       size="sm" 
                       variant="default" 
                       className="flex-1"
-                      onClick={() => handleReviewCards(set)}
+                      onClick={() => handlePlayGame(set)}
                     >
-                      <BookOpen className="h-3 w-3 mr-1" />
-                      ทบทวน
+                      <Play className="h-3 w-3 mr-1" />
+                      เล่น
                     </Button>
                   </div>
                 </CardContent>
