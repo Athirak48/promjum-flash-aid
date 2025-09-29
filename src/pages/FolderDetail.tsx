@@ -13,6 +13,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, Archive, ImagePlus, X, GamepadIcon } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
+import { GameSelectionDialog } from '@/components/GameSelectionDialog';
+import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
+import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
 
 interface FlashcardData {
   id: string;
@@ -52,7 +55,8 @@ export function FolderDetail() {
   const [loading, setLoading] = useState(true);
   const [showNewCardDialog, setShowNewCardDialog] = useState(false);
   const [selectedSet, setSelectedSet] = useState<FlashcardSet | null>(null);
-  const [gameMode, setGameMode] = useState<'swiper' | 'review' | null>(null);
+  const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | null>(null);
+  const [showGameSelection, setShowGameSelection] = useState(false);
   const [flashcardRows, setFlashcardRows] = useState([{ id: 1, front: '', back: '', frontImage: null as File | null, backImage: null as File | null }]);
 
   // Mock data - replace with real data fetching based on folderId
@@ -127,7 +131,7 @@ export function FolderDetail() {
 
   const handlePlayGame = (set: FlashcardSet) => {
     setSelectedSet(set);
-    setGameMode('swiper');
+    setShowGameSelection(true);
   };
 
   const handleReviewCards = (set: FlashcardSet) => {
@@ -220,8 +224,18 @@ export function FolderDetail() {
     const mockFlashcards: FlashcardData[] = [
       { id: '1', front: '2x + 3 = 7', back: 'x = 2' },
       { id: '2', front: '3x - 5 = 10', back: 'x = 5' },
-      { id: '3', front: 'x/2 + 4 = 6', back: 'x = 4' }
+      { id: '3', front: 'x/2 + 4 = 6', back: 'x = 4' },
+      { id: '4', front: 'What is the capital of Thailand?', back: 'Bangkok' },
+      { id: '5', front: 'What is 5 + 5?', back: '10' },
+      { id: '6', front: 'What color do you get when you mix red and blue?', back: 'Purple' }
     ];
+
+    // Convert to flashcard format for quiz and matching games
+    const quizFlashcards = mockFlashcards.map(card => ({
+      id: card.id,
+      front_text: card.front,
+      back_text: card.back
+    }));
 
     if (gameMode === 'swiper') {
       return <FlashcardSwiper cards={mockFlashcards} onClose={handleGameClose} onComplete={handleGameClose} />;
@@ -230,7 +244,20 @@ export function FolderDetail() {
     if (gameMode === 'review') {
       return <FlashcardReviewPage cards={mockFlashcards} onComplete={handleGameClose} onClose={handleGameClose} />;
     }
+
+    if (gameMode === 'quiz') {
+      return <FlashcardQuizGame flashcards={quizFlashcards} onClose={handleGameClose} />;
+    }
+
+    if (gameMode === 'matching') {
+      return <FlashcardMatchingGame flashcards={quizFlashcards} onClose={handleGameClose} />;
+    }
   }
+
+  const handleGameSelect = (gameType: 'quiz' | 'matching') => {
+    setGameMode(gameType);
+    setShowGameSelection(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950">
@@ -500,6 +527,13 @@ export function FolderDetail() {
           </div>
         )}
       </div>
+
+      {/* Game Selection Dialog */}
+      <GameSelectionDialog
+        open={showGameSelection}
+        onOpenChange={setShowGameSelection}
+        onSelectGame={handleGameSelect}
+      />
     </div>
   );
 }
