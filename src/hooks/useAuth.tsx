@@ -10,6 +10,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
+  getUserRole: (userId: string) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -65,6 +66,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
+  const getUserRole = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching user role:', error);
+      return null;
+    }
+    
+    return data?.role || 'user';
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     return { error };
@@ -88,6 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signOut,
     resetPassword,
+    getUserRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

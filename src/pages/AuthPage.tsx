@@ -10,23 +10,33 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Checkbox } from "@/components/ui/checkbox";
 import promjumLogo from "@/assets/promjum-logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
-  const { signIn, signUp, resetPassword, user } = useAuth();
+  const { signIn, signUp, resetPassword, user, getUserRole } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'login';
 
   // Redirect if user is already logged in
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
+    const checkUserRole = async () => {
+      if (user) {
+        const role = await getUserRole(user.id);
+        if (role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      }
+    };
+    
+    checkUserRole();
+  }, [user, navigate, getUserRole]);
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -49,7 +59,19 @@ export default function AuthPage() {
         title: "เข้าสู่ระบบสำเร็จ!",
         description: "ยินดีต้อนรับสู่ Promjum",
       });
-      navigate('/dashboard');
+      
+      // Get current session to check user role
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const role = await getUserRole(session.user.id);
+        if (role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        navigate('/dashboard');
+      }
     }
     
     setIsLoading(false);

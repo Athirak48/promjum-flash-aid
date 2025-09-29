@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import NotFoundPage from "./pages/NotFoundPage";
 import Navbar from "./components/Navbar";
 import FlashcardsReview from "./pages/FlashcardsReview";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +89,14 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <FlashcardsReview />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
                   </ProtectedRoute>
                 } 
               />
