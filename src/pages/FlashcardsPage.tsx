@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, Filter, MoreVertical, Edit, Trash, Move, Type, Upload, ImagePlus, X } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
+import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
@@ -50,6 +51,7 @@ function FlashcardActions({ setId }: { setId: string }) {
   const { t } = useLanguage();
   const [showSwiper, setShowSwiper] = useState(false);
   const [showReview, setShowReview] = useState(false);
+  const [showQuizGame, setShowQuizGame] = useState(false);
   const { flashcards, loading: flashcardsLoading } = useFlashcards();
   const navigate = useNavigate();
   
@@ -92,7 +94,12 @@ function FlashcardActions({ setId }: { setId: string }) {
           <Brain className="h-4 w-4 mr-1" />
           {t('flashcards.review')}
         </Button>
-        <Button variant="outline" size="sm" className="flex-1">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex-1"
+          onClick={() => setShowQuizGame(true)}
+        >
           <GamepadIcon className="h-4 w-4 mr-1" />
           {t('flashcards.playGame')}
         </Button>
@@ -118,6 +125,13 @@ function FlashcardActions({ setId }: { setId: string }) {
             onComplete={handleReviewComplete}
           />
         </>
+      )}
+
+      {showQuizGame && (
+        <FlashcardQuizGame
+          flashcards={flashcards}
+          onClose={() => setShowQuizGame(false)}
+        />
       )}
     </>
   );
