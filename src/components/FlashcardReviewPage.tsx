@@ -41,6 +41,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [progress, setProgress] = useState({ correct: 0, incorrect: 0 });
   const [showSwipeFeedback, setShowSwipeFeedback] = useState<'left' | 'right' | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
   const isMobile = useIsMobile();
 
   const currentCard = cards[currentIndex];
@@ -63,6 +64,8 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
 
   // Keyboard controls
   useEffect(() => {
+    if (isCompleted) return; // Disable keyboard controls when completed
+    
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
         e.preventDefault();
@@ -78,13 +81,16 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isFlipped]);
+  }, [isFlipped, isCompleted]);
 
   const handleNext = () => {
     if (currentIndex < cards.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setIsFlipped(false);
       setSwipeDirection(null);
+    } else {
+      // Reached the end, mark as completed
+      setIsCompleted(true);
     }
   };
 
@@ -122,13 +128,72 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
   };
 
   const handleCardTap = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (isCompleted) return; // Disable card interaction when completed
     // Flip on all devices; ignore clicks on action buttons inside the card
     const target = (e?.target as HTMLElement | null);
     if (target && target.closest('button,[role="button"]')) return;
     setIsFlipped((prev) => !prev);
   };
 
-  if (!currentCard) return null;
+  if (!currentCard && !isCompleted) return null;
+
+  // Show completion screen when all cards are reviewed
+  if (isCompleted) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 z-50">
+        <div className="flex items-center justify-center min-h-screen p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center space-y-6 bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl max-w-md w-full"
+          >
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="text-6xl mb-4">🎉</div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">ทบทวนจบแล้ว!</h2>
+              <p className="text-gray-600 mb-6">
+                คุณได้ทบทวนแฟลชการ์ดครบทั้งหมด {cards.length} ใบแล้ว
+              </p>
+            </motion.div>
+            
+            {trackProgress && (
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="bg-gray-50 rounded-xl p-4 space-y-2"
+              >
+                <h3 className="font-semibold text-gray-700">สรุปผลการทบทวน</h3>
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-600">จำได้: {progress.correct} ใบ</span>
+                  <span className="text-red-600">จำไม่ได้: {progress.incorrect} ใบ</span>
+                </div>
+                <div className="text-xs text-gray-500">
+                  ความแม่นยำ: {progress.correct + progress.incorrect > 0 ? Math.round((progress.correct / (progress.correct + progress.incorrect)) * 100) : 0}%
+                </div>
+              </motion.div>
+            )}
+            
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Button
+                onClick={onClose}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-semibold"
+              >
+                กลับไปหน้าแฟลชการ์ด
+              </Button>
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 z-50">
