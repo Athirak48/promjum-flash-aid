@@ -16,6 +16,7 @@ import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
 import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
 import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
 
 interface FlashcardData {
   id: string;
@@ -260,8 +261,9 @@ export function FolderDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950">
-      <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 relative overflow-hidden">
+      <BackgroundDecorations />
+      <div className="container mx-auto px-4 py-6 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">

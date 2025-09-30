@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Plus, ShoppingCart, Star, User, BookOpen, DollarSign } from 'lucide-react';
 import { useMarketplace } from '@/hooks/useMarketplace';
 import { Skeleton } from '@/components/ui/skeleton';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
 
 interface MarketcardProduct {
   id: string;
@@ -92,8 +93,9 @@ export default function MarketcardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8 relative overflow-hidden">
+      <BackgroundDecorations />
+      <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Marketcard</h1>

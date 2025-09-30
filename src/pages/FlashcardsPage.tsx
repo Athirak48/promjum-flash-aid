@@ -18,6 +18,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
 
 interface FlashcardSet {
   id: string;
@@ -451,8 +452,9 @@ export default function FlashcardsPage() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8">
-        <div className="container mx-auto px-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8 relative overflow-hidden">
+        <BackgroundDecorations />
+        <div className="container mx-auto px-4 relative z-10">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">{t('flashcards.title')}</h1>

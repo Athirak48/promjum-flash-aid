@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Checkbox } from "@/components/ui/checkbox";
 import promjumLogo from "@/assets/promjum-logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import BackgroundDecorations from "@/components/BackgroundDecorations";
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -131,8 +132,9 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-secondary/30 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-secondary/30 flex items-center justify-center p-4 relative overflow-hidden">
+      <BackgroundDecorations />
+      <div className="w-full max-w-md relative z-10">
         {/* Back button */}
         <Button variant="ghost" asChild className="mb-6">
           <Link to="/">

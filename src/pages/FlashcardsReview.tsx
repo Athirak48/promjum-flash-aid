@@ -4,6 +4,7 @@ import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
 
 interface FlashcardData {
   id: string;
@@ -29,8 +30,9 @@ export default function FlashcardsReview() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950">
-        <div className="space-y-4 w-full max-w-md p-6">
+      <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 relative overflow-hidden">
+        <BackgroundDecorations />
+        <div className="space-y-4 w-full max-w-md p-6 relative z-10">
           <Skeleton className="h-10 w-2/3 mx-auto bg-white/20" />
           <Skeleton className="h-64 w-full bg-white/20" />
           <div className="flex justify-center gap-4">
@@ -44,8 +46,9 @@ export default function FlashcardsReview() {
 
   if (cards.length === 0) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950">
-        <div className="text-center space-y-4">
+      <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 relative overflow-hidden">
+        <BackgroundDecorations />
+        <div className="text-center space-y-4 relative z-10">
           <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300">ไม่มีแฟลชการ์ดสำหรับทบทวน</h2>
           <p className="text-gray-500 dark:text-gray-400">กรุณาสร้างแฟลชการ์ดก่อนที่จะเริ่มทบทวน</p>
           <button 

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, User, Mail, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
 
 interface Profile {
   id: string;
@@ -106,8 +107,9 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8">
-      <div className="container max-w-2xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8 relative overflow-hidden">
+      <BackgroundDecorations />
+      <div className="container max-w-2xl mx-auto px-4 relative z-10">
         <div className="mb-6">
           <Link 
             to="/dashboard" 

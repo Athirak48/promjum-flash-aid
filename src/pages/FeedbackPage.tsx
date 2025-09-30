@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { MessageSquare, Send, Star, Lightbulb, Bug, Heart } from 'lucide-react';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
 
 export default function FeedbackPage() {
   const { user } = useAuth();
@@ -78,8 +79,9 @@ export default function FeedbackPage() {
   const TypeIcon = selectedType?.icon || MessageSquare;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8">
-      <div className="container max-w-2xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8 relative overflow-hidden">
+      <BackgroundDecorations />
+      <div className="container max-w-2xl mx-auto px-4 relative z-10">
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">ข้อเสนอแนะ</h1>

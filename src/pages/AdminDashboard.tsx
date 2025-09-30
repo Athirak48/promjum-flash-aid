@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import BackgroundDecorations from "@/components/BackgroundDecorations";
 
 interface AdminStats {
   totalUsers: number;
@@ -108,8 +109,9 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-secondary/30 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-secondary/30 p-6 relative overflow-hidden">
+      <BackgroundDecorations />
+      <div className="max-w-7xl mx-auto space-y-6 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
