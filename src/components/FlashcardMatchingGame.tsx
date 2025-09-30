@@ -139,21 +139,21 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
 
   const getCardStyle = (card: MatchingCard) => {
     if (card.isMatched) {
-      return "bg-green-100 border-green-500 text-green-700 cursor-not-allowed";
+      return "bg-green-500/20 border-green-500 text-green-700 dark:text-green-400 cursor-not-allowed";
     }
     
     if (wrongMatch.has(card.id)) {
-      return "bg-red-100 border-red-500 text-red-700 animate-pulse";
+      return "bg-red-500/20 border-red-500 text-red-700 dark:text-red-400 animate-pulse";
     }
     
     if (card.isSelected) {
-      return "bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-300";
+      return "bg-primary/20 border-primary text-primary-foreground ring-2 ring-primary/50";
     }
     
     if (card.type === 'question') {
-      return "bg-purple-50 border-purple-200 hover:bg-purple-100 hover:border-purple-300";
+      return "bg-card border-border hover:bg-muted text-foreground";
     } else {
-      return "bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300";
+      return "bg-card border-border hover:bg-muted text-foreground";
     }
   };
 
@@ -169,8 +169,8 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <Card className="max-w-md w-full">
           <CardContent className="p-6 text-center">
-            <h3 className="text-lg font-semibold mb-4">ไม่สามารถเล่นเกมได้</h3>
-            <p className="text-gray-600 mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-4">ไม่สามารถเล่นเกมได้</h3>
+            <p className="text-muted-foreground mb-4">
               ต้องมีแฟลชการ์ดอย่างน้อย 2 ใบเพื่อเล่นเกมจับคู่
             </p>
             <Button onClick={onClose}>ปิด</Button>
@@ -188,29 +188,29 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center space-y-6 bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl max-w-md w-full"
+            className="text-center space-y-6 bg-card/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl max-w-md w-full border border-border"
           >
             <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">ยินดีด้วย!</h2>
-            <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+            <h2 className="text-3xl font-bold text-foreground mb-2">ยินดีด้วย!</h2>
+            <div className="bg-muted rounded-xl p-6 space-y-4">
               <div className="flex items-center justify-center space-x-2">
                 <Trophy className="h-6 w-6 text-yellow-500" />
-                <span className="text-xl font-bold text-gray-700">จับคู่ครบทุกคู่!</span>
+                <span className="text-xl font-bold text-foreground">จับคู่ครบทุกคู่!</span>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{score}</div>
-                  <div className="text-gray-500">คู่ที่ถูกต้อง</div>
+                  <div className="text-2xl font-bold text-primary">{score}</div>
+                  <div className="text-muted-foreground">คู่ที่ถูกต้อง</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{finalTime}</div>
-                  <div className="text-gray-500">เวลาที่ใช้</div>
+                  <div className="text-2xl font-bold text-accent">{finalTime}</div>
+                  <div className="text-muted-foreground">เวลาที่ใช้</div>
                 </div>
               </div>
             </div>
             <Button
               onClick={onClose}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold"
+              className="w-full py-3 text-lg font-semibold"
             >
               เสร็จสิ้น
             </Button>
@@ -226,10 +226,10 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
     <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-100 dark:from-purple-950 dark:via-pink-900 dark:to-indigo-950 z-50">
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border-b">
+        <div className="flex items-center justify-between p-4 bg-card/80 backdrop-blur-sm border-b border-border">
           <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-bold text-gray-800">Matching Game</h2>
-            <div className="flex items-center space-x-4 text-sm text-gray-600">
+            <h2 className="text-xl font-bold text-foreground">Matching Game</h2>
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
                 <span>{formatTime(gameTime)}</span>
@@ -245,7 +245,7 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
         </div>
 
         {/* Progress */}
-        <div className="px-4 py-2 bg-white/80 backdrop-blur-sm">
+        <div className="px-4 py-2 bg-card/80 backdrop-blur-sm">
           <Progress value={progress} className="w-full" />
         </div>
 
@@ -267,15 +267,15 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
                   >
                     <div className="text-center">
                       <div className={`text-xs font-medium mb-2 ${
-                        card.type === 'question' ? 'text-purple-600' : 'text-indigo-600'
+                        card.type === 'question' ? 'text-primary' : 'text-accent'
                       }`}>
                         {card.type === 'question' ? 'คำถาม' : 'คำตอบ'}
                       </div>
-                      <div className="text-sm font-medium break-words">
+                      <div className="text-sm font-medium break-words text-foreground">
                         {card.text}
                       </div>
                       {card.isMatched && (
-                        <CheckCircle className="h-5 w-5 text-green-600 mx-auto mt-2" />
+                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mx-auto mt-2" />
                       )}
                     </div>
                   </motion.div>
@@ -285,7 +285,7 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
 
             {/* Instructions */}
             <div className="text-center mt-6">
-              <div className="inline-flex items-center space-x-2 bg-white/80 rounded-full px-4 py-2 text-sm text-gray-600">
+              <div className="inline-flex items-center space-x-2 bg-card/80 rounded-full px-4 py-2 text-sm text-muted-foreground border border-border">
                 <span>คลิกการ์ดเพื่อจับคู่คำถามกับคำตอบ</span>
               </div>
             </div>

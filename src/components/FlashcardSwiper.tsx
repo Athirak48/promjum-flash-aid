@@ -220,7 +220,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
               variant="outline" 
               size="lg"
               onClick={() => handleSwipe('left')}
-              className="bg-red-50 border-red-200 hover:bg-red-100 text-red-600"
+              className="bg-red-500/20 border-red-500 hover:bg-red-500/30 text-red-700 dark:text-red-400"
             >
               <X className="h-5 w-5 mr-2" />
               Don't Know
@@ -229,7 +229,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
               variant="outline" 
               size="lg"
               onClick={() => handleSwipe('up')}
-              className="bg-yellow-50 border-yellow-200 hover:bg-yellow-100 text-yellow-600"
+              className="bg-yellow-500/20 border-yellow-500 hover:bg-yellow-500/30 text-yellow-700 dark:text-yellow-400"
             >
               <AlertCircle className="h-5 w-5 mr-2" />
               Almost
@@ -238,7 +238,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
               variant="outline" 
               size="lg"
               onClick={() => handleSwipe('right')}
-              className="bg-green-50 border-green-200 hover:bg-green-100 text-green-600"
+              className="bg-green-500/20 border-green-500 hover:bg-green-500/30 text-green-700 dark:text-green-400"
             >
               <Check className="h-5 w-5 mr-2" />
               Know It

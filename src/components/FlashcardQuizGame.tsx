@@ -93,19 +93,19 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
   const getOptionStyle = (option: string) => {
     if (!isAnswered) {
       return selectedAnswer === option
-        ? "bg-blue-100 border-blue-500 text-blue-700"
-        : "bg-white hover:bg-gray-50 border-gray-200";
+        ? "bg-primary/20 border-primary text-primary-foreground"
+        : "bg-card hover:bg-muted border-border text-foreground";
     }
 
     if (option === currentQuestion.correctAnswer) {
-      return "bg-green-100 border-green-500 text-green-700";
+      return "bg-green-500/20 border-green-500 text-green-700 dark:text-green-400";
     }
 
     if (option === selectedAnswer && option !== currentQuestion.correctAnswer) {
-      return "bg-red-100 border-red-500 text-red-700";
+      return "bg-red-500/20 border-red-500 text-red-700 dark:text-red-400";
     }
 
-    return "bg-gray-50 border-gray-200 text-gray-500";
+    return "bg-muted border-border text-muted-foreground";
   };
 
   if (flashcards.length < 4) {
@@ -113,8 +113,8 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <Card className="max-w-md w-full">
           <CardContent className="p-6 text-center">
-            <h3 className="text-lg font-semibold mb-4">ไม่สามารถเล่นเกมได้</h3>
-            <p className="text-gray-600 mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-4">ไม่สามารถเล่นเกมได้</h3>
+            <p className="text-muted-foreground mb-4">
               ต้องมีแฟลชการ์ดอย่างน้อย 4 ใบเพื่อเล่นเกม Quiz
             </p>
             <Button onClick={onClose}>ปิด</Button>
@@ -132,27 +132,27 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center space-y-6 bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl max-w-md w-full"
+            className="text-center space-y-6 bg-card/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl max-w-md w-full border border-border"
           >
             <div className="text-6xl mb-4">
               {percentage >= 80 ? '🎉' : percentage >= 60 ? '👍' : '📚'}
             </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">เกมจบแล้ว!</h2>
-            <div className="bg-gray-50 rounded-xl p-6 space-y-4">
-              <div className="text-4xl font-bold text-purple-600">
+            <h2 className="text-3xl font-bold text-foreground mb-2">เกมจบแล้ว!</h2>
+            <div className="bg-muted rounded-xl p-6 space-y-4">
+              <div className="text-4xl font-bold text-primary">
                 {score}/{questions.length}
               </div>
-              <div className="text-xl text-gray-700">
+              <div className="text-xl text-foreground">
                 คะแนนที่ได้: {percentage}%
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 {percentage >= 80 ? 'ยอดเยี่ยม!' : 
                  percentage >= 60 ? 'ดีมาก!' : 'ลองใหม่อีกครั้ง!'}
               </div>
             </div>
             <Button
               onClick={onClose}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-semibold"
+              className="w-full py-3 text-lg font-semibold"
             >
               เสร็จสิ้น
             </Button>
@@ -170,10 +170,10 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
     <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 dark:from-blue-950 dark:via-indigo-900 dark:to-purple-950 z-50">
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border-b">
+        <div className="flex items-center justify-between p-4 bg-card/80 backdrop-blur-sm border-b border-border">
           <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-bold text-gray-800">Quiz Mode</h2>
-            <div className="text-sm text-gray-600">
+            <h2 className="text-xl font-bold text-foreground">Quiz Mode</h2>
+            <div className="text-sm text-muted-foreground">
               คำถามที่ {currentQuestionIndex + 1}/{questions.length}
             </div>
           </div>
@@ -183,7 +183,7 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
         </div>
 
         {/* Progress */}
-        <div className="px-4 py-2 bg-white/80 backdrop-blur-sm">
+        <div className="px-4 py-2 bg-card/80 backdrop-blur-sm">
           <Progress value={progress} className="w-full" />
         </div>
 
@@ -195,10 +195,10 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
               key={currentQuestionIndex}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl p-6 shadow-lg text-center"
+              className="bg-card rounded-2xl p-6 shadow-lg text-center border border-border"
             >
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">คำถาม</h3>
-              <p className="text-lg text-gray-700">{currentQuestion.flashcard.front_text}</p>
+              <h3 className="text-xl font-semibold text-foreground mb-4">คำถาม</h3>
+              <p className="text-lg text-foreground">{currentQuestion.flashcard.front_text}</p>
             </motion.div>
 
             {/* Options */}
@@ -252,9 +252,9 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
 
             {/* Score */}
             <div className="text-center">
-              <div className="inline-flex items-center space-x-2 bg-white/80 rounded-full px-4 py-2">
-                <span className="text-sm text-gray-600">คะแนน:</span>
-                <span className="font-bold text-purple-600">{score}/{questions.length}</span>
+              <div className="inline-flex items-center space-x-2 bg-card/80 rounded-full px-4 py-2 border border-border">
+                <span className="text-sm text-muted-foreground">คะแนน:</span>
+                <span className="font-bold text-primary">{score}/{questions.length}</span>
               </div>
             </div>
           </div>
