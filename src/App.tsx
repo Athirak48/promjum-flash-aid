@@ -20,6 +20,8 @@ import NotFoundPage from "./pages/NotFoundPage";
 import Navbar from "./components/Navbar";
 import FlashcardsReview from "./pages/FlashcardsReview";
 import AdminDashboard from "./pages/AdminDashboard";
+import DecksPage from "./pages/DecksPage";
+import SubDecksPage from "./pages/SubDecksPage";
 
 const queryClient = new QueryClient();
 
@@ -105,7 +107,7 @@ const App = () => {
                 path="/decks" 
                 element={
                   <ProtectedRoute>
-                    {React.createElement(React.lazy(() => import('./pages/DecksPage')))}
+                    <DecksPage />
                   </ProtectedRoute>
                 } 
               />
@@ -113,7 +115,7 @@ const App = () => {
                 path="/decks/:deckId" 
                 element={
                   <ProtectedRoute>
-                    {React.createElement(React.lazy(() => import('./pages/SubDecksPage')))}
+                    <SubDecksPage />
                   </ProtectedRoute>
                 } 
               />
