@@ -59,6 +59,7 @@ const Navbar = () => {
 
   const userNavItems = [
     { href: "/dashboard", label: t('nav.dashboard') },
+    { href: "/decks", label: "Deck" },
     { href: "/flashcards", label: t('nav.flashcards') },
     { href: "/marketcard", label: t('nav.marketcard') },
     { href: "/feedback", label: t('nav.feedback') },
