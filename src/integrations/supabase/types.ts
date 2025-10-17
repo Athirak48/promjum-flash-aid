@@ -14,12 +14,55 @@ export type Database = {
   }
   public: {
     Tables: {
+      decks: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          description_en: string | null
+          icon: string
+          id: string
+          is_premium: boolean | null
+          name: string
+          name_en: string
+          total_flashcards: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          icon?: string
+          id?: string
+          is_premium?: boolean | null
+          name: string
+          name_en: string
+          total_flashcards?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          icon?: string
+          id?: string
+          is_premium?: boolean | null
+          name?: string
+          name_en?: string
+          total_flashcards?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flashcards: {
         Row: {
           back_text: string
           created_at: string | null
           front_text: string
           id: string
+          subdeck_id: string | null
           upload_id: string | null
         }
         Insert: {
@@ -27,6 +70,7 @@ export type Database = {
           created_at?: string | null
           front_text: string
           id?: string
+          subdeck_id?: string | null
           upload_id?: string | null
         }
         Update: {
@@ -34,9 +78,17 @@ export type Database = {
           created_at?: string | null
           front_text?: string
           id?: string
+          subdeck_id?: string | null
           upload_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "flashcards_subdeck_id_fkey"
+            columns: ["subdeck_id"]
+            isOneToOne: false
+            referencedRelation: "sub_decks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "flashcards_upload_id_fkey"
             columns: ["upload_id"]
@@ -315,6 +367,59 @@ export type Database = {
           },
         ]
       }
+      sub_decks: {
+        Row: {
+          created_at: string
+          deck_id: string
+          description: string | null
+          description_en: string | null
+          difficulty_level: string | null
+          display_order: number | null
+          flashcard_count: number | null
+          id: string
+          is_free: boolean | null
+          name: string
+          name_en: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deck_id: string
+          description?: string | null
+          description_en?: string | null
+          difficulty_level?: string | null
+          display_order?: number | null
+          flashcard_count?: number | null
+          id?: string
+          is_free?: boolean | null
+          name: string
+          name_en: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deck_id?: string
+          description?: string | null
+          description_en?: string | null
+          difficulty_level?: string | null
+          display_order?: number | null
+          flashcard_count?: number | null
+          id?: string
+          is_free?: boolean | null
+          name?: string
+          name_en?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_decks_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       uploads: {
         Row: {
           created_at: string | null
@@ -356,6 +461,85 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_deck_progress: {
+        Row: {
+          created_at: string
+          deck_id: string
+          id: string
+          last_accessed: string | null
+          progress_percentage: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deck_id: string
+          id?: string
+          last_accessed?: string | null
+          progress_percentage?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deck_id?: string
+          id?: string
+          last_accessed?: string | null
+          progress_percentage?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_deck_progress_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_subdeck_progress: {
+        Row: {
+          cards_learned: number | null
+          created_at: string
+          id: string
+          is_completed: boolean | null
+          last_accessed: string | null
+          subdeck_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cards_learned?: number | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          last_accessed?: string | null
+          subdeck_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cards_learned?: number | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          last_accessed?: string | null
+          subdeck_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subdeck_progress_subdeck_id_fkey"
+            columns: ["subdeck_id"]
+            isOneToOne: false
+            referencedRelation: "sub_decks"
+            referencedColumns: ["id"]
           },
         ]
       }

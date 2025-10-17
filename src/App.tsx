@@ -1,3 +1,4 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -97,6 +98,22 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/decks" 
+                element={
+                  <ProtectedRoute>
+                    {React.createElement(React.lazy(() => import('./pages/DecksPage')))}
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/decks/:deckId" 
+                element={
+                  <ProtectedRoute>
+                    {React.createElement(React.lazy(() => import('./pages/SubDecksPage')))}
                   </ProtectedRoute>
                 } 
               />
