@@ -22,6 +22,7 @@ import FlashcardsReview from "./pages/FlashcardsReview";
 import AdminDashboard from "./pages/AdminDashboard";
 import DecksPage from "./pages/DecksPage";
 import SubDecksPage from "./pages/SubDecksPage";
+import AIRealtimePracticePage from "./pages/AIRealtimePracticePage";
 
 const queryClient = new QueryClient();
 
@@ -112,10 +113,18 @@ const App = () => {
                 } 
               />
               <Route 
-                path="/decks/:deckId" 
+                path="/decks/:deckId/subdecks" 
                 element={
                   <ProtectedRoute>
                     <SubDecksPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/practice" 
+                element={
+                  <ProtectedRoute>
+                    <AIRealtimePracticePage />
                   </ProtectedRoute>
                 } 
               />
