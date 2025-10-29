@@ -16,6 +16,7 @@ import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
 import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
 import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
+import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGame';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 
 interface FlashcardData {
@@ -56,7 +57,7 @@ export function FolderDetail() {
   const [loading, setLoading] = useState(true);
   const [showNewCardDialog, setShowNewCardDialog] = useState(false);
   const [selectedSet, setSelectedSet] = useState<FlashcardSet | null>(null);
-  const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | null>(null);
+  const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | 'listen' | null>(null);
   const [showGameSelection, setShowGameSelection] = useState(false);
   const [flashcardRows, setFlashcardRows] = useState([{ id: 1, front: '', back: '', frontImage: null as File | null, backImage: null as File | null }]);
 
@@ -253,9 +254,13 @@ export function FolderDetail() {
     if (gameMode === 'matching') {
       return <FlashcardMatchingGame flashcards={quizFlashcards} onClose={handleGameClose} />;
     }
+
+    if (gameMode === 'listen') {
+      return <FlashcardListenChooseGame flashcards={quizFlashcards} onClose={handleGameClose} />;
+    }
   }
 
-  const handleGameSelect = (gameType: 'quiz' | 'matching') => {
+  const handleGameSelect = (gameType: 'quiz' | 'matching' | 'listen') => {
     setGameMode(gameType);
     setShowGameSelection(false);
   };
