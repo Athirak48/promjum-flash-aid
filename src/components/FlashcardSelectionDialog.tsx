@@ -87,75 +87,70 @@ export function FlashcardSelectionDialog({
             variant="outline"
             size="sm"
             onClick={isAllSelected ? handleDeselectAll : handleSelectAll}
-            className="gap-2"
+            className="gap-1.5"
           >
-            {isAllSelected ? <Square className="h-4 w-4" /> : <CheckSquare className="h-4 w-4" />}
+            {isAllSelected ? <Square className="h-3.5 w-3.5" /> : <CheckSquare className="h-3.5 w-3.5" />}
             {isAllSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
           </Button>
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleRandomSelect(5)}
-              className="gap-2"
-            >
-              <Shuffle className="h-4 w-4" />
-              สุ่ม 5 คำ
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleRandomSelect(10)}
-              className="gap-2"
-            >
-              <Shuffle className="h-4 w-4" />
-              สุ่ม 10 คำ
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleRandomSelect(20)}
-              className="gap-2"
-            >
-              <Shuffle className="h-4 w-4" />
-              สุ่ม 20 คำ
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleRandomSelect(5)}
+            className="gap-1.5"
+          >
+            <Shuffle className="h-3.5 w-3.5" />
+            สุ่ม 5
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleRandomSelect(10)}
+            className="gap-1.5"
+          >
+            <Shuffle className="h-3.5 w-3.5" />
+            สุ่ม 10
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleRandomSelect(20)}
+            className="gap-1.5"
+          >
+            <Shuffle className="h-3.5 w-3.5" />
+            สุ่ม 20
+          </Button>
         </div>
 
         {/* Flashcard List */}
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-2">
+        <ScrollArea className="flex-1 h-[450px] pr-3">
+          <div className="grid grid-cols-2 gap-3">
             {flashcards.map((flashcard, index) => (
               <div
                 key={flashcard.id}
-                className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer hover:bg-accent ${
+                className={`group relative p-3 rounded-lg border transition-all cursor-pointer hover:shadow-md ${
                   selectedIds.has(flashcard.id) 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border'
+                    ? 'border-primary bg-primary/5 shadow-sm' 
+                    : 'border-border hover:border-primary/50'
                 }`}
                 onClick={() => handleToggle(flashcard.id)}
               >
-                <Checkbox
-                  checked={selectedIds.has(flashcard.id)}
-                  onCheckedChange={() => handleToggle(flashcard.id)}
-                  className="mt-1"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-2 mb-1">
-                    <Badge variant="outline" className="text-xs shrink-0">
-                      {index + 1}
-                    </Badge>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm break-words">
-                        {flashcard.front_text}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1 break-words">
-                        → {flashcard.back_text}
-                      </p>
-                    </div>
-                  </div>
+                <div className="absolute top-2 left-2 z-10">
+                  <Checkbox
+                    checked={selectedIds.has(flashcard.id)}
+                    onCheckedChange={() => handleToggle(flashcard.id)}
+                  />
+                </div>
+                <div className="pl-7">
+                  <Badge variant="secondary" className="text-xs mb-2">
+                    {index + 1}
+                  </Badge>
+                  <p className="font-medium text-sm mb-2 line-clamp-2">
+                    {flashcard.front_text}
+                  </p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {flashcard.back_text}
+                  </p>
                 </div>
               </div>
             ))}
