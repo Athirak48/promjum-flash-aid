@@ -53,15 +53,9 @@ export function FlashcardSelectionDialog({
   };
 
   const handleRandomSelect = (count: number) => {
-    // Filter only unselected flashcards
-    const unselected = flashcards.filter(f => !selectedIds.has(f.id));
-    const shuffled = [...unselected].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, Math.min(count, unselected.length));
-    
-    // Add to existing selection
-    const newSelected = new Set(selectedIds);
-    selected.forEach(f => newSelected.add(f.id));
-    setSelectedIds(newSelected);
+    const shuffled = [...flashcards].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(count, flashcards.length));
+    setSelectedIds(new Set(selected.map(f => f.id)));
   };
 
   const handleConfirm = () => {
