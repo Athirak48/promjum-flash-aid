@@ -17,6 +17,7 @@ import { GameSelectionDialog } from '@/components/GameSelectionDialog';
 import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
 import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
 import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGame';
+import { FlashcardSelectionDialog } from '@/components/FlashcardSelectionDialog';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 
 interface FlashcardData {
@@ -59,6 +60,8 @@ export function FolderDetail() {
   const [selectedSet, setSelectedSet] = useState<FlashcardSet | null>(null);
   const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | 'listen' | null>(null);
   const [showGameSelection, setShowGameSelection] = useState(false);
+  const [showFlashcardSelection, setShowFlashcardSelection] = useState(false);
+  const [selectedFlashcards, setSelectedFlashcards] = useState<FlashcardData[]>([]);
   const [flashcardRows, setFlashcardRows] = useState([{ id: 1, front: '', back: '', frontImage: null as File | null, backImage: null as File | null }]);
 
   // Mock data - replace with real data fetching based on folderId
@@ -133,6 +136,16 @@ export function FolderDetail() {
 
   const handlePlayGame = (set: FlashcardSet) => {
     setSelectedSet(set);
+    setShowFlashcardSelection(true);
+  };
+
+  const handleFlashcardsSelected = (flashcards: { id: string; front_text: string; back_text: string }[]) => {
+    const converted: FlashcardData[] = flashcards.map(card => ({
+      id: card.id,
+      front: card.front_text,
+      back: card.back_text
+    }));
+    setSelectedFlashcards(converted);
     setShowGameSelection(true);
   };
 
@@ -221,30 +234,37 @@ export function FolderDetail() {
     );
   }
 
-  // Show game modes
-  if (selectedSet && gameMode) {
-    const mockFlashcards: FlashcardData[] = [
+  // Mock flashcards for the set
+  const getMockFlashcardsForSet = (): FlashcardData[] => {
+    return [
       { id: '1', front: '2x + 3 = 7', back: 'x = 2' },
       { id: '2', front: '3x - 5 = 10', back: 'x = 5' },
       { id: '3', front: 'x/2 + 4 = 6', back: 'x = 4' },
       { id: '4', front: 'What is the capital of Thailand?', back: 'Bangkok' },
       { id: '5', front: 'What is 5 + 5?', back: '10' },
-      { id: '6', front: 'What color do you get when you mix red and blue?', back: 'Purple' }
+      { id: '6', front: 'What color do you get when you mix red and blue?', back: 'Purple' },
+      { id: '7', front: 'What is the largest planet?', back: 'Jupiter' },
+      { id: '8', front: 'Who wrote Romeo and Juliet?', back: 'Shakespeare' },
+      { id: '9', front: 'What is the speed of light?', back: '299,792 km/s' },
+      { id: '10', front: 'What is H2O?', back: 'Water' }
     ];
+  };
 
+  // Show game modes
+  if (selectedSet && gameMode && selectedFlashcards.length > 0) {
     // Convert to flashcard format for quiz and matching games
-    const quizFlashcards = mockFlashcards.map(card => ({
+    const quizFlashcards = selectedFlashcards.map(card => ({
       id: card.id,
       front_text: card.front,
       back_text: card.back
     }));
 
     if (gameMode === 'swiper') {
-      return <FlashcardSwiper cards={mockFlashcards} onClose={handleGameClose} onComplete={handleGameClose} />;
+      return <FlashcardSwiper cards={selectedFlashcards} onClose={handleGameClose} onComplete={handleGameClose} />;
     }
 
     if (gameMode === 'review') {
-      return <FlashcardReviewPage cards={mockFlashcards} onComplete={handleGameClose} onClose={handleGameClose} />;
+      return <FlashcardReviewPage cards={selectedFlashcards} onComplete={handleGameClose} onClose={handleGameClose} />;
     }
 
     if (gameMode === 'quiz') {
@@ -534,6 +554,20 @@ export function FolderDetail() {
           </div>
         )}
       </div>
+
+      {/* Flashcard Selection Dialog */}
+      {selectedSet && (
+        <FlashcardSelectionDialog
+          open={showFlashcardSelection}
+          onOpenChange={setShowFlashcardSelection}
+          flashcards={getMockFlashcardsForSet().map(card => ({
+            id: card.id,
+            front_text: card.front,
+            back_text: card.back
+          }))}
+          onConfirm={handleFlashcardsSelected}
+        />
+      )}
 
       {/* Game Selection Dialog */}
       <GameSelectionDialog
