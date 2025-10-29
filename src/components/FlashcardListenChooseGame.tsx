@@ -334,28 +334,34 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
                   : 'bg-red-50 border-red-500 dark:bg-red-900/20'
               }`}>
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    {selectedAnswer === currentQuestion.correctAnswer ? (
-                      <>
-                        <CheckCircle2 className="h-6 w-6 text-green-600" />
-                        <div>
-                          <p className="font-bold text-green-700 dark:text-green-300">ถูกต้อง! 🎉</p>
-                          <p className="text-sm text-green-600 dark:text-green-400">
-                            คำตอบคือ: {currentQuestion.correctAnswer}
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-6 w-6 text-red-600" />
-                        <div>
-                          <p className="font-bold text-red-700 dark:text-red-300">ไม่ถูกต้อง</p>
-                          <p className="text-sm text-red-600 dark:text-red-400">
-                            คำตอบที่ถูกคือ: {currentQuestion.correctAnswer}
-                          </p>
-                        </div>
-                      </>
-                    )}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      {selectedAnswer === currentQuestion.correctAnswer ? (
+                        <>
+                          <CheckCircle2 className="h-6 w-6 text-green-600" />
+                          <div>
+                            <p className="font-bold text-green-700 dark:text-green-300">ถูกต้อง! 🎉</p>
+                            <p className="text-sm text-green-600 dark:text-green-400">
+                              คำตอบคือ: {currentQuestion.correctAnswer}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-6 w-6 text-red-600" />
+                          <div>
+                            <p className="font-bold text-red-700 dark:text-red-300">ไม่ถูกต้อง</p>
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                              คำตอบที่ถูกคือ: {currentQuestion.correctAnswer}
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <p className="text-xs text-muted-foreground mb-1">ประโยคที่ฟัง:</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{currentQuestion.word}</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
