@@ -125,7 +125,7 @@ export function FlashcardSelectionDialog({
         {/* Flashcard List */}
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-[450px]">
-            <div className="grid grid-cols-2 gap-3 pr-3 pb-4">
+            <div className="grid grid-cols-2 gap-3 pr-1 pb-4">
               {flashcards.map((flashcard, index) => (
                 <div
                   key={flashcard.id}
