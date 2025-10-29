@@ -123,39 +123,41 @@ export function FlashcardSelectionDialog({
         </div>
 
         {/* Flashcard List */}
-        <ScrollArea className="flex-1 h-[450px] pr-3">
-          <div className="grid grid-cols-2 gap-3">
-            {flashcards.map((flashcard, index) => (
-              <div
-                key={flashcard.id}
-                className={`group relative p-3 rounded-lg border transition-all cursor-pointer hover:shadow-md ${
-                  selectedIds.has(flashcard.id) 
-                    ? 'border-primary bg-primary/5 shadow-sm' 
-                    : 'border-border hover:border-primary/50'
-                }`}
-                onClick={() => handleToggle(flashcard.id)}
-              >
-                <div className="absolute top-2 left-2 z-10">
-                  <Checkbox
-                    checked={selectedIds.has(flashcard.id)}
-                    onCheckedChange={() => handleToggle(flashcard.id)}
-                  />
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-[450px]">
+            <div className="grid grid-cols-2 gap-3 pr-4">
+              {flashcards.map((flashcard, index) => (
+                <div
+                  key={flashcard.id}
+                  className={`group relative p-3 rounded-lg border transition-all cursor-pointer hover:shadow-md ${
+                    selectedIds.has(flashcard.id) 
+                      ? 'border-primary bg-primary/5 shadow-sm' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                  onClick={() => handleToggle(flashcard.id)}
+                >
+                  <div className="absolute top-2 left-2 z-10">
+                    <Checkbox
+                      checked={selectedIds.has(flashcard.id)}
+                      onCheckedChange={() => handleToggle(flashcard.id)}
+                    />
+                  </div>
+                  <div className="pl-7">
+                    <Badge variant="secondary" className="text-xs mb-2">
+                      {index + 1}
+                    </Badge>
+                    <p className="font-medium text-sm mb-2 line-clamp-2">
+                      {flashcard.front_text}
+                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {flashcard.back_text}
+                    </p>
+                  </div>
                 </div>
-                <div className="pl-7">
-                  <Badge variant="secondary" className="text-xs mb-2">
-                    {index + 1}
-                  </Badge>
-                  <p className="font-medium text-sm mb-2 line-clamp-2">
-                    {flashcard.front_text}
-                  </p>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {flashcard.back_text}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
 
         {/* Footer */}
         <DialogFooter className="gap-2">
