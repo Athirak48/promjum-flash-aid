@@ -13,7 +13,7 @@ import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import FlashcardsPage from "./pages/FlashcardsPage";
 import { FolderDetail } from "./pages/FolderDetail";
-import MarketcardPage from "./pages/MarketcardPage";
+
 import FeedbackPage from "./pages/FeedbackPage";
 import Profile from "./pages/Profile";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -53,14 +53,6 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <FlashcardsPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/marketcard" 
-                element={
-                  <ProtectedRoute>
-                    <MarketcardPage />
                   </ProtectedRoute>
                 } 
               />
