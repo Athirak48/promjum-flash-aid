@@ -80,15 +80,15 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-            <div className="h-10 w-10 rounded-lg bg-gradient-primary p-1.5 shadow-soft">
+          <Link to="/" className="flex items-center space-x-3 hover:scale-105 transition-all duration-300">
+            <div className="h-12 w-12 rounded-xl bg-gradient-primary p-2 shadow-glow hover:shadow-large transition-all duration-300">
               <img 
                 src={promjumLogo} 
                 alt="Promjum Logo" 
-                className="h-full w-full object-contain"
+                className="h-full w-full object-contain drop-shadow-lg"
               />
             </div>
-            <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <span className="text-2xl font-extrabold bg-gradient-primary bg-clip-text text-transparent drop-shadow-md">
               Promjum
             </span>
           </Link>
