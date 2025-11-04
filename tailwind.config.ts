@@ -14,9 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Sarabun", "Inter", "sans-serif"],
-        sarabun: ["Sarabun", "sans-serif"],
-        inter: ["Inter", "sans-serif"],
+        sans: ["Poppins", "Prompt", "sans-serif"],
+        poppins: ["Poppins", "sans-serif"],
+        prompt: ["Prompt", "sans-serif"],
+        outfit: ["Outfit", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -137,6 +138,24 @@ export default {
           "100%": {
             transform: "translateX(100vw) translateY(-100px)"
           }
+        },
+        "orbit": {
+          "0%": {
+            strokeDashoffset: "0"
+          },
+          "100%": {
+            strokeDashoffset: "1000"
+          }
+        },
+        "glow": {
+          "0%, 100%": {
+            opacity: "0.3",
+            transform: "scale(1)"
+          },
+          "50%": {
+            opacity: "0.6",
+            transform: "scale(1.1)"
+          }
         }
       },
       animation: {
@@ -146,6 +165,8 @@ export default {
         "float": "float 6s ease-in-out infinite",
         "twinkle": "twinkle 3s ease-in-out infinite",
         "drift": "drift 20s linear infinite",
+        "orbit": "orbit 30s linear infinite",
+        "glow": "glow 4s ease-in-out infinite",
       },
     },
   },

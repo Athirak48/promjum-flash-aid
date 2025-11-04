@@ -50,11 +50,14 @@ All colors MUST be HSL for consistency and theming support.
     --pastel-blue: 210 100% 85%;
     --pastel-yellow: 43 100% 81%;
 
-    /* Promjum specific design tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(265 100% 84%), hsl(210 100% 85%));
-    --gradient-secondary: linear-gradient(135deg, hsl(265 50% 96%), hsl(210 30% 96%));
-    --gradient-hero: linear-gradient(135deg, hsl(265 100% 84%) 0%, hsl(210 100% 85%) 50%, hsl(43 100% 81%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100% / 0.8), hsl(265 30% 98% / 0.6));
+    /* Promjum specific design tokens - Minimal Galaxy Soft */
+    --galaxy-purple: 330 56% 60%; /* #b6709a */
+    --galaxy-white: 252 100% 99%; /* #f8f6ff */
+    
+    --gradient-primary: linear-gradient(135deg, hsl(330 56% 60%), hsl(252 100% 99%));
+    --gradient-secondary: linear-gradient(135deg, hsl(330 30% 90%), hsl(252 50% 98%));
+    --gradient-hero: linear-gradient(135deg, hsl(330 56% 60%) 0%, hsl(280 60% 75%) 50%, hsl(252 100% 99%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100% / 0.9), hsl(330 30% 98% / 0.7));
     
     /* Beautiful shadows with purple tint */
     --shadow-soft: 0 4px 20px hsl(265 50% 85% / 0.15);
