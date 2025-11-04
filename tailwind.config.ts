@@ -14,10 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Poppins", "Prompt", "sans-serif"],
-        poppins: ["Poppins", "sans-serif"],
-        prompt: ["Prompt", "sans-serif"],
-        outfit: ["Outfit", "sans-serif"],
+        sans: ["Sarabun", "Inter", "sans-serif"],
+        sarabun: ["Sarabun", "sans-serif"],
+        inter: ["Inter", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
