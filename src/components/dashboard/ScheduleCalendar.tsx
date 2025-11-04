@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,9 +31,12 @@ const activityTypes = [
   { value: 'review', label: 'ทำแบบทดสอบ', icon: Target, color: 'bg-orange-500/10 text-orange-600 border-orange-200' },
 ];
 
+type ViewMode = 'day' | 'week' | 'month' | 'year';
+
 export function ScheduleCalendar() {
   const { toast } = useToast();
   const today = new Date();
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -193,16 +197,77 @@ export function ScheduleCalendar() {
           })}
         </div>
 
+        {/* View Mode Tabs */}
+        <div className="mb-4">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+            <TabsList className="grid w-full grid-cols-4 bg-muted/50">
+              <TabsTrigger value="day" className="text-xs">วัน</TabsTrigger>
+              <TabsTrigger value="week" className="text-xs">สัปดาห์</TabsTrigger>
+              <TabsTrigger value="month" className="text-xs">เดือน</TabsTrigger>
+              <TabsTrigger value="year" className="text-xs">ปี</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
         {/* Schedule Details */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-foreground">กิจกรรมสัปดาห์นี้</h4>
+            <h4 className="text-sm font-semibold text-foreground">
+              {viewMode === 'day' && 'กิจกรรมวันนี้'}
+              {viewMode === 'week' && 'กิจกรรมสัปดาห์นี้'}
+              {viewMode === 'month' && 'กิจกรรมเดือนนี้'}
+              {viewMode === 'year' && 'สรุปรายปี'}
+            </h4>
             <Button variant="ghost" size="sm" className="text-xs">
               ดูทั้งหมด
             </Button>
           </div>
 
-          {schedules.slice(0, 3).map(schedule => {
+          {/* Day View */}
+          {viewMode === 'day' && (
+            <>
+              {getDaySchedule(today.getDay())?.activities.map(activity => {
+                const Icon = activity.icon;
+                return (
+                  <div 
+                    key={activity.id}
+                    className={`
+                      p-3 rounded-lg border flex items-center justify-between
+                      ${activity.color}
+                      hover:shadow-soft transition-all
+                    `}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-background/50">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">{activity.title}</div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {activity.time} • {activity.duration} นาที
+                        </div>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleEditSchedule(today.getDay())}
+                    >
+                      <Edit2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                );
+              }) || (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  ยังไม่มีกิจกรรมวันนี้
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Week View */}
+          {viewMode === 'week' && schedules.slice(0, 3).map(schedule => {
             const date = weekDays[schedule.dayIndex];
             return (
               <div key={schedule.dayIndex} className="space-y-2">
@@ -245,6 +310,83 @@ export function ScheduleCalendar() {
               </div>
             );
           })}
+
+          {/* Month View */}
+          {viewMode === 'month' && (
+            <div className="grid grid-cols-1 gap-3">
+              {schedules.map(schedule => {
+                const date = weekDays[schedule.dayIndex];
+                const totalDuration = schedule.activities.reduce((sum, a) => sum + a.duration, 0);
+                return (
+                  <div 
+                    key={schedule.dayIndex}
+                    className="p-4 rounded-lg border border-border/50 bg-muted/20 hover:bg-muted/30 transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-medium text-sm">
+                        {date.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {schedule.activities.length} กิจกรรม • {totalDuration}น
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {schedule.activities.map(activity => {
+                        const Icon = activity.icon;
+                        return (
+                          <Badge key={activity.id} variant="outline" className="text-xs">
+                            <Icon className="w-3 h-3 mr-1" />
+                            {activity.time}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Year View */}
+          {viewMode === 'year' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-200">
+                  <div className="text-xs text-muted-foreground mb-1">ทบทวนคำศัพท์</div>
+                  <div className="text-2xl font-bold text-blue-600">156</div>
+                  <div className="text-xs text-muted-foreground">ครั้ง/ปี</div>
+                </div>
+                
+                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-200">
+                  <div className="text-xs text-muted-foreground mb-1">ฝึกภาษาอังกฤษ</div>
+                  <div className="text-2xl font-bold text-purple-600">104</div>
+                  <div className="text-xs text-muted-foreground">ครั้ง/ปี</div>
+                </div>
+                
+                <div className="p-4 rounded-lg bg-green-500/10 border border-green-200">
+                  <div className="text-xs text-muted-foreground mb-1">ฟัง Podcast</div>
+                  <div className="text-2xl font-bold text-green-600">78</div>
+                  <div className="text-xs text-muted-foreground">ครั้ง/ปี</div>
+                </div>
+                
+                <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-200">
+                  <div className="text-xs text-muted-foreground mb-1">ทำแบบทดสอบ</div>
+                  <div className="text-2xl font-bold text-orange-600">52</div>
+                  <div className="text-xs text-muted-foreground">ครั้ง/ปี</div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg border border-border/50 bg-gradient-primary/10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">เวลาฝึกรวม</div>
+                    <div className="text-xs text-muted-foreground">ตลอดทั้งปี</div>
+                  </div>
+                  <div className="text-3xl font-bold text-primary">97.5 ชม.</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
 
