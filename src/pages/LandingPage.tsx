@@ -4,7 +4,6 @@ import HeroSection from "@/components/HeroSection";
 import PricingSection from "@/components/PricingSection";
 import BackgroundDecorations from "@/components/BackgroundDecorations";
 import { 
-  Users, 
   Star, 
   MessageCircle, 
   Mail, 
@@ -13,68 +12,33 @@ import {
   Upload,
   Brain,
   Gamepad2,
-  Shield,
-  Zap,
-  Heart
+  Zap
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import promjumLogo from "@/assets/promjum-logo.png";
 
 const LandingPage = () => {
-  const features = [
-    {
-      icon: Upload,
-      title: "อัปโหลดง่าย",
-      description: "รองรับไฟล์ PDF, Word, PowerPoint, Excel และอีกมากมาย อัปโหลดได้ในคลิกเดียว"
-    },
-    {
-      icon: Brain,
-      title: "AI อัจฉริยะ",
-      description: "ใช้เทคโนโลยี AI ล้ำสมัยในการวิเคราะห์และสร้างแฟลชการ์ดที่มีคุณภาพสูง"
-    },
-    {
-      icon: Gamepad2,
-      title: "เรียนรู้สนุก",
-      description: "ระบบเกมและ Spaced Repetition ที่ช่วยให้การทบทวนมีประสิทธิภาพและสนุกสนาน"
-    },
-    {
-      icon: Shield,
-      title: "ปลอดภัย 100%",
-      description: "ข้อมูลของคุณได้รับการเข้ารหัสและปกป้องด้วยมาตรฐานสากล"
-    },
-    {
-      icon: Zap,
-      title: "รวดเร็วทันใจ",
-      description: "ประมวลผลไฟล์และสร้างแฟลชการ์ดได้ภายในไม่กี่นาที"
-    },
-    {
-      icon: Heart,
-      title: "ใช้งานง่าย",
-      description: "ออกแบบมาให้ใช้งานง่าย เหมาะสำหรับทุกวัย ทุกระดับความรู้"
-    }
-  ];
-
   const reviews = [
     {
-      name: "อาจารย์สมชาย ใจดี",
-      role: "อาจารย์มหาวิทยาลัย",
-      content: "Promjum ช่วยให้ผมสร้างแฟลชการ์ดสำหรับนักศึกษาได้อย่างรวดเร็ว นักศึกษาชอบมากเพราะเรียนได้สนุก",
+      name: "มายด์",
+      role: "นักศึกษา",
+      content: "ฝึก 10 วัน พูดได้คล่องขึ้นจริง ระบบ AI แนะนำตรงจุดมาก",
       rating: 5,
-      avatar: "👨‍🏫"
+      avatar: "👨‍🎓"
     },
     {
-      name: "น้องมิ้นท์",
-      role: "นักเรียนชั้น ม.6",
-      content: "ใช้ Promjum ทบทวนก่อนสอบ GAT/PAT ผลคะแนนดีขึ้นมาก! ระบบเกมทำให้เรียนไม่เบื่อ",
+      name: "ป้อม",
+      role: "พนักงานออฟฟิศ",
+      content: "ระบบให้คำแนะนำตรงจุด เหมือนครูส่วนตัวเลย ชอบมาก",
       rating: 5,
-      avatar: "👩‍🎓"
+      avatar: "👔"
     },
     {
-      name: "คุณแป้ง",
-      role: "นักศึกษาแพทย์",
-      content: "เปลี่ยนหนังสือแพทย์หนาๆ ให้เป็นแฟลชการ์ด ทบทวนได้ทุกที่ทุกเวลา แนะนำสำหรับคนที่ต้องจำเยอะๆ",
+      name: "พี่นัท",
+      role: "ฟรีแลนซ์",
+      content: "พูดกับลูกค้าต่างชาติได้มั่นใจขึ้นเยอะ แนะนำเลยครับ",
       rating: 5,
-      avatar: "👩‍⚕️"
+      avatar: "💼"
     }
   ];
 
@@ -84,78 +48,40 @@ const LandingPage = () => {
       <BackgroundDecorations />
       
       {/* Hero Section */}
-      <HeroSection />
-
-      {/* Features Section */}
-      <section id="features" className="py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+      <section className="relative min-h-screen flex items-center justify-center px-4 py-20">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center space-y-8">
+            <h1 className="text-5xl md:text-7xl font-bold font-poppins leading-tight">
               <span className="bg-gradient-hero bg-clip-text text-transparent">
-                คุณสมบัติเด่น
+                Promjum — AI ที่จะทำให้เก่งภาษาขึ้น
               </span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Promjum มาพร้อมคุณสมบัติที่จะเปลี่ยนวิธีการเรียนรู้ของคุณ
+              <br />
+              <span className="text-foreground">ในทุกๆวัน</span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto font-prompt leading-relaxed">
+              ฝึกฟัง พูด อ่าน เขียน ด้วยระบบ AI ที่เข้าใจสำเนียงคุณจริง ๆ
+              <br />
+              <span className="text-lg md:text-xl text-muted-foreground mt-2 block">
+                เริ่มจากสิ่งที่คุณสนใจ และเห็นพัฒนาการได้ทุกวัน
+              </span>
             </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="bg-gradient-card shadow-soft border-0 hover:shadow-medium transition-all duration-300">
-                <CardHeader className="text-center">
-                  <div className="h-16 w-16 rounded-full bg-gradient-primary flex items-center justify-center mx-auto mb-4">
-                    <feature.icon className="h-8 w-8 text-primary-foreground" />
-                  </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center text-base leading-relaxed">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
+              <Button variant="hero" size="lg" className="text-lg px-12 py-6" asChild>
+                <Link to="/auth">เริ่มใช้งานฟรี</Link>
+              </Button>
+              <Button variant="outline" size="lg" className="text-lg px-12 py-6" asChild>
+                <a href="#experience">ดูตัวอย่างการใช้งาน</a>
+              </Button>
+            </div>
 
-      {/* Pricing Section */}
-      <PricingSection />
-
-      {/* About Section */}
-      <section id="about" className="py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8">
-              <span className="bg-gradient-hero bg-clip-text text-transparent">
-                เกี่ยวกับ Promjum
-              </span>
-            </h2>
-            <div className="prose prose-lg mx-auto text-muted-foreground">
-              <p className="text-xl leading-relaxed mb-6">
-                Promjum เกิดขึ้นจากความต้องการที่จะทำให้การเรียนรู้เป็นเรื่องง่ายและสนุกสำหรับทุกคน 
-                เราเชื่อว่าเทคโนโลยี AI สามารถช่วยให้การศึกษามีประสิทธิภาพมากขึ้น
-              </p>
-              <p className="text-xl leading-relaxed mb-6">
-                ทีมงานของเราประกอบด้วยนักพัฒนาที่มีประสบการณ์และนักการศึกษา 
-                ที่มุ่งมั่นในการสร้างเครื่องมือที่จะช่วยให้ผู้เรียนทุกคนประสบความสำเร็จในการเรียนรู้
-              </p>
-              <div className="flex justify-center space-x-8 mt-12">
-                <div className="text-center">
-                  <Users className="h-12 w-12 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-primary">1000+</div>
-                  <div className="text-sm text-muted-foreground">ผู้ใช้งาน</div>
-                </div>
-                <div className="text-center">
-                  <Star className="h-12 w-12 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-primary">4.9/5</div>
-                  <div className="text-sm text-muted-foreground">คะแนนรีวิว</div>
-                </div>
-                <div className="text-center">
-                  <MessageCircle className="h-12 w-12 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-primary">24/7</div>
-                  <div className="text-sm text-muted-foreground">ซัพพอร์ต</div>
+            {/* Visual mockup hint */}
+            <div className="pt-12 animate-fade-in">
+              <div className="bg-gradient-card rounded-2xl p-8 shadow-soft max-w-2xl mx-auto border border-white/10">
+                <div className="flex items-center justify-center space-x-4 text-muted-foreground">
+                  <MessageCircle className="h-8 w-8 text-primary animate-pulse" />
+                  <span className="text-base">พูด → AI วิเคราะห์ → Feedback ทันที</span>
                 </div>
               </div>
             </div>
@@ -163,39 +89,226 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Reviews Section */}
-      <section className="py-24 bg-gradient-secondary/30">
+      {/* What is Promjum Section */}
+      <section id="about" className="py-24 bg-background/50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-4xl md:text-5xl font-bold font-poppins">
               <span className="bg-gradient-hero bg-clip-text text-transparent">
-                รีวิวจากผู้ใช้งาน
+                Promjum คืออะไร?
               </span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              ฟังความคิดเห็นจากผู้ที่ได้ใช้งาน Promjum แล้ว
+            <p className="text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto font-prompt leading-relaxed">
+              เราเชื่อว่าการเรียนภาษาควร <span className="font-semibold text-primary">"เข้าใจง่าย เหมือนคุยกับเพื่อน"</span>
+              <br />
+              Promjum ใช้ AI วิเคราะห์เสียง พฤติกรรม และคำศัพท์ของคุณ
+              <br />
+              เพื่อสร้าง <span className="font-semibold text-primary">"เส้นทางการเรียนรู้เฉพาะตัว"</span> ที่จำง่าย ใช้ได้จริง
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <Card className="bg-gradient-card shadow-medium border-0 hover:scale-105 transition-all duration-300">
+              <CardHeader className="text-center space-y-4">
+                <div className="h-20 w-20 rounded-full bg-gradient-primary flex items-center justify-center mx-auto">
+                  <Brain className="h-10 w-10 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins">🧠 AI เข้าใจสำเนียงของคุณ</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center text-base text-muted-foreground font-prompt leading-relaxed">
+                  ฟังเสียงจริง วิเคราะห์ และให้คำแนะนำรายคำ
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-card shadow-medium border-0 hover:scale-105 transition-all duration-300">
+              <CardHeader className="text-center space-y-4">
+                <div className="h-20 w-20 rounded-full bg-gradient-primary flex items-center justify-center mx-auto">
+                  <Upload className="h-10 w-10 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins">🧩 เรียนด้วย Decks ที่เหมาะกับคุณ</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center text-base text-muted-foreground font-prompt leading-relaxed">
+                  เริ่มจากหมวดที่สนใจ เช่น ชีวิตประจำวัน / ท่องเที่ยว / ทำงาน
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-card shadow-medium border-0 hover:scale-105 transition-all duration-300">
+              <CardHeader className="text-center space-y-4">
+                <div className="h-20 w-20 rounded-full bg-gradient-primary flex items-center justify-center mx-auto">
+                  <Gamepad2 className="h-10 w-10 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins">🔁 จำได้ยาว ด้วยระบบ SRS + เกม</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center text-base text-muted-foreground font-prompt leading-relaxed">
+                  ฝึกซ้ำตามช่วงเวลาที่เหมาะสม พร้อมมินิเกมสนุก ๆ
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Experience Section */}
+      <section id="experience" className="py-24 bg-gradient-secondary/20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold font-poppins mb-4">
+              <span className="bg-gradient-hero bg-clip-text text-transparent">
+                ฝึกได้เหมือนมีครูอยู่ข้าง ๆ ตลอดเวลา
+              </span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-center">
+            {/* Left: Demo visualization */}
+            <div className="bg-gradient-card rounded-3xl p-8 shadow-medium border border-white/10">
+              <div className="space-y-6">
+                <div className="flex items-center space-x-3">
+                  <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                    <MessageCircle className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1 bg-primary/10 rounded-2xl p-4">
+                    <p className="font-prompt text-sm">Hello, how are you today?</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-center py-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
+                    <div className="h-3 w-3 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                    <div className="h-4 w-4 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                    <div className="h-3 w-3 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.6s' }} />
+                    <div className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.8s' }} />
+                  </div>
+                </div>
+
+                <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-green-600 font-semibold font-poppins">✓ Great pronunciation!</span>
+                    <span className="text-2xl font-bold text-green-600">95</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground font-prompt">
+                    คำว่า "today" ออกเสียงได้ชัดเจนมาก ลองเน้นที่ "are" ให้ชัดขึ้นอีกนิด
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Description */}
+            <div className="space-y-8">
+              <div className="flex items-start space-x-4">
+                <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">1</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold font-poppins mb-2">พูดประโยคจริงในชีวิตประจำวัน</h3>
+                  <p className="text-muted-foreground font-prompt">เลือกสถานการณ์ที่คุณต้องการฝึก และเริ่มพูดตามธรรมชาติ</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4">
+                <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">2</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold font-poppins mb-2">ระบบจับจังหวะ + ความชัดเจน</h3>
+                  <p className="text-muted-foreground font-prompt">AI วิเคราะห์การออกเสียงแต่ละคำ พร้อมให้คะแนนแบบเรียลไทม์</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4">
+                <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">3</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold font-poppins mb-2">แนะนำวิธีพูดให้ดีขึ้นทันที</h3>
+                  <p className="text-muted-foreground font-prompt">รับ feedback ที่ตรงจุด พร้อมคำแนะนำแบบเฉพาะเจาะจง</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Progress Tracking Section */}
+      <section className="py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold font-poppins mb-4">
+              <span className="bg-gradient-hero bg-clip-text text-transparent">
+                เห็นความก้าวหน้าของคุณ... ทุกครั้งที่ฝึก
+              </span>
+            </h2>
+          </div>
+
+          <div className="max-w-5xl mx-auto">
+            <div className="bg-gradient-card rounded-3xl p-8 md:p-12 shadow-medium border border-white/10">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div className="text-center space-y-2">
+                  <div className="text-5xl font-bold text-primary font-poppins">847</div>
+                  <p className="text-muted-foreground font-prompt">คำที่จำได้</p>
+                </div>
+                <div className="text-center space-y-2">
+                  <div className="text-5xl font-bold text-primary font-poppins">92%</div>
+                  <p className="text-muted-foreground font-prompt">ความแม่นยำเสียง</p>
+                </div>
+                <div className="text-center space-y-2">
+                  <div className="text-5xl font-bold text-primary font-poppins flex items-center justify-center">
+                    <Zap className="h-12 w-12 mr-2" />
+                    15
+                  </div>
+                  <p className="text-muted-foreground font-prompt">วันต่อเนื่อง</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-center text-lg text-foreground/80 font-prompt">
+                  "ทุกครั้งที่คุณพูด ระบบจะให้คะแนน + คำแนะนำรายคำ"
+                </p>
+                <p className="text-center text-lg text-foreground/80 font-prompt">
+                  "Promjum จะสรุปผลรายสัปดาห์ พร้อมคำแนะนำส่วนตัว"
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Reviews Section */}
+      <section className="py-24 bg-gradient-secondary/20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold font-poppins mb-4">
+              <span className="bg-gradient-hero bg-clip-text text-transparent">
+                เสียงจากผู้ใช้จริง
+              </span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {reviews.map((review, index) => (
-              <Card key={index} className="bg-gradient-card shadow-medium border-0">
+              <Card key={index} className="bg-gradient-card shadow-medium border-0 hover:scale-105 transition-all duration-300">
                 <CardHeader>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-4xl">{review.avatar}</div>
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="text-5xl">{review.avatar}</div>
                     <div>
-                      <CardTitle className="text-lg">{review.name}</CardTitle>
-                      <CardDescription>{review.role}</CardDescription>
+                      <CardTitle className="text-lg font-poppins">{review.name}</CardTitle>
+                      <CardDescription className="font-prompt">{review.role}</CardDescription>
                     </div>
                   </div>
                   <div className="flex space-x-1">
                     {Array.from({ length: review.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground italic">"{review.content}"</p>
+                  <p className="text-foreground/80 font-prompt leading-relaxed">"{review.content}"</p>
                 </CardContent>
               </Card>
             ))}
@@ -203,59 +316,37 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                <span className="bg-gradient-hero bg-clip-text text-transparent">
-                  ติดต่อเรา
-                </span>
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                พร้อมให้คำปรึกษาและช่วยเหลือคุณทุกเวลา
-              </p>
+      {/* Final CTA Section */}
+      <section className="py-32 bg-gradient-to-br from-primary/10 via-secondary/10 to-background relative overflow-hidden">
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-3xl" />
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <h2 className="text-4xl md:text-6xl font-bold font-poppins leading-tight">
+              <span className="bg-gradient-hero bg-clip-text text-transparent">
+                พร้อมจะเริ่มพูดภาษาอังกฤษ
+                <br />
+                ได้จริงไหม?
+              </span>
+            </h2>
+
+            <div className="flex flex-wrap justify-center gap-4 text-sm md:text-base">
+              <div className="flex items-center space-x-2 bg-gradient-card px-6 py-3 rounded-full shadow-soft border border-white/10">
+                <span className="text-2xl">🏆</span>
+                <span className="font-prompt">เรียนฟรีได้ทันที</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-gradient-card px-6 py-3 rounded-full shadow-soft border border-white/10">
+                <span className="text-2xl">✨</span>
+                <span className="font-prompt">ไม่ต้องใส่บัตรเครดิต</span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="bg-gradient-card shadow-soft border-0 text-center">
-                <CardHeader>
-                  <Mail className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>อีเมล</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">support@promjum.com</p>
-                  <p className="text-muted-foreground">info@promjum.com</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-card shadow-soft border-0 text-center">
-                <CardHeader>
-                  <Phone className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>โทรศัพท์</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">02-123-4567</p>
-                  <p className="text-muted-foreground">จันทร์-ศุกร์ 9:00-18:00</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-card shadow-soft border-0 text-center">
-                <CardHeader>
-                  <MapPin className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>ที่อยู่</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">123 ถ.เทคโนโลยี</p>
-                  <p className="text-muted-foreground">กรุงเทพฯ 10110</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="text-center mt-12">
-              <Button variant="hero" size="lg" asChild>
-                <Link to="/auth">เริ่มใช้งาน Promjum วันนี้</Link>
+            <div className="pt-8">
+              <Button variant="hero" size="lg" className="text-xl px-16 py-8 shadow-glow" asChild>
+                <Link to="/auth">🔹 เริ่มเรียนกับ Promjum ฟรี</Link>
               </Button>
             </div>
           </div>
@@ -263,25 +354,57 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-foreground/5 py-12">
+      <footer className="bg-background/80 backdrop-blur-sm py-16 border-t border-white/5">
         <div className="container mx-auto px-4">
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <img 
-                src={promjumLogo} 
-                alt="Promjum Logo" 
-                className="h-10 w-10 object-contain"
-              />
-              <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Promjum
-              </span>
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+              {/* Logo & Tagline */}
+              <div className="text-center md:text-left">
+                <div className="flex items-center justify-center md:justify-start space-x-2 mb-4">
+                  <img 
+                    src={promjumLogo} 
+                    alt="Promjum Logo" 
+                    className="h-12 w-12 object-contain"
+                  />
+                  <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent font-poppins">
+                    Promjum
+                  </span>
+                </div>
+                <p className="text-muted-foreground font-prompt text-sm">
+                  พร้อมจำ พร้อมเข้าใจ
+                </p>
+              </div>
+
+              {/* Menu Links */}
+              <div className="text-center">
+                <h3 className="font-bold font-poppins mb-4">เมนู</h3>
+                <div className="space-y-2">
+                  <div><Link to="/about" className="text-muted-foreground hover:text-primary transition-colors font-prompt">เกี่ยวกับเรา</Link></div>
+                  <div><a href="#contact" className="text-muted-foreground hover:text-primary transition-colors font-prompt">ติดต่อเรา</a></div>
+                  <div><Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors font-prompt">นโยบายความเป็นส่วนตัว</Link></div>
+                </div>
+              </div>
+
+              {/* Contact Channels */}
+              <div className="text-center md:text-right">
+                <h3 className="font-bold font-poppins mb-4">ติดตามเรา</h3>
+                <div className="flex justify-center md:justify-end space-x-4">
+                  <a href="#" className="h-10 w-10 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                    <MessageCircle className="h-5 w-5 text-primary" />
+                  </a>
+                  <a href="#" className="h-10 w-10 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                    <Mail className="h-5 w-5 text-primary" />
+                  </a>
+                </div>
+              </div>
             </div>
-            <p className="text-muted-foreground mb-4">
-              เปลี่ยนวิธีการเรียนรู้ด้วยพลัง AI
-            </p>
-            <p className="text-sm text-muted-foreground">
-              © 2024 Promjum. สงวนลิขสิทธิ์.
-            </p>
+
+            {/* Copyright */}
+            <div className="text-center pt-8 border-t border-white/5">
+              <p className="text-sm text-muted-foreground font-prompt">
+                © 2024 Promjum. สงวนลิขสิทธิ์.
+              </p>
+            </div>
           </div>
         </div>
       </footer>
