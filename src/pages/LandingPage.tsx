@@ -12,7 +12,11 @@ import {
   Upload,
   Brain,
   Gamepad2,
-  Zap
+  Zap,
+  BookOpen,
+  Layers,
+  TrendingUp,
+  Mic
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import promjumLogo from "@/assets/promjum-logo.png";
@@ -178,39 +182,28 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Card 1: Flashcard */}
             <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
               <CardHeader className="text-center space-y-6 p-8">
                 <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
-                  <Brain className="h-12 w-12 text-primary-foreground" />
+                  <BookOpen className="h-12 w-12 text-primary-foreground" />
                 </div>
                 <CardTitle className="text-2xl font-poppins font-bold">
-                  AI เข้าใจสำเนียงของคุณ
+                  จำคำศัพท์ด้วย Flashcard
                 </CardTitle>
               </CardHeader>
               <CardContent className="pb-8">
-                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed">
-                  🧠 ฟังเสียงจริง วิเคราะห์ และให้คำแนะนำรายคำ พร้อม feedback ที่แม่นยำ
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  🃏 ฝึกจำง่าย มีเสียง ช่วยกระตุ้นการจดจำคำศัพท์
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  🎯 เหมาะกับผู้เริ่มต้นที่อยากจำศัพท์เร็วขึ้น
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
-              <CardHeader className="text-center space-y-6 p-8">
-                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
-                  <Upload className="h-12 w-12 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-2xl font-poppins font-bold">
-                  Decks ที่เหมาะกับคุณ
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-8">
-                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed">
-                  🧩 เริ่มจากหมวดที่สนใจ เช่น ชีวิตประจำวัน ท่องเที่ยว หรือการทำงาน
-                </p>
-              </CardContent>
-            </Card>
-
+            {/* Card 2: SRS + เกม */}
             <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
               <CardHeader className="text-center space-y-6 p-8">
                 <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
@@ -221,8 +214,91 @@ const LandingPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pb-8">
-                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed">
-                  🔁 ฝึกซ้ำตามช่วงเวลาที่เหมาะสม พร้อมมินิเกมสนุก ๆ ที่ทำให้จำได้นาน
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  🎮 ทวนคำศัพท์ตามช่วงเวลาที่เหมาะสม มีเกมสนุก ๆ ให้เล่นระหว่างฝึก
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  💫 ยิ่งเล่น ยิ่งจำได้
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Card 3: Mini Deck */}
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <Layers className="h-12 w-12 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  Mini Deck
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  🪄 รวมคำศัพท์เป็นหมวดหมู่ต่างๆ เช่น ธุรกิจ ท่องเที่ยว
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  📚 เรียนตรงจุด ใช้เวลาไม่นาน ตามที่คุณต้องการ
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Card 4: Progress Tracking */}
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <TrendingUp className="h-12 w-12 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  เห็นพัฒนาการจริง ทุกครั้งที่ฝึก
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  📈 ดูคะแนน "Starlight Score" และกราฟความก้าวหน้า รู้เลยว่าพูดดีขึ้น ฟังชัดขึ้นแค่ไหน
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  🔥 เก็บ Streak ต่อเนื่องทุกวัน
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Card 5: Shadowing */}
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <Mic className="h-12 w-12 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  ฝึกออกเสียงคำ + Shadowing
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  💬 ฝึกออกเสียงคำศัพท์ พูดตามเสียงเจ้าของภาษา แล้วให้ feedback
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  🚀 ฝึกพูดได้ทุกที่ ทุกเวลา
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Card 6: AI ครูส่วนตัว */}
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <Brain className="h-12 w-12 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  AI ครูส่วนตัว ฟัง
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  🧠 วิเคราะห์จังหวะ สำเนียง และให้คำแนะนำทันที
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  🌠 เหมือนมีครูอยู่ข้าง ๆ ทุกครั้งที่ฝึก
                 </p>
               </CardContent>
             </Card>
