@@ -156,6 +156,19 @@ export default {
             opacity: "0.6",
             transform: "scale(1.1)"
           }
+        },
+        "shooting-star": {
+          "0%": {
+            transform: "translateX(0) translateY(0) rotate(-45deg)",
+            opacity: "1"
+          },
+          "70%": {
+            opacity: "1"
+          },
+          "100%": {
+            transform: "translateX(300px) translateY(300px) rotate(-45deg)",
+            opacity: "0"
+          }
         }
       },
       animation: {
@@ -167,6 +180,7 @@ export default {
         "drift": "drift 20s linear infinite",
         "orbit": "orbit 30s linear infinite",
         "glow": "glow 4s ease-in-out infinite",
+        "shooting-star": "shooting-star 3s ease-in infinite",
       },
     },
   },

@@ -8,13 +8,13 @@ All colors MUST be HSL for consistency and theming support.
 
 @layer base {
   :root {
-    /* Base colors - Clean minimal palette */
+    /* Base colors - Clean minimal palette with better contrast */
     --background: 252 100% 99%;
-    --foreground: 240 10% 10%;
+    --foreground: 240 15% 8%;
 
-    /* Card system - Soft translucent cards */
+    /* Card system - Clean cards with better readability */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 15%;
+    --card-foreground: 240 15% 10%;
 
     --popover: 0 0% 100%; 
     --popover-foreground: 240 10% 15%;

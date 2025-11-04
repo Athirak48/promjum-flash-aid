@@ -2,88 +2,84 @@ import { useEffect, useState } from "react";
 
 const BackgroundDecorations = () => {
   const [stars, setStars] = useState<Array<{ id: number; left: string; top: string; delay: string; size: string; duration: string }>>([]);
+  const [shootingStars, setShootingStars] = useState<Array<{ id: number; left: string; top: string; delay: string; duration: string }>>([]);
 
   useEffect(() => {
-    // Generate random twinkling stars
-    const newStars = Array.from({ length: 60 }, (_, i) => ({
+    // Generate fewer, subtler twinkling stars for minimal look
+    const newStars = Array.from({ length: 30 }, (_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
       delay: `${Math.random() * 5}s`,
-      size: Math.random() > 0.7 ? 'w-1.5 h-1.5' : 'w-1 h-1',
+      size: 'w-0.5 h-0.5',
       duration: `${3 + Math.random() * 2}s`
     }));
 
+    // Generate shooting stars
+    const newShootingStars = Array.from({ length: 5 }, (_, i) => ({
+      id: i + 100,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 50}%`,
+      delay: `${Math.random() * 10}s`,
+      duration: `${2 + Math.random() * 1}s`
+    }));
+
     setStars(newStars);
+    setShootingStars(newShootingStars);
   }, []);
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {/* Main Gradient Background */}
+      {/* Minimal Gradient Background */}
       <div 
         className="absolute inset-0"
         style={{
-          background: 'linear-gradient(135deg, #b6709a 0%, #c988b8 30%, #e8d5f0 60%, #f8f6ff 100%)',
+          background: 'linear-gradient(135deg, #b6709a 0%, #d4a5c4 40%, #f0e5f5 70%, #faf8ff 100%)',
         }}
       />
 
-      {/* Subtle Fog/Texture Overlay */}
+      {/* Very Subtle Fog/Texture - reduced for minimal look */}
       <div 
-        className="absolute inset-0 opacity-[0.15]"
+        className="absolute inset-0 opacity-[0.08]"
         style={{
-          backgroundImage: `radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
-                           radial-gradient(circle at 80% 70%, rgba(182, 112, 154, 0.2) 0%, transparent 50%),
-                           radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%)`,
+          backgroundImage: `radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 60%),
+                           radial-gradient(circle at 80% 70%, rgba(182, 112, 154, 0.15) 0%, transparent 60%)`,
         }}
       />
 
-      {/* Orbit Lines (เส้นวงโคจร) */}
-      <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.08 }}>
-        {/* Orbit 1 - Top */}
-        <ellipse
-          cx="50%"
-          cy="20%"
-          rx="40%"
-          ry="15%"
-          fill="none"
-          stroke="white"
-          strokeWidth="1"
-          strokeDasharray="20 10"
-          className="animate-orbit"
-        />
-        {/* Orbit 2 - Middle */}
-        <ellipse
-          cx="50%"
-          cy="50%"
-          rx="35%"
-          ry="20%"
-          fill="none"
-          stroke="rgba(255, 255, 255, 0.8)"
-          strokeWidth="1"
-          strokeDasharray="15 15"
-          className="animate-orbit"
-          style={{ animationDelay: '10s' }}
-        />
-        {/* Orbit 3 - Bottom */}
-        <ellipse
-          cx="50%"
-          cy="80%"
-          rx="30%"
-          ry="12%"
-          fill="none"
-          stroke="rgba(255, 255, 255, 0.6)"
-          strokeWidth="1"
-          strokeDasharray="25 8"
-          className="animate-orbit"
-          style={{ animationDelay: '20s' }}
-        />
-      </svg>
+      {/* Shooting Stars Animation ⭐ */}
+      {shootingStars.map((star) => (
+        <div
+          key={star.id}
+          className="absolute w-1 h-1"
+          style={{
+            left: star.left,
+            top: star.top,
+            animation: `shooting-star ${star.duration} ease-in infinite`,
+            animationDelay: star.delay,
+          }}
+        >
+          <div 
+            className="w-full h-full bg-white rounded-full"
+            style={{
+              boxShadow: '0 0 6px 2px rgba(255, 255, 255, 0.8), 0 0 12px 4px rgba(182, 112, 154, 0.6)',
+            }}
+          />
+          <div 
+            className="absolute top-0 left-0 w-12 h-[1px] origin-left"
+            style={{
+              background: 'linear-gradient(to right, rgba(255, 255, 255, 0.8), transparent)',
+              transform: 'rotate(-45deg)',
+            }}
+          />
+        </div>
+      ))}
 
-      {/* Twinkling Stars */}
+      {/* Minimal Twinkling Stars */}
       {stars.map((star) => (
         <div
           key={star.id}
-          className={`absolute ${star.size} bg-white rounded-full`}
+          className={`absolute ${star.size} bg-white/60 rounded-full`}
           style={{
             left: star.left,
             top: star.top,
@@ -93,54 +89,11 @@ const BackgroundDecorations = () => {
         />
       ))}
 
-      {/* Soft Planet Glow - Top Right */}
+      {/* Minimal Soft Glow - Top Right */}
       <div
-        className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-20 animate-glow"
+        className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-[0.12] animate-glow"
         style={{
-          background: 'radial-gradient(circle, rgba(255, 223, 186, 0.6) 0%, transparent 70%)',
-        }}
-      />
-
-      {/* Soft Planet Glow - Bottom Left */}
-      <div
-        className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full opacity-15 animate-glow"
-        style={{
-          background: 'radial-gradient(circle, rgba(201, 136, 184, 0.5) 0%, transparent 70%)',
-          animationDelay: '2s',
-        }}
-      />
-
-      {/* Soft Planet Glow - Center */}
-      <div
-        className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full opacity-10 animate-glow"
-        style={{
-          background: 'radial-gradient(circle, rgba(255, 246, 255, 0.8) 0%, transparent 65%)',
-          animationDelay: '1s',
-        }}
-      />
-
-      {/* Responsive: Hide some elements on mobile */}
-      <div className="hidden md:block">
-        {/* Additional decorative elements for desktop */}
-        <div
-          className="absolute top-1/4 right-1/4 w-2 h-2 bg-white/40 rounded-full animate-twinkle"
-          style={{ animationDelay: '1.5s' }}
-        />
-        <div
-          className="absolute top-3/4 left-1/4 w-1.5 h-1.5 bg-white/30 rounded-full animate-twinkle"
-          style={{ animationDelay: '3s' }}
-        />
-      </div>
-
-      {/* Subtle Grid Pattern (very faint) */}
-      <div 
-        className="absolute inset-0 opacity-[0.015]"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '80px 80px'
+          background: 'radial-gradient(circle, rgba(255, 223, 186, 0.5) 0%, transparent 70%)',
         }}
       />
     </div>
