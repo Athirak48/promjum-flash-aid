@@ -3,30 +3,51 @@ import { Button } from "@/components/ui/button";
 import HeroSection from "@/components/HeroSection";
 import PricingSection from "@/components/PricingSection";
 import BackgroundDecorations from "@/components/BackgroundDecorations";
-import { Star, MessageCircle, Mail, MapPin, Phone, Upload, Brain, Gamepad2, Zap } from "lucide-react";
+import { 
+  Star, 
+  MessageCircle, 
+  Mail, 
+  MapPin, 
+  Phone,
+  Upload,
+  Brain,
+  Gamepad2,
+  Zap,
+  BookOpen,
+  Layers,
+  TrendingUp,
+  Mic
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import promjumLogo from "@/assets/promjum-logo.png";
+
 const LandingPage = () => {
-  const reviews = [{
-    name: "มายด์",
-    role: "นักศึกษา",
-    content: "ฝึก 10 วัน พูดได้คล่องขึ้นจริง ระบบ AI แนะนำตรงจุดมาก",
-    rating: 5,
-    avatar: "👨‍🎓"
-  }, {
-    name: "ป้อม",
-    role: "พนักงานออฟฟิศ",
-    content: "ระบบให้คำแนะนำตรงจุด เหมือนครูส่วนตัวเลย ชอบมาก",
-    rating: 5,
-    avatar: "👔"
-  }, {
-    name: "พี่นัท",
-    role: "ฟรีแลนซ์",
-    content: "พูดกับลูกค้าต่างชาติได้มั่นใจขึ้นเยอะ แนะนำเลยครับ",
-    rating: 5,
-    avatar: "💼"
-  }];
-  return <div className="min-h-screen relative">
+  const reviews = [
+    {
+      name: "มายด์",
+      role: "นักศึกษา",
+      content: "ฝึก 10 วัน พูดได้คล่องขึ้นจริง ระบบ AI แนะนำตรงจุดมาก",
+      rating: 5,
+      avatar: "👨‍🎓"
+    },
+    {
+      name: "ป้อม",
+      role: "พนักงานออฟฟิศ",
+      content: "ระบบให้คำแนะนำตรงจุด เหมือนครูส่วนตัวเลย ชอบมาก",
+      rating: 5,
+      avatar: "👔"
+    },
+    {
+      name: "พี่นัท",
+      role: "ฟรีแลนซ์",
+      content: "พูดกับลูกค้าต่างชาติได้มั่นใจขึ้นเยอะ แนะนำเลยครับ",
+      rating: 5,
+      avatar: "💼"
+    }
+  ];
+
+  return (
+    <div className="min-h-screen relative">
       {/* Background Decorations for entire page */}
       <BackgroundDecorations />
       
@@ -78,7 +99,20 @@ const LandingPage = () => {
             </div>
 
             {/* Trust indicators */}
-            
+            <div className="flex flex-wrap justify-center gap-6 pt-8 text-sm text-muted-foreground font-prompt">
+              <div className="flex items-center space-x-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                <span>ใช้งานฟรี ไม่มีค่าใช้จ่าย</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                <span>ไม่ต้องใส่บัตรเครดิต</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                <span>เริ่มได้ทันที ใน 2 นาที</span>
+              </div>
+            </div>
 
             {/* Enhanced Visual mockup */}
             <div className="pt-16 animate-fade-in">
@@ -98,9 +132,7 @@ const LandingPage = () => {
                   {/* Step 2 */}
                   <div className="flex flex-col items-center space-y-4 p-6 bg-background/30 rounded-2xl backdrop-blur-sm">
                     <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Brain className="h-8 w-8 text-primary animate-pulse" style={{
-                      animationDelay: '0.2s'
-                    }} />
+                      <Brain className="h-8 w-8 text-primary animate-pulse" style={{ animationDelay: '0.2s' }} />
                     </div>
                     <div className="text-center">
                       <div className="font-bold text-lg font-poppins mb-2">2. AI วิเคราะห์</div>
@@ -111,9 +143,7 @@ const LandingPage = () => {
                   {/* Step 3 */}
                   <div className="flex flex-col items-center space-y-4 p-6 bg-background/30 rounded-2xl backdrop-blur-sm">
                     <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Zap className="h-8 w-8 text-primary animate-pulse" style={{
-                      animationDelay: '0.4s'
-                    }} />
+                      <Zap className="h-8 w-8 text-primary animate-pulse" style={{ animationDelay: '0.4s' }} />
                     </div>
                     <div className="text-center">
                       <div className="font-bold text-lg font-poppins mb-2">3. Feedback</div>
@@ -152,39 +182,28 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Card 1: Flashcard */}
             <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
               <CardHeader className="text-center space-y-6 p-8">
                 <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
-                  <Brain className="h-12 w-12 text-primary-foreground" />
+                  <BookOpen className="h-12 w-12 text-primary-foreground" />
                 </div>
                 <CardTitle className="text-2xl font-poppins font-bold">
-                  AI เข้าใจสำเนียงของคุณ
+                  จำคำศัพท์ด้วย Flashcard
                 </CardTitle>
               </CardHeader>
               <CardContent className="pb-8">
-                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed">
-                  🧠 ฟังเสียงจริง วิเคราะห์ และให้คำแนะนำรายคำ พร้อม feedback ที่แม่นยำ
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  🃏 ฝึกจำง่าย มีเสียง ช่วยกระตุ้นการจดจำคำศัพท์
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  🎯 เหมาะกับผู้เริ่มต้นที่อยากจำศัพท์เร็วขึ้น
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
-              <CardHeader className="text-center space-y-6 p-8">
-                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
-                  <Upload className="h-12 w-12 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-2xl font-poppins font-bold">
-                  Decks ที่เหมาะกับคุณ
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-8">
-                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed">
-                  🧩 เริ่มจากหมวดที่สนใจ เช่น ชีวิตประจำวัน ท่องเที่ยว หรือการทำงาน
-                </p>
-              </CardContent>
-            </Card>
-
+            {/* Card 2: SRS + เกม */}
             <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
               <CardHeader className="text-center space-y-6 p-8">
                 <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
@@ -195,8 +214,91 @@ const LandingPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pb-8">
-                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed">
-                  🔁 ฝึกซ้ำตามช่วงเวลาที่เหมาะสม พร้อมมินิเกมสนุก ๆ ที่ทำให้จำได้นาน
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  🎮 ทวนคำศัพท์ตามช่วงเวลาที่เหมาะสม มีเกมสนุก ๆ ให้เล่นระหว่างฝึก
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  💫 ยิ่งเล่น ยิ่งจำได้
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Card 3: Mini Deck */}
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <Layers className="h-12 w-12 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  Mini Deck
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  🪄 รวมคำศัพท์เป็นหมวดหมู่ต่างๆ เช่น ธุรกิจ ท่องเที่ยว
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  📚 เรียนตรงจุด ใช้เวลาไม่นาน ตามที่คุณต้องการ
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Card 4: Progress Tracking */}
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <TrendingUp className="h-12 w-12 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  เห็นพัฒนาการจริง ทุกครั้งที่ฝึก
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  📈 ดูคะแนน "Starlight Score" และกราฟความก้าวหน้า รู้เลยว่าพูดดีขึ้น ฟังชัดขึ้นแค่ไหน
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  🔥 เก็บ Streak ต่อเนื่องทุกวัน
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Card 5: Shadowing */}
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <Mic className="h-12 w-12 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  ฝึกออกเสียงคำ + Shadowing
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  💬 ฝึกออกเสียงคำศัพท์ พูดตามเสียงเจ้าของภาษา แล้วให้ feedback
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  🚀 ฝึกพูดได้ทุกที่ ทุกเวลา
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Card 6: AI ครูส่วนตัว */}
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <Brain className="h-12 w-12 text-primary-foreground" />
+                </div>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  AI ครูส่วนตัว ฟัง
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed mb-3">
+                  🧠 วิเคราะห์จังหวะ สำเนียง และให้คำแนะนำทันที
+                </p>
+                <p className="text-center text-sm text-primary/80 font-prompt font-semibold">
+                  🌠 เหมือนมีครูอยู่ข้าง ๆ ทุกครั้งที่ฝึก
                 </p>
               </CardContent>
             </Card>
@@ -239,18 +341,10 @@ const LandingPage = () => {
                 <div className="flex justify-center py-4">
                   <div className="flex items-center space-x-2">
                     <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
-                    <div className="h-3 w-3 bg-primary rounded-full animate-pulse" style={{
-                    animationDelay: '0.2s'
-                  }} />
-                    <div className="h-4 w-4 bg-primary rounded-full animate-pulse" style={{
-                    animationDelay: '0.4s'
-                  }} />
-                    <div className="h-3 w-3 bg-primary rounded-full animate-pulse" style={{
-                    animationDelay: '0.6s'
-                  }} />
-                    <div className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{
-                    animationDelay: '0.8s'
-                  }} />
+                    <div className="h-3 w-3 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                    <div className="h-4 w-4 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                    <div className="h-3 w-3 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.6s' }} />
+                    <div className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.8s' }} />
                   </div>
                 </div>
 
@@ -366,7 +460,8 @@ const LandingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {reviews.map((review, index) => <Card key={index} className="bg-gradient-card shadow-medium border-0 hover:scale-105 transition-all duration-300">
+            {reviews.map((review, index) => (
+              <Card key={index} className="bg-gradient-card shadow-medium border-0 hover:scale-105 transition-all duration-300">
                 <CardHeader>
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="text-5xl">{review.avatar}</div>
@@ -376,15 +471,16 @@ const LandingPage = () => {
                     </div>
                   </div>
                   <div className="flex space-x-1">
-                    {Array.from({
-                  length: review.rating
-                }).map((_, i) => <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />)}
+                    {Array.from({ length: review.rating }).map((_, i) => (
+                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                    ))}
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-foreground/80 font-prompt leading-relaxed">"{review.content}"</p>
                 </CardContent>
-              </Card>)}
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -434,7 +530,11 @@ const LandingPage = () => {
               {/* Logo & Tagline */}
               <div className="text-center md:text-left">
                 <div className="flex items-center justify-center md:justify-start space-x-2 mb-4">
-                  <img src={promjumLogo} alt="Promjum Logo" className="h-12 w-12 object-contain" />
+                  <img 
+                    src={promjumLogo} 
+                    alt="Promjum Logo" 
+                    className="h-12 w-12 object-contain"
+                  />
                   <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent font-poppins">
                     Promjum
                   </span>
@@ -477,6 +577,8 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default LandingPage;
