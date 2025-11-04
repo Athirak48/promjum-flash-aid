@@ -13,12 +13,6 @@ export default {
       },
     },
     extend: {
-      fontFamily: {
-        sans: ["Poppins", "Prompt", "sans-serif"],
-        poppins: ["Poppins", "sans-serif"],
-        prompt: ["Prompt", "sans-serif"],
-        outfit: ["Outfit", "sans-serif"],
-      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -138,37 +132,6 @@ export default {
           "100%": {
             transform: "translateX(100vw) translateY(-100px)"
           }
-        },
-        "orbit": {
-          "0%": {
-            strokeDashoffset: "0"
-          },
-          "100%": {
-            strokeDashoffset: "1000"
-          }
-        },
-        "glow": {
-          "0%, 100%": {
-            opacity: "0.3",
-            transform: "scale(1)"
-          },
-          "50%": {
-            opacity: "0.6",
-            transform: "scale(1.1)"
-          }
-        },
-        "shooting-star": {
-          "0%": {
-            transform: "translateX(0) translateY(0) rotate(-45deg)",
-            opacity: "1"
-          },
-          "70%": {
-            opacity: "1"
-          },
-          "100%": {
-            transform: "translateX(300px) translateY(300px) rotate(-45deg)",
-            opacity: "0"
-          }
         }
       },
       animation: {
@@ -178,9 +141,6 @@ export default {
         "float": "float 6s ease-in-out infinite",
         "twinkle": "twinkle 3s ease-in-out infinite",
         "drift": "drift 20s linear infinite",
-        "orbit": "orbit 30s linear infinite",
-        "glow": "glow 4s ease-in-out infinite",
-        "shooting-star": "shooting-star 3s ease-in infinite",
       },
     },
   },
