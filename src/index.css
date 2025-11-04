@@ -9,7 +9,7 @@ All colors MUST be HSL for consistency and theming support.
 @layer base {
   :root {
     /* Base colors - Clean minimal palette */
-    --background: 0 0% 99%;
+    --background: 252 100% 99%;
     --foreground: 240 10% 10%;
 
     /* Card system - Soft translucent cards */
@@ -19,42 +19,48 @@ All colors MUST be HSL for consistency and theming support.
     --popover: 0 0% 100%; 
     --popover-foreground: 240 10% 15%;
 
-    /* Primary - Soft purple brand color */
-    --primary: 280 100% 85%;
-    --primary-foreground: 280 50% 15%;
-    --primary-glow: 280 100% 90%;
+    /* Primary - Lavender brand color */
+    --primary: 265 100% 84%;
+    --primary-foreground: 270 100% 98%;
+    --primary-glow: 265 100% 90%;
 
-    /* Secondary - Light lavender */
-    --secondary: 290 30% 95%;
-    --secondary-foreground: 280 50% 25%;
+    /* Secondary - Pastel blue */
+    --secondary: 210 100% 85%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
     /* Muted elements */
-    --muted: 280 20% 96%;
-    --muted-foreground: 280 10% 50%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    /* Accent - Pink highlight */
-    --accent: 320 70% 90%;
-    --accent-foreground: 320 50% 25%;
+    /* Accent - Pastel blue */
+    --accent: 210 100% 85%;
+    --accent-foreground: 210 80% 40%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
     /* Borders and inputs - Very subtle */
-    --border: 280 20% 92%;
-    --input: 280 20% 96%;
-    --ring: 280 100% 80%;
+    --border: 280 30% 85%;
+    --input: 280 30% 85%;
+    --ring: 265 100% 84%;
+
+    /* Promjum Theme Colors */
+    --lavender: 265 100% 84%;
+    --cream: 252 100% 99%;
+    --pastel-blue: 210 100% 85%;
+    --pastel-yellow: 43 100% 81%;
 
     /* Promjum specific design tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(280 100% 85%), hsl(320 90% 85%));
-    --gradient-secondary: linear-gradient(135deg, hsl(280 50% 96%), hsl(320 30% 96%));
-    --gradient-hero: linear-gradient(135deg, hsl(280 100% 85%) 0%, hsl(320 90% 85%) 50%, hsl(340 80% 90%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100% / 0.8), hsl(280 30% 98% / 0.6));
+    --gradient-primary: linear-gradient(135deg, hsl(265 100% 84%), hsl(210 100% 85%));
+    --gradient-secondary: linear-gradient(135deg, hsl(265 50% 96%), hsl(210 30% 96%));
+    --gradient-hero: linear-gradient(135deg, hsl(265 100% 84%) 0%, hsl(210 100% 85%) 50%, hsl(43 100% 81%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100% / 0.8), hsl(265 30% 98% / 0.6));
     
     /* Beautiful shadows with purple tint */
-    --shadow-soft: 0 4px 20px hsl(280 50% 85% / 0.15);
-    --shadow-medium: 0 8px 40px hsl(280 50% 80% / 0.2);
-    --shadow-large: 0 20px 60px hsl(280 40% 70% / 0.25);
-    --shadow-glow: 0 0 30px hsl(280 100% 85% / 0.4);
+    --shadow-soft: 0 4px 20px hsl(265 50% 85% / 0.15);
+    --shadow-medium: 0 8px 40px hsl(265 50% 80% / 0.2);
+    --shadow-large: 0 20px 60px hsl(265 40% 70% / 0.25);
+    --shadow-glow: 0 0 30px hsl(265 100% 84% / 0.4);
 
     /* Smooth transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
