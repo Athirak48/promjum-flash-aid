@@ -2,10 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Home, ArrowLeft, Search } from "lucide-react";
 import { Link } from "react-router-dom";
+import BackgroundDecorations from "@/components/BackgroundDecorations";
 
 const NotFoundPage = () => {
   return (
-    <div className="min-h-screen bg-gradient-secondary/30 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <BackgroundDecorations />
       <div className="w-full max-w-md">
         <Card className="bg-gradient-card shadow-large border-0 text-center">
           <CardHeader>

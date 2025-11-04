@@ -11,6 +11,7 @@ import { ShadowingMode } from '@/components/practice/ShadowingMode';
 import { QuizMode } from '@/components/practice/QuizMode';
 import { useRealtimeChat, PracticeMode } from '@/hooks/useRealtimeChat';
 import { useToast } from '@/hooks/use-toast';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
 
 export default function AIRealtimePracticePage() {
   const navigate = useNavigate();
@@ -93,7 +94,8 @@ export default function AIRealtimePracticePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
+      <BackgroundDecorations />
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
