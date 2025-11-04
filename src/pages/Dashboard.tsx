@@ -2,7 +2,7 @@ import BackgroundDecorations from "@/components/BackgroundDecorations";
 import { DailyDeckQuickStart } from "@/components/dashboard/DailyDeckQuickStart";
 import { StreakProgress } from "@/components/dashboard/StreakProgress";
 import { AIRecommendation } from "@/components/dashboard/AIRecommendation";
-import { WeeklyCalendar } from "@/components/dashboard/WeeklyCalendar";
+import { ScheduleCalendar } from "@/components/dashboard/ScheduleCalendar";
 import { QuickNotes } from "@/components/dashboard/QuickNotes";
 import { MiniAchievements } from "@/components/dashboard/MiniAchievements";
 import { AITips } from "@/components/dashboard/AITips";
@@ -77,9 +77,9 @@ export default function Dashboard() {
 
         {/* Second Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Weekly Calendar - Spans 2 cols */}
+          {/* Schedule Calendar - Spans 2 cols */}
           <div className="lg:col-span-2">
-            <WeeklyCalendar />
+            <ScheduleCalendar />
           </div>
 
           {/* AI Recommendation */}
