@@ -11,13 +11,13 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative container mx-auto px-4 pt-32 pb-24 text-center">
-        <h1 className="text-6xl md:text-8xl font-bold mb-8 leading-tight tracking-tight">
+        <h1 className="text-6xl md:text-8xl font-poppins font-bold mb-8 leading-tight tracking-tight">
           <span className="text-transparent bg-clip-text bg-gradient-primary">
             Promjum
           </span>
         </h1>
 
-        <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed">
+        <p className="text-xl md:text-2xl text-foreground/80 max-w-2xl mx-auto mb-12 leading-relaxed font-prompt">
           เพื่อน AI ที่ช่วยให้คุณเก่งภาษาขึ้นในทุกๆวัน
         </p>
 
