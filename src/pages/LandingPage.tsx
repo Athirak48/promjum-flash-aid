@@ -49,39 +49,103 @@ const LandingPage = () => {
       
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center px-4 py-20">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center space-y-8">
-            <h1 className="text-5xl md:text-7xl font-bold font-poppins leading-tight">
-              <span className="bg-gradient-hero bg-clip-text text-transparent">
-                Promjum — AI ที่จะทำให้เก่งภาษาขึ้น
-              </span>
-              <br />
-              <span className="text-foreground">ในทุกๆวัน</span>
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto font-prompt leading-relaxed">
-              ฝึกฟัง พูด อ่าน เขียน ด้วยระบบ AI ที่เข้าใจสำเนียงคุณจริง ๆ
-              <br />
-              <span className="text-lg md:text-xl text-muted-foreground mt-2 block">
-                เริ่มจากสิ่งที่คุณสนใจ และเห็นพัฒนาการได้ทุกวัน
-              </span>
-            </p>
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center space-y-12">
+            {/* Badge */}
+            <div className="inline-flex items-center space-x-2 bg-primary/10 backdrop-blur-sm px-6 py-3 rounded-full border border-primary/20 animate-fade-in">
+              <Zap className="h-4 w-4 text-primary" />
+              <span className="text-sm font-prompt font-semibold text-primary">AI-Powered Language Learning</span>
+            </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
-              <Button variant="hero" size="lg" className="text-lg px-12 py-6" asChild>
-                <Link to="/auth">เริ่มใช้งานฟรี</Link>
+            {/* Main Headline */}
+            <div className="space-y-6">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold font-poppins leading-tight tracking-tight">
+                <span className="bg-gradient-hero bg-clip-text text-transparent block">
+                  Promjum
+                </span>
+                <span className="text-foreground/90 text-4xl md:text-6xl lg:text-7xl block mt-4">
+                  AI ที่จะทำให้เก่งภาษาขึ้น
+                </span>
+                <span className="text-foreground/60 text-3xl md:text-5xl lg:text-6xl block mt-2">
+                  ในทุกๆวัน
+                </span>
+              </h1>
+              
+              <p className="text-xl md:text-2xl text-foreground/70 max-w-4xl mx-auto font-prompt leading-relaxed px-4">
+                ฝึก <span className="text-primary font-semibold">ฟัง พูด อ่าน เขียน</span> ด้วยระบบ AI ที่เข้าใจสำเนียงคุณจริง ๆ
+              </p>
+              
+              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-prompt">
+                เริ่มจากสิ่งที่คุณสนใจ และเห็นพัฒนาการได้ทุกวัน
+              </p>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
+              <Button variant="hero" size="lg" className="text-lg px-12 py-7 shadow-glow font-prompt" asChild>
+                <Link to="/auth">
+                  เริ่มใช้งานฟรี →
+                </Link>
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-12 py-6" asChild>
-                <a href="#experience">ดูตัวอย่างการใช้งาน</a>
+              <Button variant="outline" size="lg" className="text-lg px-12 py-7 font-prompt bg-background/50 backdrop-blur-sm" asChild>
+                <a href="#experience">
+                  ดูตัวอย่างการใช้งาน
+                </a>
               </Button>
             </div>
 
-            {/* Visual mockup hint */}
-            <div className="pt-12 animate-fade-in">
-              <div className="bg-gradient-card rounded-2xl p-8 shadow-soft max-w-2xl mx-auto border border-white/10">
-                <div className="flex items-center justify-center space-x-4 text-muted-foreground">
-                  <MessageCircle className="h-8 w-8 text-primary animate-pulse" />
-                  <span className="text-base">พูด → AI วิเคราะห์ → Feedback ทันที</span>
+            {/* Trust indicators */}
+            <div className="flex flex-wrap justify-center gap-6 pt-8 text-sm text-muted-foreground font-prompt">
+              <div className="flex items-center space-x-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                <span>ใช้งานฟรี ไม่มีค่าใช้จ่าย</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                <span>ไม่ต้องใส่บัตรเครดิต</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                <span>เริ่มได้ทันที ใน 2 นาที</span>
+              </div>
+            </div>
+
+            {/* Enhanced Visual mockup */}
+            <div className="pt-16 animate-fade-in">
+              <div className="bg-gradient-card backdrop-blur-sm rounded-3xl p-8 md:p-12 shadow-medium max-w-4xl mx-auto border border-white/20">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                  {/* Step 1 */}
+                  <div className="flex flex-col items-center space-y-4 p-6 bg-background/30 rounded-2xl backdrop-blur-sm">
+                    <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center">
+                      <MessageCircle className="h-8 w-8 text-primary animate-pulse" />
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-lg font-poppins mb-2">1. พูด</div>
+                      <p className="text-sm text-muted-foreground font-prompt">พูดประโยคภาษาอังกฤษ</p>
+                    </div>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="flex flex-col items-center space-y-4 p-6 bg-background/30 rounded-2xl backdrop-blur-sm">
+                    <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Brain className="h-8 w-8 text-primary animate-pulse" style={{ animationDelay: '0.2s' }} />
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-lg font-poppins mb-2">2. AI วิเคราะห์</div>
+                      <p className="text-sm text-muted-foreground font-prompt">ตรวจสอบการออกเสียง</p>
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="flex flex-col items-center space-y-4 p-6 bg-background/30 rounded-2xl backdrop-blur-sm">
+                    <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Zap className="h-8 w-8 text-primary animate-pulse" style={{ animationDelay: '0.4s' }} />
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-lg font-poppins mb-2">3. Feedback</div>
+                      <p className="text-sm text-muted-foreground font-prompt">ได้คำแนะนำทันที</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -90,62 +154,75 @@ const LandingPage = () => {
       </section>
 
       {/* What is Promjum Section */}
-      <section id="about" className="py-24 bg-background/50">
+      <section id="about" className="py-32 bg-gradient-to-b from-background via-background/50 to-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-4xl md:text-5xl font-bold font-poppins">
+          <div className="text-center mb-20 space-y-6 max-w-4xl mx-auto">
+            <div className="inline-block bg-primary/10 px-6 py-2 rounded-full">
+              <span className="text-sm font-semibold text-primary font-prompt">เกี่ยวกับ Promjum</span>
+            </div>
+            
+            <h2 className="text-4xl md:text-6xl font-bold font-poppins">
               <span className="bg-gradient-hero bg-clip-text text-transparent">
                 Promjum คืออะไร?
               </span>
             </h2>
-            <p className="text-lg md:text-xl text-foreground/80 max-w-3xl mx-auto font-prompt leading-relaxed">
-              เราเชื่อว่าการเรียนภาษาควร <span className="font-semibold text-primary">"เข้าใจง่าย เหมือนคุยกับเพื่อน"</span>
-              <br />
+            
+            <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto font-prompt leading-relaxed">
+              เราเชื่อว่าการเรียนภาษาควร 
+              <span className="font-bold text-primary"> "เข้าใจง่าย เหมือนคุยกับเพื่อน"</span>
+            </p>
+            
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-prompt leading-relaxed">
               Promjum ใช้ AI วิเคราะห์เสียง พฤติกรรม และคำศัพท์ของคุณ
-              <br />
-              เพื่อสร้าง <span className="font-semibold text-primary">"เส้นทางการเรียนรู้เฉพาะตัว"</span> ที่จำง่าย ใช้ได้จริง
+              เพื่อสร้าง <span className="font-semibold text-foreground">"เส้นทางการเรียนรู้เฉพาะตัว"</span> ที่จำง่าย ใช้ได้จริง
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="bg-gradient-card shadow-medium border-0 hover:scale-105 transition-all duration-300">
-              <CardHeader className="text-center space-y-4">
-                <div className="h-20 w-20 rounded-full bg-gradient-primary flex items-center justify-center mx-auto">
-                  <Brain className="h-10 w-10 text-primary-foreground" />
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <Brain className="h-12 w-12 text-primary-foreground" />
                 </div>
-                <CardTitle className="text-2xl font-poppins">🧠 AI เข้าใจสำเนียงของคุณ</CardTitle>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  AI เข้าใจสำเนียงของคุณ
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-center text-base text-muted-foreground font-prompt leading-relaxed">
-                  ฟังเสียงจริง วิเคราะห์ และให้คำแนะนำรายคำ
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed">
+                  🧠 ฟังเสียงจริง วิเคราะห์ และให้คำแนะนำรายคำ พร้อม feedback ที่แม่นยำ
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-card shadow-medium border-0 hover:scale-105 transition-all duration-300">
-              <CardHeader className="text-center space-y-4">
-                <div className="h-20 w-20 rounded-full bg-gradient-primary flex items-center justify-center mx-auto">
-                  <Upload className="h-10 w-10 text-primary-foreground" />
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <Upload className="h-12 w-12 text-primary-foreground" />
                 </div>
-                <CardTitle className="text-2xl font-poppins">🧩 เรียนด้วย Decks ที่เหมาะกับคุณ</CardTitle>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  Decks ที่เหมาะกับคุณ
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-center text-base text-muted-foreground font-prompt leading-relaxed">
-                  เริ่มจากหมวดที่สนใจ เช่น ชีวิตประจำวัน / ท่องเที่ยว / ทำงาน
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed">
+                  🧩 เริ่มจากหมวดที่สนใจ เช่น ชีวิตประจำวัน ท่องเที่ยว หรือการทำงาน
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-card shadow-medium border-0 hover:scale-105 transition-all duration-300">
-              <CardHeader className="text-center space-y-4">
-                <div className="h-20 w-20 rounded-full bg-gradient-primary flex items-center justify-center mx-auto">
-                  <Gamepad2 className="h-10 w-10 text-primary-foreground" />
+            <Card className="group bg-gradient-card backdrop-blur-sm shadow-soft border border-white/10 hover:shadow-medium hover:scale-105 hover:border-primary/30 transition-all duration-300">
+              <CardHeader className="text-center space-y-6 p-8">
+                <div className="h-24 w-24 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto shadow-glow group-hover:scale-110 transition-transform">
+                  <Gamepad2 className="h-12 w-12 text-primary-foreground" />
                 </div>
-                <CardTitle className="text-2xl font-poppins">🔁 จำได้ยาว ด้วยระบบ SRS + เกม</CardTitle>
+                <CardTitle className="text-2xl font-poppins font-bold">
+                  จำได้ยาว ด้วย SRS + เกม
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-center text-base text-muted-foreground font-prompt leading-relaxed">
-                  ฝึกซ้ำตามช่วงเวลาที่เหมาะสม พร้อมมินิเกมสนุก ๆ
+              <CardContent className="pb-8">
+                <p className="text-center text-base text-foreground/70 font-prompt leading-relaxed">
+                  🔁 ฝึกซ้ำตามช่วงเวลาที่เหมาะสม พร้อมมินิเกมสนุก ๆ ที่ทำให้จำได้นาน
                 </p>
               </CardContent>
             </Card>
@@ -154,19 +231,27 @@ const LandingPage = () => {
       </section>
 
       {/* Experience Section */}
-      <section id="experience" className="py-24 bg-gradient-secondary/20">
+      <section id="experience" className="py-32 bg-gradient-to-b from-background to-primary/5">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold font-poppins mb-4">
+          <div className="text-center mb-20 space-y-6">
+            <div className="inline-block bg-primary/10 px-6 py-2 rounded-full">
+              <span className="text-sm font-semibold text-primary font-prompt">ลองใช้งาน</span>
+            </div>
+            
+            <h2 className="text-4xl md:text-6xl font-bold font-poppins mb-4">
               <span className="bg-gradient-hero bg-clip-text text-transparent">
-                ฝึกได้เหมือนมีครูอยู่ข้าง ๆ ตลอดเวลา
+                ฝึกได้เหมือนมีครูอยู่ข้าง ๆ
+              </span>
+              <br />
+              <span className="text-foreground/80 text-3xl md:text-5xl">
+                ตลอดเวลา
               </span>
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 max-w-7xl mx-auto items-center">
             {/* Left: Demo visualization */}
-            <div className="bg-gradient-card rounded-3xl p-8 shadow-medium border border-white/10">
+            <div className="bg-gradient-card backdrop-blur-sm rounded-3xl p-10 shadow-medium border border-white/20">
               <div className="space-y-6">
                 <div className="flex items-center space-x-3">
                   <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
@@ -236,19 +321,27 @@ const LandingPage = () => {
       </section>
 
       {/* Progress Tracking Section */}
-      <section className="py-24 bg-background">
+      <section className="py-32 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold font-poppins mb-4">
+          <div className="text-center mb-20 space-y-6">
+            <div className="inline-block bg-primary/10 px-6 py-2 rounded-full">
+              <span className="text-sm font-semibold text-primary font-prompt">ติดตามความก้าวหน้า</span>
+            </div>
+            
+            <h2 className="text-4xl md:text-6xl font-bold font-poppins mb-4">
               <span className="bg-gradient-hero bg-clip-text text-transparent">
-                เห็นความก้าวหน้าของคุณ... ทุกครั้งที่ฝึก
+                เห็นความก้าวหน้าของคุณ
+              </span>
+              <br />
+              <span className="text-foreground/80 text-3xl md:text-5xl">
+                ทุกครั้งที่ฝึก
               </span>
             </h2>
           </div>
 
-          <div className="max-w-5xl mx-auto">
-            <div className="bg-gradient-card rounded-3xl p-8 md:p-12 shadow-medium border border-white/10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-gradient-card backdrop-blur-sm rounded-3xl p-10 md:p-16 shadow-medium border border-white/20">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
                 <div className="text-center space-y-2">
                   <div className="text-5xl font-bold text-primary font-poppins">847</div>
                   <p className="text-muted-foreground font-prompt">คำที่จำได้</p>
