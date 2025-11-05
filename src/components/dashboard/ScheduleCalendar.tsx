@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -500,6 +500,12 @@ export function ScheduleCalendar() {
               + เพิ่มกิจกรรม
             </Button>
           </div>
+
+          <DialogFooter>
+            <Button onClick={() => setIsDialogOpen(false)} className="w-full">
+              ตกลง
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
