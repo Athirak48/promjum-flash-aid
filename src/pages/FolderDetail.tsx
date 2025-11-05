@@ -61,6 +61,7 @@ export function FolderDetail() {
   const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | 'listen' | null>(null);
   const [showGameSelection, setShowGameSelection] = useState(false);
   const [showFlashcardSelection, setShowFlashcardSelection] = useState(false);
+  const [showReviewFlashcardSelection, setShowReviewFlashcardSelection] = useState(false);
   const [selectedFlashcards, setSelectedFlashcards] = useState<FlashcardData[]>([]);
   const [flashcardRows, setFlashcardRows] = useState([{ id: 1, front: '', back: '', frontImage: null as File | null, backImage: null as File | null }]);
 
@@ -151,6 +152,17 @@ export function FolderDetail() {
 
   const handleReviewCards = (set: FlashcardSet) => {
     setSelectedSet(set);
+    setShowReviewFlashcardSelection(true);
+  };
+
+  const handleReviewFlashcardsSelected = (flashcards: { id: string; front_text: string; back_text: string }[]) => {
+    const converted: FlashcardData[] = flashcards.map(card => ({
+      id: card.id,
+      front: card.front_text,
+      back: card.back_text
+    }));
+    setSelectedFlashcards(converted);
+    setShowReviewFlashcardSelection(false);
     setGameMode('review');
   };
 
@@ -555,7 +567,7 @@ export function FolderDetail() {
         )}
       </div>
 
-      {/* Flashcard Selection Dialog */}
+      {/* Flashcard Selection Dialog for Games */}
       {selectedSet && (
         <FlashcardSelectionDialog
           open={showFlashcardSelection}
@@ -566,6 +578,20 @@ export function FolderDetail() {
             back_text: card.back
           }))}
           onConfirm={handleFlashcardsSelected}
+        />
+      )}
+
+      {/* Flashcard Selection Dialog for Review */}
+      {selectedSet && (
+        <FlashcardSelectionDialog
+          open={showReviewFlashcardSelection}
+          onOpenChange={setShowReviewFlashcardSelection}
+          flashcards={getMockFlashcardsForSet().map(card => ({
+            id: card.id,
+            front_text: card.front,
+            back_text: card.back
+          }))}
+          onConfirm={handleReviewFlashcardsSelected}
         />
       )}
 
