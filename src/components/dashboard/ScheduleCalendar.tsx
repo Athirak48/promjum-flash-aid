@@ -4,10 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { TimePicker } from './TimePicker';
+import { DurationPicker } from './DurationPicker';
 
 interface Activity {
   id: string;
@@ -138,6 +139,32 @@ export function ScheduleCalendar() {
       title: "ลบกิจกรรมสำเร็จ",
       description: "ลบกิจกรรมออกจากตารางเวลาแล้ว",
     });
+  };
+
+  const handleUpdateActivityTime = (dayIndex: number, activityId: string, newTime: string) => {
+    setSchedules(prev => prev.map(s => 
+      s.dayIndex === dayIndex 
+        ? { 
+            ...s, 
+            activities: s.activities.map(a => 
+              a.id === activityId ? { ...a, time: newTime } : a
+            ) 
+          }
+        : s
+    ));
+  };
+
+  const handleUpdateActivityDuration = (dayIndex: number, activityId: string, newDuration: number) => {
+    setSchedules(prev => prev.map(s => 
+      s.dayIndex === dayIndex 
+        ? { 
+            ...s, 
+            activities: s.activities.map(a => 
+              a.id === activityId ? { ...a, duration: newDuration } : a
+            ) 
+          }
+        : s
+    ));
   };
 
   return (
@@ -422,36 +449,24 @@ export function ScheduleCalendar() {
                       ลบ
                     </Button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-4">
                     <div>
-                      <Label className="text-xs">เวลา</Label>
-                      <Select defaultValue={activity.time}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="07:00">07:00</SelectItem>
-                          <SelectItem value="08:00">08:00</SelectItem>
-                          <SelectItem value="12:30">12:30</SelectItem>
-                          <SelectItem value="18:00">18:00</SelectItem>
-                          <SelectItem value="19:00">19:00</SelectItem>
-                          <SelectItem value="20:00">20:00</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-xs mb-2 block">เวลาทบทวน</Label>
+                      <div className="flex justify-center p-4 bg-muted/30 rounded-lg">
+                        <TimePicker
+                          value={activity.time}
+                          onChange={(newTime) => handleUpdateActivityTime(selectedDay, activity.id, newTime)}
+                        />
+                      </div>
                     </div>
                     <div>
-                      <Label className="text-xs">ระยะเวลา (นาที)</Label>
-                      <Select defaultValue={activity.duration.toString()}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="15">15 นาที</SelectItem>
-                          <SelectItem value="20">20 นาที</SelectItem>
-                          <SelectItem value="25">25 นาที</SelectItem>
-                          <SelectItem value="30">30 นาที</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-xs mb-2 block">ระยะเวลาทบทวน</Label>
+                      <div className="flex justify-center p-4 bg-muted/30 rounded-lg">
+                        <DurationPicker
+                          value={activity.duration}
+                          onChange={(newDuration) => handleUpdateActivityDuration(selectedDay, activity.id, newDuration)}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
