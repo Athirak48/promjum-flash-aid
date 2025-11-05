@@ -27,8 +27,8 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
 
   const scrollToValue = (ref: React.RefObject<HTMLDivElement>, value: number) => {
     if (ref.current) {
-      const itemHeight = 40;
-      ref.current.scrollTop = value * itemHeight - itemHeight * 2;
+      const itemHeight = 28;
+      ref.current.scrollTop = value * itemHeight - itemHeight;
     }
   };
 
@@ -37,42 +37,61 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     scrollToValue(minutesRef, localMinutes);
   }, []);
 
-  const incrementHours = () => setLocalHours((prev) => (prev + 1) % 24);
-  const decrementHours = () => setLocalHours((prev) => (prev - 1 + 24) % 24);
-  const incrementMinutes = () => setLocalMinutes((prev) => (prev + 1) % 60);
-  const decrementMinutes = () => setLocalMinutes((prev) => (prev - 1 + 60) % 60);
+  const incrementHours = () => {
+    const newHour = (localHours + 1) % 24;
+    setLocalHours(newHour);
+    scrollToValue(hoursRef, newHour);
+  };
+  
+  const decrementHours = () => {
+    const newHour = (localHours - 1 + 24) % 24;
+    setLocalHours(newHour);
+    scrollToValue(hoursRef, newHour);
+  };
+  
+  const incrementMinutes = () => {
+    const newMinute = (localMinutes + 1) % 60;
+    setLocalMinutes(newMinute);
+    scrollToValue(minutesRef, newMinute);
+  };
+  
+  const decrementMinutes = () => {
+    const newMinute = (localMinutes - 1 + 60) % 60;
+    setLocalMinutes(newMinute);
+    scrollToValue(minutesRef, newMinute);
+  };
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-1", className)}>
       {/* Hours Picker */}
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center gap-0.5">
         <button
           type="button"
           onClick={incrementHours}
-          className="p-1 hover:bg-muted rounded transition-colors"
+          className="p-0.5 hover:bg-muted rounded transition-colors"
         >
-          <ChevronUp className="w-4 h-4" />
+          <ChevronUp className="w-3 h-3" />
         </button>
         <div 
           ref={hoursRef}
-          className="h-[120px] w-16 overflow-y-scroll scrollbar-hide scroll-smooth"
+          className="h-[84px] w-12 overflow-y-scroll scrollbar-hide scroll-smooth relative"
           onScroll={(e) => {
             const scrollTop = e.currentTarget.scrollTop;
-            const itemHeight = 40;
+            const itemHeight = 28;
             const newHour = Math.round(scrollTop / itemHeight);
             if (newHour !== localHours && newHour >= 0 && newHour < 24) {
               setLocalHours(newHour);
             }
           }}
         >
-          <div className="py-10">
+          <div className="py-7">
             {allHours.map((hour) => (
               <div
                 key={hour}
                 className={cn(
-                  "h-10 flex items-center justify-center cursor-pointer transition-all",
+                  "h-7 flex items-center justify-center cursor-pointer transition-all text-sm",
                   hour === localHours 
-                    ? "text-primary font-bold text-xl" 
+                    ? "text-primary font-semibold border border-primary/50 bg-primary/10 rounded mx-1" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
                 onClick={() => {
@@ -88,43 +107,43 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         <button
           type="button"
           onClick={decrementHours}
-          className="p-1 hover:bg-muted rounded transition-colors"
+          className="p-0.5 hover:bg-muted rounded transition-colors"
         >
-          <ChevronDown className="w-4 h-4" />
+          <ChevronDown className="w-3 h-3" />
         </button>
       </div>
 
-      <div className="text-2xl font-bold">:</div>
+      <div className="text-lg font-semibold text-muted-foreground">:</div>
 
       {/* Minutes Picker */}
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center gap-0.5">
         <button
           type="button"
           onClick={incrementMinutes}
-          className="p-1 hover:bg-muted rounded transition-colors"
+          className="p-0.5 hover:bg-muted rounded transition-colors"
         >
-          <ChevronUp className="w-4 h-4" />
+          <ChevronUp className="w-3 h-3" />
         </button>
         <div 
           ref={minutesRef}
-          className="h-[120px] w-16 overflow-y-scroll scrollbar-hide scroll-smooth"
+          className="h-[84px] w-12 overflow-y-scroll scrollbar-hide scroll-smooth"
           onScroll={(e) => {
             const scrollTop = e.currentTarget.scrollTop;
-            const itemHeight = 40;
+            const itemHeight = 28;
             const newMinute = Math.round(scrollTop / itemHeight);
             if (newMinute !== localMinutes && newMinute >= 0 && newMinute < 60) {
               setLocalMinutes(newMinute);
             }
           }}
         >
-          <div className="py-10">
+          <div className="py-7">
             {allMinutes.map((minute) => (
               <div
                 key={minute}
                 className={cn(
-                  "h-10 flex items-center justify-center cursor-pointer transition-all",
+                  "h-7 flex items-center justify-center cursor-pointer transition-all text-sm",
                   minute === localMinutes 
-                    ? "text-primary font-bold text-xl" 
+                    ? "text-primary font-semibold border border-primary/50 bg-primary/10 rounded mx-1" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
                 onClick={() => {
@@ -140,9 +159,9 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         <button
           type="button"
           onClick={decrementMinutes}
-          className="p-1 hover:bg-muted rounded transition-colors"
+          className="p-0.5 hover:bg-muted rounded transition-colors"
         >
-          <ChevronDown className="w-4 h-4" />
+          <ChevronDown className="w-3 h-3" />
         </button>
       </div>
     </div>

@@ -419,7 +419,7 @@ export function ScheduleCalendar() {
 
       {/* Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
               แก้ไขตารางเวลา
@@ -449,10 +449,10 @@ export function ScheduleCalendar() {
                       ลบ
                     </Button>
                   </div>
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs mb-2 block">เวลาทบทวน</Label>
-                      <div className="flex justify-center p-4 bg-muted/30 rounded-lg">
+                      <Label className="text-xs mb-1.5 block text-center">เวลาทบทวน</Label>
+                      <div className="flex justify-center p-2 bg-muted/20 rounded-lg border border-border/50">
                         <TimePicker
                           value={activity.time}
                           onChange={(newTime) => handleUpdateActivityTime(selectedDay, activity.id, newTime)}
@@ -460,8 +460,8 @@ export function ScheduleCalendar() {
                       </div>
                     </div>
                     <div>
-                      <Label className="text-xs mb-2 block">ระยะเวลาทบทวน</Label>
-                      <div className="flex justify-center p-4 bg-muted/30 rounded-lg">
+                      <Label className="text-xs mb-1.5 block text-center">ระยะเวลาทบทวน</Label>
+                      <div className="flex justify-center p-2 bg-muted/20 rounded-lg border border-border/50">
                         <DurationPicker
                           value={activity.duration}
                           onChange={(newDuration) => handleUpdateActivityDuration(selectedDay, activity.id, newDuration)}

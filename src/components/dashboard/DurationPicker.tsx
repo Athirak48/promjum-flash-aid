@@ -20,8 +20,8 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
     if (!isCustom && scrollRef.current) {
       const index = presetDurations.indexOf(value);
       if (index !== -1) {
-        const itemHeight = 40;
-        scrollRef.current.scrollTop = index * itemHeight - itemHeight * 2;
+        const itemHeight = 28;
+        scrollRef.current.scrollTop = index * itemHeight - itemHeight;
       }
     }
   }, [value, isCustom]);
@@ -30,8 +30,8 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
     if (scrollRef.current) {
       const index = presetDurations.indexOf(duration);
       if (index !== -1) {
-        const itemHeight = 40;
-        scrollRef.current.scrollTop = index * itemHeight - itemHeight * 2;
+        const itemHeight = 28;
+        scrollRef.current.scrollTop = index * itemHeight - itemHeight;
       }
     }
   };
@@ -64,17 +64,16 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
 
   if (isCustom) {
     return (
-      <div className={cn("flex items-center gap-2", className)}>
+      <div className={cn("flex flex-col items-center gap-1", className)}>
         <Input
           type="number"
           min="1"
           max="999"
           value={customValue}
           onChange={(e) => handleCustomInput(e.target.value)}
-          className="w-20 text-center"
+          className="w-16 h-8 text-center text-sm"
           placeholder="นาที"
         />
-        <span className="text-sm text-muted-foreground">นาที</span>
         <button
           type="button"
           onClick={() => {
@@ -84,30 +83,30 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
             );
             onChange(nearest);
           }}
-          className="text-xs text-primary hover:underline"
+          className="text-[10px] text-primary hover:underline"
         >
-          เลือกจากรายการ
+          รายการ
         </button>
       </div>
     );
   }
 
   return (
-    <div className={cn("flex flex-col items-center", className)}>
+    <div className={cn("flex flex-col items-center gap-0.5", className)}>
       <button
         type="button"
         onClick={incrementDuration}
-        className="p-1 hover:bg-muted rounded transition-colors"
+        className="p-0.5 hover:bg-muted rounded transition-colors"
       >
-        <ChevronUp className="w-4 h-4" />
+        <ChevronUp className="w-3 h-3" />
       </button>
       
       <div 
         ref={scrollRef}
-        className="h-[120px] w-24 overflow-y-scroll scrollbar-hide scroll-smooth"
+        className="h-[84px] w-16 overflow-y-scroll scrollbar-hide scroll-smooth"
         onScroll={(e) => {
           const scrollTop = e.currentTarget.scrollTop;
-          const itemHeight = 40;
+          const itemHeight = 28;
           const index = Math.round(scrollTop / itemHeight);
           if (index >= 0 && index < presetDurations.length) {
             const newDuration = presetDurations[index];
@@ -117,14 +116,14 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
           }
         }}
       >
-        <div className="py-10">
+        <div className="py-7">
           {presetDurations.map((duration) => (
             <div
               key={duration}
               className={cn(
-                "h-10 flex items-center justify-center cursor-pointer transition-all",
+                "h-7 flex items-center justify-center cursor-pointer transition-all text-sm",
                 duration === value 
-                  ? "text-primary font-bold text-xl" 
+                  ? "text-primary font-semibold border border-primary/50 bg-primary/10 rounded mx-1" 
                   : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => {
@@ -132,7 +131,7 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
                 scrollToValue(duration);
               }}
             >
-              {duration} น.
+              {duration}น
             </div>
           ))}
         </div>
@@ -141,9 +140,9 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
       <button
         type="button"
         onClick={decrementDuration}
-        className="p-1 hover:bg-muted rounded transition-colors"
+        className="p-0.5 hover:bg-muted rounded transition-colors"
       >
-        <ChevronDown className="w-4 h-4" />
+        <ChevronDown className="w-3 h-3" />
       </button>
 
       <button
@@ -152,7 +151,7 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
           setIsCustom(true);
           setCustomValue(value.toString());
         }}
-        className="mt-2 text-xs text-primary hover:underline"
+        className="mt-1 text-[10px] text-primary hover:underline"
       >
         กำหนดเอง
       </button>
