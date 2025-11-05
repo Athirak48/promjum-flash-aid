@@ -31,26 +31,27 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
       const index = presetDurations.indexOf(duration);
       if (index !== -1) {
         const itemHeight = 28;
-        scrollRef.current.scrollTop = index * itemHeight - itemHeight;
+        scrollRef.current.scrollTo({
+          top: index * itemHeight - itemHeight,
+          behavior: 'auto'
+        });
       }
     }
   };
 
   const incrementDuration = () => {
-    const currentIndex = presetDurations.indexOf(value);
-    if (currentIndex !== -1 && currentIndex < presetDurations.length - 1) {
-      const newValue = presetDurations[currentIndex + 1];
-      onChange(newValue);
-      scrollToValue(newValue);
+    const newValue = Math.min(value + 1, 999);
+    onChange(newValue);
+    if (presetDurations.includes(newValue)) {
+      setTimeout(() => scrollToValue(newValue), 0);
     }
   };
 
   const decrementDuration = () => {
-    const currentIndex = presetDurations.indexOf(value);
-    if (currentIndex !== -1 && currentIndex > 0) {
-      const newValue = presetDurations[currentIndex - 1];
-      onChange(newValue);
-      scrollToValue(newValue);
+    const newValue = Math.max(value - 1, 1);
+    onChange(newValue);
+    if (presetDurations.includes(newValue)) {
+      setTimeout(() => scrollToValue(newValue), 0);
     }
   };
 
@@ -107,7 +108,7 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
         
         <div 
           ref={scrollRef}
-          className="h-full w-full overflow-y-scroll scrollbar-hide scroll-smooth"
+          className="h-full w-full overflow-y-scroll scrollbar-hide"
           onScroll={(e) => {
             const scrollTop = e.currentTarget.scrollTop;
             const itemHeight = 28;

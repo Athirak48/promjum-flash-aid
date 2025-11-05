@@ -28,7 +28,10 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
   const scrollToValue = (ref: React.RefObject<HTMLDivElement>, value: number) => {
     if (ref.current) {
       const itemHeight = 28;
-      ref.current.scrollTop = value * itemHeight - itemHeight;
+      ref.current.scrollTo({
+        top: value * itemHeight - itemHeight,
+        behavior: 'auto'
+      });
     }
   };
 
@@ -40,25 +43,25 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
   const incrementHours = () => {
     const newHour = (localHours + 1) % 24;
     setLocalHours(newHour);
-    scrollToValue(hoursRef, newHour);
+    setTimeout(() => scrollToValue(hoursRef, newHour), 0);
   };
   
   const decrementHours = () => {
     const newHour = (localHours - 1 + 24) % 24;
     setLocalHours(newHour);
-    scrollToValue(hoursRef, newHour);
+    setTimeout(() => scrollToValue(hoursRef, newHour), 0);
   };
   
   const incrementMinutes = () => {
     const newMinute = (localMinutes + 1) % 60;
     setLocalMinutes(newMinute);
-    scrollToValue(minutesRef, newMinute);
+    setTimeout(() => scrollToValue(minutesRef, newMinute), 0);
   };
   
   const decrementMinutes = () => {
     const newMinute = (localMinutes - 1 + 60) % 60;
     setLocalMinutes(newMinute);
-    scrollToValue(minutesRef, newMinute);
+    setTimeout(() => scrollToValue(minutesRef, newMinute), 0);
   };
 
   return (
@@ -78,7 +81,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
           
           <div 
             ref={hoursRef}
-            className="h-full w-full overflow-y-scroll scrollbar-hide scroll-smooth"
+            className="h-full w-full overflow-y-scroll scrollbar-hide"
             onScroll={(e) => {
               const scrollTop = e.currentTarget.scrollTop;
               const itemHeight = 28;
@@ -135,7 +138,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
           
           <div 
             ref={minutesRef}
-            className="h-full w-full overflow-y-scroll scrollbar-hide scroll-smooth"
+            className="h-full w-full overflow-y-scroll scrollbar-hide"
             onScroll={(e) => {
               const scrollTop = e.currentTarget.scrollTop;
               const itemHeight = 28;
