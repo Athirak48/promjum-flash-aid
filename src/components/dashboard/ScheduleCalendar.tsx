@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, Plus, Minus } from 'lucide-react';
+import { Calendar, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Activity {
@@ -138,48 +138,6 @@ export function ScheduleCalendar() {
       title: "ลบกิจกรรมสำเร็จ",
       description: "ลบกิจกรรมออกจากตารางเวลาแล้ว",
     });
-  };
-
-  const adjustTime = (dayIndex: number, activityId: string, minutes: number) => {
-    setSchedules(prev => prev.map(s => {
-      if (s.dayIndex === dayIndex) {
-        return {
-          ...s,
-          activities: s.activities.map(a => {
-            if (a.id === activityId) {
-              const [hours, mins] = a.time.split(':').map(Number);
-              const totalMinutes = hours * 60 + mins + minutes;
-              const newHours = Math.floor((totalMinutes / 60) % 24);
-              const newMins = totalMinutes % 60;
-              return {
-                ...a,
-                time: `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}`
-              };
-            }
-            return a;
-          })
-        };
-      }
-      return s;
-    }));
-  };
-
-  const adjustDuration = (dayIndex: number, activityId: string, minutes: number) => {
-    setSchedules(prev => prev.map(s => {
-      if (s.dayIndex === dayIndex) {
-        return {
-          ...s,
-          activities: s.activities.map(a => {
-            if (a.id === activityId) {
-              const newDuration = Math.max(5, Math.min(120, a.duration + minutes));
-              return { ...a, duration: newDuration };
-            }
-            return a;
-          })
-        };
-      }
-      return s;
-    }));
   };
 
   return (
@@ -466,58 +424,34 @@ export function ScheduleCalendar() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs mb-2 block">เวลา</Label>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-9 w-9 shrink-0"
-                          onClick={() => adjustTime(selectedDay, activity.id, -30)}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <div className="flex-1 text-center font-semibold text-lg bg-muted/50 rounded-md py-2">
-                          {activity.time}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-9 w-9 shrink-0"
-                          onClick={() => adjustTime(selectedDay, activity.id, 30)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="text-xs text-muted-foreground text-center mt-1">
-                        ±30 นาที
-                      </div>
+                      <Label className="text-xs">เวลา</Label>
+                      <Select defaultValue={activity.time}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="07:00">07:00</SelectItem>
+                          <SelectItem value="08:00">08:00</SelectItem>
+                          <SelectItem value="12:30">12:30</SelectItem>
+                          <SelectItem value="18:00">18:00</SelectItem>
+                          <SelectItem value="19:00">19:00</SelectItem>
+                          <SelectItem value="20:00">20:00</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
-                      <Label className="text-xs mb-2 block">ระยะเวลา</Label>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-9 w-9 shrink-0"
-                          onClick={() => adjustDuration(selectedDay, activity.id, -5)}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <div className="flex-1 text-center font-semibold text-lg bg-muted/50 rounded-md py-2">
-                          {activity.duration}น
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-9 w-9 shrink-0"
-                          onClick={() => adjustDuration(selectedDay, activity.id, 5)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="text-xs text-muted-foreground text-center mt-1">
-                        ±5 นาที
-                      </div>
+                      <Label className="text-xs">ระยะเวลา (นาที)</Label>
+                      <Select defaultValue={activity.duration.toString()}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15">15 นาที</SelectItem>
+                          <SelectItem value="20">20 นาที</SelectItem>
+                          <SelectItem value="25">25 นาที</SelectItem>
+                          <SelectItem value="30">30 นาที</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
