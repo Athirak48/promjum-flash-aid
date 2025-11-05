@@ -72,36 +72,41 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         >
           <ChevronUp className="w-3 h-3" />
         </button>
-        <div 
-          ref={hoursRef}
-          className="h-[84px] w-12 overflow-y-scroll scrollbar-hide scroll-smooth relative"
-          onScroll={(e) => {
-            const scrollTop = e.currentTarget.scrollTop;
-            const itemHeight = 28;
-            const newHour = Math.round(scrollTop / itemHeight);
-            if (newHour !== localHours && newHour >= 0 && newHour < 24) {
-              setLocalHours(newHour);
-            }
-          }}
-        >
-          <div className="py-7">
-            {allHours.map((hour) => (
-              <div
-                key={hour}
-                className={cn(
-                  "h-7 flex items-center justify-center cursor-pointer transition-all text-sm",
-                  hour === localHours 
-                    ? "text-primary font-semibold border border-primary/50 bg-primary/10 rounded mx-1" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => {
-                  setLocalHours(hour);
-                  scrollToValue(hoursRef, hour);
-                }}
-              >
-                {String(hour).padStart(2, '0')}
-              </div>
-            ))}
+        <div className="relative h-[84px] w-12">
+          {/* Fixed selection box */}
+          <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-7 border border-primary/50 bg-primary/10 rounded pointer-events-none z-10 mx-1" />
+          
+          <div 
+            ref={hoursRef}
+            className="h-full w-full overflow-y-scroll scrollbar-hide scroll-smooth"
+            onScroll={(e) => {
+              const scrollTop = e.currentTarget.scrollTop;
+              const itemHeight = 28;
+              const newHour = Math.round(scrollTop / itemHeight);
+              if (newHour !== localHours && newHour >= 0 && newHour < 24) {
+                setLocalHours(newHour);
+              }
+            }}
+          >
+            <div className="py-7">
+              {allHours.map((hour) => (
+                <div
+                  key={hour}
+                  className={cn(
+                    "h-7 flex items-center justify-center cursor-pointer transition-colors text-sm",
+                    hour === localHours 
+                      ? "text-primary font-semibold" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => {
+                    setLocalHours(hour);
+                    scrollToValue(hoursRef, hour);
+                  }}
+                >
+                  {String(hour).padStart(2, '0')}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         <button
@@ -124,36 +129,41 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         >
           <ChevronUp className="w-3 h-3" />
         </button>
-        <div 
-          ref={minutesRef}
-          className="h-[84px] w-12 overflow-y-scroll scrollbar-hide scroll-smooth"
-          onScroll={(e) => {
-            const scrollTop = e.currentTarget.scrollTop;
-            const itemHeight = 28;
-            const newMinute = Math.round(scrollTop / itemHeight);
-            if (newMinute !== localMinutes && newMinute >= 0 && newMinute < 60) {
-              setLocalMinutes(newMinute);
-            }
-          }}
-        >
-          <div className="py-7">
-            {allMinutes.map((minute) => (
-              <div
-                key={minute}
-                className={cn(
-                  "h-7 flex items-center justify-center cursor-pointer transition-all text-sm",
-                  minute === localMinutes 
-                    ? "text-primary font-semibold border border-primary/50 bg-primary/10 rounded mx-1" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => {
-                  setLocalMinutes(minute);
-                  scrollToValue(minutesRef, minute);
-                }}
-              >
-                {String(minute).padStart(2, '0')}
-              </div>
-            ))}
+        <div className="relative h-[84px] w-12">
+          {/* Fixed selection box */}
+          <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-7 border border-primary/50 bg-primary/10 rounded pointer-events-none z-10 mx-1" />
+          
+          <div 
+            ref={minutesRef}
+            className="h-full w-full overflow-y-scroll scrollbar-hide scroll-smooth"
+            onScroll={(e) => {
+              const scrollTop = e.currentTarget.scrollTop;
+              const itemHeight = 28;
+              const newMinute = Math.round(scrollTop / itemHeight);
+              if (newMinute !== localMinutes && newMinute >= 0 && newMinute < 60) {
+                setLocalMinutes(newMinute);
+              }
+            }}
+          >
+            <div className="py-7">
+              {allMinutes.map((minute) => (
+                <div
+                  key={minute}
+                  className={cn(
+                    "h-7 flex items-center justify-center cursor-pointer transition-colors text-sm",
+                    minute === localMinutes 
+                      ? "text-primary font-semibold" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => {
+                    setLocalMinutes(minute);
+                    scrollToValue(minutesRef, minute);
+                  }}
+                >
+                  {String(minute).padStart(2, '0')}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         <button
