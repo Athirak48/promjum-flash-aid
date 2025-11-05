@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -433,7 +433,7 @@ export function ScheduleCalendar() {
 
       {/* Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
               แก้ไขตารางเวลา
@@ -445,7 +445,7 @@ export function ScheduleCalendar() {
             </DialogTitle>
           </DialogHeader>
           
-          <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-4">
             {selectedDay !== null && getDaySchedule(selectedDay)?.activities.map(activity => {
               const Icon = activity.icon;
               return (
@@ -468,7 +468,7 @@ export function ScheduleCalendar() {
                       ลบ
                     </Button>
                   </div>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs mb-1.5 block text-center">เวลาทบทวน</Label>
                       <div className="flex justify-center p-2 bg-muted/20 rounded-lg border border-border/50">
@@ -491,21 +491,15 @@ export function ScheduleCalendar() {
                 </div>
               );
             })}
-          </div>
 
-          <Button 
-            variant="outline" 
-            className="w-full mt-4"
-            onClick={handleAddActivity}
-          >
-            + เพิ่มกิจกรรม
-          </Button>
-
-          <DialogFooter>
-            <Button onClick={() => setIsDialogOpen(false)} className="w-full">
-              ตกลง
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={handleAddActivity}
+            >
+              + เพิ่มกิจกรรม
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>
