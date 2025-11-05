@@ -26,6 +26,10 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
     }
   }, [value, isCustom]);
 
+  // Disabled states for arrow buttons
+  const isAtMin = value <= presetDurations[0];
+  const isAtMax = value >= presetDurations[presetDurations.length - 1];
+
   const scrollToValue = (duration: number) => {
     if (scrollRef.current) {
       const index = presetDurations.indexOf(duration);
@@ -109,7 +113,9 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
       <button
         type="button"
         onClick={incrementDuration}
-        className="p-0.5 hover:bg-muted rounded transition-colors"
+        aria-label="เพิ่มระยะเวลา"
+        disabled={isAtMax}
+        className="p-1.5 hover:bg-muted rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <ChevronUp className="w-3 h-3" />
       </button>
@@ -158,7 +164,9 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
       <button
         type="button"
         onClick={decrementDuration}
-        className="p-0.5 hover:bg-muted rounded transition-colors"
+        aria-label="ลดระยะเวลา"
+        disabled={isAtMin}
+        className="p-1.5 hover:bg-muted rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <ChevronDown className="w-3 h-3" />
       </button>
