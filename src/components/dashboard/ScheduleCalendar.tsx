@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -161,6 +162,19 @@ export function ScheduleCalendar() {
             ...s, 
             activities: s.activities.map(a => 
               a.id === activityId ? { ...a, duration: newDuration } : a
+            ) 
+          }
+        : s
+    ));
+  };
+
+  const handleUpdateActivityTitle = (dayIndex: number, activityId: string, newTitle: string) => {
+    setSchedules(prev => prev.map(s => 
+      s.dayIndex === dayIndex 
+        ? { 
+            ...s, 
+            activities: s.activities.map(a => 
+              a.id === activityId ? { ...a, title: newTitle } : a
             ) 
           }
         : s
@@ -437,9 +451,14 @@ export function ScheduleCalendar() {
               return (
                 <div key={activity.id} className={`p-4 rounded-lg border ${activity.color}`}>
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-4 h-4" />
-                      <span className="font-medium text-sm">{activity.title}</span>
+                    <div className="flex items-center gap-2 flex-1">
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <Input
+                        value={activity.title}
+                        onChange={(e) => handleUpdateActivityTitle(selectedDay, activity.id, e.target.value)}
+                        className="font-medium text-sm h-8 bg-background/50"
+                        placeholder="ชื่อกิจกรรม"
+                      />
                     </div>
                     <Button 
                       variant="ghost" 
