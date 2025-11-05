@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TimePicker } from './TimePicker';
@@ -445,61 +446,63 @@ export function ScheduleCalendar() {
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
-            {selectedDay !== null && getDaySchedule(selectedDay)?.activities.map(activity => {
-              const Icon = activity.icon;
-              return (
-                <div key={activity.id} className={`p-4 rounded-lg border ${activity.color}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2 flex-1">
-                      <Icon className="w-4 h-4 flex-shrink-0" />
-                      <Input
-                        value={activity.title}
-                        onChange={(e) => handleUpdateActivityTitle(selectedDay, activity.id, e.target.value)}
-                        className="font-medium text-sm h-8 bg-background/50"
-                        placeholder="ชื่อกิจกรรม"
-                      />
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleRemoveActivity(selectedDay, activity.id)}
-                    >
-                      ลบ
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs mb-1.5 block text-center">เวลาทบทวน</Label>
-                      <div className="flex justify-center p-2 bg-muted/20 rounded-lg border border-border/50">
-                        <TimePicker
-                          value={activity.time}
-                          onChange={(newTime) => handleUpdateActivityTime(selectedDay, activity.id, newTime)}
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-4">
+              {selectedDay !== null && getDaySchedule(selectedDay)?.activities.map(activity => {
+                const Icon = activity.icon;
+                return (
+                  <div key={activity.id} className={`p-4 rounded-lg border ${activity.color}`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2 flex-1">
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <Input
+                          value={activity.title}
+                          onChange={(e) => handleUpdateActivityTitle(selectedDay, activity.id, e.target.value)}
+                          className="font-medium text-sm h-8 bg-background/50"
+                          placeholder="ชื่อกิจกรรม"
                         />
                       </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleRemoveActivity(selectedDay, activity.id)}
+                      >
+                        ลบ
+                      </Button>
                     </div>
-                    <div>
-                      <Label className="text-xs mb-1.5 block text-center">ระยะเวลาทบทวน</Label>
-                      <div className="flex justify-center p-2 bg-muted/20 rounded-lg border border-border/50">
-                        <DurationPicker
-                          value={activity.duration}
-                          onChange={(newDuration) => handleUpdateActivityDuration(selectedDay, activity.id, newDuration)}
-                        />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs mb-1.5 block text-center">เวลาทบทวน</Label>
+                        <div className="flex justify-center p-2 bg-muted/20 rounded-lg border border-border/50">
+                          <TimePicker
+                            value={activity.time}
+                            onChange={(newTime) => handleUpdateActivityTime(selectedDay, activity.id, newTime)}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs mb-1.5 block text-center">ระยะเวลาทบทวน</Label>
+                        <div className="flex justify-center p-2 bg-muted/20 rounded-lg border border-border/50">
+                          <DurationPicker
+                            value={activity.duration}
+                            onChange={(newDuration) => handleUpdateActivityDuration(selectedDay, activity.id, newDuration)}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={handleAddActivity}
-            >
-              + เพิ่มกิจกรรม
-            </Button>
-          </div>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={handleAddActivity}
+              >
+                + เพิ่มกิจกรรม
+              </Button>
+            </div>
+          </ScrollArea>
 
           <DialogFooter>
             <Button onClick={() => setIsDialogOpen(false)} className="w-full">
