@@ -40,18 +40,30 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
   };
 
   const incrementDuration = () => {
-    const newValue = Math.min(value + 1, 999);
-    onChange(newValue);
-    if (presetDurations.includes(newValue)) {
+    const currentIndex = presetDurations.indexOf(value);
+    if (currentIndex !== -1 && currentIndex < presetDurations.length - 1) {
+      const newValue = presetDurations[currentIndex + 1];
+      onChange(newValue);
       setTimeout(() => scrollToValue(newValue), 0);
+    } else if (currentIndex === -1) {
+      // ถ้าค่าปัจจุบันไม่อยู่ในรายการ ให้หาค่าที่ใกล้ที่สุด
+      const nextValue = presetDurations.find(d => d > value) || presetDurations[presetDurations.length - 1];
+      onChange(nextValue);
+      setTimeout(() => scrollToValue(nextValue), 0);
     }
   };
 
   const decrementDuration = () => {
-    const newValue = Math.max(value - 1, 1);
-    onChange(newValue);
-    if (presetDurations.includes(newValue)) {
+    const currentIndex = presetDurations.indexOf(value);
+    if (currentIndex !== -1 && currentIndex > 0) {
+      const newValue = presetDurations[currentIndex - 1];
+      onChange(newValue);
       setTimeout(() => scrollToValue(newValue), 0);
+    } else if (currentIndex === -1) {
+      // ถ้าค่าปัจจุบันไม่อยู่ในรายการ ให้หาค่าที่ใกล้ที่สุด
+      const prevValue = [...presetDurations].reverse().find(d => d < value) || presetDurations[0];
+      onChange(prevValue);
+      setTimeout(() => scrollToValue(prevValue), 0);
     }
   };
 
