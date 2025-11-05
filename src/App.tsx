@@ -57,18 +57,10 @@ const App = () => {
                 } 
               />
               <Route 
-                path="/feedback" 
+                path="/flashcards/review" 
                 element={
                   <ProtectedRoute>
-                    <FeedbackPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/profile" 
-                element={
-                  <ProtectedRoute>
-                    <Profile />
+                    <FlashcardsReview />
                   </ProtectedRoute>
                 } 
               />
@@ -81,10 +73,18 @@ const App = () => {
                 } 
               />
               <Route 
-                path="/flashcards/review" 
+                path="/feedback" 
                 element={
                   <ProtectedRoute>
-                    <FlashcardsReview />
+                    <FeedbackPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <Profile />
                   </ProtectedRoute>
                 } 
               />
