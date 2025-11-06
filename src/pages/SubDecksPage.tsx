@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Home } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
 
@@ -64,30 +64,49 @@ export default function SubDecksPage() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8 relative z-10">
-        <div className="max-w-7xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/decks')}
-            className="mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            กลับไป Deck
-          </Button>
+        <div className="max-w-5xl mx-auto">
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="h-8 gap-1"
+            >
+              <Home className="w-4 h-4" />
+              หน้าแรก
+            </Button>
+            <ChevronRight className="w-4 h-4" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/decks')}
+              className="h-8"
+            >
+              Deck ทั้งหมด
+            </Button>
+            {deckInfo && (
+              <>
+                <ChevronRight className="w-4 h-4" />
+                <span className="font-medium text-foreground">{deckInfo.name}</span>
+              </>
+            )}
+          </div>
 
           {deckInfo && (
-            <div className="text-center mb-12">
+            <div className="mb-8">
               <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
                 {deckInfo.name}
               </h1>
               <p className="text-xl text-muted-foreground mb-4">
                 {deckInfo.name_en}
               </p>
-              <p className="text-foreground/80 mb-6 max-w-2xl mx-auto">
+              <p className="text-foreground/80 mb-6 max-w-2xl">
                 {deckInfo.description}
               </p>
 
               {deckProgress > 0 && (
-                <div className="max-w-md mx-auto space-y-2">
+                <div className="max-w-md space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">ความคืบหน้าทั้งหมด</span>
                     <span className="font-medium text-primary">{deckProgress}%</span>
@@ -98,14 +117,15 @@ export default function SubDecksPage() {
             </div>
           )}
 
+          {/* Vertical List of Subdecks */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-[300px]" />
+                <Skeleton key={i} className="h-[180px]" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-4">
               {subDecks.map((subdeck) => (
                 <SubDeckCard key={subdeck.id} subdeck={subdeck} />
               ))}
