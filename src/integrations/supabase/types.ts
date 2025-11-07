@@ -187,6 +187,7 @@ export type Database = {
       }
       features: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           description_en: string | null
@@ -199,6 +200,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           description_en?: string | null
@@ -211,6 +213,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           description_en?: string | null

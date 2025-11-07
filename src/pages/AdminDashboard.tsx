@@ -47,27 +47,25 @@ export default function AdminDashboard() {
         .from('profiles')
         .select('id');
 
-      // Fetch uploads count
-      const { data: uploadsData, error: uploadsError } = await supabase
-        .from('uploads')
+      // Fetch decks count
+      const { data: decksData, error: decksError } = await supabase
+        .from('decks')
         .select('id');
 
-      // Fetch sales count and revenue
-      const { data: salesData, error: salesError } = await supabase
-        .from('sales')
-        .select('amount');
+      // Fetch flashcards count
+      const { data: flashcardsData, error: flashcardsError } = await supabase
+        .from('flashcards')
+        .select('id');
 
-      if (usersError || uploadsError || salesError) {
+      if (usersError || decksError || flashcardsError) {
         throw new Error('Failed to fetch admin stats');
       }
 
-      const totalRevenue = salesData?.reduce((sum, sale) => sum + sale.amount, 0) || 0;
-
       setStats({
         totalUsers: usersData?.length || 0,
-        totalUploads: uploadsData?.length || 0,
-        totalSales: salesData?.length || 0,
-        totalRevenue
+        totalUploads: decksData?.length || 0,
+        totalSales: flashcardsData?.length || 0,
+        totalRevenue: 0
       });
     } catch (error) {
       console.error('Error fetching admin stats:', error);
@@ -134,24 +132,24 @@ export default function AdminDashboard() {
             trend="+12%"
           />
           <StatCard
-            title="ไฟล์อัปโหลด"
+            title="Decks ทั้งหมด"
             value={isLoading ? "..." : stats.totalUploads}
             icon={FileText}
-            description="จำนวนไฟล์ที่อัปโหลดทั้งหมด"
+            description="จำนวน Decks ที่สร้างทั้งหมด"
             trend="+8%"
           />
           <StatCard
-            title="การขาย"
+            title="Flashcards"
             value={isLoading ? "..." : stats.totalSales}
             icon={CreditCard}
-            description="จำนวนการขายทั้งหมด"
+            description="จำนวน Flashcards ทั้งหมด"
             trend="+23%"
           />
           <StatCard
-            title="รายได้"
-            value={isLoading ? "..." : `฿${stats.totalRevenue.toLocaleString()}`}
+            title="Sessions"
+            value={isLoading ? "..." : stats.totalRevenue}
             icon={BarChart3}
-            description="รายได้รวมทั้งหมด"
+            description="จำนวน Practice Sessions"
             trend="+15%"
           />
         </div>
