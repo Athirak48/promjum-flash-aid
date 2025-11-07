@@ -155,32 +155,6 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                 <Download className="w-4 h-4" />
                 ดาวน์โหลด
               </Button>
-              
-              {subdeck.is_free ? (
-                <Button 
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/subdecks/${subdeck.id}/learn`);
-                  }}
-                  className="w-full"
-                >
-                  เริ่มเรียน
-                </Button>
-              ) : (
-                <Button 
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate('/pricing');
-                  }}
-                  className="w-full"
-                >
-                  <Lock className="w-4 h-4 mr-2" />
-                  ปลดล็อค
-                </Button>
-              )}
             </div>
           </div>
         </CardContent>
