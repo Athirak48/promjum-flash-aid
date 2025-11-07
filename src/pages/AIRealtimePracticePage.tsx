@@ -160,6 +160,13 @@ export default function AIRealtimePracticePage() {
                   </div>
                 )}
               </div>
+
+              {/* Feature Title */}
+              <div className="p-4">
+                <h3 className="font-semibold text-lg text-center group-hover:text-primary transition-colors">
+                  {language === 'th' ? feature.name : feature.name_en}
+                </h3>
+              </div>
             </Card>
           ))}
         </div>
