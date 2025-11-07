@@ -8,6 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -43,6 +45,7 @@ export default function FeatureReviewDialog({
   const { toast } = useToast();
   const { language } = useLanguage();
   const [rating, setRating] = useState<number>(existingRating || 0);
+  const [comment, setComment] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleRatingChange = (newRating: number) => {
@@ -79,7 +82,8 @@ export default function FeatureReviewDialog({
         .upsert({
           user_id: user.id,
           feature_id: feature.id,
-          rating
+          rating,
+          comment: comment || null
         }, { 
           onConflict: 'user_id,feature_id',
           ignoreDuplicates: false 
@@ -168,8 +172,23 @@ export default function FeatureReviewDialog({
             )}
           </div>
 
+          {/* Comment/Feedback Section */}
+          <div className="space-y-2">
+            <Label htmlFor="comment">
+              {language === 'th' ? 'คำแนะนำเพิ่มเติม (ถ้ามี)' : 'Additional Feedback (Optional)'}
+            </Label>
+            <Textarea
+              id="comment"
+              placeholder={language === 'th' ? 'แชร์ความคิดเห็นของคุณ...' : 'Share your thoughts...'}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={4}
+              className="resize-none"
+            />
+          </div>
+
           {/* Submit Button */}
-          <Button 
+          <Button
             size="lg"
             onClick={handleSubmitReview}
             disabled={submitting || rating === 0}

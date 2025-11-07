@@ -152,6 +152,7 @@ export type Database = {
       }
       feature_reviews: {
         Row: {
+          comment: string | null
           created_at: string
           feature_id: string
           id: string
@@ -160,6 +161,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comment?: string | null
           created_at?: string
           feature_id: string
           id?: string
@@ -168,6 +170,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comment?: string | null
           created_at?: string
           feature_id?: string
           id?: string
@@ -352,51 +355,6 @@ export type Database = {
           {
             foreignKeyName: "game_data_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      marketplace_cards: {
-        Row: {
-          created_at: string | null
-          flashcard_id: string | null
-          id: string
-          price: number
-          status: string
-          updated_at: string | null
-          uploader_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          flashcard_id?: string | null
-          id?: string
-          price: number
-          status?: string
-          updated_at?: string | null
-          uploader_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          flashcard_id?: string | null
-          id?: string
-          price?: number
-          status?: string
-          updated_at?: string | null
-          uploader_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "marketplace_cards_flashcard_id_fkey"
-            columns: ["flashcard_id"]
-            isOneToOne: false
-            referencedRelation: "flashcards"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "marketplace_cards_uploader_id_fkey"
-            columns: ["uploader_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
