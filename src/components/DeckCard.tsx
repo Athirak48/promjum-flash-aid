@@ -78,7 +78,7 @@ export function DeckCard({ deck }: DeckCardProps) {
               ดาวน์โหลด
             </Button>
             <Button 
-              onClick={() => navigate(`/decks/${deck.id}`)}
+              onClick={() => navigate(`/decks/${deck.id}/subdecks`)}
               variant={deck.is_premium ? "outline" : "default"}
             >
               {deck.is_premium ? (
