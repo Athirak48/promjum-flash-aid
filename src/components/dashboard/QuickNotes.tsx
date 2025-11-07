@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { StickyNote, Save } from 'lucide-react';
+import { StickyNote, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export function QuickNotes() {
@@ -26,6 +26,14 @@ export function QuickNotes() {
     toast({
       title: "บันทึกสำเร็จ",
       description: "บันทึกของคุณถูกเก็บไว้แล้ว",
+    });
+  };
+
+  const handleDeleteNote = (index: number) => {
+    setSavedNotes(savedNotes.filter((_, i) => i !== index));
+    toast({
+      title: "ลบสำเร็จ",
+      description: "บันทึกถูกลบแล้ว",
     });
   };
 
@@ -62,9 +70,16 @@ export function QuickNotes() {
             {savedNotes.map((savedNote, index) => (
               <div 
                 key={index}
-                className="p-3 rounded-lg bg-muted/30 border border-border/30 text-sm text-foreground"
+                className="flex items-start justify-between gap-2 p-3 rounded-lg bg-muted/30 border border-border/30 text-sm text-foreground"
               >
-                {savedNote}
+                <span className="flex-1">{savedNote}</span>
+                <button
+                  onClick={() => handleDeleteNote(index)}
+                  className="flex-shrink-0 p-1 hover:bg-destructive/10 rounded transition-colors"
+                  aria-label="ลบบันทึก"
+                >
+                  <X className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+                </button>
               </div>
             ))}
           </div>
