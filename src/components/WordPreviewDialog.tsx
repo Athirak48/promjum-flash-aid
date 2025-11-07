@@ -23,6 +23,22 @@ interface WordPreviewDialogProps {
 export function WordPreviewDialog({ open, onOpenChange, flashcards, subdeckName }: WordPreviewDialogProps) {
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
 
+  // Mock data for preview if no flashcards provided
+  const mockFlashcards: Flashcard[] = [
+    { id: '1', front_text: 'Hello', back_text: 'สวัสดี' },
+    { id: '2', front_text: 'Thank you', back_text: 'ขอบคุณ' },
+    { id: '3', front_text: 'Good morning', back_text: 'สวัสดีตอนเช้า' },
+    { id: '4', front_text: 'Goodbye', back_text: 'ลาก่อน' },
+    { id: '5', front_text: 'How are you?', back_text: 'สบายดีไหม?' },
+    { id: '6', front_text: 'I love you', back_text: 'ฉันรักคุณ' },
+    { id: '7', front_text: 'Beautiful', back_text: 'สวยงาม' },
+    { id: '8', front_text: 'Delicious', back_text: 'อร่อย' },
+    { id: '9', front_text: 'Happy', back_text: 'มีความสุข' },
+    { id: '10', front_text: 'Friend', back_text: 'เพื่อน' },
+  ];
+
+  const displayCards = flashcards.length > 0 ? flashcards : mockFlashcards;
+
   const toggleFlip = (cardId: string) => {
     setFlippedCards(prev => {
       const newSet = new Set(prev);
@@ -40,13 +56,13 @@ export function WordPreviewDialog({ open, onOpenChange, flashcards, subdeckName 
       <DialogContent className="max-w-7xl max-h-[85vh]">
         <DialogHeader>
           <DialogTitle className="text-2xl bg-gradient-primary bg-clip-text text-transparent">
-            {subdeckName} - คำศัพท์ทั้งหมด ({flashcards.length} คำ)
+            {subdeckName} - คำศัพท์ทั้งหมด ({displayCards.length} คำ)
           </DialogTitle>
         </DialogHeader>
         
         <ScrollArea className="h-[65vh] pr-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {flashcards.map((card) => {
+            {displayCards.map((card) => {
               const isFlipped = flippedCards.has(card.id);
               
               return (
