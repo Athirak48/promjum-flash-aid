@@ -45,54 +45,56 @@ export function WordPreviewDialog({ open, onOpenChange, flashcards, subdeckName 
         </DialogHeader>
         
         <ScrollArea className="h-[65vh] pr-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {flashcards.map((card) => {
               const isFlipped = flippedCards.has(card.id);
               
               return (
-                <Card
+                <div
                   key={card.id}
-                  className={cn(
-                    "relative h-48 cursor-pointer transition-all duration-300 hover:shadow-glow",
-                    "bg-card backdrop-blur-sm border-primary/20"
-                  )}
+                  className="h-52 perspective-1000 cursor-pointer"
                   onClick={() => toggleFlip(card.id)}
                 >
-                  <div className="absolute inset-0 p-4 flex flex-col items-center justify-center text-center">
-                    {!isFlipped ? (
-                      <>
-                        <p className="text-lg font-semibold text-foreground mb-2">
+                  <div
+                    className={cn(
+                      "relative w-full h-full transition-transform duration-500 transform-style-3d",
+                      isFlipped && "rotate-y-180"
+                    )}
+                  >
+                    {/* Front Side */}
+                    <Card
+                      className={cn(
+                        "absolute inset-0 backface-hidden",
+                        "flex items-center justify-center p-6",
+                        "bg-card border-primary/20 hover:shadow-glow"
+                      )}
+                    >
+                      <div className="text-center">
+                        <p className="text-xl font-bold text-foreground">
                           {card.front_text}
                         </p>
-                        {card.part_of_speech && (
-                          <span className="text-xs text-muted-foreground italic px-2 py-1 bg-muted/50 rounded">
-                            {card.part_of_speech}
-                          </span>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-auto">
+                        <p className="text-xs text-muted-foreground mt-4">
                           คลิกเพื่อดูคำแปล
                         </p>
-                      </>
-                    ) : (
-                      <div className="space-y-2 w-full">
-                        <p className="text-base font-medium text-primary">
+                      </div>
+                    </Card>
+
+                    {/* Back Side */}
+                    <Card
+                      className={cn(
+                        "absolute inset-0 backface-hidden rotate-y-180",
+                        "flex items-center justify-center p-6",
+                        "bg-primary/10 border-primary/40 hover:shadow-glow"
+                      )}
+                    >
+                      <div className="text-center">
+                        <p className="text-lg font-semibold text-primary">
                           {card.back_text}
                         </p>
-                        {card.synonym && (
-                          <div className="text-xs text-muted-foreground">
-                            <span className="font-semibold">Synonym: </span>
-                            {card.synonym}
-                          </div>
-                        )}
-                        {card.example_sentence && (
-                          <div className="text-xs text-muted-foreground italic pt-2 border-t border-border/50">
-                            "{card.example_sentence}"
-                          </div>
-                        )}
                       </div>
-                    )}
+                    </Card>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
