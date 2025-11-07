@@ -34,11 +34,10 @@ export default function AIRealtimePracticePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { language } = useLanguage();
-  const [categories, setCategories] = useState<Category[]>([]);
   const [features, setFeatures] = useState<Feature[]>([]);
   const [existingReviews, setExistingReviews] = useState<FeatureRating>({});
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -59,25 +58,6 @@ export default function AIRealtimePracticePage() {
       if (featuresError) throw featuresError;
 
       setFeatures(featuresData || []);
-
-      // Get unique categories
-      const uniqueCategories = Array.from(
-        new Map(
-          featuresData
-            ?.filter(f => f.category)
-            .map(f => [
-              f.category,
-              {
-                id: f.category,
-                name: f.category,
-                name_en: f.category,
-                image_url: f.image_url
-              }
-            ])
-        ).values()
-      );
-
-      setCategories(uniqueCategories as Category[]);
 
       // Fetch user's existing reviews
       const { data: { user } } = await supabase.auth.getUser();
@@ -109,8 +89,8 @@ export default function AIRealtimePracticePage() {
     }
   };
 
-  const handleCategoryClick = (categoryId: string) => {
-    setSelectedCategory(categoryId);
+  const handleFeatureClick = (feature: Feature) => {
+    setSelectedFeature(feature);
     setDialogOpen(true);
   };
 
@@ -160,60 +140,49 @@ export default function AIRealtimePracticePage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {categories.map((category) => (
+          {features.map((feature) => (
             <Card 
-              key={category.id} 
+              key={feature.id} 
               className="overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
-              onClick={() => handleCategoryClick(category.id)}
+              onClick={() => handleFeatureClick(feature)}
             >
-              {/* Category Image */}
+              {/* Feature Image */}
               <div className="aspect-video bg-gradient-subtle relative overflow-hidden">
-                {category.image_url ? (
+                {feature.image_url ? (
                   <img 
-                    src={category.image_url} 
-                    alt={language === 'th' ? category.name : category.name_en}
+                    src={feature.image_url} 
+                    alt={language === 'th' ? feature.name : feature.name_en}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <span className="text-5xl">📚</span>
+                    <span className="text-5xl">✨</span>
                   </div>
                 )}
-              </div>
-
-              {/* Category Content */}
-              <div className="p-4">
-                <h3 className="font-semibold text-lg text-center group-hover:text-primary transition-colors">
-                  {language === 'th' ? category.name : category.name_en}
-                </h3>
               </div>
             </Card>
           ))}
         </div>
 
         {/* Empty State */}
-        {categories.length === 0 && (
+        {features.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
               {language === 'th' 
-                ? 'ยังไม่มีหมวดหมู่ที่พร้อมให้รีวิว' 
-                : 'No categories available for review yet'}
+                ? 'ยังไม่มีฟีเจอร์ที่พร้อมให้รีวิว' 
+                : 'No features available for review yet'}
             </p>
           </div>
         )}
       </main>
 
       {/* Feature Review Dialog */}
-      {selectedCategory && (
+      {selectedFeature && (
         <FeatureReviewDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
-          category={selectedCategory}
-          categoryName={
-            categories.find(c => c.id === selectedCategory)?.[language === 'th' ? 'name' : 'name_en'] || ''
-          }
-          features={features.filter(f => f.category === selectedCategory)}
-          existingRatings={existingReviews}
+          feature={selectedFeature}
+          existingRating={existingReviews[selectedFeature.id]}
           onReviewSubmitted={handleReviewSubmitted}
         />
       )}
