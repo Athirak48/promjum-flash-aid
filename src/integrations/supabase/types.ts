@@ -150,6 +150,80 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_reviews: {
+        Row: {
+          created_at: string
+          feature_id: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feature_id: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feature_id?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_reviews_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: false
+            referencedRelation: "features"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      features: {
+        Row: {
+          created_at: string
+          description: string | null
+          description_en: string | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          name_en: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          name_en: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          name_en?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flashcards: {
         Row: {
           audio_url: string | null
@@ -235,13 +309,6 @@ export type Database = {
             columns: ["subdeck_id"]
             isOneToOne: false
             referencedRelation: "sub_decks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flashcards_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "uploads"
             referencedColumns: ["id"]
           },
         ]
@@ -368,57 +435,6 @@ export type Database = {
           },
         ]
       }
-      payments: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          payment_method: string | null
-          payment_session_id: string | null
-          status: string
-          updated_at: string | null
-          upload_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          payment_method?: string | null
-          payment_session_id?: string | null
-          status?: string
-          updated_at?: string | null
-          upload_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          payment_method?: string | null
-          payment_session_id?: string | null
-          status?: string
-          updated_at?: string | null
-          upload_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payments_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "uploads"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
       practice_sessions: {
         Row: {
           completed: boolean | null
@@ -494,24 +510,6 @@ export type Database = {
           },
         ]
       }
-      pricing_history: {
-        Row: {
-          created_at: string | null
-          id: string
-          price_per_mb: number
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          price_per_mb: number
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          price_per_mb?: number
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           auto_play_audio: boolean | null
@@ -571,45 +569,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      sales: {
-        Row: {
-          amount: number
-          buyer_id: string | null
-          card_id: string | null
-          created_at: string | null
-          id: string
-        }
-        Insert: {
-          amount: number
-          buyer_id?: string | null
-          card_id?: string | null
-          created_at?: string | null
-          id?: string
-        }
-        Update: {
-          amount?: number
-          buyer_id?: string | null
-          card_id?: string | null
-          created_at?: string | null
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sales_buyer_id_fkey"
-            columns: ["buyer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "sales_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "marketplace_cards"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       sub_decks: {
         Row: {
@@ -673,50 +632,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "decks"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      uploads: {
-        Row: {
-          created_at: string | null
-          file_size_mb: number
-          id: string
-          original_file_name: string
-          original_file_url: string
-          payment_status: string
-          status: string
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          file_size_mb: number
-          id?: string
-          original_file_name: string
-          original_file_url: string
-          payment_status?: string
-          status?: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          file_size_mb?: number
-          id?: string
-          original_file_name?: string
-          original_file_url?: string
-          payment_status?: string
-          status?: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "uploads_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
           },
         ]
       }
