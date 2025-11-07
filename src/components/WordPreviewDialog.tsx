@@ -50,49 +50,37 @@ export function WordPreviewDialog({ open, onOpenChange, flashcards, subdeckName 
               const isFlipped = flippedCards.has(card.id);
               
               return (
-                <Card
+                <div
                   key={card.id}
-                  className={cn(
-                    "relative h-48 cursor-pointer transition-all duration-300 hover:shadow-glow",
-                    "bg-card backdrop-blur-sm border-primary/20"
-                  )}
+                  className="flip-card h-48 cursor-pointer"
                   onClick={() => toggleFlip(card.id)}
                 >
-                  <div className="absolute inset-0 p-4 flex flex-col items-center justify-center text-center">
-                    {!isFlipped ? (
-                      <>
-                        <p className="text-lg font-semibold text-foreground mb-2">
+                  <div className={cn(
+                    "flip-card-inner",
+                    isFlipped && "flipped"
+                  )}>
+                    {/* Front */}
+                    <Card className="flip-card-front absolute inset-0 backface-hidden bg-card border-primary/20">
+                      <div className="h-full p-4 flex flex-col items-center justify-center text-center">
+                        <p className="text-lg font-semibold text-foreground">
                           {card.front_text}
                         </p>
-                        {card.part_of_speech && (
-                          <span className="text-xs text-muted-foreground italic px-2 py-1 bg-muted/50 rounded">
-                            {card.part_of_speech}
-                          </span>
-                        )}
                         <p className="text-xs text-muted-foreground mt-auto">
                           คลิกเพื่อดูคำแปล
                         </p>
-                      </>
-                    ) : (
-                      <div className="space-y-2 w-full">
-                        <p className="text-base font-medium text-primary">
+                      </div>
+                    </Card>
+                    
+                    {/* Back */}
+                    <Card className="flip-card-back absolute inset-0 backface-hidden bg-primary/10 border-primary/30">
+                      <div className="h-full p-4 flex items-center justify-center text-center">
+                        <p className="text-base font-medium text-foreground">
                           {card.back_text}
                         </p>
-                        {card.synonym && (
-                          <div className="text-xs text-muted-foreground">
-                            <span className="font-semibold">Synonym: </span>
-                            {card.synonym}
-                          </div>
-                        )}
-                        {card.example_sentence && (
-                          <div className="text-xs text-muted-foreground italic pt-2 border-t border-border/50">
-                            "{card.example_sentence}"
-                          </div>
-                        )}
                       </div>
-                    )}
+                    </Card>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
