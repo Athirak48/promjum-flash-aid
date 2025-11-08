@@ -23,8 +23,10 @@ export default function Dashboard() {
 
   // Mock data - in real app, fetch from backend
   const userStats = {
-    streak: 1,
+    streak: 7,
     starlightScore: 245,
+    totalXP: 1250,
+    wordsLearnedToday: 23,
     decksCompleted: 0,
     wordsLearned: 20,
     progressPercentage: 15,
@@ -50,9 +52,13 @@ export default function Dashboard() {
 
         {/* แถว 2: Quick Start & Daily Deck */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          {/* Daily Deck (Column 1-2) */}
+          {/* Daily Progress (Column 1-2) */}
           <div className="lg:col-span-2">
-            <DailyDeckQuickStart />
+            <DailyDeckQuickStart 
+              streak={userStats.streak}
+              totalXP={userStats.totalXP}
+              wordsLearnedToday={userStats.wordsLearnedToday}
+            />
           </div>
 
           {/* Suggested Deck (Column 3) */}
