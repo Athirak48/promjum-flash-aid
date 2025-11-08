@@ -54,8 +54,12 @@ const activityTypes = [{
 }];
 type ViewMode = 'day' | 'week' | 'month' | 'year';
 export function ScheduleCalendar() {
-  const { toast } = useToast();
-  const { flashcards } = useFlashcards();
+  const {
+    toast
+  } = useToast();
+  const {
+    flashcards
+  } = useFlashcards();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -173,19 +177,17 @@ export function ScheduleCalendar() {
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startDayOfWeek = firstDay.getDay();
-    
     const days: (Date | null)[] = [];
-    
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startDayOfWeek; i++) {
       days.push(null);
     }
-    
+
     // Add all days in the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
-    
     return days;
   };
   const handleEditSchedule = (dayIndex: number) => {
@@ -288,44 +290,23 @@ export function ScheduleCalendar() {
                   <div className="space-y-3">
                     <Label className="text-base font-semibold">คำศัพท์ทบทวน</Label>
                     <ScrollArea className="h-[320px] rounded-lg border border-border/50 bg-muted/20 p-3">
-                      {flashcards.length > 0 ? (
-                        <div className="space-y-2">
-                          {flashcards.slice(0, 20).map((card) => (
-                            <div
-                              key={card.id}
-                              onClick={() => {
-                                setSelectedVocabulary(prev => 
-                                  prev.includes(card.id) 
-                                    ? prev.filter(id => id !== card.id)
-                                    : [...prev, card.id]
-                                );
-                              }}
-                              className={cn(
-                                "p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-soft",
-                                selectedVocabulary.includes(card.id)
-                                  ? "border-primary bg-primary/10"
-                                  : "border-border/30 bg-background hover:border-primary/50"
-                              )}
-                            >
+                      {flashcards.length > 0 ? <div className="space-y-2">
+                          {flashcards.slice(0, 20).map(card => <div key={card.id} onClick={() => {
+                        setSelectedVocabulary(prev => prev.includes(card.id) ? prev.filter(id => id !== card.id) : [...prev, card.id]);
+                      }} className={cn("p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-soft", selectedVocabulary.includes(card.id) ? "border-primary bg-primary/10" : "border-border/30 bg-background hover:border-primary/50")}>
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <div className="font-semibold text-sm truncate">{card.front_text}</div>
                                   <div className="text-xs text-muted-foreground truncate mt-1">{card.back_text}</div>
                                 </div>
-                                {selectedVocabulary.includes(card.id) && (
-                                  <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
-                                )}
+                                {selectedVocabulary.includes(card.id) && <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />}
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                            </div>)}
+                        </div> : <div className="flex flex-col items-center justify-center h-full text-center py-8">
                           <BookOpen className="w-12 h-12 text-muted-foreground/50 mb-3" />
                           <p className="text-sm text-muted-foreground">ยังไม่มีคำศัพท์</p>
                           <p className="text-xs text-muted-foreground/70 mt-1">เพิ่มคำศัพท์เพื่อเริ่มทบทวน</p>
-                        </div>
-                      )}
+                        </div>}
                     </ScrollArea>
                     <p className="text-xs text-muted-foreground">
                       เลือกแล้ว: {selectedVocabulary.length} คำศัพท์
@@ -337,69 +318,40 @@ export function ScheduleCalendar() {
                     <div className="space-y-3">
                       <Label className="text-base font-semibold">เลือกวันที่</Label>
                       <div className="flex justify-center p-4 rounded-lg border border-border/50 bg-gradient-to-br from-primary/5 to-accent/5">
-                        <DatePicker 
-                          value={reviewDate} 
-                          onChange={setReviewDate}
-                        />
+                        <DatePicker value={reviewDate} onChange={setReviewDate} />
                       </div>
                     </div>
 
                     <div className="space-y-3">
                       <Label className="text-base font-semibold">เลือกเวลา</Label>
                       <div className="flex justify-center p-4 rounded-lg border border-border/50 bg-gradient-to-br from-accent/5 to-primary/5">
-                        <TimePicker 
-                          value={reviewTime} 
-                          onChange={setReviewTime}
-                        />
+                        <TimePicker value={reviewTime} onChange={setReviewTime} />
                       </div>
                     </div>
 
                     {/* Preview */}
-                    <div className="p-4 rounded-lg bg-primary/10 border-2 border-primary/20 space-y-2">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-                        <Bell className="w-4 h-4" />
-                        <span>สรุปการตั้งเวลา</span>
-                      </div>
-                      <div className="text-sm space-y-1">
-                        <p className="text-foreground">
-                          📅 {reviewDate.toLocaleDateString('th-TH', { 
-                            day: 'numeric', 
-                            month: 'long', 
-                            year: 'numeric' 
-                          })}
-                        </p>
-                        <p className="text-foreground">🕐 {reviewTime} น.</p>
-                        <p className="text-muted-foreground">
-                          📚 {selectedVocabulary.length} คำศัพท์ที่เลือก
-                        </p>
-                      </div>
-                    </div>
+                    
                   </div>
                 </div>
 
                 <DialogFooter className="gap-2 sm:gap-0">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setIsReviewDialogOpen(false);
-                      setSelectedVocabulary([]);
-                    }}
-                    className="w-full sm:w-auto"
-                  >
+                  <Button variant="outline" onClick={() => {
+                  setIsReviewDialogOpen(false);
+                  setSelectedVocabulary([]);
+                }} className="w-full sm:w-auto">
                     ยกเลิก
                   </Button>
-                  <Button 
-                    onClick={() => {
-                      toast({
-                        title: "✅ ตั้งเวลาทบทวนสำเร็จ",
-                        description: `จะแจ้งเตือนในวันที่ ${reviewDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} เวลา ${reviewTime} น.`
-                      });
-                      setIsReviewDialogOpen(false);
-                      setSelectedVocabulary([]);
-                    }}
-                    className="w-full sm:w-auto"
-                    disabled={selectedVocabulary.length === 0}
-                  >
+                  <Button onClick={() => {
+                  toast({
+                    title: "✅ ตั้งเวลาทบทวนสำเร็จ",
+                    description: `จะแจ้งเตือนในวันที่ ${reviewDate.toLocaleDateString('th-TH', {
+                      day: 'numeric',
+                      month: 'short'
+                    })} เวลา ${reviewTime} น.`
+                  });
+                  setIsReviewDialogOpen(false);
+                  setSelectedVocabulary([]);
+                }} className="w-full sm:w-auto" disabled={selectedVocabulary.length === 0}>
                     <Bell className="h-4 w-4 mr-2" />
                     ตั้งเวลาทบทวน
                   </Button>
@@ -552,29 +504,24 @@ export function ScheduleCalendar() {
               {/* เดือน/ปี Header */}
               <div className="flex items-center justify-between px-2">
                 <h3 className="text-lg font-bold text-foreground">
-                  {selectedDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}
+                  {selectedDate.toLocaleDateString('th-TH', {
+                month: 'long',
+                year: 'numeric'
+              })}
                 </h3>
                 <div className="flex gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      const newDate = new Date(selectedDate);
-                      newDate.setMonth(newDate.getMonth() - 1);
-                      setSelectedDate(newDate);
-                    }}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setMonth(newDate.getMonth() - 1);
+                setSelectedDate(newDate);
+              }}>
                     ←
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      const newDate = new Date(selectedDate);
-                      newDate.setMonth(newDate.getMonth() + 1);
-                      setSelectedDate(newDate);
-                    }}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setMonth(newDate.getMonth() + 1);
+                setSelectedDate(newDate);
+              }}>
                     →
                   </Button>
                 </div>
@@ -582,45 +529,27 @@ export function ScheduleCalendar() {
 
               {/* Header วันในสัปดาห์ */}
               <div className="grid grid-cols-7 gap-1 mb-1">
-                {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map((day, index) => (
-                  <div 
-                    key={day} 
-                    className={`text-center text-xs font-bold py-2 rounded-md ${
-                      index === 0 || index === 6 ? 'text-primary' : 'text-muted-foreground'
-                    }`}
-                  >
+                {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map((day, index) => <div key={day} className={`text-center text-xs font-bold py-2 rounded-md ${index === 0 || index === 6 ? 'text-primary' : 'text-muted-foreground'}`}>
                     {day}
-                  </div>
-                ))}
+                  </div>)}
               </div>
               
               {/* ตารางวันที่ */}
               <div className="grid grid-cols-7 gap-1">
                 {getMonthDays().map((date, index) => {
-                  if (!date) {
-                    return <div key={`empty-${index}`} className="aspect-square min-h-[80px]" />;
-                  }
-                  
-                  const daySchedule = getDaySchedule(date.getDay());
-                  const isCurrentDay = isToday(date);
-                  const hasActivities = daySchedule && daySchedule.activities.length > 0;
-                  const totalActivities = daySchedule?.activities.length || 0;
-                  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                  
-                  return (
-                    <div
-                      key={date.toDateString()}
-                      className={`
+              if (!date) {
+                return <div key={`empty-${index}`} className="aspect-square min-h-[80px]" />;
+              }
+              const daySchedule = getDaySchedule(date.getDay());
+              const isCurrentDay = isToday(date);
+              const hasActivities = daySchedule && daySchedule.activities.length > 0;
+              const totalActivities = daySchedule?.activities.length || 0;
+              const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+              return <div key={date.toDateString()} className={`
                         relative min-h-[80px] p-2 rounded-lg border-2 transition-all duration-200 cursor-pointer
                         hover:shadow-soft hover:scale-[1.02] hover:z-10
-                        ${isCurrentDay 
-                          ? 'bg-primary/10 border-primary shadow-sm ring-2 ring-primary/20' 
-                          : hasActivities 
-                          ? 'bg-accent/10 border-accent/50 hover:bg-accent/20' 
-                          : 'bg-background border-border/30 hover:bg-muted/20'}
-                      `}
-                      onClick={() => handleEditSchedule(date.getDay())}
-                    >
+                        ${isCurrentDay ? 'bg-primary/10 border-primary shadow-sm ring-2 ring-primary/20' : hasActivities ? 'bg-accent/10 border-accent/50 hover:bg-accent/20' : 'bg-background border-border/30 hover:bg-muted/20'}
+                      `} onClick={() => handleEditSchedule(date.getDay())}>
                       {/* วันที่ */}
                       <div className="flex items-center justify-between mb-1">
                         <div className={`
@@ -630,65 +559,51 @@ export function ScheduleCalendar() {
                           {date.getDate()}
                         </div>
                         
-                        {isCurrentDay && (
-                          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                        )}
+                        {isCurrentDay && <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
                       </div>
                       
                       {/* กิจกรรม */}
-                      {hasActivities && (
-                        <div className="space-y-1">
-                          {daySchedule!.activities.slice(0, 3).map((activity) => {
-                            const Icon = activity.icon;
-                            return (
-                              <div 
-                                key={activity.id} 
-                                className={`
+                      {hasActivities && <div className="space-y-1">
+                          {daySchedule!.activities.slice(0, 3).map(activity => {
+                    const Icon = activity.icon;
+                    return <div key={activity.id} className={`
                                   text-xs px-1.5 py-1 rounded-md border
                                   ${activity.color}
                                   flex items-center gap-1.5 truncate
                                   hover:scale-105 transition-transform
-                                `}
-                              >
+                                `}>
                                 <Icon className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate font-medium" style={{ fontSize: '10px' }}>
+                                <span className="truncate font-medium" style={{
+                        fontSize: '10px'
+                      }}>
                                   {activity.time}
                                 </span>
-                              </div>
-                            );
-                          })}
-                          {totalActivities > 3 && (
-                            <div className="text-[10px] text-center font-semibold text-primary bg-primary/10 rounded px-1 py-0.5">
+                              </div>;
+                  })}
+                          {totalActivities > 3 && <div className="text-[10px] text-center font-semibold text-primary bg-primary/10 rounded px-1 py-0.5">
                               +{totalActivities - 3} กิจกรรม
-                            </div>
-                          )}
-                        </div>
-                      )}
+                            </div>}
+                        </div>}
                       
                       {/* Empty state hint */}
-                      {!hasActivities && !isCurrentDay && (
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                      {!hasActivities && !isCurrentDay && <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                           <div className="text-xs text-muted-foreground">+</div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        </div>}
+                    </div>;
+            })}
               </div>
               
               {/* Legend */}
               <div className="flex flex-wrap gap-3 pt-3 border-t border-border/30">
-                {activityTypes.map((type) => {
-                  const Icon = type.icon;
-                  return (
-                    <div key={type.value} className="flex items-center gap-1.5">
+                {activityTypes.map(type => {
+              const Icon = type.icon;
+              return <div key={type.value} className="flex items-center gap-1.5">
                       <div className={`p-1 rounded ${type.color}`}>
                         <Icon className="w-3 h-3" />
                       </div>
                       <span className="text-xs text-muted-foreground">{type.label}</span>
-                    </div>
-                  );
-                })}
+                    </div>;
+            })}
               </div>
             </div>}
 
