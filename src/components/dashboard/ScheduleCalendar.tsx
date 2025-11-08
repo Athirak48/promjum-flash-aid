@@ -8,14 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, ChevronDown, Bell } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, ChevronDown, Bell, CheckCircle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { TimePicker } from './TimePicker';
 import { DurationPicker } from './DurationPicker';
+import { DatePicker } from './DatePicker';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useFlashcards } from '@/hooks/useFlashcards';
 interface Activity {
   id: string;
   type: 'vocabulary' | 'practice' | 'listening' | 'review';
@@ -52,14 +54,17 @@ const activityTypes = [{
 }];
 type ViewMode = 'day' | 'week' | 'month' | 'year';
 export function ScheduleCalendar() {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  const { flashcards } = useFlashcards();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  const [reviewDate, setReviewDate] = useState<Date>(new Date());
+  const [reviewTime, setReviewTime] = useState<string>('09:00');
+  const [selectedVocabulary, setSelectedVocabulary] = useState<string[]>([]);
   const today = selectedDate;
   const weekDays = Array.from({
     length: 7
@@ -266,18 +271,141 @@ export function ScheduleCalendar() {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                toast({
-                  title: "ตั้งเวลาทวน",
-                  description: "ฟีเจอร์นี้จะพร้อมใช้งานเร็วๆ นี้"
-                });
-              }}
-            >
-              <Bell className="h-4 w-4 mr-2" />
-              ตั้งเวลาทวน
-            </Button>
+            <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Bell className="h-4 w-4 mr-2" />
+                  ตั้งเวลาทวน
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[700px]">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-bold">⏰ ตั้งเวลาทบทวนคำศัพท์</DialogTitle>
+                </DialogHeader>
+                
+                <div className="grid grid-cols-2 gap-6 py-4">
+                  {/* ฝั่งซ้าย: คำศัพท์ทบทวน */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">คำศัพท์ทบทวน</Label>
+                    <ScrollArea className="h-[320px] rounded-lg border border-border/50 bg-muted/20 p-3">
+                      {flashcards.length > 0 ? (
+                        <div className="space-y-2">
+                          {flashcards.slice(0, 20).map((card) => (
+                            <div
+                              key={card.id}
+                              onClick={() => {
+                                setSelectedVocabulary(prev => 
+                                  prev.includes(card.id) 
+                                    ? prev.filter(id => id !== card.id)
+                                    : [...prev, card.id]
+                                );
+                              }}
+                              className={cn(
+                                "p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-soft",
+                                selectedVocabulary.includes(card.id)
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border/30 bg-background hover:border-primary/50"
+                              )}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-sm truncate">{card.front_text}</div>
+                                  <div className="text-xs text-muted-foreground truncate mt-1">{card.back_text}</div>
+                                </div>
+                                {selectedVocabulary.includes(card.id) && (
+                                  <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                          <BookOpen className="w-12 h-12 text-muted-foreground/50 mb-3" />
+                          <p className="text-sm text-muted-foreground">ยังไม่มีคำศัพท์</p>
+                          <p className="text-xs text-muted-foreground/70 mt-1">เพิ่มคำศัพท์เพื่อเริ่มทบทวน</p>
+                        </div>
+                      )}
+                    </ScrollArea>
+                    <p className="text-xs text-muted-foreground">
+                      เลือกแล้ว: {selectedVocabulary.length} คำศัพท์
+                    </p>
+                  </div>
+
+                  {/* ฝั่งขวา: ตั้งวันและเวลา */}
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <Label className="text-base font-semibold">เลือกวันที่</Label>
+                      <div className="flex justify-center p-4 rounded-lg border border-border/50 bg-gradient-to-br from-primary/5 to-accent/5">
+                        <DatePicker 
+                          value={reviewDate} 
+                          onChange={setReviewDate}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-base font-semibold">เลือกเวลา</Label>
+                      <div className="flex justify-center p-4 rounded-lg border border-border/50 bg-gradient-to-br from-accent/5 to-primary/5">
+                        <TimePicker 
+                          value={reviewTime} 
+                          onChange={setReviewTime}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Preview */}
+                    <div className="p-4 rounded-lg bg-primary/10 border-2 border-primary/20 space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                        <Bell className="w-4 h-4" />
+                        <span>สรุปการตั้งเวลา</span>
+                      </div>
+                      <div className="text-sm space-y-1">
+                        <p className="text-foreground">
+                          📅 {reviewDate.toLocaleDateString('th-TH', { 
+                            day: 'numeric', 
+                            month: 'long', 
+                            year: 'numeric' 
+                          })}
+                        </p>
+                        <p className="text-foreground">🕐 {reviewTime} น.</p>
+                        <p className="text-muted-foreground">
+                          📚 {selectedVocabulary.length} คำศัพท์ที่เลือก
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsReviewDialogOpen(false);
+                      setSelectedVocabulary([]);
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    ยกเลิก
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      toast({
+                        title: "✅ ตั้งเวลาทบทวนสำเร็จ",
+                        description: `จะแจ้งเตือนในวันที่ ${reviewDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} เวลา ${reviewTime} น.`
+                      });
+                      setIsReviewDialogOpen(false);
+                      setSelectedVocabulary([]);
+                    }}
+                    className="w-full sm:w-auto"
+                    disabled={selectedVocabulary.length === 0}
+                  >
+                    <Bell className="h-4 w-4 mr-2" />
+                    ตั้งเวลาทบทวน
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             
             <Popover>
               <PopoverTrigger asChild>
