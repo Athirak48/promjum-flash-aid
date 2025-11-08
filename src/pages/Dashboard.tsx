@@ -50,7 +50,7 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* แถว 2: Quick Start & Daily Deck */}
+        {/* แถว 2: Quick Start & Friends Leaderboard */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           {/* Daily Progress (Column 1-2) */}
           <div className="lg:col-span-2">
@@ -61,37 +61,33 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* Suggested Deck (Column 3) */}
+          {/* Friends Leaderboard (Column 3) */}
           <div>
-            <SuggestedDeck />
+            <FriendsLeaderboard />
           </div>
         </div>
 
-        {/* แถว 3: Progress Overview */}
-        <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <ProgressOverview
-            streak={userStats.streak}
-            wordsLearned={userStats.wordsLearned}
-            totalWords={userStats.totalWords}
-            subdecksCompleted={userStats.subdecksCompleted}
-            totalSubdecks={userStats.totalSubdecks}
-          />
-        </div>
-
-        {/* แถว 4: Friends / Leaderboard */}
-        <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <FriendsLeaderboard />
-        </div>
-
-        {/* แถว 5: Calendar / Schedule */}
+        {/* แถว 3: Calendar & Progress Overview + Suggested Deck */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
-          <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          {/* Calendar (Left Column) */}
+          <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <ScheduleCalendar />
           </div>
           
-          {/* AI Recommendation space (can add component later) */}
-          <div className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
-            {/* Reserved for AI recommendations or other content */}
+          {/* Progress Overview & Suggested Deck (Right Column) */}
+          <div className="flex flex-col gap-4 sm:gap-6">
+            <div className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
+              <SuggestedDeck />
+            </div>
+            <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+              <ProgressOverview
+                streak={userStats.streak}
+                wordsLearned={userStats.wordsLearned}
+                totalWords={userStats.totalWords}
+                subdecksCompleted={userStats.subdecksCompleted}
+                totalSubdecks={userStats.totalSubdecks}
+              />
+            </div>
           </div>
         </div>
 
