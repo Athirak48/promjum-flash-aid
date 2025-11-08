@@ -7,10 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarIcon, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, ChevronDown } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { TimePicker } from './TimePicker';
 import { DurationPicker } from './DurationPicker';
+import { format } from 'date-fns';
+import { th } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface Activity {
   id: string;
@@ -38,11 +43,12 @@ type ViewMode = 'day' | 'week' | 'month' | 'year';
 
 export function ScheduleCalendar() {
   const { toast } = useToast();
-  const today = new Date();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const today = selectedDate;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(today);
@@ -186,14 +192,41 @@ export function ScheduleCalendar() {
     <Card className="bg-gradient-card backdrop-blur-sm shadow-soft border border-border/50">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Calendar className="w-6 h-6 text-primary" />
-            ตารางเวลาฝึกภาษา
-          </CardTitle>
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <Sparkles className="w-3 h-3" />
-            AI แนะนำ
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              AI แนะนำ
+            </Badge>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <CalendarIcon className="w-6 h-6 text-primary" />
+              ตารางเวลาฝึกภาษา
+            </CardTitle>
+          </div>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !selectedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, "d MMM yyyy", { locale: th }) : <span>เลือกวันที่</span>}
+                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </CardHeader>
       <CardContent>

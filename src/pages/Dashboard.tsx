@@ -84,8 +84,15 @@ export default function Dashboard() {
         </div>
 
         {/* แถว 5: Calendar / Schedule */}
-        <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <ScheduleCalendar />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+          <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <ScheduleCalendar />
+          </div>
+          
+          {/* AI Recommendation space (can add component later) */}
+          <div className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
+            {/* Reserved for AI recommendations or other content */}
+          </div>
         </div>
 
         {/* แถว 6: Goals / Motivation */}
