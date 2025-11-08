@@ -57,16 +57,16 @@ export default function Dashboard() {
         </div>
 
         {/* แถว 3: Calendar & Suggested Deck + Goals */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
-          {/* Calendar (Left Column) */}
-          <div className="animate-fade-in" style={{
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6 mb-6">
+          {/* Calendar (3/5 width) */}
+          <div className="lg:col-span-3 animate-fade-in" style={{
           animationDelay: '0.2s'
         }}>
             <ScheduleCalendar />
           </div>
           
-          {/* Suggested Deck & Goals (Right Column) */}
-          <div className="flex flex-col gap-4 sm:gap-6">
+          {/* Suggested Deck & Goals (2/5 width) */}
+          <div className="lg:col-span-2 flex flex-col gap-4 sm:gap-6">
             <div className="animate-fade-in" style={{
             animationDelay: '0.25s'
           }}>
