@@ -3,22 +3,18 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
 import { Flame, Star, BookOpen, Play } from 'lucide-react';
-
 interface DailyDeckQuickStartProps {
   streak?: number;
   totalXP?: number;
   wordsLearnedToday?: number;
 }
-
-export function DailyDeckQuickStart({ 
-  streak = 0, 
-  totalXP = 0, 
-  wordsLearnedToday = 0 
+export function DailyDeckQuickStart({
+  streak = 0,
+  totalXP = 0,
+  wordsLearnedToday = 0
 }: DailyDeckQuickStartProps) {
   const navigate = useNavigate();
-
-  return (
-    <Card className="bg-gradient-primary/10 backdrop-blur-sm shadow-glow border border-primary/30 hover:shadow-large transition-all h-full">
+  return <Card className="bg-gradient-primary/10 backdrop-blur-sm shadow-glow border border-primary/30 hover:shadow-large transition-all h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-3 text-2xl">
           <div className="p-3 rounded-xl bg-primary/20 shadow-soft">
@@ -66,24 +62,13 @@ export function DailyDeckQuickStart({
         </div>
 
         {/* Progress Bar */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">เป้าหมายวันนี้</span>
-            <span className="font-bold text-primary">{wordsLearnedToday}/50 คำ</span>
-          </div>
-          <Progress value={(wordsLearnedToday / 50) * 100} className="h-3" />
-        </div>
+        
 
         {/* Review Button */}
-        <Button 
-          onClick={() => navigate('/decks')}
-          className="w-full bg-gradient-primary hover:shadow-glow transition-all text-lg py-6"
-          size="lg"
-        >
+        <Button onClick={() => navigate('/decks')} className="w-full bg-gradient-primary hover:shadow-glow transition-all text-lg py-6" size="lg">
           <Play className="w-5 h-5 mr-2" />
           ทบทวนทันที
         </Button>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 }
