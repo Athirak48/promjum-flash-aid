@@ -1,9 +1,53 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Target, Trophy, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Target, Trophy, Zap, Plus, BookOpen, Star, Award, Flame, Heart, Brain, Rocket, Crown, Medal, CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { LucideIcon } from "lucide-react";
+
+interface Goal {
+  id: number;
+  title: string;
+  description?: string;
+  icon: LucideIcon;
+  current: number;
+  target: number;
+  color: string;
+  bgColor: string;
+}
+
+const availableIcons = [
+  { value: 'Target', icon: Target, label: 'เป้าหมาย', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
+  { value: 'Trophy', icon: Trophy, label: 'ถ้วยรางวัล', color: 'text-yellow-500', bgColor: 'bg-yellow-500/10' },
+  { value: 'Zap', icon: Zap, label: 'พลังงาน', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
+  { value: 'BookOpen', icon: BookOpen, label: 'หนังสือ', color: 'text-green-500', bgColor: 'bg-green-500/10' },
+  { value: 'Star', icon: Star, label: 'ดาว', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
+  { value: 'Award', icon: Award, label: 'รางวัล', color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
+  { value: 'Flame', icon: Flame, label: 'ไฟ', color: 'text-red-500', bgColor: 'bg-red-500/10' },
+  { value: 'Heart', icon: Heart, label: 'หัวใจ', color: 'text-pink-500', bgColor: 'bg-pink-500/10' },
+  { value: 'Brain', icon: Brain, label: 'สมอง', color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
+  { value: 'Rocket', icon: Rocket, label: 'จรวด', color: 'text-cyan-500', bgColor: 'bg-cyan-500/10' },
+  { value: 'Crown', icon: Crown, label: 'มงกุฎ', color: 'text-yellow-600', bgColor: 'bg-yellow-600/10' },
+  { value: 'Medal', icon: Medal, label: 'เหรียญ', color: 'text-orange-600', bgColor: 'bg-orange-600/10' },
+  { value: 'CheckCircle', icon: CheckCircle, label: 'ถูกต้อง', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+];
 
 export function GoalsMotivation() {
-  const goals = [
+  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newGoal, setNewGoal] = useState({
+    title: '',
+    description: '',
+    target: '',
+    iconValue: 'Target'
+  });
+
+  const [goals, setGoals] = useState<Goal[]>([
     {
       id: 1,
       title: "เรียนครบ 7 วัน",
@@ -31,12 +75,125 @@ export function GoalsMotivation() {
       color: "text-purple-500",
       bgColor: "bg-purple-500/10"
     }
-  ];
+  ]);
+
+  const handleAddGoal = () => {
+    if (!newGoal.title.trim() || !newGoal.target) {
+      toast({
+        title: "กรุณากรอกข้อมูลให้ครบ",
+        description: "โปรดระบุหัวข้อและจำนวนเป้าหมาย",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const selectedIcon = availableIcons.find(i => i.value === newGoal.iconValue) || availableIcons[0];
+    
+    const goalToAdd: Goal = {
+      id: Date.now(),
+      title: newGoal.title,
+      description: newGoal.description,
+      icon: selectedIcon.icon,
+      current: 0,
+      target: parseInt(newGoal.target),
+      color: selectedIcon.color,
+      bgColor: selectedIcon.bgColor
+    };
+
+    setGoals([...goals, goalToAdd]);
+    setIsDialogOpen(false);
+    setNewGoal({ title: '', description: '', target: '', iconValue: 'Target' });
+    
+    toast({
+      title: "เพิ่มเป้าหมายสำเร็จ",
+      description: `เพิ่ม "${newGoal.title}" แล้ว`
+    });
+  };
 
   return (
     <Card className="bg-gradient-card backdrop-blur-sm border-border/50 shadow-soft">
       <CardHeader>
-        <CardTitle className="text-lg">เป้าหมายการเรียน</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">เป้าหมายการเรียน</CardTitle>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>เพิ่มเป้าหมายใหม่</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="title">หัวข้อเป้าหมาย</Label>
+                  <Input
+                    id="title"
+                    placeholder="เช่น เรียนครบ 30 วัน"
+                    value={newGoal.title}
+                    onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
+                    maxLength={100}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">รายละเอียด (ไม่บังคับ)</Label>
+                  <Input
+                    id="description"
+                    placeholder="เพิ่มรายละเอียด..."
+                    value={newGoal.description}
+                    onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
+                    maxLength={200}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="target">จำนวนเป้าหมาย</Label>
+                  <Input
+                    id="target"
+                    type="number"
+                    placeholder="เช่น 30"
+                    value={newGoal.target}
+                    onChange={(e) => setNewGoal({ ...newGoal, target: e.target.value })}
+                    min="1"
+                    max="10000"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="icon">ไอคอน</Label>
+                  <Select 
+                    value={newGoal.iconValue} 
+                    onValueChange={(value) => setNewGoal({ ...newGoal, iconValue: value })}
+                  >
+                    <SelectTrigger id="icon">
+                      <SelectValue placeholder="เลือกไอคอน" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableIcons.map((iconOption) => {
+                        const IconComponent = iconOption.icon;
+                        return (
+                          <SelectItem key={iconOption.value} value={iconOption.value}>
+                            <div className="flex items-center gap-2">
+                              <IconComponent className={`h-4 w-4 ${iconOption.color}`} />
+                              <span>{iconOption.label}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  ยกเลิก
+                </Button>
+                <Button onClick={handleAddGoal}>
+                  เพิ่มเป้าหมาย
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-4">
