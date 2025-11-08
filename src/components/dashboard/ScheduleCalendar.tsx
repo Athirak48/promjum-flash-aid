@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarIcon, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, ChevronDown, Bell, CheckCircle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { TimePicker } from './TimePicker';
 import { DurationPicker } from './DurationPicker';
 import { DatePicker } from './DatePicker';
@@ -341,16 +342,58 @@ export function ScheduleCalendar() {
                 }} className="w-full sm:w-auto">
                     ยกเลิก
                   </Button>
-                  <Button onClick={() => {
-                  toast({
-                    title: "✅ ตั้งเวลาทบทวนสำเร็จ",
-                    description: `จะแจ้งเตือนในวันที่ ${reviewDate.toLocaleDateString('th-TH', {
-                      day: 'numeric',
-                      month: 'short'
-                    })} เวลา ${reviewTime} น.`
-                  });
-                  setIsReviewDialogOpen(false);
-                  setSelectedVocabulary([]);
+                  <Button onClick={async () => {
+                  if (selectedVocabulary.length === 0) {
+                    toast({
+                      title: "กรุณาเลือกคำศัพท์",
+                      description: "กรุณาเลือกคำศัพท์อย่างน้อย 1 คำก่อนตั้งเวลาทบทวน",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+
+                  try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) {
+                      toast({
+                        title: "กรุณาเข้าสู่ระบบ",
+                        description: "กรุณาเข้าสู่ระบบก่อนตั้งเวลาทบทวน",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+
+                    // Save to database
+                    const { error } = await supabase
+                      .from('scheduled_reviews')
+                      .insert({
+                        user_id: user.id,
+                        scheduled_date: reviewDate.toISOString().split('T')[0],
+                        scheduled_time: reviewTime,
+                        vocabulary_ids: selectedVocabulary
+                      });
+
+                    if (error) throw error;
+
+                    toast({
+                      title: "✅ ตั้งเวลาทบทวนสำเร็จ",
+                      description: `จะแจ้งเตือนในวันที่ ${reviewDate.toLocaleDateString('th-TH', {
+                        day: 'numeric',
+                        month: 'short'
+                      })} เวลา ${reviewTime} น.`
+                    });
+                    setIsReviewDialogOpen(false);
+                    setSelectedVocabulary([]);
+                    setReviewDate(new Date());
+                    setReviewTime("09:00");
+                  } catch (error: any) {
+                    console.error('Error setting review:', error);
+                    toast({
+                      title: "เกิดข้อผิดพลาด",
+                      description: "ไม่สามารถตั้งเวลาทบทวนได้",
+                      variant: "destructive"
+                    });
+                  }
                 }} className="w-full sm:w-auto" disabled={selectedVocabulary.length === 0}>
                     <Bell className="h-4 w-4 mr-2" />
                     ตั้งเวลาทบทวน

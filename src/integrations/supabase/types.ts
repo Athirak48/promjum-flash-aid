@@ -531,6 +531,36 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_reviews: {
+        Row: {
+          created_at: string
+          id: string
+          scheduled_date: string
+          scheduled_time: string
+          updated_at: string
+          user_id: string
+          vocabulary_ids: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          scheduled_date: string
+          scheduled_time: string
+          updated_at?: string
+          user_id: string
+          vocabulary_ids: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          scheduled_date?: string
+          scheduled_time?: string
+          updated_at?: string
+          user_id?: string
+          vocabulary_ids?: string[]
+        }
+        Relationships: []
+      }
       sub_decks: {
         Row: {
           created_at: string
