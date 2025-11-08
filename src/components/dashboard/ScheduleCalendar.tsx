@@ -420,75 +420,144 @@ export function ScheduleCalendar() {
         })}
 
           {/* Month View */}
-          {viewMode === 'month' && <div>
+          {viewMode === 'month' && <div className="space-y-4">
+              {/* เดือน/ปี Header */}
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-lg font-bold text-foreground">
+                  {selectedDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}
+                </h3>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      const newDate = new Date(selectedDate);
+                      newDate.setMonth(newDate.getMonth() - 1);
+                      setSelectedDate(newDate);
+                    }}
+                  >
+                    ←
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      const newDate = new Date(selectedDate);
+                      newDate.setMonth(newDate.getMonth() + 1);
+                      setSelectedDate(newDate);
+                    }}
+                  >
+                    →
+                  </Button>
+                </div>
+              </div>
+
               {/* Header วันในสัปดาห์ */}
-              <div className="grid grid-cols-7 gap-2 mb-2">
-                {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map((day) => (
-                  <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-2">
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map((day, index) => (
+                  <div 
+                    key={day} 
+                    className={`text-center text-xs font-bold py-2 rounded-md ${
+                      index === 0 || index === 6 ? 'text-primary' : 'text-muted-foreground'
+                    }`}
+                  >
                     {day}
                   </div>
                 ))}
               </div>
               
               {/* ตารางวันที่ */}
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-1">
                 {getMonthDays().map((date, index) => {
                   if (!date) {
-                    return <div key={`empty-${index}`} className="aspect-square" />;
+                    return <div key={`empty-${index}`} className="aspect-square min-h-[80px]" />;
                   }
                   
                   const daySchedule = getDaySchedule(date.getDay());
                   const isCurrentDay = isToday(date);
                   const hasActivities = daySchedule && daySchedule.activities.length > 0;
                   const totalActivities = daySchedule?.activities.length || 0;
+                  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                   
                   return (
                     <div
                       key={date.toDateString()}
                       className={`
-                        relative aspect-square p-2 rounded-lg border transition-all cursor-pointer
+                        relative min-h-[80px] p-2 rounded-lg border-2 transition-all duration-200 cursor-pointer
+                        hover:shadow-soft hover:scale-[1.02] hover:z-10
                         ${isCurrentDay 
-                          ? 'bg-primary/20 border-primary shadow-soft ring-2 ring-primary/30' 
+                          ? 'bg-primary/10 border-primary shadow-sm ring-2 ring-primary/20' 
                           : hasActivities 
-                          ? 'bg-accent/30 border-accent hover:bg-accent/40' 
-                          : 'bg-background/50 border-border/30 hover:bg-muted/30'}
+                          ? 'bg-accent/10 border-accent/50 hover:bg-accent/20' 
+                          : 'bg-background border-border/30 hover:bg-muted/20'}
                       `}
                       onClick={() => handleEditSchedule(date.getDay())}
                     >
-                      <div className={`
-                        text-sm font-semibold mb-1
-                        ${isCurrentDay ? 'text-primary' : 'text-foreground'}
-                      `}>
-                        {date.getDate()}
+                      {/* วันที่ */}
+                      <div className="flex items-center justify-between mb-1">
+                        <div className={`
+                          text-sm font-bold
+                          ${isCurrentDay ? 'text-primary' : isWeekend ? 'text-primary/70' : 'text-foreground'}
+                        `}>
+                          {date.getDate()}
+                        </div>
+                        
+                        {isCurrentDay && (
+                          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        )}
                       </div>
                       
+                      {/* กิจกรรม */}
                       {hasActivities && (
                         <div className="space-y-1">
-                          {daySchedule!.activities.slice(0, 2).map((activity) => {
+                          {daySchedule!.activities.slice(0, 3).map((activity) => {
                             const Icon = activity.icon;
                             return (
                               <div 
                                 key={activity.id} 
-                                className={`text-xs p-1 rounded ${activity.color} flex items-center gap-1 truncate`}
+                                className={`
+                                  text-xs px-1.5 py-1 rounded-md border
+                                  ${activity.color}
+                                  flex items-center gap-1.5 truncate
+                                  hover:scale-105 transition-transform
+                                `}
                               >
                                 <Icon className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate text-[10px]">{activity.time}</span>
+                                <span className="truncate font-medium" style={{ fontSize: '10px' }}>
+                                  {activity.time}
+                                </span>
                               </div>
                             );
                           })}
-                          {totalActivities > 2 && (
-                            <div className="text-[10px] text-muted-foreground text-center">
-                              +{totalActivities - 2} เพิ่มเติม
+                          {totalActivities > 3 && (
+                            <div className="text-[10px] text-center font-semibold text-primary bg-primary/10 rounded px-1 py-0.5">
+                              +{totalActivities - 3} กิจกรรม
                             </div>
                           )}
                         </div>
                       )}
                       
-                      {isCurrentDay && (
-                        <div className="absolute top-1 right-1">
-                          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                      {/* Empty state hint */}
+                      {!hasActivities && !isCurrentDay && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <div className="text-xs text-muted-foreground">+</div>
                         </div>
                       )}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Legend */}
+              <div className="flex flex-wrap gap-3 pt-3 border-t border-border/30">
+                {activityTypes.map((type) => {
+                  const Icon = type.icon;
+                  return (
+                    <div key={type.value} className="flex items-center gap-1.5">
+                      <div className={`p-1 rounded ${type.color}`}>
+                        <Icon className="w-3 h-3" />
+                      </div>
+                      <span className="text-xs text-muted-foreground">{type.label}</span>
                     </div>
                   );
                 })}
