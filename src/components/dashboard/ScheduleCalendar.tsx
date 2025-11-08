@@ -159,6 +159,30 @@ export function ScheduleCalendar() {
   const getDaySchedule = (dayIndex: number) => {
     return schedules.find(s => s.dayIndex === dayIndex);
   };
+
+  // Get all days in the current month for calendar view
+  const getMonthDays = () => {
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay();
+    
+    const days: (Date | null)[] = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add all days in the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+    
+    return days;
+  };
   const handleEditSchedule = (dayIndex: number) => {
     setSelectedDay(dayIndex);
     setIsDialogOpen(true);
@@ -396,34 +420,79 @@ export function ScheduleCalendar() {
         })}
 
           {/* Month View */}
-          {viewMode === 'month' && <div className="grid grid-cols-1 gap-3">
-              {schedules.map(schedule => {
-            const date = weekDays[schedule.dayIndex];
-            const totalDuration = schedule.activities.reduce((sum, a) => sum + a.duration, 0);
-            return <div key={schedule.dayIndex} className="p-4 rounded-lg border border-border/50 bg-muted/20 hover:bg-muted/30 transition-all">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-medium text-sm">
-                        {date.toLocaleDateString('th-TH', {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short'
-                  })}
+          {viewMode === 'month' && <div>
+              {/* Header วันในสัปดาห์ */}
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map((day) => (
+                  <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-2">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              
+              {/* ตารางวันที่ */}
+              <div className="grid grid-cols-7 gap-2">
+                {getMonthDays().map((date, index) => {
+                  if (!date) {
+                    return <div key={`empty-${index}`} className="aspect-square" />;
+                  }
+                  
+                  const daySchedule = getDaySchedule(date.getDay());
+                  const isCurrentDay = isToday(date);
+                  const hasActivities = daySchedule && daySchedule.activities.length > 0;
+                  const totalActivities = daySchedule?.activities.length || 0;
+                  
+                  return (
+                    <div
+                      key={date.toDateString()}
+                      className={`
+                        relative aspect-square p-2 rounded-lg border transition-all cursor-pointer
+                        ${isCurrentDay 
+                          ? 'bg-primary/20 border-primary shadow-soft ring-2 ring-primary/30' 
+                          : hasActivities 
+                          ? 'bg-accent/30 border-accent hover:bg-accent/40' 
+                          : 'bg-background/50 border-border/30 hover:bg-muted/30'}
+                      `}
+                      onClick={() => handleEditSchedule(date.getDay())}
+                    >
+                      <div className={`
+                        text-sm font-semibold mb-1
+                        ${isCurrentDay ? 'text-primary' : 'text-foreground'}
+                      `}>
+                        {date.getDate()}
                       </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {schedule.activities.length} กิจกรรม • {totalDuration}น
-                      </Badge>
+                      
+                      {hasActivities && (
+                        <div className="space-y-1">
+                          {daySchedule!.activities.slice(0, 2).map((activity) => {
+                            const Icon = activity.icon;
+                            return (
+                              <div 
+                                key={activity.id} 
+                                className={`text-xs p-1 rounded ${activity.color} flex items-center gap-1 truncate`}
+                              >
+                                <Icon className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate text-[10px]">{activity.time}</span>
+                              </div>
+                            );
+                          })}
+                          {totalActivities > 2 && (
+                            <div className="text-[10px] text-muted-foreground text-center">
+                              +{totalActivities - 2} เพิ่มเติม
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {isCurrentDay && (
+                        <div className="absolute top-1 right-1">
+                          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        </div>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-1">
-                      {schedule.activities.map(activity => {
-                  const Icon = activity.icon;
-                  return <Badge key={activity.id} variant="outline" className="text-xs">
-                            <Icon className="w-3 h-3 mr-1" />
-                            {activity.time}
-                          </Badge>;
+                  );
                 })}
-                    </div>
-                  </div>;
-          })}
+              </div>
             </div>}
 
           {/* Year View */}
