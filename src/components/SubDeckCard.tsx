@@ -148,6 +148,19 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
             <div className="flex flex-col gap-2 min-w-[140px]">
               <Button
                 size="sm"
+                variant="default"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCardClick();
+                }}
+                className="gap-2 w-full bg-gradient-primary hover:shadow-glow"
+                disabled={loadingFlashcards}
+              >
+                <Eye className="w-4 h-4" />
+                {loadingFlashcards ? 'กำลังโหลด...' : 'Preview'}
+              </Button>
+              <Button
+                size="sm"
                 variant="outline"
                 onClick={handleDownload}
                 className="gap-2 w-full"
