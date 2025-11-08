@@ -121,73 +121,143 @@ export function GoalsMotivation() {
                 <Plus className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>เพิ่มเป้าหมายใหม่</DialogTitle>
+                <DialogTitle className="text-xl font-bold">✨ เพิ่มเป้าหมายใหม่</DialogTitle>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="title">หัวข้อเป้าหมาย</Label>
-                  <Input
-                    id="title"
-                    placeholder="เช่น เรียนครบ 30 วัน"
-                    value={newGoal.title}
-                    onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
-                    maxLength={100}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">รายละเอียด (ไม่บังคับ)</Label>
-                  <Input
-                    id="description"
-                    placeholder="เพิ่มรายละเอียด..."
-                    value={newGoal.description}
-                    onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
-                    maxLength={200}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="target">จำนวนเป้าหมาย</Label>
-                  <Input
-                    id="target"
-                    type="number"
-                    placeholder="เช่น 30"
-                    value={newGoal.target}
-                    onChange={(e) => setNewGoal({ ...newGoal, target: e.target.value })}
-                    min="1"
-                    max="10000"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="icon">ไอคอน</Label>
-                  <Select 
-                    value={newGoal.iconValue} 
-                    onValueChange={(value) => setNewGoal({ ...newGoal, iconValue: value })}
-                  >
-                    <SelectTrigger id="icon">
-                      <SelectValue placeholder="เลือกไอคอน" />
-                    </SelectTrigger>
-                    <SelectContent>
+              
+              <div className="space-y-6 py-4">
+                {/* Preview Card */}
+                {newGoal.title && (
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-dashed border-primary/20 animate-fade-in">
+                    <div className="flex items-center gap-3">
+                      {(() => {
+                        const selectedIcon = availableIcons.find(i => i.value === newGoal.iconValue);
+                        if (selectedIcon) {
+                          const PreviewIcon = selectedIcon.icon;
+                          return (
+                            <div className={`p-3 rounded-lg ${selectedIcon.bgColor}`}>
+                              <PreviewIcon className={`h-6 w-6 ${selectedIcon.color}`} />
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-sm">{newGoal.title}</h4>
+                        {newGoal.description && (
+                          <p className="text-xs text-muted-foreground mt-1">{newGoal.description}</p>
+                        )}
+                        {newGoal.target && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="h-1.5 flex-1 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full w-0 bg-primary rounded-full" />
+                            </div>
+                            <span className="text-xs font-semibold text-muted-foreground">
+                              0 / {newGoal.target}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Form Fields */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="text-sm font-semibold">
+                      หัวข้อเป้าหมาย <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="title"
+                      placeholder="เช่น เรียนครบ 30 วัน"
+                      value={newGoal.title}
+                      onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
+                      maxLength={100}
+                      className="h-11"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="text-sm font-semibold">
+                      รายละเอียด <span className="text-xs text-muted-foreground">(ไม่บังคับ)</span>
+                    </Label>
+                    <Input
+                      id="description"
+                      placeholder="เพิ่มรายละเอียดเพิ่มเติม..."
+                      value={newGoal.description}
+                      onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
+                      maxLength={200}
+                      className="h-11"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="target" className="text-sm font-semibold">
+                      จำนวนเป้าหมาย <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="target"
+                      type="number"
+                      placeholder="เช่น 30"
+                      value={newGoal.target}
+                      onChange={(e) => setNewGoal({ ...newGoal, target: e.target.value })}
+                      min="1"
+                      max="10000"
+                      className="h-11"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold">
+                      เลือกไอคอน <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="grid grid-cols-6 gap-2">
                       {availableIcons.map((iconOption) => {
                         const IconComponent = iconOption.icon;
+                        const isSelected = newGoal.iconValue === iconOption.value;
                         return (
-                          <SelectItem key={iconOption.value} value={iconOption.value}>
-                            <div className="flex items-center gap-2">
-                              <IconComponent className={`h-4 w-4 ${iconOption.color}`} />
-                              <span>{iconOption.label}</span>
-                            </div>
-                          </SelectItem>
+                          <button
+                            key={iconOption.value}
+                            type="button"
+                            onClick={() => setNewGoal({ ...newGoal, iconValue: iconOption.value })}
+                            className={`
+                              aspect-square p-3 rounded-lg border-2 transition-all duration-200
+                              hover:scale-110 hover:shadow-soft
+                              ${isSelected 
+                                ? `${iconOption.bgColor} ${iconOption.color} border-current ring-2 ring-offset-2 ring-current shadow-soft` 
+                                : 'bg-muted/30 border-border hover:border-primary/50'
+                              }
+                            `}
+                            title={iconOption.label}
+                          >
+                            <IconComponent className={`w-full h-full ${isSelected ? '' : 'text-muted-foreground'}`} />
+                          </button>
                         );
                       })}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsDialogOpen(false);
+                    setNewGoal({ title: '', description: '', target: '', iconValue: 'Target' });
+                  }}
+                  className="w-full sm:w-auto"
+                >
                   ยกเลิก
                 </Button>
-                <Button onClick={handleAddGoal}>
+                <Button 
+                  onClick={handleAddGoal}
+                  className="w-full sm:w-auto"
+                  disabled={!newGoal.title || !newGoal.target}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
                   เพิ่มเป้าหมาย
                 </Button>
               </DialogFooter>
