@@ -2,11 +2,9 @@ import BackgroundDecorations from "@/components/BackgroundDecorations";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { DailyDeckQuickStart } from "@/components/dashboard/DailyDeckQuickStart";
 import { SuggestedDeck } from "@/components/dashboard/SuggestedDeck";
-import { ProgressOverview } from "@/components/dashboard/ProgressOverview";
 import { FriendsLeaderboard } from "@/components/dashboard/FriendsLeaderboard";
 import { ScheduleCalendar } from "@/components/dashboard/ScheduleCalendar";
 import { GoalsMotivation } from "@/components/dashboard/GoalsMotivation";
-import { QuickNotes } from "@/components/dashboard/QuickNotes";
 import { AITips } from "@/components/dashboard/AITips";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -67,46 +65,27 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* แถว 3: Calendar & Progress Overview + Suggested Deck */}
+        {/* แถว 3: Calendar & Suggested Deck + Goals */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
           {/* Calendar (Left Column) */}
           <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <ScheduleCalendar />
           </div>
           
-          {/* Progress Overview & Suggested Deck (Right Column) */}
+          {/* Suggested Deck & Goals (Right Column) */}
           <div className="flex flex-col gap-4 sm:gap-6">
             <div className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
               <SuggestedDeck />
             </div>
             <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              <ProgressOverview
-                streak={userStats.streak}
-                wordsLearned={userStats.wordsLearned}
-                totalWords={userStats.totalWords}
-                subdecksCompleted={userStats.subdecksCompleted}
-                totalSubdecks={userStats.totalSubdecks}
-              />
+              <GoalsMotivation />
             </div>
           </div>
         </div>
 
-        {/* แถว 6: Goals / Motivation */}
-        <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          <GoalsMotivation />
-        </div>
-
-        {/* แถว 7: Quick Notes / Tips / AI Guide */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
-          {/* Quick Notes */}
-          <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
-            <QuickNotes />
-          </div>
-
-          {/* AI Tips */}
-          <div className="animate-fade-in" style={{ animationDelay: '0.7s' }}>
-            <AITips />
-          </div>
+        {/* แถว 4: AI Tips */}
+        <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <AITips />
         </div>
 
         {/* แถว 8: Footer (Optional) */}

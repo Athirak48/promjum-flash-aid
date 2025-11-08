@@ -39,32 +39,30 @@ export function GoalsMotivation() {
         <CardTitle className="text-lg">เป้าหมายการเรียน</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4">
           {goals.map((goal) => {
             const Icon = goal.icon;
             const progress = (goal.current / goal.target) * 100;
             
             return (
-              <div key={goal.id} className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-lg ${goal.bgColor}`}>
-                    <Icon className={`h-6 w-6 ${goal.color}`} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{goal.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {goal.current} / {goal.target}
-                    </p>
-                  </div>
+              <div key={goal.id} className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                <div className={`p-3 rounded-lg ${goal.bgColor} flex-shrink-0`}>
+                  <Icon className={`h-5 w-5 ${goal.color}`} />
                 </div>
-                
-                <Progress value={progress} className="h-3" />
-                
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{Math.round(progress)}% เสร็จสมบูรณ์</span>
-                  {progress === 100 && (
-                    <span className="text-primary font-semibold animate-pulse">✨ สำเร็จ!</span>
-                  )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-foreground text-sm">{goal.title}</h3>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                      {goal.current} / {goal.target}
+                    </span>
+                  </div>
+                  <Progress value={progress} className="h-2 mb-1" />
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">{Math.round(progress)}% เสร็จสมบูรณ์</span>
+                    {progress === 100 && (
+                      <span className="text-primary font-semibold animate-pulse">✨ สำเร็จ!</span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
