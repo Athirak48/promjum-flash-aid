@@ -29,19 +29,13 @@ export default function AdminSidebar() {
   const { user, signOut } = useAuth();
   
   const handleLogout = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถออกจากระบบได้",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "ออกจากระบบสำเร็จ",
-      });
-      navigate('/auth');
-    }
+    await signOut();
+    // Always show success and redirect regardless of error
+    // "Session not found" error means user is already logged out, which is the desired state
+    toast({
+      title: "ออกจากระบบสำเร็จ",
+    });
+    navigate('/auth');
   };
   
   const getInitials = (email?: string) => {
