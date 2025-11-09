@@ -29,7 +29,7 @@ export default function AuthPage() {
       if (user) {
         const role = await getUserRole(user.id);
         if (role === 'admin') {
-          navigate('/admin/dashboard');
+          navigate('/admin');
         } else {
           navigate('/dashboard');
         }
@@ -66,7 +66,7 @@ export default function AuthPage() {
       if (session?.user) {
         const role = await getUserRole(session.user.id);
         if (role === 'admin') {
-          navigate('/admin/dashboard');
+          navigate('/admin');
         } else {
           navigate('/dashboard');
         }
