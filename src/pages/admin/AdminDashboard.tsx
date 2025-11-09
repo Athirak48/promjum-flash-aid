@@ -66,7 +66,7 @@ export default function AdminDashboard() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*, user_roles(role)')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -137,8 +137,8 @@ export default function AdminDashboard() {
                         <TableCell className="font-medium">{user.full_name || '-'}</TableCell>
                         <TableCell>{user.email || '-'}</TableCell>
                         <TableCell>
-                          <Badge variant={user.user_roles?.[0]?.role === 'admin' ? 'default' : 'secondary'}>
-                            {user.user_roles?.[0]?.role || 'user'}
+                          <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'teacher' ? 'default' : 'secondary'}>
+                            {user.role === 'admin' ? 'ผู้ดูแลระบบ' : user.role === 'teacher' ? 'ครู' : user.role === 'content_editor' ? 'ผู้จัดการเนื้อหา' : 'ผู้ใช้'}
                           </Badge>
                         </TableCell>
                         <TableCell>
