@@ -53,7 +53,7 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   }
 
   if (isAdmin === false) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
