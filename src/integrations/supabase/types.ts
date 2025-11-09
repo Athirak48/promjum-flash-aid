@@ -230,6 +230,54 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          contact_permission: boolean | null
+          created_at: string
+          email: string | null
+          feedback_type: string
+          id: string
+          message: string
+          rating: number | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          category: string
+          contact_permission?: boolean | null
+          created_at?: string
+          email?: string | null
+          feedback_type: string
+          id?: string
+          message: string
+          rating?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          contact_permission?: boolean | null
+          created_at?: string
+          email?: string | null
+          feedback_type?: string
+          id?: string
+          message?: string
+          rating?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       flashcards: {
         Row: {
           audio_url: string | null
@@ -531,6 +579,54 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          current_uses: number | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          updated_at: string
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number | null
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          updated_at?: string
+          valid_from?: string
+          valid_until: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string
+        }
+        Relationships: []
+      }
       scheduled_reviews: {
         Row: {
           created_at: string
@@ -625,6 +721,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscriptions: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan_type: string
+          price_paid: number | null
+          promotion_code: string | null
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_type: string
+          price_paid?: number | null
+          promotion_code?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_type?: string
+          price_paid?: number | null
+          promotion_code?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_deck_progress: {
         Row: {

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminRoute } from "./components/AdminRoute";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import LandingPage from "./pages/LandingPage";
@@ -19,10 +20,15 @@ import Profile from "./pages/Profile";
 import NotFoundPage from "./pages/NotFoundPage";
 import Navbar from "./components/Navbar";
 import FlashcardsReview from "./pages/FlashcardsReview";
-import AdminDashboard from "./pages/AdminDashboard";
 import DecksPage from "./pages/DecksPage";
 import SubDecksPage from "./pages/SubDecksPage";
 import AIRealtimePracticePage from "./pages/AIRealtimePracticePage";
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminDecks from "./pages/admin/AdminDecks";
+import AdminMembers from "./pages/admin/AdminMembers";
+import AdminPromotions from "./pages/admin/AdminPromotions";
+import AdminFeedback from "./pages/admin/AdminFeedback";
 
 const queryClient = new QueryClient();
 
@@ -36,15 +42,14 @@ const App = () => {
               <Toaster />
               <Sonner />
               <BrowserRouter>
-                <Navbar />
                 <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/" element={<><Navbar /><LandingPage /></>} />
+              <Route path="/auth" element={<><Navbar /><AuthPage /></>} />
               <Route 
                 path="/dashboard" 
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <><Navbar /><Dashboard /></>
                   </ProtectedRoute>
                 } 
               />
@@ -52,7 +57,7 @@ const App = () => {
                 path="/flashcards" 
                 element={
                   <ProtectedRoute>
-                    <FlashcardsPage />
+                    <><Navbar /><FlashcardsPage /></>
                   </ProtectedRoute>
                 } 
               />
@@ -60,7 +65,7 @@ const App = () => {
                 path="/flashcards/review" 
                 element={
                   <ProtectedRoute>
-                    <FlashcardsReview />
+                    <><Navbar /><FlashcardsReview /></>
                   </ProtectedRoute>
                 } 
               />
@@ -68,7 +73,7 @@ const App = () => {
                 path="/flashcards/:folderId" 
                 element={
                   <ProtectedRoute>
-                    <FolderDetail />
+                    <><Navbar /><FolderDetail /></>
                   </ProtectedRoute>
                 } 
               />
@@ -76,7 +81,7 @@ const App = () => {
                 path="/feedback" 
                 element={
                   <ProtectedRoute>
-                    <FeedbackPage />
+                    <><Navbar /><FeedbackPage /></>
                   </ProtectedRoute>
                 } 
               />
@@ -84,23 +89,31 @@ const App = () => {
                 path="/profile" 
                 element={
                   <ProtectedRoute>
-                    <Profile />
+                    <><Navbar /><Profile /></>
                   </ProtectedRoute>
                 } 
               />
+              {/* Admin Routes */}
               <Route 
-                path="/admin/dashboard" 
+                path="/admin" 
                 element={
-                  <ProtectedRoute>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                }
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="decks" element={<AdminDecks />} />
+                <Route path="members" element={<AdminMembers />} />
+                <Route path="promotions" element={<AdminPromotions />} />
+                <Route path="feedback" element={<AdminFeedback />} />
+              </Route>
+              
+              <Route
                 path="/decks" 
                 element={
                   <ProtectedRoute>
-                    <DecksPage />
+                    <><Navbar /><DecksPage /></>
                   </ProtectedRoute>
                 } 
               />
@@ -108,7 +121,7 @@ const App = () => {
                 path="/decks/:deckId/subdecks" 
                 element={
                   <ProtectedRoute>
-                    <SubDecksPage />
+                    <><Navbar /><SubDecksPage /></>
                   </ProtectedRoute>
                 } 
               />
@@ -116,12 +129,12 @@ const App = () => {
                 path="/practice" 
                 element={
                   <ProtectedRoute>
-                    <AIRealtimePracticePage />
+                    <><Navbar /><AIRealtimePracticePage /></>
                   </ProtectedRoute>
                 } 
               />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFoundPage />} />
+              <Route path="*" element={<><Navbar /><NotFoundPage /></>} />
             </Routes>
           </BrowserRouter>
         </AuthProvider>
