@@ -10,6 +10,10 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
@@ -21,7 +25,24 @@ const menuItems = [
 
 export default function AdminSidebar() {
   const location = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถออกจากระบบได้",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "ออกจากระบบสำเร็จ",
+      });
+      navigate('/auth');
+    }
+  };
   
   const getInitials = (email?: string) => {
     if (!email) return 'AD';
@@ -73,6 +94,18 @@ export default function AdminSidebar() {
           })}
         </ul>
       </nav>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-border">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-5 w-5" />
+          <span className="font-medium">ออกจากระบบ</span>
+        </Button>
+      </div>
 
       {/* Footer */}
       <div className="p-4 border-t border-border">
