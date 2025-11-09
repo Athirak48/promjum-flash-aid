@@ -14,8 +14,18 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
+interface Profile {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  role: string;
+  created_at: string;
+  phone: string | null;
+}
+
 export default function AdminMembers() {
-  const [members, setMembers] = useState<any[]>([]);
+  const [members, setMembers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -26,8 +36,8 @@ export default function AdminMembers() {
   const fetchMembers = async () => {
     try {
       const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*, profiles(full_name, email)')
+        .from('profiles')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -41,27 +51,27 @@ export default function AdminMembers() {
   };
 
   const filteredMembers = members.filter(member =>
-    member.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    member.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'default';
-      case 'cancelled': return 'destructive';
-      case 'expired': return 'secondary';
-      case 'paused': return 'outline';
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin': return 'destructive';
+      case 'teacher': return 'default';
+      case 'content_editor': return 'secondary';
+      case 'user': return 'outline';
       default: return 'secondary';
     }
   };
 
-  const getPlanColor = (plan: string) => {
-    switch (plan) {
-      case 'lifetime': return 'default';
-      case 'yearly': return 'default';
-      case 'monthly': return 'secondary';
-      case 'free': return 'outline';
-      default: return 'secondary';
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'admin': return 'ผู้ดูแลระบบ';
+      case 'teacher': return 'ครู';
+      case 'content_editor': return 'ผู้จัดการเนื้อหา';
+      case 'user': return 'ผู้ใช้';
+      default: return role;
     }
   };
 
@@ -82,8 +92,8 @@ export default function AdminMembers() {
 
       <Card>
         <CardHeader>
-          <CardTitle>รายชื่อสมาชิก</CardTitle>
-          <CardDescription>ดูข้อมูลสมาชิก แผน และสถานะการใช้งาน</CardDescription>
+          <CardTitle>รายชื่อสมาชิก ({filteredMembers.length})</CardTitle>
+          <CardDescription>ดูและจัดการข้อมูลผู้ใช้ในระบบ</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input
@@ -99,45 +109,45 @@ export default function AdminMembers() {
                 <TableRow>
                   <TableHead>ชื่อ</TableHead>
                   <TableHead>อีเมล</TableHead>
-                  <TableHead>แผน</TableHead>
-                  <TableHead>วันที่เริ่ม</TableHead>
-                  <TableHead>วันหมดอายุ</TableHead>
-                  <TableHead>สถานะ</TableHead>
-                  <TableHead>ราคา</TableHead>
+                  <TableHead>เบอร์โทร</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>วันที่สมัคร</TableHead>
                   <TableHead>การกระทำ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMembers.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell className="font-medium">
-                      {member.profiles?.full_name || '-'}
-                    </TableCell>
-                    <TableCell>{member.profiles?.email || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={getPlanColor(member.plan_type)}>
-                        {member.plan_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(member.started_at).toLocaleDateString('th-TH')}
-                    </TableCell>
-                    <TableCell>
-                      {member.expires_at 
-                        ? new Date(member.expires_at).toLocaleDateString('th-TH')
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(member.status)}>
-                        {member.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{member.price_paid ? `${member.price_paid} ฿` : '-'}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm">แก้ไข</Button>
+                {filteredMembers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      ไม่พบข้อมูลสมาชิก
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredMembers.map((member) => (
+                    <TableRow key={member.id}>
+                      <TableCell className="font-medium">
+                        {member.full_name || '-'}
+                      </TableCell>
+                      <TableCell>{member.email || '-'}</TableCell>
+                      <TableCell>{member.phone || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={getRoleColor(member.role)}>
+                          {getRoleLabel(member.role)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(member.created_at).toLocaleDateString('th-TH', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm">ดูรายละเอียด</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
