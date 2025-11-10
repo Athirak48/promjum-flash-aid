@@ -237,8 +237,14 @@ export function CreateSubDeckDialog({
             {/* Right: Preview */}
             <div className="space-y-4">
               <Label>Preview</Label>
-              <Card className="hover:shadow-lg transition-all duration-300 border-l-4">
+              <Card className="relative hover:shadow-lg transition-all duration-300 border-l-4">
                 <CardContent className="p-6">
+                  {!isFree && (
+                    <Badge className="absolute top-4 right-4 gap-1.5 px-2.5 py-1 bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">
+                      <Lock className="w-4 h-4" />
+                      Locked
+                    </Badge>
+                  )}
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <div>
@@ -265,10 +271,6 @@ export function CreateSubDeckDialog({
                         <BookOpen className="w-4 h-4" />
                         <span>{formValues.flashcard_count || 0} คำศัพท์</span>
                       </div>
-                      {!isFree && <Badge variant="secondary" className="gap-1">
-                          <Lock className="w-3 h-3" />
-                          Locked
-                        </Badge>}
                     </div>
 
                     {formValues.tags && <div className="flex flex-wrap gap-2">
