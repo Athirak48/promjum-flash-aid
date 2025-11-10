@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, ArrowLeft, Edit, Trash2, BookOpen, Star, Lock } from 'lucide-react';
+import { Plus, ArrowLeft, Edit, Trash2, BookOpen, Star, Lock, Eye, EyeOff } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { CreateSubDeckDialog } from '@/components/admin/CreateSubDeckDialog';
 import { CreateDeckDialog } from '@/components/admin/CreateDeckDialog';
@@ -84,6 +84,26 @@ export default function AdminDeckDetail() {
     } catch (error) {
       console.error('Error deleting subdeck:', error);
       toast.error('ไม่สามารถลบ Subdeck ได้');
+    }
+  };
+
+  const handleTogglePublish = async (subDeckId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('sub_decks')
+        .update({
+          is_published: !currentStatus,
+          published_at: !currentStatus ? new Date().toISOString() : null
+        })
+        .eq('id', subDeckId);
+
+      if (error) throw error;
+
+      toast.success(!currentStatus ? 'เผยแพร่ Subdeck สำเร็จ' : 'ซ่อน Subdeck จาก User แล้ว');
+      fetchDeckAndSubDecks();
+    } catch (error) {
+      console.error('Error toggling publish status:', error);
+      toast.error('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ');
     }
   };
 
@@ -231,10 +251,15 @@ export default function AdminDeckDetail() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex-1 space-y-3">
-                        <div>
+                        <div className="flex items-center gap-2">
                           <CardTitle className="text-xl mb-1">{subdeck.name}</CardTitle>
-                          <CardDescription>{subdeck.name_en}</CardDescription>
+                          {!subdeck.is_published && (
+                            <Badge variant="secondary" className="text-xs">
+                              ไม่เผยแพร่
+                            </Badge>
+                          )}
                         </div>
+                        <CardDescription>{subdeck.name_en}</CardDescription>
 
                         <p className="text-sm text-foreground/70 line-clamp-2">
                           {subdeck.description}
@@ -257,23 +282,45 @@ export default function AdminDeckDetail() {
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2">
                         <Button
-                          variant="ghost"
+                          variant={subdeck.is_published ? "default" : "outline"}
                           size="sm"
-                          onClick={() => setEditingSubDeck(subdeck)}
+                          onClick={() => handleTogglePublish(subdeck.id, subdeck.is_published)}
+                          className="gap-2 w-full"
                         >
-                          <Edit className="w-4 h-4 mr-2" />
-                          แก้ไข
+                          {subdeck.is_published ? (
+                            <>
+                              <Eye className="w-4 h-4" />
+                              แสดงให้ User
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="w-4 h-4" />
+                              ซ่อนจาก User
+                            </>
+                          )}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeletingSubDeck(subdeck)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          ลบ
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingSubDeck(subdeck)}
+                            className="flex-1"
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            แก้ไข
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeletingSubDeck(subdeck)}
+                            className="flex-1"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            ลบ
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

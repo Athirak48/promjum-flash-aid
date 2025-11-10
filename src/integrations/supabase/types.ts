@@ -669,9 +669,11 @@ export type Database = {
           flashcard_count: number | null
           id: string
           is_free: boolean | null
+          is_published: boolean | null
           level: string | null
           name: string
           name_en: string
+          published_at: string | null
           tags: string[] | null
           thumbnail_url: string | null
           updated_at: string
@@ -687,9 +689,11 @@ export type Database = {
           flashcard_count?: number | null
           id?: string
           is_free?: boolean | null
+          is_published?: boolean | null
           level?: string | null
           name: string
           name_en: string
+          published_at?: string | null
           tags?: string[] | null
           thumbnail_url?: string | null
           updated_at?: string
@@ -705,9 +709,11 @@ export type Database = {
           flashcard_count?: number | null
           id?: string
           is_free?: boolean | null
+          is_published?: boolean | null
           level?: string | null
           name?: string
           name_en?: string
+          published_at?: string | null
           tags?: string[] | null
           thumbnail_url?: string | null
           updated_at?: string
