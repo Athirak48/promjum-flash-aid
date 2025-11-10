@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Upload, Download } from 'lucide-react';
+import { Plus, Upload, Download, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +33,27 @@ export default function AdminDecks() {
       toast.error('ไม่สามารถโหลดข้อมูล Deck ได้');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleTogglePublish = async (deckId: string, currentStatus: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from('decks')
+        .update({
+          is_published: !currentStatus,
+          published_at: !currentStatus ? new Date().toISOString() : null
+        })
+        .eq('id', deckId);
+
+      if (error) throw error;
+
+      toast.success(!currentStatus ? 'เผยแพร่ Deck สำเร็จ' : 'ซ่อน Deck จาก User แล้ว');
+      fetchDecks();
+    } catch (error) {
+      console.error('Error toggling publish status:', error);
+      toast.error('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ');
     }
   };
   const filteredDecks = decks.filter(deck => deck.name?.toLowerCase().includes(searchTerm.toLowerCase()) || deck.name_en?.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -91,12 +112,31 @@ export default function AdminDecks() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={e => {
-                    e.stopPropagation();
-                    navigate(`/admin/decks/${deck.id}`);
-                  }}>
-                        จัดการ
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant={deck.is_published ? "default" : "outline"}
+                          size="sm" 
+                          onClick={(e) => handleTogglePublish(deck.id, deck.is_published, e)}
+                        >
+                          {deck.is_published ? (
+                            <>
+                              <Eye className="w-4 h-4 mr-2" />
+                              แสดงให้ User
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="w-4 h-4 mr-2" />
+                              ซ่อนจาก User
+                            </>
+                          )}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={e => {
+                          e.stopPropagation();
+                          navigate(`/admin/decks/${deck.id}`);
+                        }}>
+                          จัดการ
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>)}
               </TableBody>
