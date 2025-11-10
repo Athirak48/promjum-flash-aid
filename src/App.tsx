@@ -26,6 +26,7 @@ import AIRealtimePracticePage from "./pages/AIRealtimePracticePage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
+import AdminDeckDetail from "./pages/admin/AdminDeckDetail";
 import AdminMembers from "./pages/admin/AdminMembers";
 import AdminPromotions from "./pages/admin/AdminPromotions";
 import AdminFeedback from "./pages/admin/AdminFeedback";
@@ -107,6 +108,16 @@ const App = () => {
                 <Route path="members" element={<AdminMembers />} />
                 <Route path="promotions" element={<AdminPromotions />} />
                 <Route path="feedback" element={<AdminFeedback />} />
+              </Route>
+              <Route 
+                path="/admin/decks/:deckId" 
+                element={
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                }
+              >
+                <Route index element={<AdminDeckDetail />} />
               </Route>
               
               <Route

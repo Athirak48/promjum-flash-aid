@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Upload, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -14,11 +15,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { CreateDeckDialog } from '@/components/admin/CreateDeckDialog';
 
 export default function AdminDecks() {
+  const navigate = useNavigate();
   const [decks, setDecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateDeck, setShowCreateDeck] = useState(false);
 
   useEffect(() => {
     fetchDecks();
@@ -70,7 +74,7 @@ export default function AdminDecks() {
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button>
+          <Button onClick={() => setShowCreateDeck(true)}>
             <Plus className="w-4 h-4 mr-2" />
             เพิ่ม Deck
           </Button>
@@ -104,7 +108,11 @@ export default function AdminDecks() {
               </TableHeader>
               <TableBody>
                 {filteredDecks.map((deck) => (
-                  <TableRow key={deck.id}>
+                  <TableRow 
+                    key={deck.id} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => navigate(`/admin/decks/${deck.id}`)}
+                  >
                     <TableCell className="font-medium">{deck.name}</TableCell>
                     <TableCell>{deck.category}</TableCell>
                     <TableCell>
@@ -117,10 +125,16 @@ export default function AdminDecks() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">แก้ไข</Button>
-                        <Button variant="ghost" size="sm">ลบ</Button>
-                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/admin/decks/${deck.id}`);
+                        }}
+                      >
+                        จัดการ
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -129,6 +143,12 @@ export default function AdminDecks() {
           </div>
         </CardContent>
       </Card>
+
+      <CreateDeckDialog
+        open={showCreateDeck}
+        onOpenChange={setShowCreateDeck}
+        onSuccess={fetchDecks}
+      />
     </div>
   );
 }
