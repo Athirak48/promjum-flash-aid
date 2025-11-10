@@ -80,8 +80,22 @@ export default function AdminDecks() {
 
       <Card>
         <CardHeader>
-          <CardTitle>จัดการ Decks</CardTitle>
-          <CardDescription>แก้ไข เพิ่ม หรือลบ Deck และ Subdeck</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>จัดการ Decks</CardTitle>
+              <CardDescription>แก้ไข เพิ่ม หรือลบ Deck และ Subdeck</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => navigate('/admin/decks')}>
+                <Plus className="w-4 h-4 mr-2" />
+                หน้า Deck
+              </Button>
+              <Button variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                รายได้
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input placeholder="ค้นหา Deck..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-sm" />
