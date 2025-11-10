@@ -323,8 +323,8 @@ export function CreateDeckDialog({ open, onOpenChange, onSuccess, deck }: Create
                       <IconComponent className="w-8 h-8 text-primary-foreground" />
                     </div>
                     {isPremium && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Star className="w-3 h-3 fill-current" />
+                      <Badge variant="destructive" className="gap-1">
+                        <Lock className="w-3 h-3" />
                         Premium
                       </Badge>
                     )}
