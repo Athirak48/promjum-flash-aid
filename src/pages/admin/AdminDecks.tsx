@@ -69,13 +69,8 @@ export default function AdminDecks() {
           <p className="text-muted-foreground">จัดการ Deck, Subdeck และ Flashcard</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/decks')}>
-            หน้า Deck
-          </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            รายได้
-          </Button>
+          
+          
           <Button onClick={() => setShowCreateDeck(true)}>
             <Plus className="w-4 h-4 mr-2" />
             เพิ่ม Deck
