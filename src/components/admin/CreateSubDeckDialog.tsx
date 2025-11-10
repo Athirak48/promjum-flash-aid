@@ -14,7 +14,6 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-
 const subDeckSchema = z.object({
   name: z.string().min(1, 'กรุณาใส่ชื่อภาษาไทย'),
   name_en: z.string().min(1, 'กรุณาใส่ชื่อภาษาอังกฤษ'),
@@ -25,11 +24,9 @@ const subDeckSchema = z.object({
   flashcard_count: z.number().min(0, 'กรุณาใส่จำนวน Flashcards'),
   estimated_duration_minutes: z.number().min(1, 'กรุณาใส่ระยะเวลา'),
   tags: z.string().optional(),
-  is_free: z.boolean(),
+  is_free: z.boolean()
 });
-
 type SubDeckFormData = z.infer<typeof subDeckSchema>;
-
 interface CreateSubDeckDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -37,23 +34,32 @@ interface CreateSubDeckDialogProps {
   deckId: string;
   subdeck?: any;
 }
-
-const difficultyLevels = [
-  { value: 'beginner', label: 'เริ่มต้น' },
-  { value: 'intermediate', label: 'กลาง' },
-  { value: 'advanced', label: 'ขั้นสูง' },
-];
-
+const difficultyLevels = [{
+  value: 'beginner',
+  label: 'เริ่มต้น'
+}, {
+  value: 'intermediate',
+  label: 'กลาง'
+}, {
+  value: 'advanced',
+  label: 'ขั้นสูง'
+}];
 const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-
-export function CreateSubDeckDialog({ open, onOpenChange, onSuccess, deckId, subdeck }: CreateSubDeckDialogProps) {
+export function CreateSubDeckDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+  deckId,
+  subdeck
+}: CreateSubDeckDialogProps) {
   const [isFree, setIsFree] = useState(subdeck?.is_free ?? true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: {
+      errors
+    },
     setValue,
     watch,
     reset
@@ -69,31 +75,30 @@ export function CreateSubDeckDialog({ open, onOpenChange, onSuccess, deckId, sub
       flashcard_count: subdeck?.flashcard_count || 0,
       estimated_duration_minutes: subdeck?.estimated_duration_minutes || 10,
       tags: subdeck?.tags?.join(', ') || '',
-      is_free: subdeck?.is_free ?? true,
+      is_free: subdeck?.is_free ?? true
     }
   });
-
   const formValues = watch();
-
   const getDifficultyColor = (level: string) => {
     switch (level) {
-      case 'beginner': return 'bg-green-500/10 text-green-500 border-green-500/20';
-      case 'intermediate': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'advanced': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      default: return 'bg-muted';
+      case 'beginner':
+        return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'intermediate':
+        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      case 'advanced':
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
+      default:
+        return 'bg-muted';
     }
   };
-
   const getDifficultyText = (level: string) => {
     const found = difficultyLevels.find(d => d.value === level);
     return found?.label || level;
   };
-
   const onSubmit = async (data: SubDeckFormData) => {
     setIsSubmitting(true);
     try {
       const tagsArray = data.tags ? data.tags.split(',').map(t => t.trim()).filter(t => t) : [];
-      
       const subDeckData = {
         name: data.name,
         name_en: data.name_en,
@@ -105,26 +110,21 @@ export function CreateSubDeckDialog({ open, onOpenChange, onSuccess, deckId, sub
         estimated_duration_minutes: data.estimated_duration_minutes,
         deck_id: deckId,
         tags: tagsArray,
-        is_free: isFree,
+        is_free: isFree
       };
-
       if (subdeck?.id) {
-        const { error } = await supabase
-          .from('sub_decks')
-          .update(subDeckData)
-          .eq('id', subdeck.id);
-
+        const {
+          error
+        } = await supabase.from('sub_decks').update(subDeckData).eq('id', subdeck.id);
         if (error) throw error;
         toast.success('แก้ไข Subdeck สำเร็จ');
       } else {
-        const { error } = await supabase
-          .from('sub_decks')
-          .insert([subDeckData]);
-
+        const {
+          error
+        } = await supabase.from('sub_decks').insert([subDeckData]);
         if (error) throw error;
         toast.success('สร้าง Subdeck สำเร็จ');
       }
-
       reset();
       onOpenChange(false);
       onSuccess?.();
@@ -135,9 +135,7 @@ export function CreateSubDeckDialog({ open, onOpenChange, onSuccess, deckId, sub
       setIsSubmitting(false);
     }
   };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+  return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">
@@ -157,142 +155,82 @@ export function CreateSubDeckDialog({ open, onOpenChange, onSuccess, deckId, sub
                 <Label htmlFor="free-toggle" className="font-semibold">
                   {isFree ? 'ฟรี' : 'ล็อค (Premium)'}
                 </Label>
-                <Switch
-                  id="free-toggle"
-                  checked={isFree}
-                  onCheckedChange={(checked) => {
-                    setIsFree(checked);
-                    setValue('is_free', checked);
-                  }}
-                />
+                <Switch id="free-toggle" checked={isFree} onCheckedChange={checked => {
+                setIsFree(checked);
+                setValue('is_free', checked);
+              }} />
               </div>
 
               {/* Basic Info */}
               <div className="space-y-2">
                 <Label htmlFor="name">ชื่อภาษาไทย *</Label>
-                <Input
-                  id="name"
-                  {...register('name')}
-                  placeholder="คำศัพท์พื้นฐาน"
-                />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name.message}</p>
-                )}
+                <Input id="name" {...register('name')} placeholder="คำศัพท์พื้นฐาน" />
+                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="name_en">ชื่อภาษาอังกฤษ *</Label>
-                <Input
-                  id="name_en"
-                  {...register('name_en')}
-                  placeholder="Basic Vocabulary"
-                />
-                {errors.name_en && (
-                  <p className="text-sm text-destructive">{errors.name_en.message}</p>
-                )}
+                <Input id="name_en" {...register('name_en')} placeholder="Basic Vocabulary" />
+                {errors.name_en && <p className="text-sm text-destructive">{errors.name_en.message}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">รายละเอียดภาษาไทย</Label>
-                <Textarea
-                  id="description"
-                  {...register('description')}
-                  placeholder="คำศัพท์พื้นฐานสำหรับผู้เริ่มต้น"
-                  rows={3}
-                />
+                <Textarea id="description" {...register('description')} placeholder="คำศัพท์พื้นฐานสำหรับผู้เริ่มต้น" rows={3} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description_en">รายละเอียดภาษาอังกฤษ</Label>
-                <Textarea
-                  id="description_en"
-                  {...register('description_en')}
-                  placeholder="Basic vocabulary for beginners"
-                  rows={3}
-                />
+                <Textarea id="description_en" {...register('description_en')} placeholder="Basic vocabulary for beginners" rows={3} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="difficulty_level">ระดับความยาก *</Label>
-                  <Select
-                    value={formValues.difficulty_level}
-                    onValueChange={(value) => setValue('difficulty_level', value)}
-                  >
+                  <Select value={formValues.difficulty_level} onValueChange={value => setValue('difficulty_level', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="เลือกระดับความยาก" />
                     </SelectTrigger>
                     <SelectContent>
-                      {difficultyLevels.map((diff) => (
-                        <SelectItem key={diff.value} value={diff.value}>
+                      {difficultyLevels.map(diff => <SelectItem key={diff.value} value={diff.value}>
                           {diff.label}
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
-                  {errors.difficulty_level && (
-                    <p className="text-sm text-destructive">{errors.difficulty_level.message}</p>
-                  )}
+                  {errors.difficulty_level && <p className="text-sm text-destructive">{errors.difficulty_level.message}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="level">ระดับ CEFR *</Label>
-                  <Select
-                    value={formValues.level}
-                    onValueChange={(value) => setValue('level', value)}
-                  >
+                  <Select value={formValues.level} onValueChange={value => setValue('level', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="เลือกระดับ" />
                     </SelectTrigger>
                     <SelectContent>
-                      {levels.map((level) => (
-                        <SelectItem key={level} value={level}>
+                      {levels.map(level => <SelectItem key={level} value={level}>
                           {level}
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
-                  {errors.level && (
-                    <p className="text-sm text-destructive">{errors.level.message}</p>
-                  )}
+                  {errors.level && <p className="text-sm text-destructive">{errors.level.message}</p>}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="flashcard_count">จำนวน Flashcards *</Label>
-                  <Input
-                    id="flashcard_count"
-                    type="number"
-                    {...register('flashcard_count', { valueAsNumber: true })}
-                    placeholder="20"
-                  />
-                  {errors.flashcard_count && (
-                    <p className="text-sm text-destructive">{errors.flashcard_count.message}</p>
-                  )}
+                  <Input id="flashcard_count" type="number" {...register('flashcard_count', {
+                  valueAsNumber: true
+                })} placeholder="20" />
+                  {errors.flashcard_count && <p className="text-sm text-destructive">{errors.flashcard_count.message}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="estimated_duration_minutes">ระยะเวลา (นาที) *</Label>
-                  <Input
-                    id="estimated_duration_minutes"
-                    type="number"
-                    {...register('estimated_duration_minutes', { valueAsNumber: true })}
-                    placeholder="10"
-                  />
-                  {errors.estimated_duration_minutes && (
-                    <p className="text-sm text-destructive">{errors.estimated_duration_minutes.message}</p>
-                  )}
-                </div>
+                
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="tags">Tags (คั่นด้วยเครื่องหมายจุลภาค)</Label>
-                <Input
-                  id="tags"
-                  {...register('tags')}
-                  placeholder="พื้นฐาน, สนทนา, ทั่วไป"
-                />
+                <Input id="tags" {...register('tags')} placeholder="พื้นฐาน, สนทนา, ทั่วไป" />
               </div>
             </div>
 
@@ -327,25 +265,17 @@ export function CreateSubDeckDialog({ open, onOpenChange, onSuccess, deckId, sub
                         <BookOpen className="w-4 h-4" />
                         <span>{formValues.flashcard_count || 0} คำศัพท์</span>
                       </div>
-                      {!isFree && (
-                        <Badge variant="secondary" className="gap-1">
+                      {!isFree && <Badge variant="secondary" className="gap-1">
                           <Lock className="w-3 h-3" />
                           Locked
-                        </Badge>
-                      )}
+                        </Badge>}
                     </div>
 
-                    {formValues.tags && (
-                      <div className="flex flex-wrap gap-2">
-                        {formValues.tags.split(',').map((tag, idx) => (
-                          tag.trim() && (
-                            <Badge key={idx} variant="outline" className="text-xs">
+                    {formValues.tags && <div className="flex flex-wrap gap-2">
+                        {formValues.tags.split(',').map((tag, idx) => tag.trim() && <Badge key={idx} variant="outline" className="text-xs">
                               {tag.trim()}
-                            </Badge>
-                          )
-                        ))}
-                      </div>
-                    )}
+                            </Badge>)}
+                      </div>}
 
                     <div className="text-xs text-muted-foreground">
                       ระยะเวลาโดยประมาณ: {formValues.estimated_duration_minutes || 0} นาที
@@ -357,12 +287,7 @@ export function CreateSubDeckDialog({ open, onOpenChange, onSuccess, deckId, sub
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               ยกเลิก
             </Button>
             <Button type="submit" disabled={isSubmitting}>
@@ -371,6 +296,5 @@ export function CreateSubDeckDialog({ open, onOpenChange, onSuccess, deckId, sub
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
