@@ -277,9 +277,7 @@ export function CreateSubDeckDialog({
                             </Badge>)}
                       </div>}
 
-                    <div className="text-xs text-muted-foreground">
-                      ระยะเวลาโดยประมาณ: {formValues.estimated_duration_minutes || 0} นาที
-                    </div>
+                    
                   </div>
                 </CardContent>
               </Card>
