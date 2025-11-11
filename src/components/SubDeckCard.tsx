@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Lock, CheckCircle2, BookOpen, Download, Eye } from 'lucide-react';
+import { CheckCircle2, BookOpen, Download, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SubDeck } from '@/hooks/useSubDecks';
 import { useState, useEffect } from 'react';
@@ -121,12 +121,6 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                   <BookOpen className="w-4 h-4" />
                   <span>{subdeck.flashcard_count} คำศัพท์</span>
                 </div>
-                {!subdeck.is_free && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Lock className="w-3 h-3" />
-                    Locked
-                  </Badge>
-                )}
               </div>
 
               {subdeck.progress && (

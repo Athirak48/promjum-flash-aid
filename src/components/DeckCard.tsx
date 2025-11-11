@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Lock, Star, Download, BookOpen } from 'lucide-react';
+import { Star, Download, BookOpen } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Deck } from '@/hooks/useDecks';
@@ -79,16 +79,9 @@ export function DeckCard({ deck }: DeckCardProps) {
             </Button>
             <Button 
               onClick={() => navigate(`/decks/${deck.id}/subdecks`)}
-              variant={deck.is_premium ? "outline" : "default"}
+              variant="default"
             >
-              {deck.is_premium ? (
-                <>
-                  <Lock className="w-4 h-4 mr-2" />
-                  ดู Deck
-                </>
-              ) : (
-                'เข้า Deck'
-              )}
+              เข้า Deck
             </Button>
           </div>
         </CardContent>
