@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,6 +79,26 @@ export function CreateSubDeckDialog({
     }
   });
   const formValues = watch();
+
+  // Reset form when subdeck changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      reset({
+        name: subdeck?.name || '',
+        name_en: subdeck?.name_en || '',
+        description: subdeck?.description || '',
+        description_en: subdeck?.description_en || '',
+        difficulty_level: subdeck?.difficulty_level || 'beginner',
+        level: subdeck?.level || 'B1',
+        flashcard_count: subdeck?.flashcard_count || 0,
+        estimated_duration_minutes: subdeck?.estimated_duration_minutes || 10,
+        tags: subdeck?.tags?.join(', ') || '',
+        is_free: subdeck?.is_free ?? true
+      });
+      setIsFree(subdeck?.is_free ?? true);
+    }
+  }, [open, subdeck, reset]);
+
   const getDifficultyColor = (level: string) => {
     switch (level) {
       case 'beginner':
