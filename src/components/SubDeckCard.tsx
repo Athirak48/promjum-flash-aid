@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, BookOpen, Download, Eye } from 'lucide-react';
+import { CheckCircle2, BookOpen, Download, Eye, ShoppingCart, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SubDeck } from '@/hooks/useSubDecks';
 import { useState, useEffect } from 'react';
@@ -20,6 +20,37 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [flashcards, setFlashcards] = useState<any[]>([]);
   const [loadingFlashcards, setLoadingFlashcards] = useState(false);
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [checkingPurchase, setCheckingPurchase] = useState(false);
+
+  // Check if user has purchased this subdeck
+  useEffect(() => {
+    const checkPurchase = async () => {
+      if (subdeck.is_free) {
+        setHasPurchased(true);
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setHasPurchased(false);
+        return;
+      }
+
+      setCheckingPurchase(true);
+      const { data } = await supabase
+        .from('user_subdeck_purchases')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('subdeck_id', subdeck.id)
+        .single();
+
+      setHasPurchased(!!data);
+      setCheckingPurchase(false);
+    };
+
+    checkPurchase();
+  }, [subdeck.id, subdeck.is_free]);
 
   const getDifficultyColor = (level: string) => {
     switch (level) {
@@ -78,10 +109,59 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
       return;
     }
 
+    if (!subdeck.is_free && !hasPurchased) {
+      toast({
+        title: "ไม่มีสิทธิ์ดาวน์โหลด",
+        description: "กรุณาซื้อ Sub-deck นี้ก่อนดาวน์โหลด",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Implement download logic here
     toast({
       title: "ดาวน์โหลดสำเร็จ!",
       description: `เพิ่ม "${subdeck.name}" ไปยังแฟลชการ์ดของคุณแล้ว`,
+    });
+  };
+
+  const handlePurchase = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        title: "กรุณาเข้าสู่ระบบ",
+        description: "คุณต้องเข้าสู่ระบบก่อนซื้อ",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // TODO: Implement payment flow
+    // For now, just create a purchase record
+    const { error } = await supabase
+      .from('user_subdeck_purchases')
+      .insert({
+        user_id: user.id,
+        subdeck_id: subdeck.id,
+        amount_paid: 0 // TODO: Set actual price
+      });
+
+    if (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถดำเนินการซื้อได้",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setHasPurchased(true);
+    toast({
+      title: "ซื้อสำเร็จ!",
+      description: `คุณสามารถดาวน์โหลด "${subdeck.name}" ได้แล้ว`,
     });
   };
 
@@ -117,6 +197,12 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                 <Badge className={`${getDifficultyColor(subdeck.difficulty_level)} border`}>
                   {getDifficultyText(subdeck.difficulty_level)}
                 </Badge>
+                {!subdeck.is_free && (
+                  <Badge variant="secondary" className="gap-1 bg-gradient-primary text-primary-foreground">
+                    <Lock className="w-3 h-3" />
+                    Premium
+                  </Badge>
+                )}
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <BookOpen className="w-4 h-4" />
                   <span>{subdeck.flashcard_count} คำศัพท์</span>
@@ -153,15 +239,30 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                 <Eye className="w-4 h-4" />
                 {loadingFlashcards ? 'กำลังโหลด...' : 'Preview'}
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDownload}
-                className="gap-2 w-full"
-              >
-                <Download className="w-4 h-4" />
-                ดาวน์โหลด
-              </Button>
+              
+              {!subdeck.is_free && !hasPurchased ? (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={handlePurchase}
+                  className="gap-2 w-full"
+                  disabled={checkingPurchase}
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  {checkingPurchase ? 'กำลังตรวจสอบ...' : 'ซื้อ'}
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDownload}
+                  className="gap-2 w-full"
+                  disabled={checkingPurchase}
+                >
+                  <Download className="w-4 h-4" />
+                  ดาวน์โหลด
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

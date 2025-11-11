@@ -1046,6 +1046,33 @@ export type Database = {
           },
         ]
       }
+      user_subdeck_purchases: {
+        Row: {
+          amount_paid: number | null
+          created_at: string
+          id: string
+          purchase_date: string
+          subdeck_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          created_at?: string
+          id?: string
+          purchase_date?: string
+          subdeck_id: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number | null
+          created_at?: string
+          id?: string
+          purchase_date?: string
+          subdeck_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
