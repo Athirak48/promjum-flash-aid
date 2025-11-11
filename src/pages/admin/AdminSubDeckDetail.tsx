@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Upload, Plus, Edit, Trash2, GripVertical, Trash } from 'lucide-react';
+import { ArrowLeft, Upload, Plus, Edit, Trash2, Trash } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -33,8 +33,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 import * as XLSX from 'xlsx';
 
 interface Flashcard {
@@ -42,57 +40,6 @@ interface Flashcard {
   front_text: string;
   back_text: string;
 }
-
-interface DraggableRowProps {
-  flashcard: Flashcard;
-  index: number;
-  moveRow: (dragIndex: number, hoverIndex: number) => void;
-  onEdit: (flashcard: Flashcard) => void;
-  onDelete: (flashcard: Flashcard) => void;
-}
-
-const DraggableRow = ({ flashcard, index, moveRow, onEdit, onDelete }: DraggableRowProps) => {
-  const [{ isDragging }, drag, preview] = useDrag({
-    type: 'row',
-    item: { index },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
-
-  const [, drop] = useDrop({
-    accept: 'row',
-    hover: (item: { index: number }) => {
-      if (item.index !== index) {
-        moveRow(item.index, index);
-        item.index = index;
-      }
-    },
-  });
-
-  return (
-    <TableRow ref={(node) => preview(drop(node))} style={{ opacity: isDragging ? 0.5 : 1 }}>
-      <TableCell className="w-[60px]">
-        <div ref={drag} className="cursor-move">
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
-        </div>
-      </TableCell>
-      <TableCell className="font-medium">{index + 1}</TableCell>
-      <TableCell>{flashcard.front_text}</TableCell>
-      <TableCell>{flashcard.back_text}</TableCell>
-      <TableCell>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onEdit(flashcard)}>
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => onDelete(flashcard)}>
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-};
 
 export default function AdminSubDeckDetail() {
   const { deckId, subdeckId } = useParams();
@@ -201,14 +148,6 @@ export default function AdminSubDeckDetail() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  };
-
-  const moveRow = (dragIndex: number, hoverIndex: number) => {
-    const draggedFlashcard = flashcards[dragIndex];
-    const newFlashcards = [...flashcards];
-    newFlashcards.splice(dragIndex, 1);
-    newFlashcards.splice(hoverIndex, 0, draggedFlashcard);
-    setFlashcards(newFlashcards);
   };
 
   const handleEditClick = (flashcard: Flashcard) => {
@@ -381,8 +320,7 @@ export default function AdminSubDeckDetail() {
   }
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="p-8 space-y-6">
+    <div className="p-8 space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
@@ -445,7 +383,6 @@ export default function AdminSubDeckDetail() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[60px]"></TableHead>
                   <TableHead className="w-[80px]">No.</TableHead>
                   <TableHead>Front</TableHead>
                   <TableHead>Back</TableHead>
@@ -454,14 +391,21 @@ export default function AdminSubDeckDetail() {
               </TableHeader>
               <TableBody>
                 {flashcards.map((flashcard, index) => (
-                  <DraggableRow
-                    key={flashcard.id}
-                    flashcard={flashcard}
-                    index={index}
-                    moveRow={moveRow}
-                    onEdit={handleEditClick}
-                    onDelete={handleDeleteClick}
-                  />
+                  <TableRow key={flashcard.id}>
+                    <TableCell className="font-medium">{index + 1}</TableCell>
+                    <TableCell>{flashcard.front_text}</TableCell>
+                    <TableCell>{flashcard.back_text}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(flashcard)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(flashcard)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ))}
               </TableBody>
             </Table>
@@ -575,6 +519,5 @@ export default function AdminSubDeckDetail() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-    </DndProvider>
   );
 }
