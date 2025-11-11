@@ -231,9 +231,15 @@ export default function AdminSubDeckDetail() {
 
       if (error) throw error;
 
+      // Update state directly to preserve order
+      setFlashcards(flashcards.map(fc => 
+        fc.id === selectedFlashcard.id 
+          ? { ...fc, front_text: editForm.front_text, back_text: editForm.back_text }
+          : fc
+      ));
+
       toast.success('แก้ไขคำศัพท์สำเร็จ');
       setIsEditDialogOpen(false);
-      fetchSubDeckAndFlashcards();
     } catch (error) {
       console.error('Error updating flashcard:', error);
       toast.error('ไม่สามารถแก้ไขคำศัพท์ได้');
@@ -264,9 +270,11 @@ export default function AdminSubDeckDetail() {
 
       if (updateError) throw updateError;
 
+      // Update state directly to preserve order
+      setFlashcards(flashcards.filter(fc => fc.id !== selectedFlashcard.id));
+
       toast.success('ลบคำศัพท์สำเร็จ');
       setIsDeleteDialogOpen(false);
-      fetchSubDeckAndFlashcards();
     } catch (error) {
       console.error('Error deleting flashcard:', error);
       toast.error('ไม่สามารถลบคำศัพท์ได้');
@@ -285,7 +293,7 @@ export default function AdminSubDeckDetail() {
     }
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('flashcards')
         .insert({
           subdeck_id: subdeckId,
@@ -293,7 +301,9 @@ export default function AdminSubDeckDetail() {
           back_text: addForm.back_text,
           is_published: true,
           published_at: new Date().toISOString(),
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
@@ -305,9 +315,11 @@ export default function AdminSubDeckDetail() {
 
       if (updateError) throw updateError;
 
+      // Add to state directly to preserve order
+      setFlashcards([...flashcards, data]);
+
       toast.success('เพิ่มคำศัพท์สำเร็จ');
       setIsAddDialogOpen(false);
-      fetchSubDeckAndFlashcards();
     } catch (error) {
       console.error('Error adding flashcard:', error);
       toast.error('ไม่สามารถเพิ่มคำศัพท์ได้');
@@ -335,9 +347,11 @@ export default function AdminSubDeckDetail() {
 
       if (updateError) throw updateError;
 
+      // Clear state directly
+      setFlashcards([]);
+
       toast.success('ลบคำศัพท์ทั้งหมดสำเร็จ');
       setIsDeleteAllDialogOpen(false);
-      fetchSubDeckAndFlashcards();
     } catch (error) {
       console.error('Error deleting all flashcards:', error);
       toast.error('ไม่สามารถลบคำศัพท์ทั้งหมดได้');
