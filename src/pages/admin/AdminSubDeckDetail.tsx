@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Upload, Plus, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Upload, Plus, Edit, Trash2, GripVertical, Trash } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -13,6 +13,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import * as XLSX from 'xlsx';
 
 interface Flashcard {
@@ -21,6 +43,57 @@ interface Flashcard {
   back_text: string;
 }
 
+interface DraggableRowProps {
+  flashcard: Flashcard;
+  index: number;
+  moveRow: (dragIndex: number, hoverIndex: number) => void;
+  onEdit: (flashcard: Flashcard) => void;
+  onDelete: (flashcard: Flashcard) => void;
+}
+
+const DraggableRow = ({ flashcard, index, moveRow, onEdit, onDelete }: DraggableRowProps) => {
+  const [{ isDragging }, drag, preview] = useDrag({
+    type: 'row',
+    item: { index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: 'row',
+    hover: (item: { index: number }) => {
+      if (item.index !== index) {
+        moveRow(item.index, index);
+        item.index = index;
+      }
+    },
+  });
+
+  return (
+    <TableRow ref={(node) => preview(drop(node))} style={{ opacity: isDragging ? 0.5 : 1 }}>
+      <TableCell className="w-[60px]">
+        <div ref={drag} className="cursor-move">
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
+        </div>
+      </TableCell>
+      <TableCell className="font-medium">{index + 1}</TableCell>
+      <TableCell>{flashcard.front_text}</TableCell>
+      <TableCell>{flashcard.back_text}</TableCell>
+      <TableCell>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onEdit(flashcard)}>
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => onDelete(flashcard)}>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
+
 export default function AdminSubDeckDetail() {
   const { deckId, subdeckId } = useParams();
   const navigate = useNavigate();
@@ -28,6 +101,13 @@ export default function AdminSubDeckDetail() {
   const [subdeck, setSubdeck] = useState<any>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+  const [selectedFlashcard, setSelectedFlashcard] = useState<Flashcard | null>(null);
+  const [editForm, setEditForm] = useState({ front_text: '', back_text: '' });
+  const [addForm, setAddForm] = useState({ front_text: '', back_text: '' });
 
   useEffect(() => {
     fetchSubDeckAndFlashcards();
@@ -123,20 +203,144 @@ export default function AdminSubDeckDetail() {
     }
   };
 
-  const handleDeleteFlashcard = async (flashcardId: string) => {
+  const moveRow = (dragIndex: number, hoverIndex: number) => {
+    const draggedFlashcard = flashcards[dragIndex];
+    const newFlashcards = [...flashcards];
+    newFlashcards.splice(dragIndex, 1);
+    newFlashcards.splice(hoverIndex, 0, draggedFlashcard);
+    setFlashcards(newFlashcards);
+  };
+
+  const handleEditClick = (flashcard: Flashcard) => {
+    setSelectedFlashcard(flashcard);
+    setEditForm({ front_text: flashcard.front_text, back_text: flashcard.back_text });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!selectedFlashcard) return;
+    
+    try {
+      const { error } = await supabase
+        .from('flashcards')
+        .update({
+          front_text: editForm.front_text,
+          back_text: editForm.back_text,
+        })
+        .eq('id', selectedFlashcard.id);
+
+      if (error) throw error;
+
+      toast.success('แก้ไขคำศัพท์สำเร็จ');
+      setIsEditDialogOpen(false);
+      fetchSubDeckAndFlashcards();
+    } catch (error) {
+      console.error('Error updating flashcard:', error);
+      toast.error('ไม่สามารถแก้ไขคำศัพท์ได้');
+    }
+  };
+
+  const handleDeleteClick = (flashcard: Flashcard) => {
+    setSelectedFlashcard(flashcard);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedFlashcard) return;
+
     try {
       const { error } = await supabase
         .from('flashcards')
         .delete()
-        .eq('id', flashcardId);
+        .eq('id', selectedFlashcard.id);
 
       if (error) throw error;
 
+      // Update flashcard count
+      const { error: updateError } = await supabase
+        .from('sub_decks')
+        .update({ flashcard_count: flashcards.length - 1 })
+        .eq('id', subdeckId);
+
+      if (updateError) throw updateError;
+
       toast.success('ลบคำศัพท์สำเร็จ');
+      setIsDeleteDialogOpen(false);
       fetchSubDeckAndFlashcards();
     } catch (error) {
       console.error('Error deleting flashcard:', error);
       toast.error('ไม่สามารถลบคำศัพท์ได้');
+    }
+  };
+
+  const handleAddClick = () => {
+    setAddForm({ front_text: '', back_text: '' });
+    setIsAddDialogOpen(true);
+  };
+
+  const handleAddSave = async () => {
+    if (!addForm.front_text || !addForm.back_text) {
+      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('flashcards')
+        .insert({
+          subdeck_id: subdeckId,
+          front_text: addForm.front_text,
+          back_text: addForm.back_text,
+          is_published: true,
+          published_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      // Update flashcard count
+      const { error: updateError } = await supabase
+        .from('sub_decks')
+        .update({ flashcard_count: flashcards.length + 1 })
+        .eq('id', subdeckId);
+
+      if (updateError) throw updateError;
+
+      toast.success('เพิ่มคำศัพท์สำเร็จ');
+      setIsAddDialogOpen(false);
+      fetchSubDeckAndFlashcards();
+    } catch (error) {
+      console.error('Error adding flashcard:', error);
+      toast.error('ไม่สามารถเพิ่มคำศัพท์ได้');
+    }
+  };
+
+  const handleDeleteAllClick = () => {
+    setIsDeleteAllDialogOpen(true);
+  };
+
+  const handleDeleteAllConfirm = async () => {
+    try {
+      const { error } = await supabase
+        .from('flashcards')
+        .delete()
+        .eq('subdeck_id', subdeckId);
+
+      if (error) throw error;
+
+      // Update flashcard count
+      const { error: updateError } = await supabase
+        .from('sub_decks')
+        .update({ flashcard_count: 0 })
+        .eq('id', subdeckId);
+
+      if (updateError) throw updateError;
+
+      toast.success('ลบคำศัพท์ทั้งหมดสำเร็จ');
+      setIsDeleteAllDialogOpen(false);
+      fetchSubDeckAndFlashcards();
+    } catch (error) {
+      console.error('Error deleting all flashcards:', error);
+      toast.error('ไม่สามารถลบคำศัพท์ทั้งหมดได้');
     }
   };
 
@@ -163,44 +367,51 @@ export default function AdminSubDeckDetail() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(`/admin/decks/${deckId}`)}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">{subdeck.name}</h1>
-            <p className="text-muted-foreground text-lg">{subdeck.name_en}</p>
-            <p className="text-foreground/80 mt-2">จำนวนคำศัพท์ทั้งหมด: {flashcards.length}</p>
+    <DndProvider backend={HTML5Backend}>
+      <div className="p-8 space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(`/admin/decks/${deckId}`)}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">{subdeck.name}</h1>
+              <p className="text-muted-foreground text-lg">{subdeck.name_en}</p>
+              <p className="text-foreground/80 mt-2">จำนวนคำศัพท์ทั้งหมด: {flashcards.length}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              อัปโหลดไฟล์ .xlsx
+            </Button>
+            <Button onClick={handleAddClick}>
+              <Plus className="w-4 h-4 mr-2" />
+              เพิ่มคำศัพท์
+            </Button>
+            {flashcards.length > 0 && (
+              <Button variant="destructive" onClick={handleDeleteAllClick}>
+                <Trash className="w-4 h-4 mr-2" />
+                ลบทั้งหมด
+              </Button>
+            )}
           </div>
         </div>
-        <div className="flex gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-          <Button
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            อัปโหลดไฟล์ .xlsx
-          </Button>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            เพิ่มคำศัพท์
-          </Button>
-        </div>
-      </div>
 
       {/* Flashcards Table */}
       <Card>
@@ -220,6 +431,7 @@ export default function AdminSubDeckDetail() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[60px]"></TableHead>
                   <TableHead className="w-[80px]">No.</TableHead>
                   <TableHead>Front</TableHead>
                   <TableHead>Back</TableHead>
@@ -228,31 +440,127 @@ export default function AdminSubDeckDetail() {
               </TableHeader>
               <TableBody>
                 {flashcards.map((flashcard, index) => (
-                  <TableRow key={flashcard.id}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell>{flashcard.front_text}</TableCell>
-                    <TableCell>{flashcard.back_text}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteFlashcard(flashcard.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <DraggableRow
+                    key={flashcard.id}
+                    flashcard={flashcard}
+                    index={index}
+                    moveRow={moveRow}
+                    onEdit={handleEditClick}
+                    onDelete={handleDeleteClick}
+                  />
                 ))}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>แก้ไขคำศัพท์</DialogTitle>
+            <DialogDescription>แก้ไขข้อมูล Front และ Back ของคำศัพท์</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-front">Front</Label>
+              <Input
+                id="edit-front"
+                value={editForm.front_text}
+                onChange={(e) => setEditForm({ ...editForm, front_text: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-back">Back</Label>
+              <Input
+                id="edit-back"
+                value={editForm.back_text}
+                onChange={(e) => setEditForm({ ...editForm, back_text: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              ยกเลิก
+            </Button>
+            <Button onClick={handleEditSave}>บันทึก</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>เพิ่มคำศัพท์</DialogTitle>
+            <DialogDescription>กรอกข้อมูล Front และ Back ของคำศัพท์ใหม่</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="add-front">Front</Label>
+              <Input
+                id="add-front"
+                value={addForm.front_text}
+                onChange={(e) => setAddForm({ ...addForm, front_text: e.target.value })}
+                placeholder="กรอก Front text"
+              />
+            </div>
+            <div>
+              <Label htmlFor="add-back">Back</Label>
+              <Input
+                id="add-back"
+                value={addForm.back_text}
+                onChange={(e) => setAddForm({ ...addForm, back_text: e.target.value })}
+                placeholder="กรอก Back text"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              ยกเลิก
+            </Button>
+            <Button onClick={handleAddSave}>บันทึก</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันการลบคำศัพท์นี้หรือไม่?</AlertDialogTitle>
+            <AlertDialogDescription>
+              การดำเนินการนี้ไม่สามารถย้อนกลับได้ คำศัพท์จะถูกลบออกจากระบบอย่างถาวร
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              ลบถาวร
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete All Confirmation Dialog */}
+      <AlertDialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ต้องการลบคำศัพท์ทั้งหมดใน deck นี้หรือไม่?</AlertDialogTitle>
+            <AlertDialogDescription>
+              การดำเนินการนี้จะลบคำศัพท์ทั้งหมด {flashcards.length} คำ ออกจากระบบอย่างถาวร และไม่สามารถย้อนกลับได้
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAllConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              ลบทั้งหมด
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+    </DndProvider>
   );
 }
