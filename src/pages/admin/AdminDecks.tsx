@@ -66,8 +66,8 @@ export default function AdminDecks() {
       const {
         data,
         error
-      } = await supabase.from('decks').select('*, sub_decks(count)').order('created_at', {
-        ascending: false
+      } = await supabase.from('decks').select('*, sub_decks(count)').order('display_order', {
+        ascending: true
       });
       if (error) throw error;
       setDecks(data || []);
@@ -100,12 +100,34 @@ export default function AdminDecks() {
     }
   };
 
-  const moveRow = useCallback((dragIndex: number, hoverIndex: number) => {
+  const moveRow = useCallback(async (dragIndex: number, hoverIndex: number) => {
     setDecks((prevDecks) => {
       const newDecks = [...prevDecks];
       const [removed] = newDecks.splice(dragIndex, 1);
       newDecks.splice(hoverIndex, 0, removed);
-      return newDecks;
+      
+      // Update display_order for all decks after reordering
+      const updatedDecks = newDecks.map((deck, index) => ({
+        ...deck,
+        display_order: index
+      }));
+      
+      // Save to database
+      Promise.all(
+        updatedDecks.map(deck =>
+          supabase
+            .from('decks')
+            .update({ display_order: deck.display_order })
+            .eq('id', deck.id)
+        )
+      ).then(() => {
+        toast.success('บันทึกลำดับสำเร็จ');
+      }).catch((error) => {
+        console.error('Error saving order:', error);
+        toast.error('เกิดข้อผิดพลาดในการบันทึกลำดับ');
+      });
+      
+      return updatedDecks;
     });
   }, []);
   const filteredDecks = decks.filter(deck => deck.name?.toLowerCase().includes(searchTerm.toLowerCase()) || deck.name_en?.toLowerCase().includes(searchTerm.toLowerCase()));

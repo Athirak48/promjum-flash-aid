@@ -33,7 +33,7 @@ export function useDecks() {
       const { data: decksData, error: decksError } = await supabase
         .from('decks')
         .select('*')
-        .order('created_at', { ascending: true });
+        .order('display_order', { ascending: true });
 
       if (decksError) throw decksError;
 

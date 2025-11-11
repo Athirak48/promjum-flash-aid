@@ -94,6 +94,7 @@ export type Database = {
           default_tts_voice: string | null
           description: string | null
           description_en: string | null
+          display_order: number | null
           icon: string
           id: string
           is_premium: boolean | null
@@ -114,6 +115,7 @@ export type Database = {
           default_tts_voice?: string | null
           description?: string | null
           description_en?: string | null
+          display_order?: number | null
           icon?: string
           id?: string
           is_premium?: boolean | null
@@ -134,6 +136,7 @@ export type Database = {
           default_tts_voice?: string | null
           description?: string | null
           description_en?: string | null
+          display_order?: number | null
           icon?: string
           id?: string
           is_premium?: boolean | null
