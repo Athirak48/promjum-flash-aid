@@ -249,7 +249,10 @@ export default function AdminDeckDetail() {
               {subDecks.map((subdeck) => (
                 <Card key={subdeck.id} className="border-l-4">
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between gap-4">
+                     <div 
+                      className="flex items-center justify-between gap-4 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => navigate(`/admin/decks/${deckId}/subdecks/${subdeck.id}`)}
+                    >
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-xl mb-1">{subdeck.name}</CardTitle>
@@ -282,7 +285,7 @@ export default function AdminDeckDetail() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant={subdeck.is_published ? "default" : "outline"}
                           size="sm"

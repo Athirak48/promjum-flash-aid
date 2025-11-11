@@ -27,6 +27,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
 import AdminDeckDetail from "./pages/admin/AdminDeckDetail";
+import AdminSubDeckDetail from "./pages/admin/AdminSubDeckDetail";
 import AdminMembers from "./pages/admin/AdminMembers";
 import AdminPromotions from "./pages/admin/AdminPromotions";
 import AdminFeedback from "./pages/admin/AdminFeedback";
@@ -118,6 +119,16 @@ const App = () => {
                 }
               >
                 <Route index element={<AdminDeckDetail />} />
+              </Route>
+              <Route 
+                path="/admin/decks/:deckId/subdecks/:subdeckId" 
+                element={
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                }
+              >
+                <Route index element={<AdminSubDeckDetail />} />
               </Route>
               
               <Route
