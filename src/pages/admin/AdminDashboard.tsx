@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import UserDetailModal from '@/components/admin/UserDetailModal';
 import EditUserModal from '@/components/admin/EditUserModal';
 import BlockUserDialog from '@/components/admin/BlockUserDialog';
+import UserDecksDialog from '@/components/admin/UserDecksDialog';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -36,6 +37,7 @@ export default function AdminDashboard() {
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [showUserDecks, setShowUserDecks] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -144,6 +146,16 @@ export default function AdminDashboard() {
     fetchUsers();
   };
 
+  const handleViewDecks = (user: any) => {
+    setSelectedUser({
+      id: user.user_id,
+      name: user.full_name || 'Unknown User',
+      email: user.email || 'No email',
+      isBlocked: user.is_blocked || false,
+    });
+    setShowUserDecks(true);
+  };
+
   const filteredUsers = users.filter(user =>
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -218,7 +230,15 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell className="text-muted-foreground">-</TableCell>
                         <TableCell className="text-muted-foreground">-</TableCell>
-                        <TableCell className="text-muted-foreground">-</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewDecks(user)}
+                          >
+                            View Decks
+                          </Button>
+                        </TableCell>
                         <TableCell className="text-muted-foreground">-</TableCell>
                         <TableCell className="text-sm">
                           {new Date(user.created_at).toLocaleDateString('th-TH', { 
@@ -350,6 +370,12 @@ export default function AdminDashboard() {
             userName={selectedUser.name}
             isBlocked={selectedUser.isBlocked}
             onSuccess={handleBlockSuccess}
+          />
+          <UserDecksDialog
+            open={showUserDecks}
+            onOpenChange={setShowUserDecks}
+            userId={selectedUser.id}
+            userEmail={selectedUser.email}
           />
         </>
       )}
