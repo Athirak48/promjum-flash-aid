@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, FolderOpen } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import CreateMockDataButton from './CreateMockDataButton';
 
 interface UserDecksDialogProps {
   open: boolean;
@@ -112,10 +113,19 @@ export default function UserDecksDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Decks & Folders</DialogTitle>
-          <DialogDescription className="text-base font-medium text-foreground">
-            {userEmail}
-          </DialogDescription>
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle>Decks & Folders</DialogTitle>
+              <DialogDescription className="text-base font-medium text-foreground">
+                {userEmail}
+              </DialogDescription>
+            </div>
+            <CreateMockDataButton 
+              userId={userId} 
+              userEmail={userEmail} 
+              onSuccess={fetchUserDecks}
+            />
+          </div>
         </DialogHeader>
 
         <ScrollArea className="max-h-[500px] pr-4">
