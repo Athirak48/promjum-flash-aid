@@ -17,6 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import UserDetailModal from '@/components/admin/UserDetailModal';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -29,6 +30,8 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<{id: string, name: string, email: string} | null>(null);
+  const [showUserDetail, setShowUserDetail] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -96,6 +99,15 @@ export default function AdminDashboard() {
   const getUserPlanType = (userId: string) => {
     const sub = subscriptions.find(s => s.user_id === userId && s.status === 'active');
     return sub?.plan_type || 'Free';
+  };
+
+  const handleViewUser = (user: any) => {
+    setSelectedUser({
+      id: user.user_id,
+      name: user.full_name || 'Unknown User',
+      email: user.email || 'No email',
+    });
+    setShowUserDetail(true);
   };
 
   const filteredUsers = users.filter(user =>
@@ -183,7 +195,9 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="sm">View</Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleViewUser(user)}>
+                              View
+                            </Button>
                             <Button variant="ghost" size="sm">Edit</Button>
                             <Button variant="ghost" size="sm" className="text-destructive">Block</Button>
                           </div>
@@ -262,6 +276,17 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* User Detail Modal */}
+      {selectedUser && (
+        <UserDetailModal
+          open={showUserDetail}
+          onOpenChange={setShowUserDetail}
+          userId={selectedUser.id}
+          userName={selectedUser.name}
+          userEmail={selectedUser.email}
+        />
+      )}
     </div>
   );
 }
