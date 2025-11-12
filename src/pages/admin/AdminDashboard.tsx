@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import UserDetailModal from '@/components/admin/UserDetailModal';
+import EditUserModal from '@/components/admin/EditUserModal';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -32,6 +33,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<{id: string, name: string, email: string} | null>(null);
   const [showUserDetail, setShowUserDetail] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -108,6 +110,20 @@ export default function AdminDashboard() {
       email: user.email || 'No email',
     });
     setShowUserDetail(true);
+  };
+
+  const handleEditUser = (user: any) => {
+    setSelectedUser({
+      id: user.user_id,
+      name: user.full_name || 'Unknown User',
+      email: user.email || 'No email',
+    });
+    setShowEditUser(true);
+  };
+
+  const handleEditSuccess = () => {
+    fetchUsers();
+    fetchSubscriptions();
   };
 
   const filteredUsers = users.filter(user =>
@@ -198,7 +214,9 @@ export default function AdminDashboard() {
                             <Button variant="ghost" size="sm" onClick={() => handleViewUser(user)}>
                               View
                             </Button>
-                            <Button variant="ghost" size="sm">Edit</Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
+                              Edit
+                            </Button>
                             <Button variant="ghost" size="sm" className="text-destructive">Block</Button>
                           </div>
                         </TableCell>
@@ -279,13 +297,23 @@ export default function AdminDashboard() {
 
       {/* User Detail Modal */}
       {selectedUser && (
-        <UserDetailModal
-          open={showUserDetail}
-          onOpenChange={setShowUserDetail}
-          userId={selectedUser.id}
-          userName={selectedUser.name}
-          userEmail={selectedUser.email}
-        />
+        <>
+          <UserDetailModal
+            open={showUserDetail}
+            onOpenChange={setShowUserDetail}
+            userId={selectedUser.id}
+            userName={selectedUser.name}
+            userEmail={selectedUser.email}
+          />
+          <EditUserModal
+            open={showEditUser}
+            onOpenChange={setShowEditUser}
+            userId={selectedUser.id}
+            userName={selectedUser.name}
+            userEmail={selectedUser.email}
+            onSuccess={handleEditSuccess}
+          />
+        </>
       )}
     </div>
   );
