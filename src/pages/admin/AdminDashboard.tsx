@@ -27,11 +27,13 @@ export default function AdminDashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<any[]>([]);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchStats();
     fetchUsers();
+    fetchSubscriptions();
   }, []);
 
   const fetchStats = async () => {
@@ -78,6 +80,24 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchSubscriptions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('user_id, plan_type, status');
+
+      if (error) throw error;
+      setSubscriptions(data || []);
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+    }
+  };
+
+  const getUserPlanType = (userId: string) => {
+    const sub = subscriptions.find(s => s.user_id === userId && s.status === 'active');
+    return sub?.plan_type || 'Free';
+  };
+
   const filteredUsers = users.filter(user =>
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -120,32 +140,53 @@ export default function AdminDashboard() {
                 className="max-w-sm"
               />
               
-              <div className="border rounded-lg">
+              <div className="border rounded-lg overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ชื่อ</TableHead>
-                      <TableHead>อีเมล</TableHead>
-                      <TableHead>บทบาท</TableHead>
-                      <TableHead>วันที่สมัคร</TableHead>
-                      <TableHead>การกระทำ</TableHead>
+                      <TableHead>User ID</TableHead>
+                      <TableHead>Name / Email</TableHead>
+                      <TableHead>Plan Type</TableHead>
+                      <TableHead>Gender</TableHead>
+                      <TableHead>Total XP</TableHead>
+                      <TableHead>Deck</TableHead>
+                      <TableHead>Last Active</TableHead>
+                      <TableHead>Joined Date</TableHead>
+                      <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredUsers.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.full_name || '-'}</TableCell>
-                        <TableCell>{user.email || '-'}</TableCell>
+                        <TableCell className="font-mono text-xs">{user.user_id?.substring(0, 8)}...</TableCell>
                         <TableCell>
-                          <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'teacher' ? 'default' : 'secondary'}>
-                            {user.role === 'admin' ? 'ผู้ดูแลระบบ' : user.role === 'teacher' ? 'ครู' : user.role === 'content_editor' ? 'ผู้จัดการเนื้อหา' : 'ผู้ใช้'}
+                          <div className="flex flex-col">
+                            <span className="font-medium">{user.full_name || '-'}</span>
+                            <span className="text-xs text-muted-foreground">{user.email || '-'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getUserPlanType(user.user_id) !== 'Free' ? 'default' : 'secondary'}>
+                            {getUserPlanType(user.user_id)}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          {new Date(user.created_at).toLocaleDateString('th-TH')}
+                        <TableCell className="text-muted-foreground">-</TableCell>
+                        <TableCell className="text-muted-foreground">-</TableCell>
+                        <TableCell className="text-muted-foreground">-</TableCell>
+                        <TableCell className="text-muted-foreground">-</TableCell>
+                        <TableCell className="text-sm">
+                          {new Date(user.created_at).toLocaleDateString('th-TH', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="sm">แก้ไข</Button>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm">View</Button>
+                            <Button variant="ghost" size="sm">Edit</Button>
+                            <Button variant="ghost" size="sm" className="text-destructive">Block</Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
