@@ -19,6 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import UserDetailModal from '@/components/admin/UserDetailModal';
 import EditUserModal from '@/components/admin/EditUserModal';
+import BlockUserDialog from '@/components/admin/BlockUserDialog';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -31,9 +32,10 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<{id: string, name: string, email: string} | null>(null);
+  const [selectedUser, setSelectedUser] = useState<{id: string, name: string, email: string, isBlocked: boolean} | null>(null);
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -108,6 +110,7 @@ export default function AdminDashboard() {
       id: user.user_id,
       name: user.full_name || 'Unknown User',
       email: user.email || 'No email',
+      isBlocked: user.is_blocked || false,
     });
     setShowUserDetail(true);
   };
@@ -117,13 +120,28 @@ export default function AdminDashboard() {
       id: user.user_id,
       name: user.full_name || 'Unknown User',
       email: user.email || 'No email',
+      isBlocked: user.is_blocked || false,
     });
     setShowEditUser(true);
+  };
+
+  const handleBlockUser = (user: any) => {
+    setSelectedUser({
+      id: user.user_id,
+      name: user.full_name || 'Unknown User',
+      email: user.email || 'No email',
+      isBlocked: user.is_blocked || false,
+    });
+    setShowBlockDialog(true);
   };
 
   const handleEditSuccess = () => {
     fetchUsers();
     fetchSubscriptions();
+  };
+
+  const handleBlockSuccess = () => {
+    fetchUsers();
   };
 
   const filteredUsers = users.filter(user =>
@@ -185,7 +203,7 @@ export default function AdminDashboard() {
                   </TableHeader>
                   <TableBody>
                     {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
+                      <TableRow key={user.id} className={user.is_blocked ? 'bg-destructive/5' : ''}>
                         <TableCell className="font-mono text-xs">{user.user_id?.substring(0, 8)}...</TableCell>
                         <TableCell>
                           <div className="flex flex-col">
@@ -214,10 +232,22 @@ export default function AdminDashboard() {
                             <Button variant="ghost" size="sm" onClick={() => handleViewUser(user)}>
                               View
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleEditUser(user)}
+                              disabled={user.is_blocked}
+                            >
                               Edit
                             </Button>
-                            <Button variant="ghost" size="sm" className="text-destructive">Block</Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className={user.is_blocked ? 'text-orange-600' : 'text-destructive'}
+                              onClick={() => handleBlockUser(user)}
+                            >
+                              {user.is_blocked ? 'Unblock' : 'Block'}
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -312,6 +342,14 @@ export default function AdminDashboard() {
             userName={selectedUser.name}
             userEmail={selectedUser.email}
             onSuccess={handleEditSuccess}
+          />
+          <BlockUserDialog
+            open={showBlockDialog}
+            onOpenChange={setShowBlockDialog}
+            userId={selectedUser.id}
+            userName={selectedUser.name}
+            isBlocked={selectedUser.isBlocked}
+            onSuccess={handleBlockSuccess}
           />
         </>
       )}

@@ -527,10 +527,13 @@ export type Database = {
           auto_play_audio: boolean | null
           avatar_url: string | null
           bio: string | null
+          blocked_at: string | null
+          blocked_reason: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          is_blocked: boolean | null
           learner_accent: string | null
           phone: string | null
           role: string
@@ -546,10 +549,13 @@ export type Database = {
           auto_play_audio?: boolean | null
           avatar_url?: string | null
           bio?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          is_blocked?: boolean | null
           learner_accent?: string | null
           phone?: string | null
           role?: string
@@ -565,10 +571,13 @@ export type Database = {
           auto_play_audio?: boolean | null
           avatar_url?: string | null
           bio?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          is_blocked?: boolean | null
           learner_accent?: string | null
           phone?: string | null
           role?: string

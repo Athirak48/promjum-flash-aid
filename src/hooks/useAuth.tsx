@@ -26,6 +26,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Check if user is blocked whenever auth state changes
+        if (session?.user) {
+          setTimeout(async () => {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('is_blocked')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+
+            if (profile?.is_blocked) {
+              await supabase.auth.signOut();
+            }
+          }, 0);
+        }
+        
         setLoading(false);
       }
     );
@@ -58,12 +74,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    
-    return { error };
+
+    if (error) return { error };
+
+    // Check if user is blocked
+    if (data.user) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_blocked, blocked_reason')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error checking user status:', profileError);
+      }
+
+      if (profile?.is_blocked) {
+        // Sign out the blocked user immediately
+        await supabase.auth.signOut();
+        return { 
+          error: { 
+            message: 'บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ',
+            code: 'user_blocked'
+          } 
+        };
+      }
+    }
+
+    return { error: null };
   };
 
   const getUserRole = async (userId: string) => {
