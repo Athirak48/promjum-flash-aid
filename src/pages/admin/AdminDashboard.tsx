@@ -204,11 +204,11 @@ export default function AdminDashboard() {
                   <TableBody>
                     {filteredUsers.map((user) => (
                       <TableRow key={user.id} className={user.is_blocked ? 'bg-destructive/5' : ''}>
-                        <TableCell className="font-mono text-xs">{user.user_id?.substring(0, 8)}...</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
+                        <TableCell className="font-mono text-xs max-w-[200px] break-all">{user.user_id}</TableCell>
+                        <TableCell className="min-w-[200px]">
+                          <div className="flex flex-col gap-1">
                             <span className="font-medium">{user.full_name || '-'}</span>
-                            <span className="text-xs text-muted-foreground">{user.email || '-'}</span>
+                            <span className="text-sm text-foreground">{user.email || '-'}</span>
                           </div>
                         </TableCell>
                         <TableCell>
