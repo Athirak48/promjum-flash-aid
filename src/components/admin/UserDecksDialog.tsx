@@ -55,57 +55,62 @@ export default function UserDecksDialog({
     try {
       setLoading(true);
 
-      // Mock data for demonstration
-      const mockDecks: DeckProgress[] = [
-        {
-          deck_id: '1',
-          deck_name: 'Business English',
-          flashcard_count: 150,
-          progress_percentage: 75,
-        },
-        {
-          deck_id: '2',
-          deck_name: 'Travel Phrases',
-          flashcard_count: 200,
-          progress_percentage: 45,
-        },
-        {
-          deck_id: '3',
-          deck_name: 'Daily Conversation',
-          flashcard_count: 120,
-          progress_percentage: 90,
-        },
-      ];
+      // Fetch deck progress for this user
+      const { data: userDeckProgressData, error: deckProgressError } = await supabase
+        .from('user_deck_progress')
+        .select(`
+          deck_id,
+          progress_percentage,
+          decks:deck_id (
+            id,
+            name,
+            total_flashcards
+          )
+        `)
+        .eq('user_id', userId);
 
-      const mockSubDecks: SubDeckProgress[] = [
-        {
-          subdeck_id: '1',
-          subdeck_name: 'Meeting Vocabulary',
-          flashcard_count: 50,
-          cards_learned: 30,
-        },
-        {
-          subdeck_id: '2',
-          subdeck_name: 'Airport & Flight',
-          flashcard_count: 75,
-          cards_learned: 60,
-        },
-        {
-          subdeck_id: '3',
-          subdeck_name: 'Hotel Check-in',
-          flashcard_count: 40,
-          cards_learned: 25,
-        },
-        {
-          subdeck_id: '4',
-          subdeck_name: 'Greetings & Introductions',
-          flashcard_count: 30,
-          cards_learned: 28,
-        },
-      ];
+      if (deckProgressError) throw deckProgressError;
 
-      setDeckProgress(mockDecks);
-      setSubDeckProgress(mockSubDecks);
+      // Format deck progress data
+      const formattedDeckProgress: DeckProgress[] = (userDeckProgressData || [])
+        .filter(item => item.decks)
+        .map(item => ({
+          deck_id: item.deck_id,
+          deck_name: item.decks.name,
+          flashcard_count: item.decks.total_flashcards || 0,
+          progress_percentage: item.progress_percentage || 0,
+        }));
+
+      setDeckProgress(formattedDeckProgress);
+
+      // Fetch subdeck progress for this user
+      const { data: userSubDeckProgressData, error: subDeckProgressError } = await supabase
+        .from('user_subdeck_progress')
+        .select(`
+          subdeck_id,
+          cards_learned,
+          sub_decks:subdeck_id (
+            id,
+            name,
+            flashcard_count
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (subDeckProgressError) throw subDeckProgressError;
+
+      // Format subdeck progress data
+      const formattedSubDeckProgress: SubDeckProgress[] = (userSubDeckProgressData || [])
+        .filter(item => item.sub_decks)
+        .map(item => ({
+          subdeck_id: item.subdeck_id,
+          subdeck_name: item.sub_decks.name,
+          flashcard_count: item.sub_decks.flashcard_count || 0,
+          cards_learned: item.cards_learned || 0,
+        }));
+
+      setSubDeckProgress(formattedSubDeckProgress);
+
     } catch (error) {
       console.error('Error fetching user decks:', error);
     } finally {

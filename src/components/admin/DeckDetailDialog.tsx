@@ -70,14 +70,8 @@ export function DeckDetailDialog({ open, onOpenChange, userId, deckId, deckName 
 
     } catch (error) {
       console.error('Error fetching subdecks:', error);
-      // Use mock data if error
-      const mockSubDecks = [
-        { id: 'mock-1', name: 'Meeting Vocabulary', flashcard_count: 50 },
-        { id: 'mock-2', name: 'Office Terms', flashcard_count: 75 },
-        { id: 'mock-3', name: 'Business Writing', flashcard_count: 60 },
-      ];
-      setSubDecks(mockSubDecks);
-      setTotalFlashcards(185);
+      setSubDecks([]);
+      setTotalFlashcards(0);
     } finally {
       setLoading(false);
     }
@@ -125,15 +119,7 @@ export function DeckDetailDialog({ open, onOpenChange, userId, deckId, deckName 
 
     } catch (error) {
       console.error('Error fetching flashcards:', error);
-      // Use mock data if error
-      const mockFlashcards = [
-        { id: '1', front_text: 'Meeting', back_text: 'การประชุม', times_reviewed: 5 },
-        { id: '2', front_text: 'Schedule', back_text: 'ตารางเวลา', times_reviewed: 3 },
-        { id: '3', front_text: 'Presentation', back_text: 'การนำเสนอ', times_reviewed: 7 },
-        { id: '4', front_text: 'Discussion', back_text: 'การอภิปราย', times_reviewed: 2 },
-        { id: '5', front_text: 'Agreement', back_text: 'ข้อตกลง', times_reviewed: 4 },
-      ];
-      setFlashcards(mockFlashcards);
+      setFlashcards([]);
     } finally {
       setLoadingFlashcards(false);
     }
