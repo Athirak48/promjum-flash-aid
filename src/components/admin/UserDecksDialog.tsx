@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, FolderOpen } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DeckDetailDialog } from './DeckDetailDialog';
 
 interface UserDecksDialogProps {
   open: boolean;
@@ -41,6 +42,8 @@ export default function UserDecksDialog({
   const [loading, setLoading] = useState(false);
   const [deckProgress, setDeckProgress] = useState<DeckProgress[]>([]);
   const [subDeckProgress, setSubDeckProgress] = useState<SubDeckProgress[]>([]);
+  const [selectedDeck, setSelectedDeck] = useState<{ id: string; name: string } | null>(null);
+  const [showDeckDetail, setShowDeckDetail] = useState(false);
 
   useEffect(() => {
     if (open && userId) {
@@ -136,7 +139,14 @@ export default function UserDecksDialog({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Main Decks */}
               {deckProgress.map((deck) => (
-                <Card key={deck.deck_id} className="hover:shadow-md transition-shadow">
+                <Card 
+                  key={deck.deck_id} 
+                  className="hover:shadow-md transition-all cursor-pointer hover:scale-105"
+                  onClick={() => {
+                    setSelectedDeck({ id: deck.deck_id, name: deck.deck_name });
+                    setShowDeckDetail(true);
+                  }}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <div className="p-2 rounded-lg bg-primary/10">
@@ -183,6 +193,17 @@ export default function UserDecksDialog({
           )}
         </ScrollArea>
       </DialogContent>
+
+      {/* Deck Detail Dialog */}
+      {selectedDeck && (
+        <DeckDetailDialog
+          open={showDeckDetail}
+          onOpenChange={setShowDeckDetail}
+          userId={userId}
+          deckId={selectedDeck.id}
+          deckName={selectedDeck.name}
+        />
+      )}
     </Dialog>
   );
 }
