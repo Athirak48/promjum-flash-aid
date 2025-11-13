@@ -306,6 +306,8 @@ export default function FlashcardsPage() {
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [showCreateFlashcardDialog, setShowCreateFlashcardDialog] = useState(false);
+  const [newFlashcardSetTitle, setNewFlashcardSetTitle] = useState('');
+  const [selectedFolderForFlashcard, setSelectedFolderForFlashcard] = useState<string>('');
   const [flashcardRows, setFlashcardRows] = useState([{
     id: 1,
     front: '',
@@ -485,17 +487,111 @@ export default function FlashcardsPage() {
     };
     input.click();
   };
-  const handleCreateFlashcards = () => {
-    // TODO: Implement flashcard creation logic
-    console.log('Creating flashcards:', flashcardRows);
-    setShowCreateFlashcardDialog(false);
-    setFlashcardRows([{
-      id: 1,
-      front: '',
-      back: '',
-      frontImage: null,
-      backImage: null
-    }]);
+  const handleCreateFlashcards = async () => {
+    if (!newFlashcardSetTitle.trim()) {
+      toast({
+        title: "กรุณาใส่ชื่อชุดแฟลชการ์ด",
+        description: "ชื่อชุดแฟลชการ์ดต้องไม่ว่างเปล่า",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const validFlashcards = flashcardRows.filter(row => row.front.trim() && row.back.trim());
+    
+    if (validFlashcards.length === 0) {
+      toast({
+        title: "กรุณาเพิ่มแฟลชการ์ด",
+        description: "ต้องมีแฟลชการ์ดอย่างน้อย 1 ใบที่มีข้อมูลครบ",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "กรุณาเข้าสู่ระบบ",
+          description: "คุณต้องเข้าสู่ระบบก่อนสร้างแฟลชการ์ด",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create flashcard set first
+      const { data: flashcardSet, error: setError } = await supabase
+        .from('user_flashcard_sets')
+        .insert([{
+          user_id: user.id,
+          folder_id: selectedFolderForFlashcard || null,
+          title: newFlashcardSetTitle.trim(),
+          card_count: validFlashcards.length,
+          source: 'created'
+        }])
+        .select()
+        .single();
+
+      if (setError) throw setError;
+
+      // Create individual flashcards
+      const flashcardsToInsert = validFlashcards.map(row => ({
+        user_id: user.id,
+        flashcard_set_id: flashcardSet.id,
+        front_text: row.front.trim(),
+        back_text: row.back.trim()
+      }));
+
+      const { error: flashcardsError } = await supabase
+        .from('user_flashcards')
+        .insert(flashcardsToInsert);
+
+      if (flashcardsError) throw flashcardsError;
+
+      // Update folder count if folder selected
+      if (selectedFolderForFlashcard) {
+        const { data: folderData } = await supabase
+          .from('user_folders')
+          .select('card_sets_count')
+          .eq('id', selectedFolderForFlashcard)
+          .single();
+
+        if (folderData) {
+          await supabase
+            .from('user_folders')
+            .update({ card_sets_count: (folderData.card_sets_count || 0) + 1 })
+            .eq('id', selectedFolderForFlashcard);
+        }
+      }
+
+      // Refresh folders and flashcard sets
+      await fetchFolders();
+
+      // Reset form
+      setShowCreateFlashcardDialog(false);
+      setNewFlashcardSetTitle('');
+      setSelectedFolderForFlashcard('');
+      setFlashcardRows([{
+        id: 1,
+        front: '',
+        back: '',
+        frontImage: null,
+        backImage: null
+      }]);
+
+      toast({
+        title: "สร้างแฟลชการ์ดสำเร็จ",
+        description: `สร้างชุด "${newFlashcardSetTitle}" พร้อม ${validFlashcards.length} ใบเรียบร้อยแล้ว`,
+      });
+    } catch (error) {
+      console.error('Error creating flashcards:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถสร้างแฟลชการ์ดได้",
+        variant: "destructive"
+      });
+    }
   };
   const filteredSets = flashcardSets.filter(set => {
     const matchesSearch = set.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -572,6 +668,20 @@ export default function FlashcardsPage() {
                 </DialogHeader>
                 
                 <div className="space-y-6">
+                  {/* Flashcard Set Title */}
+                  <div className="space-y-2">
+                    <Label htmlFor="flashcard-set-title" className="text-sm font-medium">
+                      ชื่อชุดแฟลชการ์ด *
+                    </Label>
+                    <Input
+                      id="flashcard-set-title"
+                      placeholder="เช่น คำศัพท์ภาษาอังกฤษพื้นฐาน"
+                      value={newFlashcardSetTitle}
+                      onChange={(e) => setNewFlashcardSetTitle(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+
                   {/* Folder Selection Section */}
                   <div className="border-t pt-4">
                     <Label className="text-sm font-medium mb-3 block">จัดเก็บในโฟลเดอร์</Label>
@@ -584,17 +694,11 @@ export default function FlashcardsPage() {
 
                       {/* Folder Dropdown with Search */}
                       <div className="flex-1">
-                        <Select>
+                        <Select value={selectedFolderForFlashcard} onValueChange={setSelectedFolderForFlashcard}>
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="เลือกโฟลเดอร์ (ไม่บังคับ)" />
                           </SelectTrigger>
                           <SelectContent>
-                            <div className="p-2">
-                              <div className="relative">
-                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input placeholder="ค้นหาโฟลเดอร์..." className="pl-8" />
-                              </div>
-                            </div>
                             <SelectItem value="none">ไม่เลือกโฟลเดอร์</SelectItem>
                             {folders.map(folder => <SelectItem key={folder.id} value={folder.id}>
                                 <div className="flex items-center gap-2">
