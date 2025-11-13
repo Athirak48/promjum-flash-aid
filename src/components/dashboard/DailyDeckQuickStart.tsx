@@ -8,10 +8,6 @@ import { useFlashcards } from '@/hooks/useFlashcards';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
-import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
-import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
-import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
-import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGame';
 interface DailyDeckQuickStartProps {
   streak?: number;
   totalXP?: number;
@@ -25,91 +21,118 @@ export function DailyDeckQuickStart({
   const navigate = useNavigate();
   const [showModeDialog, setShowModeDialog] = useState(false);
   const [showGameSelection, setShowGameSelection] = useState(false);
-  const [showReview, setShowReview] = useState(false);
-  const [gameMode, setGameMode] = useState<'quiz' | 'matching' | 'listen' | null>(null);
-  const [reviewCards, setReviewCards] = useState<Array<{ id: string; front: string; back: string }>>([]);
   const { flashcards } = useFlashcards();
   const { toast } = useToast();
 
-  // Get 7 cards from latest scheduled review + 3 random from same upload_id
+  // Get 12 cards: prioritize cards due for review, then random from same folder
   const getReviewCards = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      // Get latest scheduled review
-      const { data: scheduledReview } = await supabase
-        .from('scheduled_reviews')
-        .select('vocabulary_ids')
+      // Get cards that are due for review (next_review_date <= now)
+      const { data: dueCards } = await supabase
+        .from('user_flashcard_progress')
+        .select(`
+          flashcard_id,
+          flashcards:flashcard_id (
+            id,
+            front_text,
+            back_text,
+            upload_id
+          )
+        `)
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .lte('next_review_date', new Date().toISOString())
+        .order('next_review_date', { ascending: true })
+        .limit(12);
 
-      if (!scheduledReview || !scheduledReview.vocabulary_ids || scheduledReview.vocabulary_ids.length === 0) {
-        // If no scheduled review, return random 10 cards
-        return flashcards.slice(0, 10).map(card => ({
-          id: card.id,
-          front: card.front_text,
-          back: card.back_text,
+      let reviewCards = (dueCards || [])
+        .filter(item => item.flashcards)
+        .map(item => ({
+          id: item.flashcards.id,
+          front: item.flashcards.front_text,
+          back: item.flashcards.back_text,
+          upload_id: item.flashcards.upload_id,
         }));
+
+      // If we have 12 or more cards, return the first 12
+      if (reviewCards.length >= 12) {
+        return reviewCards.slice(0, 12);
       }
 
-      // Get 7 cards from vocabulary_ids
-      const vocabIds = scheduledReview.vocabulary_ids.slice(0, 7);
-      const { data: scheduledCards } = await supabase
-        .from('flashcards')
-        .select('id, front_text, back_text, upload_id')
-        .in('id', vocabIds);
+      // Need more cards - find the most common upload_id from existing cards
+      const uploadIdCounts = reviewCards.reduce((acc, card) => {
+        if (card.upload_id) {
+          acc[card.upload_id] = (acc[card.upload_id] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>);
 
-      if (!scheduledCards || scheduledCards.length === 0) {
-        return flashcards.slice(0, 10).map(card => ({
-          id: card.id,
-          front: card.front_text,
-          back: card.back_text,
-        }));
+      let targetUploadId = null;
+      if (Object.keys(uploadIdCounts).length > 0) {
+        // Get the upload_id with most cards
+        targetUploadId = Object.entries(uploadIdCounts)
+          .sort(([, a], [, b]) => b - a)[0][0];
+      } else if (reviewCards.length > 0 && reviewCards[0].upload_id) {
+        // If no upload_id counts, use the first card's upload_id
+        targetUploadId = reviewCards[0].upload_id;
       }
 
-      // Get upload_id from first card (if exists)
-      const uploadId = scheduledCards.find(c => c.upload_id)?.upload_id;
+      // Fill remaining cards from the same folder
+      const neededCards = 12 - reviewCards.length;
+      const existingIds = reviewCards.map(c => c.id);
 
-      let additionalCards: any[] = [];
-      if (uploadId) {
-        // Get 3 more cards from same upload_id (excluding already selected)
-        const { data: moreCards } = await supabase
+      if (targetUploadId) {
+        const { data: folderCards } = await supabase
           .from('flashcards')
-          .select('id, front_text, back_text')
-          .eq('upload_id', uploadId)
-          .not('id', 'in', `(${vocabIds.join(',')})`)
-          .limit(3);
+          .select('id, front_text, back_text, upload_id')
+          .eq('upload_id', targetUploadId)
+          .not('id', 'in', `(${existingIds.join(',')})`)
+          .limit(neededCards);
 
-        additionalCards = moreCards || [];
+        if (folderCards && folderCards.length > 0) {
+          reviewCards = [
+            ...reviewCards,
+            ...folderCards.map(c => ({
+              id: c.id,
+              front: c.front_text,
+              back: c.back_text,
+              upload_id: c.upload_id || undefined,
+            }))
+          ];
+        }
       }
 
-      // If not enough cards from same upload_id, fill with random cards
-      if (additionalCards.length < 3) {
-        const needed = 3 - additionalCards.length;
-        const allCardIds = [...vocabIds, ...additionalCards.map(c => c.id)];
+      // If still not enough, fill with random cards
+      if (reviewCards.length < 12) {
+        const stillNeeded = 12 - reviewCards.length;
+        const allExistingIds = reviewCards.map(c => c.id);
+        
         const { data: randomCards } = await supabase
           .from('flashcards')
           .select('id, front_text, back_text')
-          .not('id', 'in', `(${allCardIds.join(',')})`)
-          .limit(needed);
+          .not('id', 'in', `(${allExistingIds.join(',')})`)
+          .limit(stillNeeded);
 
-        additionalCards = [...additionalCards, ...(randomCards || [])];
+        if (randomCards && randomCards.length > 0) {
+          reviewCards = [
+            ...reviewCards,
+            ...randomCards.map(c => ({
+              id: c.id,
+              front: c.front_text,
+              back: c.back_text,
+              upload_id: undefined,
+            }))
+          ];
+        }
       }
 
-      // Combine 7 scheduled + 3 additional
-      const allCards = [
-        ...scheduledCards.map(c => ({ id: c.id, front: c.front_text, back: c.back_text })),
-        ...additionalCards.map(c => ({ id: c.id, front: c.front_text, back: c.back_text }))
-      ];
-
-      return allCards;
+      return reviewCards;
     } catch (error) {
       console.error('Error getting review cards:', error);
-      // Fallback to first 10 cards
-      return flashcards.slice(0, 10).map(card => ({
+      // Fallback to first 12 cards
+      return flashcards.slice(0, 12).map(card => ({
         id: card.id,
         front: card.front_text,
         back: card.back_text,
@@ -132,27 +155,40 @@ export function DailyDeckQuickStart({
       return;
     }
     
-    setReviewCards(cards);
+    // Navigate to fullpage review with cards data
+    navigate('/flashcards-review', {
+      state: {
+        mode,
+        cards,
+        isQuickReview: true
+      }
+    });
+  };
+
+  const handleGameSelect = async (gameType: 'quiz' | 'matching' | 'listen') => {
+    setShowGameSelection(false);
     
-    if (mode === 'review') {
-      setShowReview(true);
-    } else {
-      setShowGameSelection(true);
+    // Get cards for game
+    const cards = await getReviewCards();
+    
+    if (cards.length === 0) {
+      toast({
+        title: "ไม่มีคำศัพท์",
+        description: "กรุณาเพิ่มคำศัพท์หรือตั้งเวลาทบทวนก่อน",
+        variant: "destructive"
+      });
+      return;
     }
-  };
-
-  const handleGameSelect = (gameType: 'quiz' | 'matching' | 'listen') => {
-    setGameMode(gameType);
-  };
-
-  const handleReviewComplete = (results: { correct: number; incorrect: number; needsReview: number }) => {
-    console.log('Review results:', results);
-    setShowReview(false);
-    setGameMode(null);
-  };
-
-  const handleCloseGame = () => {
-    setGameMode(null);
+    
+    // Navigate to fullpage review with game mode
+    navigate('/flashcards-review', {
+      state: {
+        mode: 'game',
+        gameType,
+        cards,
+        isQuickReview: true
+      }
+    });
   };
   return <Card className="bg-gradient-primary/10 backdrop-blur-sm shadow-glow border border-primary/30 hover:shadow-large transition-all h-full">
       <CardHeader>
@@ -269,57 +305,6 @@ export function DailyDeckQuickStart({
           onOpenChange={setShowGameSelection}
           onSelectGame={handleGameSelect}
         />
-
-        {/* Review Mode */}
-        {showReview && reviewCards.length > 0 && (
-          <FlashcardReviewPage
-            cards={reviewCards}
-            onClose={() => {
-              setShowReview(false);
-              setReviewCards([]);
-            }}
-            onComplete={handleReviewComplete}
-          />
-        )}
-
-        {/* Quiz Game */}
-        {gameMode === 'quiz' && reviewCards.length > 0 && (
-          <FlashcardQuizGame
-            flashcards={reviewCards.map(c => ({
-              id: c.id,
-              front_text: c.front,
-              back_text: c.back,
-              created_at: new Date().toISOString()
-            }))}
-            onClose={handleCloseGame}
-          />
-        )}
-
-        {/* Matching Game */}
-        {gameMode === 'matching' && reviewCards.length > 0 && (
-          <FlashcardMatchingGame
-            flashcards={reviewCards.map(c => ({
-              id: c.id,
-              front_text: c.front,
-              back_text: c.back,
-              created_at: new Date().toISOString()
-            }))}
-            onClose={handleCloseGame}
-          />
-        )}
-
-        {/* Listen & Choose Game */}
-        {gameMode === 'listen' && reviewCards.length > 0 && (
-          <FlashcardListenChooseGame
-            flashcards={reviewCards.map(c => ({
-              id: c.id,
-              front_text: c.front,
-              back_text: c.back,
-              created_at: new Date().toISOString()
-            }))}
-            onClose={handleCloseGame}
-          />
-        )}
       </CardContent>
     </Card>;
 }
