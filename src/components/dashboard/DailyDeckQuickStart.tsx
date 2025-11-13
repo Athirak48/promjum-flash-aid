@@ -24,11 +24,30 @@ export function DailyDeckQuickStart({
   const { flashcards } = useFlashcards();
   const { toast } = useToast();
 
+  // Mock flashcards data for fallback
+  const getMockFlashcards = (): Array<{ id: string; front: string; back: string; upload_id?: string }> => [
+    { id: 'mock-1', front: 'Hello', back: 'สวัสดี' },
+    { id: 'mock-2', front: 'Thank you', back: 'ขอบคุณ' },
+    { id: 'mock-3', front: 'Goodbye', back: 'ลาก่อน' },
+    { id: 'mock-4', front: 'Good morning', back: 'สวัสดีตอนเช้า' },
+    { id: 'mock-5', front: 'How are you?', back: 'สบายดีไหม' },
+    { id: 'mock-6', front: 'I am fine', back: 'ฉันสบายดี' },
+    { id: 'mock-7', front: 'Please', back: 'กรุณา' },
+    { id: 'mock-8', front: 'Excuse me', back: 'ขอโทษ' },
+    { id: 'mock-9', front: 'Yes', back: 'ใช่' },
+    { id: 'mock-10', front: 'No', back: 'ไม่' },
+    { id: 'mock-11', front: 'Water', back: 'น้ำ' },
+    { id: 'mock-12', front: 'Food', back: 'อาหาร' },
+  ];
+
   // Get 12 cards: prioritize cards due for review, then random from same folder
   const getReviewCards = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!user) {
+        // Return mock data if no user
+        return getMockFlashcards();
+      }
 
       // Get cards that are due for review (next_review_date <= now)
       const { data: dueCards } = await supabase
@@ -47,13 +66,13 @@ export function DailyDeckQuickStart({
         .order('next_review_date', { ascending: true })
         .limit(12);
 
-      let reviewCards = (dueCards || [])
+      let reviewCards: Array<{ id: string; front: string; back: string; upload_id?: string }> = (dueCards || [])
         .filter(item => item.flashcards)
         .map(item => ({
           id: item.flashcards.id,
           front: item.flashcards.front_text,
           back: item.flashcards.back_text,
-          upload_id: item.flashcards.upload_id,
+          upload_id: item.flashcards.upload_id || undefined,
         }));
 
       // If we have 12 or more cards, return the first 12
@@ -83,7 +102,7 @@ export function DailyDeckQuickStart({
       const neededCards = 12 - reviewCards.length;
       const existingIds = reviewCards.map(c => c.id);
 
-      if (targetUploadId) {
+      if (targetUploadId && existingIds.length > 0) {
         const { data: folderCards } = await supabase
           .from('flashcards')
           .select('id, front_text, back_text, upload_id')
@@ -104,16 +123,21 @@ export function DailyDeckQuickStart({
         }
       }
 
-      // If still not enough, fill with random cards
+      // If still not enough, fill with any random flashcards from DB
       if (reviewCards.length < 12) {
         const stillNeeded = 12 - reviewCards.length;
         const allExistingIds = reviewCards.map(c => c.id);
         
-        const { data: randomCards } = await supabase
+        let query = supabase
           .from('flashcards')
           .select('id, front_text, back_text')
-          .not('id', 'in', `(${allExistingIds.join(',')})`)
           .limit(stillNeeded);
+        
+        if (allExistingIds.length > 0) {
+          query = query.not('id', 'in', `(${allExistingIds.join(',')})`);
+        }
+        
+        const { data: randomCards } = await query;
 
         if (randomCards && randomCards.length > 0) {
           reviewCards = [
@@ -128,15 +152,24 @@ export function DailyDeckQuickStart({
         }
       }
 
+      // If still no cards after all attempts, use mock data
+      if (reviewCards.length === 0) {
+        console.log('No flashcards found in database, using mock data');
+        return getMockFlashcards();
+      }
+
+      // If less than 12 cards, fill with mock data
+      if (reviewCards.length < 12) {
+        const mockCards = getMockFlashcards();
+        const needed = 12 - reviewCards.length;
+        reviewCards = [...reviewCards, ...mockCards.slice(0, needed)];
+      }
+
       return reviewCards;
     } catch (error) {
       console.error('Error getting review cards:', error);
-      // Fallback to first 12 cards
-      return flashcards.slice(0, 12).map(card => ({
-        id: card.id,
-        front: card.front_text,
-        back: card.back_text,
-      }));
+      // Use mock data on error
+      return getMockFlashcards();
     }
   };
 
