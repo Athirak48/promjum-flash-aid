@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ import { useFlashcards } from '@/hooks/useFlashcards';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 interface FlashcardSet {
   id: string;
   title: string;
@@ -297,9 +299,8 @@ function DroppableFolder({
     </Card>;
 }
 export default function FlashcardsPage() {
-  const {
-    t
-  } = useLanguage();
+  const { t } = useLanguage();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSource, setFilterSource] = useState<string>('all');
   const [newFolderName, setNewFolderName] = useState('');
@@ -312,39 +313,126 @@ export default function FlashcardsPage() {
     frontImage: null as File | null,
     backImage: null as File | null
   }]);
-  const {
-    flashcards,
-    loading
-  } = useFlashcards();
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
+  const [loadingFolders, setLoadingFolders] = useState(true);
+  const { flashcards, loading } = useFlashcards();
 
-  // Create folders based on flashcard categories (simplified approach)
-  const [folders, setFolders] = useState<Folder[]>([{
-    id: '1',
-    title: 'ภาษาอังกฤษ',
-    cardSetsCount: flashcards.length || 0,
-    createdAt: new Date().toISOString().split('T')[0]
-  }]);
-  const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([{
-    id: '1',
-    title: 'คำศัพท์ภาษาอังกฤษพื้นฐาน',
-    cardCount: flashcards.length || 20,
-    source: 'uploaded',
-    lastReviewed: new Date().toISOString().split('T')[0],
-    nextReview: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-    progress: 25,
-    folderId: '1'
-  }]);
-  const handleCreateFolder = () => {
+  // Fetch folders from Supabase
+  useEffect(() => {
+    fetchFolders();
+  }, []);
+
+  const fetchFolders = async () => {
+    try {
+      setLoadingFolders(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setLoadingFolders(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_folders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedFolders: Folder[] = (data || []).map(folder => ({
+        id: folder.id,
+        title: folder.title,
+        cardSetsCount: folder.card_sets_count || 0,
+        createdAt: folder.created_at
+      }));
+
+      setFolders(formattedFolders);
+
+      // Fetch flashcard sets
+      const { data: setsData, error: setsError } = await supabase
+        .from('user_flashcard_sets')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (setsError) throw setsError;
+
+      const formattedSets: FlashcardSet[] = (setsData || []).map(set => ({
+        id: set.id,
+        title: set.title,
+        cardCount: set.card_count || 0,
+        source: set.source as 'created' | 'uploaded' | 'marketcard',
+        lastReviewed: set.last_reviewed || new Date().toISOString(),
+        nextReview: set.next_review || new Date().toISOString(),
+        progress: set.progress || 0,
+        folderId: set.folder_id || undefined
+      }));
+
+      setFlashcardSets(formattedSets);
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถโหลดข้อมูลโฟลเดอร์ได้",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingFolders(false);
+    }
+  };
+
+  const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
-    const newFolder: Folder = {
-      id: Date.now().toString(),
-      title: newFolderName,
-      cardSetsCount: 0,
-      createdAt: new Date().toISOString()
-    };
-    setFolders([...folders, newFolder]);
-    setNewFolderName('');
-    setShowNewFolderDialog(false);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "กรุณาเข้าสู่ระบบ",
+          description: "คุณต้องเข้าสู่ระบบก่อนสร้างโฟลเดอร์",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_folders')
+        .insert([{
+          user_id: user.id,
+          title: newFolderName.trim(),
+          card_sets_count: 0
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newFolder: Folder = {
+        id: data.id,
+        title: data.title,
+        cardSetsCount: 0,
+        createdAt: data.created_at
+      };
+
+      setFolders([newFolder, ...folders]);
+      setNewFolderName('');
+      setShowNewFolderDialog(false);
+
+      toast({
+        title: "สร้างโฟลเดอร์สำเร็จ",
+        description: `สร้างโฟลเดอร์ "${newFolderName}" เรียบร้อยแล้ว`,
+      });
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถสร้างโฟลเดอร์ได้",
+        variant: "destructive"
+      });
+    }
   };
   const handleMoveToFolder = (setId: string, folderId: string) => {
     setFlashcardSets(sets => sets.map(set => set.id === setId ? {
@@ -415,7 +503,7 @@ export default function FlashcardsPage() {
     return matchesSearch && matchesFilter;
   });
   const unorganizedSets = filteredSets.filter(set => !set.folderId);
-  if (loading) {
+  if (loading || loadingFolders) {
     return <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8">
         <div className="container mx-auto px-4">
           <div className="mb-8">

@@ -876,6 +876,127 @@ export type Database = {
           },
         ]
       }
+      user_flashcard_sets: {
+        Row: {
+          card_count: number | null
+          created_at: string
+          folder_id: string | null
+          id: string
+          last_reviewed: string | null
+          next_review: string | null
+          progress: number | null
+          source: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_count?: number | null
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          last_reviewed?: string | null
+          next_review?: string | null
+          progress?: number | null
+          source?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_count?: number | null
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          last_reviewed?: string | null
+          next_review?: string | null
+          progress?: number | null
+          source?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_flashcard_sets_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "user_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_flashcards: {
+        Row: {
+          back_image_url: string | null
+          back_text: string
+          created_at: string
+          flashcard_set_id: string
+          front_image_url: string | null
+          front_text: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          back_image_url?: string | null
+          back_text: string
+          created_at?: string
+          flashcard_set_id: string
+          front_image_url?: string | null
+          front_text: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          back_image_url?: string | null
+          back_text?: string
+          created_at?: string
+          flashcard_set_id?: string
+          front_image_url?: string | null
+          front_text?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_flashcards_flashcard_set_id_fkey"
+            columns: ["flashcard_set_id"]
+            isOneToOne: false
+            referencedRelation: "user_flashcard_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_folders: {
+        Row: {
+          card_sets_count: number | null
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_sets_count?: number | null
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_sets_count?: number | null
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_phrasebook: {
         Row: {
           audio_url: string | null
