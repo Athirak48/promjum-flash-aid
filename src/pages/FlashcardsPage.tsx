@@ -335,24 +335,7 @@ export default function FlashcardsPage() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('user_folders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedFolders: Folder[] = (data || []).map(folder => ({
-        id: folder.id,
-        title: folder.title,
-        cardSetsCount: folder.card_sets_count || 0,
-        createdAt: folder.created_at
-      }));
-
-      setFolders(formattedFolders);
-
-      // Fetch flashcard sets
+      // Fetch flashcard sets first to count them per folder
       const { data: setsData, error: setsError } = await supabase
         .from('user_flashcard_sets')
         .select('*')
@@ -373,6 +356,28 @@ export default function FlashcardsPage() {
       }));
 
       setFlashcardSets(formattedSets);
+
+      // Fetch folders
+      const { data, error } = await supabase
+        .from('user_folders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Count actual flashcard sets per folder from real data
+      const formattedFolders: Folder[] = (data || []).map(folder => {
+        const setsInFolder = formattedSets.filter(set => set.folderId === folder.id).length;
+        return {
+          id: folder.id,
+          title: folder.title,
+          cardSetsCount: setsInFolder, // Count from actual data, not from database column
+          createdAt: folder.created_at
+        };
+      });
+
+      setFolders(formattedFolders);
     } catch (error) {
       console.error('Error fetching folders:', error);
       toast({
@@ -436,20 +441,31 @@ export default function FlashcardsPage() {
       });
     }
   };
-  const handleMoveToFolder = (setId: string, folderId: string) => {
-    setFlashcardSets(sets => sets.map(set => set.id === setId ? {
-      ...set,
-      folderId
-    } : set));
+  const handleMoveToFolder = async (setId: string, folderId: string) => {
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('user_flashcard_sets')
+        .update({ folder_id: folderId })
+        .eq('id', setId);
 
-    // Update folder card count
-    setFolders(folders => folders.map(folder => {
-      const setsInFolder = flashcardSets.filter(set => set.folderId === folder.id).length;
-      return {
-        ...folder,
-        cardSetsCount: setsInFolder
-      };
-    }));
+      if (error) throw error;
+
+      // Refresh folders and sets to get accurate counts
+      await fetchFolders();
+
+      toast({
+        title: "ย้ายชุดแฟลชการ์ดสำเร็จ",
+        description: "ย้ายชุดแฟลชการ์ดไปยังโฟลเดอร์แล้ว",
+      });
+    } catch (error) {
+      console.error('Error moving flashcard set:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถย้ายชุดแฟลชการ์ดได้",
+        variant: "destructive"
+      });
+    }
   };
   const handleAddFlashcardRow = () => {
     const newRow = {
@@ -549,23 +565,7 @@ export default function FlashcardsPage() {
 
       if (flashcardsError) throw flashcardsError;
 
-      // Update folder count if folder selected
-      if (selectedFolderForFlashcard) {
-        const { data: folderData } = await supabase
-          .from('user_folders')
-          .select('card_sets_count')
-          .eq('id', selectedFolderForFlashcard)
-          .single();
-
-        if (folderData) {
-          await supabase
-            .from('user_folders')
-            .update({ card_sets_count: (folderData.card_sets_count || 0) + 1 })
-            .eq('id', selectedFolderForFlashcard);
-        }
-      }
-
-      // Refresh folders and flashcard sets
+      // Refresh folders and flashcard sets (will auto-count from real data)
       await fetchFolders();
 
       // Reset form
