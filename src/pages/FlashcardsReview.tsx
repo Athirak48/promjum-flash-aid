@@ -4,6 +4,8 @@ import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
 import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
 import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGame';
+import { FlashcardHangmanGame } from '@/components/FlashcardHangmanGame';
+import { FlashcardVocabBlinderGame } from '@/components/FlashcardVocabBlinderGame';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,7 +26,7 @@ export default function FlashcardsReview() {
   // Check if this is a quick review from dashboard
   const state = location.state as {
     mode?: 'review' | 'game';
-    gameType?: 'quiz' | 'matching' | 'listen';
+    gameType?: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder';
     cards?: FlashcardData[];
     isQuickReview?: boolean;
   } | null;
@@ -126,6 +128,28 @@ export default function FlashcardsReview() {
       return (
         <div className="min-h-screen bg-background">
           <FlashcardListenChooseGame
+            flashcards={gameFlashcards}
+            onClose={handleClose}
+          />
+        </div>
+      );
+    }
+
+    if (state.gameType === 'hangman') {
+      return (
+        <div className="min-h-screen bg-background">
+          <FlashcardHangmanGame
+            flashcards={gameFlashcards}
+            onClose={handleClose}
+          />
+        </div>
+      );
+    }
+
+    if (state.gameType === 'vocabBlinder') {
+      return (
+        <div className="min-h-screen bg-background">
+          <FlashcardVocabBlinderGame
             flashcards={gameFlashcards}
             onClose={handleClose}
           />
