@@ -186,7 +186,7 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
             <CardContent className="space-y-6">
               {/* Blinded Word Display */}
               <div className="text-center bg-gray-100 dark:bg-gray-800 p-8 rounded-lg">
-                <p className="text-5xl font-mono font-bold tracking-wider mb-4">
+                <p className="text-5xl font-mono font-bold tracking-wider mb-4 text-gray-900 dark:text-gray-100">
                   {displayBlindedWord()}
                 </p>
                 <p className="text-xl text-gray-600 dark:text-gray-400">
