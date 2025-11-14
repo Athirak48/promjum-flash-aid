@@ -238,18 +238,18 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
                 <div className="text-center">
                   {isCorrect ? (
                     <div className="bg-green-100 dark:bg-green-900/30 p-4 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
+                      <p className="text-2xl font-bold text-green-700 dark:text-green-300 mb-2">
                         ✅ ถูกต้อง! +{targetWord.length * 10} คะแนน
                       </p>
-                      <p className="text-lg">คำตอบ: {targetWord}</p>
+                      <p className="text-lg text-green-900 dark:text-green-100 font-semibold">คำตอบ: {targetWord}</p>
                     </div>
                   ) : (
                     <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-lg">
-                      <p className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">
+                      <p className="text-2xl font-bold text-red-700 dark:text-red-300 mb-2">
                         ❌ ผิด!
                       </p>
-                      <p className="text-lg">คำตอบที่ถูกต้อง: {targetWord}</p>
-                      <p className="text-sm mt-2">
+                      <p className="text-lg text-red-900 dark:text-red-100 font-semibold">คำตอบที่ถูกต้อง: {targetWord}</p>
+                      <p className="text-sm mt-2 text-red-800 dark:text-red-200">
                         ตัวอักษรที่หายไป: {blindedWord.missingLetters.join(', ')}
                       </p>
                     </div>
