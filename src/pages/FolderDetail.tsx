@@ -21,6 +21,8 @@ import { FlashcardHangmanGame } from '@/components/FlashcardHangmanGame';
 import { FlashcardVocabBlinderGame } from '@/components/FlashcardVocabBlinderGame';
 import { FlashcardSelectionDialog } from '@/components/FlashcardSelectionDialog';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface FlashcardData {
   id: string;
@@ -51,8 +53,8 @@ export function FolderDetail() {
   const { folderId } = useParams<{ folderId: string }>();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { toast } = useToast();
   
-  // Mock data - replace with real data fetching
   const [folder, setFolder] = useState<Folder | null>(null);
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
   const [filteredSets, setFilteredSets] = useState<FlashcardSet[]>([]);
@@ -65,68 +67,102 @@ export function FolderDetail() {
   const [showFlashcardSelection, setShowFlashcardSelection] = useState(false);
   const [showReviewFlashcardSelection, setShowReviewFlashcardSelection] = useState(false);
   const [selectedFlashcards, setSelectedFlashcards] = useState<FlashcardData[]>([]);
+  const [availableFlashcards, setAvailableFlashcards] = useState<FlashcardData[]>([]);
   const [flashcardRows, setFlashcardRows] = useState([{ id: 1, front: '', back: '', frontImage: null as File | null, backImage: null as File | null }]);
 
-  // Mock data - replace with real data fetching based on folderId
+  // Fetch folder data from Supabase
   useEffect(() => {
     const fetchFolderData = async () => {
-      setLoading(true);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock folder data
-      const mockFolder: Folder = {
-        id: folderId || '1',
-        title: 'โฟลเดอร์วิชาคณิตศาสตร์',
-        cardSetsCount: 3
-      };
+      if (!folderId) {
+        setLoading(false);
+        return;
+      }
 
-      // Mock flashcard sets in this folder
-      const mockSets: FlashcardSet[] = [
-        {
-          id: '1',
-          title: 'สมการเชิงเส้น',
-          cardCount: 25,
-          source: 'คณิตศาสตร์ ม.3',
-          progress: 80,
-          lastReviewed: new Date(2024, 2, 15),
-          nextReview: new Date(2024, 2, 20),
-          isArchived: false,
-          folderId: folderId
-        },
-        {
-          id: '2',
-          title: 'เรขาคณิต',
-          cardCount: 30,
-          source: 'คณิตศาสตร์ ม.3',
-          progress: 60,
-          lastReviewed: new Date(2024, 2, 10),
-          nextReview: new Date(2024, 2, 18),
-          isArchived: false,
-          folderId: folderId
-        },
-        {
-          id: '3',
-          title: 'สถิติและความน่าจะเป็น',
-          cardCount: 20,
-          source: 'คณิตศาสตร์ ม.3',
-          progress: 40,
-          lastReviewed: null,
-          nextReview: new Date(2024, 2, 16),
-          isArchived: false,
-          folderId: folderId
+      try {
+        setLoading(true);
+
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          toast({
+            title: "กรุณาเข้าสู่ระบบ",
+            description: "คุณต้องเข้าสู่ระบบเพื่อดูโฟลเดอร์",
+            variant: "destructive"
+          });
+          navigate('/auth');
+          return;
         }
-      ];
 
-      setFolder(mockFolder);
-      setFlashcardSets(mockSets);
-      setFilteredSets(mockSets);
-      setLoading(false);
+        // Fetch folder
+        const { data: folderData, error: folderError } = await supabase
+          .from('user_folders')
+          .select('*')
+          .eq('id', folderId)
+          .eq('user_id', user.id)
+          .single();
+
+        if (folderError || !folderData) {
+          toast({
+            title: "ไม่พบโฟลเดอร์",
+            description: "ไม่พบโฟลเดอร์ที่คุณต้องการดู",
+            variant: "destructive"
+          });
+          navigate('/flashcards');
+          return;
+        }
+
+        // Fetch flashcard sets in this folder
+        const { data: setsData, error: setsError } = await supabase
+          .from('user_flashcard_sets')
+          .select('*')
+          .eq('folder_id', folderId)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (setsError) throw setsError;
+
+        // For each set, count the flashcards
+        const setsWithCounts = await Promise.all((setsData || []).map(async (set) => {
+          const { count } = await supabase
+            .from('user_flashcards')
+            .select('*', { count: 'exact', head: true })
+            .eq('flashcard_set_id', set.id);
+
+          return {
+            id: set.id,
+            title: set.title,
+            cardCount: count || 0,
+            source: set.source,
+            progress: set.progress || 0,
+            lastReviewed: set.last_reviewed ? new Date(set.last_reviewed) : null,
+            nextReview: set.next_review ? new Date(set.next_review) : null,
+            isArchived: false,
+            folderId: set.folder_id || undefined
+          };
+        }));
+
+        setFolder({
+          id: folderData.id,
+          title: folderData.title,
+          cardSetsCount: setsWithCounts.length
+        });
+
+        setFlashcardSets(setsWithCounts);
+        setFilteredSets(setsWithCounts);
+      } catch (error) {
+        console.error('Error fetching folder data:', error);
+        toast({
+          title: "เกิดข้อผิดพลาด",
+          description: "ไม่สามารถดึงข้อมูลโฟลเดอร์ได้",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchFolderData();
-  }, [folderId]);
+  }, [folderId, navigate, toast]);
 
   // Filter flashcard sets based on search term
   useEffect(() => {
@@ -137,8 +173,10 @@ export function FolderDetail() {
     setFilteredSets(filtered);
   }, [searchTerm, flashcardSets]);
 
-  const handlePlayGame = (set: FlashcardSet) => {
+  const handlePlayGame = async (set: FlashcardSet) => {
     setSelectedSet(set);
+    const flashcards = await getFlashcardsForSet(set.id);
+    setAvailableFlashcards(flashcards);
     setShowFlashcardSelection(true);
   };
 
@@ -152,8 +190,10 @@ export function FolderDetail() {
     setShowGameSelection(true);
   };
 
-  const handleReviewCards = (set: FlashcardSet) => {
+  const handleReviewCards = async (set: FlashcardSet) => {
     setSelectedSet(set);
+    const flashcards = await getFlashcardsForSet(set.id);
+    setAvailableFlashcards(flashcards);
     setShowReviewFlashcardSelection(true);
   };
 
@@ -248,20 +288,32 @@ export function FolderDetail() {
     );
   }
 
-  // Mock flashcards for the set
-  const getMockFlashcardsForSet = (): FlashcardData[] => {
-    return [
-      { id: '1', front: '2x + 3 = 7', back: 'x = 2' },
-      { id: '2', front: '3x - 5 = 10', back: 'x = 5' },
-      { id: '3', front: 'x/2 + 4 = 6', back: 'x = 4' },
-      { id: '4', front: 'What is the capital of Thailand?', back: 'Bangkok' },
-      { id: '5', front: 'What is 5 + 5?', back: '10' },
-      { id: '6', front: 'What color do you get when you mix red and blue?', back: 'Purple' },
-      { id: '7', front: 'What is the largest planet?', back: 'Jupiter' },
-      { id: '8', front: 'Who wrote Romeo and Juliet?', back: 'Shakespeare' },
-      { id: '9', front: 'What is the speed of light?', back: '299,792 km/s' },
-      { id: '10', front: 'What is H2O?', back: 'Water' }
-    ];
+  // Fetch flashcards for a specific set
+  const getFlashcardsForSet = async (setId: string): Promise<FlashcardData[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('user_flashcards')
+        .select('*')
+        .eq('flashcard_set_id', setId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      return (data || []).map(card => ({
+        id: card.id,
+        front: card.front_text,
+        back: card.back_text,
+        source: 'user_created'
+      }));
+    } catch (error) {
+      console.error('Error fetching flashcards:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถดึงข้อมูลแฟลชการ์ดได้",
+        variant: "destructive"
+      });
+      return [];
+    }
   };
 
   // Show game modes
@@ -270,7 +322,8 @@ export function FolderDetail() {
     const quizFlashcards = selectedFlashcards.map(card => ({
       id: card.id,
       front_text: card.front,
-      back_text: card.back
+      back_text: card.back,
+      created_at: new Date().toISOString()
     }));
 
     if (gameMode === 'swiper') {
@@ -291,6 +344,14 @@ export function FolderDetail() {
 
     if (gameMode === 'listen') {
       return <FlashcardListenChooseGame flashcards={quizFlashcards} onClose={handleGameClose} />;
+    }
+
+    if (gameMode === 'hangman') {
+      return <FlashcardHangmanGame flashcards={quizFlashcards} onClose={handleGameClose} />;
+    }
+
+    if (gameMode === 'vocabBlinder') {
+      return <FlashcardVocabBlinderGame flashcards={quizFlashcards} onClose={handleGameClose} />;
     }
   }
 
@@ -574,7 +635,7 @@ export function FolderDetail() {
         <FlashcardSelectionDialog
           open={showFlashcardSelection}
           onOpenChange={setShowFlashcardSelection}
-          flashcards={getMockFlashcardsForSet().map(card => ({
+          flashcards={availableFlashcards.map(card => ({
             id: card.id,
             front_text: card.front,
             back_text: card.back
@@ -588,7 +649,7 @@ export function FolderDetail() {
         <FlashcardSelectionDialog
           open={showReviewFlashcardSelection}
           onOpenChange={setShowReviewFlashcardSelection}
-          flashcards={getMockFlashcardsForSet().map(card => ({
+          flashcards={availableFlashcards.map(card => ({
             id: card.id,
             front_text: card.front,
             back_text: card.back
