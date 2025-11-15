@@ -30,6 +30,9 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+  const [isGameComplete, setIsGameComplete] = useState(false);
 
   const currentCard = flashcards[currentIndex];
   const targetWord = currentCard.front_text.toUpperCase().trim();
@@ -135,16 +138,107 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
   };
 
   const handleNext = () => {
+    // Update stats
+    if (isCorrect) {
+      setCorrectCount(correctCount + 1);
+    } else {
+      setWrongCount(wrongCount + 1);
+    }
+
     if (currentIndex < flashcards.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setSelectedAnswer(null);
       setShowResult(false);
       setIsCorrect(false);
     } else {
-      // Game finished
-      onClose();
+      // Game finished - show summary
+      setIsGameComplete(true);
     }
   };
+
+  // Game Complete Summary
+  if (isGameComplete) {
+    const totalQuestions = correctCount + wrongCount;
+    const successRate = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+    const avgScore = totalQuestions > 0 ? Math.round(score / totalQuestions) : 0;
+
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 dark:from-blue-950 dark:via-indigo-900 dark:to-blue-950 overflow-auto flex items-center justify-center p-4">
+        <BackgroundDecorations />
+        <Card className="max-w-xl w-full shadow-2xl relative z-10">
+          <CardHeader className="text-center pb-2">
+            <div className="text-6xl mb-4">👁️</div>
+            <CardTitle className="text-3xl font-bold text-foreground">
+              สรุปผล Vocab Blinder
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Score Summary */}
+            <div className="bg-gradient-primary rounded-xl p-6 text-white text-center">
+              <div className="text-5xl font-bold mb-2">{score}</div>
+              <div className="text-xl opacity-90">คะแนนรวม</div>
+              <div className="text-sm opacity-75 mt-1">เฉลี่ย {avgScore} คะแนน/ข้อ</div>
+            </div>
+
+            {/* Statistics */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <div className="text-3xl font-bold text-green-700 dark:text-green-300">
+                  {correctCount}
+                </div>
+                <div className="text-sm text-green-900 dark:text-green-100 mt-1">
+                  ตอบถูก
+                </div>
+              </div>
+              <div className="text-center p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                <div className="text-3xl font-bold text-red-700 dark:text-red-300">
+                  {wrongCount}
+                </div>
+                <div className="text-sm text-red-900 dark:text-red-100 mt-1">
+                  ตอบผิด
+                </div>
+              </div>
+              <div className="text-center p-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">
+                  {successRate}%
+                </div>
+                <div className="text-sm text-blue-900 dark:text-blue-100 mt-1">
+                  อัตราความแม่นยำ
+                </div>
+              </div>
+            </div>
+
+            {/* Performance Message */}
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <p className="text-lg font-semibold text-foreground">
+                {successRate >= 90 ? '🌟 สุดยอด! คุณเห็นรายละเอียดได้แม่นยำมาก!' :
+                 successRate >= 70 ? '🎯 เยี่ยมมาก! สายตาคุณคมชัด' :
+                 successRate >= 50 ? '👍 ดี ฝึกฝนต่อไปจะเก่งขึ้น' :
+                 '💪 ยังไม่เป็นไร ลองอีกครั้งนะ!'}
+              </p>
+            </div>
+
+            {/* Total Cards Info */}
+            <div className="text-center text-sm text-muted-foreground">
+              เล่นทั้งหมด {totalQuestions} ข้อ
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                onClick={onClose}
+                className="flex-1"
+                size="lg"
+              >
+                <ArrowLeft className="h-5 w-5 mr-2" />
+                กลับหน้าหลัก
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 overflow-auto">

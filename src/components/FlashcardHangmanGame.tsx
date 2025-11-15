@@ -25,6 +25,9 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
   const [score, setScore] = useState(0);
   const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost'>('playing');
   const [showResult, setShowResult] = useState(false);
+  const [wonCount, setWonCount] = useState(0);
+  const [lostCount, setLostCount] = useState(0);
+  const [isGameComplete, setIsGameComplete] = useState(false);
 
   const maxWrongGuesses = 7;
   const currentCard = flashcards[currentIndex];
@@ -94,6 +97,13 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
 
   // Move to next word
   const handleNext = () => {
+    // Update stats
+    if (gameStatus === 'won') {
+      setWonCount(wonCount + 1);
+    } else if (gameStatus === 'lost') {
+      setLostCount(lostCount + 1);
+    }
+
     if (currentIndex < flashcards.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setGuessedLetters([]);
@@ -101,8 +111,8 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
       setGameStatus('playing');
       setShowResult(false);
     } else {
-      // Game finished
-      onClose();
+      // Game finished - show summary
+      setIsGameComplete(true);
     }
   };
 
@@ -129,6 +139,83 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
 
     return stages[wrongGuesses];
   };
+
+  // Game Complete Summary
+  if (isGameComplete) {
+    const totalGames = wonCount + lostCount;
+    const successRate = totalGames > 0 ? Math.round((wonCount / totalGames) * 100) : 0;
+
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 overflow-auto flex items-center justify-center p-4">
+        <BackgroundDecorations />
+        <Card className="max-w-xl w-full shadow-2xl relative z-10">
+          <CardHeader className="text-center pb-2">
+            <div className="text-6xl mb-4">🎮</div>
+            <CardTitle className="text-3xl font-bold text-foreground">
+              สรุปผล Hangman Game
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Score Summary */}
+            <div className="bg-gradient-primary rounded-xl p-6 text-white text-center">
+              <div className="text-5xl font-bold mb-2">{score}</div>
+              <div className="text-xl opacity-90">คะแนนรวม</div>
+            </div>
+
+            {/* Statistics */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <div className="text-3xl font-bold text-green-700 dark:text-green-300">
+                  {wonCount}
+                </div>
+                <div className="text-sm text-green-900 dark:text-green-100 mt-1">
+                  ชนะ
+                </div>
+              </div>
+              <div className="text-center p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                <div className="text-3xl font-bold text-red-700 dark:text-red-300">
+                  {lostCount}
+                </div>
+                <div className="text-sm text-red-900 dark:text-red-100 mt-1">
+                  แพ้
+                </div>
+              </div>
+              <div className="text-center p-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">
+                  {successRate}%
+                </div>
+                <div className="text-sm text-blue-900 dark:text-blue-100 mt-1">
+                  อัตราสำเร็จ
+                </div>
+              </div>
+            </div>
+
+            {/* Performance Message */}
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <p className="text-lg font-semibold text-foreground">
+                {successRate >= 80 ? '🏆 ยอดเยี่ยม! คุณเก่งมาก!' :
+                 successRate >= 60 ? '👍 ดีมาก! คุณทำได้ดี' :
+                 successRate >= 40 ? '📖 พอใช้ ควรฝึกฝนเพิ่มเติม' :
+                 '💪 ลองใหม่อีกครั้ง อย่าท้อนะ!'}
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                onClick={onClose}
+                className="flex-1"
+                size="lg"
+              >
+                <ArrowLeft className="h-5 w-5 mr-2" />
+                กลับหน้าหลัก
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 overflow-auto">

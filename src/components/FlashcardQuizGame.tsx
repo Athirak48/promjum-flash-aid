@@ -126,30 +126,73 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
 
   if (isGameComplete) {
     const percentage = Math.round((score / questions.length) * 100);
+    const wrongAnswers = questions.length - score;
+    
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 z-50">
         <div className="flex items-center justify-center min-h-screen p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center space-y-6 bg-card/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl max-w-md w-full border border-border"
+            className="text-center space-y-6 bg-card/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl max-w-lg w-full border border-border"
           >
             <div className="text-6xl mb-4">
               {percentage >= 80 ? '🎉' : percentage >= 60 ? '👍' : '📚'}
             </div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">เกมจบแล้ว!</h2>
-            <div className="bg-muted rounded-xl p-6 space-y-4">
-              <div className="text-4xl font-bold text-primary">
+            <h2 className="text-3xl font-bold text-foreground mb-2">สรุปผล Quiz Game</h2>
+            
+            {/* Main Score */}
+            <div className="bg-gradient-primary rounded-xl p-6 text-white">
+              <div className="text-5xl font-bold mb-2">
                 {score}/{questions.length}
               </div>
-              <div className="text-xl text-foreground">
-                คะแนนที่ได้: {percentage}%
+              <div className="text-2xl mb-1">
+                {percentage}%
               </div>
-              <div className="text-sm text-muted-foreground">
-                {percentage >= 80 ? 'ยอดเยี่ยม!' : 
-                 percentage >= 60 ? 'ดีมาก!' : 'ลองใหม่อีกครั้ง!'}
+              <div className="text-lg opacity-90">
+                {percentage >= 80 ? '🏆 ยอดเยี่ยม!' : 
+                 percentage >= 60 ? '⭐ ดีมาก!' : 
+                 percentage >= 40 ? '👍 พอใช้' : '💪 ลองใหม่!'}
               </div>
             </div>
+
+            {/* Detailed Stats */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <div className="text-3xl font-bold text-green-700 dark:text-green-300">
+                  {score}
+                </div>
+                <div className="text-sm text-green-900 dark:text-green-100 mt-1">
+                  ตอบถูก
+                </div>
+              </div>
+              <div className="text-center p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                <div className="text-3xl font-bold text-red-700 dark:text-red-300">
+                  {wrongAnswers}
+                </div>
+                <div className="text-sm text-red-900 dark:text-red-100 mt-1">
+                  ตอบผิด
+                </div>
+              </div>
+            </div>
+
+            {/* Knowledge Level */}
+            <div className="bg-muted rounded-xl p-4">
+              <p className="font-semibold text-foreground mb-2">ระดับความรู้</p>
+              <div className="flex justify-center items-center gap-2">
+                {percentage >= 90 ? '⭐⭐⭐⭐⭐' :
+                 percentage >= 70 ? '⭐⭐⭐⭐' :
+                 percentage >= 50 ? '⭐⭐⭐' :
+                 percentage >= 30 ? '⭐⭐' : '⭐'}
+                <span className="text-sm text-muted-foreground">
+                  ({percentage >= 90 ? 'ผู้เชี่ยวชาญ' :
+                    percentage >= 70 ? 'ดีเยี่ยม' :
+                    percentage >= 50 ? 'ดี' :
+                    percentage >= 30 ? 'พอใช้' : 'ต้องพัฒนา'})
+                </span>
+              </div>
+            </div>
+
             <Button
               onClick={onClose}
               className="w-full py-3 text-lg font-semibold"
