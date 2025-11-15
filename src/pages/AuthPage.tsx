@@ -16,6 +16,7 @@ import BackgroundDecorations from "@/components/BackgroundDecorations";
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
   const { signIn, signUp, resetPassword, user, getUserRole } = useAuth();
@@ -85,7 +86,19 @@ export default function AuthPage() {
     const formData = new FormData(event.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    const confirmPassword = formData.get('confirmPassword') as string;
     const fullName = formData.get('fullName') as string;
+
+    // ตรวจสอบว่ารหัสผ่านตรงกันหรือไม่
+    if (password !== confirmPassword) {
+      toast({
+        title: "รหัสผ่านไม่ตรงกัน",
+        description: "กรุณาตรวจสอบรหัสผ่านให้ตรงกัน",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
 
     const { error } = await signUp(email, password, fullName);
     
@@ -295,6 +308,34 @@ export default function AuthPage() {
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">ยืนยันรหัสผ่าน</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="confirm-password"
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="pl-10 pr-10"
+                        minLength={6}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-transparent"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? (
                           <EyeOff className="h-4 w-4" />
                         ) : (
                           <Eye className="h-4 w-4" />
