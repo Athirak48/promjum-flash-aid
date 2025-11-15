@@ -132,6 +132,8 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
   if (isGameComplete) {
     const scoreLevel = getScoreLevel();
     const percentage = Math.round((score / questions.length) * 100);
+    const totalWrong = wrongAnswers.length;
+    const avgAccuracy = percentage;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 p-4">
@@ -140,7 +142,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
           <Card className="mb-6 shadow-glow">
             <CardContent className="p-8 text-center">
               <div className="mb-6">
-                <h2 className="text-3xl font-bold mb-2">🎉 เสร็จสิ้น!</h2>
+                <h2 className="text-3xl font-bold mb-2">🎧 สรุปผลการฟังและเลือก</h2>
                 <p className="text-muted-foreground">คุณทำแบบทดสอบเสร็จแล้ว</p>
               </div>
 
@@ -155,6 +157,39 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
                     {scoreLevel.text}
                   </div>
                 </div>
+              </div>
+
+              {/* Detailed Statistics */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <div className="text-3xl font-bold text-green-700 dark:text-green-300">
+                    {score}
+                  </div>
+                  <div className="text-sm text-green-900 dark:text-green-100 mt-1">
+                    คำที่ถูกต้อง
+                  </div>
+                </div>
+                <div className="text-center p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                  <div className="text-3xl font-bold text-red-700 dark:text-red-300">
+                    {totalWrong}
+                  </div>
+                  <div className="text-sm text-red-900 dark:text-red-100 mt-1">
+                    คำที่ผิด
+                  </div>
+                </div>
+              </div>
+
+              {/* Listening Skills Assessment */}
+              <div className="text-center p-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg mb-6">
+                <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                  ทักษะการฟัง: {avgAccuracy >= 90 ? '⭐⭐⭐⭐⭐ ดีเลิศ' :
+                                avgAccuracy >= 70 ? '⭐⭐⭐⭐ ดีมาก' :
+                                avgAccuracy >= 50 ? '⭐⭐⭐ ดี' :
+                                avgAccuracy >= 30 ? '⭐⭐ พอใช้' : '⭐ ควรฝึกฝน'}
+                </p>
+                <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
+                  ความแม่นยำในการจับเสียง {percentage}%
+                </p>
               </div>
 
               {/* Action Buttons */}
