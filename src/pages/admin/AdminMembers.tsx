@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { UserFlashcardsDialog } from '@/components/admin/UserFlashcardsDialog';
+import { FileText } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -28,6 +30,8 @@ export default function AdminMembers() {
   const [members, setMembers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<{ userId: string; email: string } | null>(null);
+  const [showFlashcardsDialog, setShowFlashcardsDialog] = useState(false);
 
   useEffect(() => {
     fetchMembers();
@@ -143,7 +147,22 @@ export default function AdminMembers() {
                         })}
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">ดูรายละเอียด</Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser({ 
+                                userId: member.user_id, 
+                                email: member.email || 'ไม่มีอีเมล' 
+                              });
+                              setShowFlashcardsDialog(true);
+                            }}
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            View Flashcards
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -153,6 +172,15 @@ export default function AdminMembers() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedUser && (
+        <UserFlashcardsDialog
+          open={showFlashcardsDialog}
+          onOpenChange={setShowFlashcardsDialog}
+          userId={selectedUser.userId}
+          userEmail={selectedUser.email}
+        />
+      )}
     </div>
   );
 }
