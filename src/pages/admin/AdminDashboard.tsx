@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import UserDetailModal from '@/components/admin/UserDetailModal';
 import EditUserModal from '@/components/admin/EditUserModal';
 import BlockUserDialog from '@/components/admin/BlockUserDialog';
-import UserDecksDialog from '@/components/admin/UserDecksDialog';
+import { UserFlashcardsDialog } from '@/components/admin/UserFlashcardsDialog';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
-  const [showUserDecks, setShowUserDecks] = useState(false);
+  const [showUserFlashcards, setShowUserFlashcards] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
       email: user.email || 'No email',
       isBlocked: user.is_blocked || false,
     });
-    setShowUserDecks(true);
+    setShowUserFlashcards(true);
   };
 
   const filteredUsers = users.filter(user =>
@@ -371,9 +371,9 @@ export default function AdminDashboard() {
             isBlocked={selectedUser.isBlocked}
             onSuccess={handleBlockSuccess}
           />
-          <UserDecksDialog
-            open={showUserDecks}
-            onOpenChange={setShowUserDecks}
+          <UserFlashcardsDialog
+            open={showUserFlashcards}
+            onOpenChange={setShowUserFlashcards}
             userId={selectedUser.id}
             userEmail={selectedUser.email}
           />
