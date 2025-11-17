@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -17,75 +19,108 @@ interface VocabSelectionStepProps {
   onNext: (selectedVocab: string[]) => void;
 }
 
-// Mock data
-const mockFolders = [
-  { id: '1', name: 'Business English' },
-  { id: '2', name: 'Travel Phrases' },
-  { id: '3', name: 'Daily Conversation' },
-];
-
-const mockDecks = {
-  '1': [
-    { id: 'd1', name: 'Meeting Vocabulary' },
-    { id: 'd2', name: 'Email Writing' },
-  ],
-  '2': [
-    { id: 'd3', name: 'Airport & Hotel' },
-    { id: 'd4', name: 'Ordering Food' },
-  ],
-  '3': [
-    { id: 'd5', name: 'Greetings' },
-    { id: 'd6', name: 'Shopping' },
-  ],
-};
-
-const mockVocab = [
-  { front: 'schedule', back: 'กำหนดการ' },
-  { front: 'deadline', back: 'กำหนดเวลา' },
-  { front: 'meeting', back: 'การประชุม' },
-  { front: 'presentation', back: 'การนำเสนอ' },
-  { front: 'colleague', back: 'เพื่อนร่วมงาน' },
-  { front: 'project', back: 'โครงการ' },
-  { front: 'budget', back: 'งบประมาณ' },
-  { front: 'report', back: 'รายงาน' },
-  { front: 'approve', back: 'อนุมัติ' },
-  { front: 'revise', back: 'แก้ไข' },
-  { front: 'confirm', back: 'ยืนยัน' },
-  { front: 'postpone', back: 'เลื่อน' },
-  { front: 'urgent', back: 'เร่งด่วน' },
-  { front: 'priority', back: 'ความสำคัญ' },
-  { front: 'forward', back: 'ส่งต่อ' },
-];
-
 export default function VocabSelectionStep({ onNext }: VocabSelectionStepProps) {
+  const { toast } = useToast();
   const [selectedFolder, setSelectedFolder] = useState<string>('');
   const [selectedDeck, setSelectedDeck] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVocab, setSelectedVocab] = useState<string[]>([]);
+  const [folders, setFolders] = useState<any[]>([]);
+  const [sets, setSets] = useState<any[]>([]);
+  const [vocab, setVocab] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleVocabToggle = (vocab: string) => {
-    if (selectedVocab.includes(vocab)) {
-      setSelectedVocab(selectedVocab.filter(v => v !== vocab));
+  useEffect(() => {
+    fetchFolders();
+  }, []);
+
+  useEffect(() => {
+    if (selectedFolder) {
+      fetchSets(selectedFolder);
+    }
+  }, [selectedFolder]);
+
+  useEffect(() => {
+    if (selectedDeck) {
+      fetchVocab(selectedDeck);
+    }
+  }, [selectedDeck]);
+
+  const fetchFolders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_folders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setFolders(data || []);
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: 'ไม่สามารถโหลด folder ได้',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSets = async (folderId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_flashcard_sets')
+        .select('*')
+        .eq('folder_id', folderId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSets(data || []);
+    } catch (error) {
+      console.error('Error fetching sets:', error);
+    }
+  };
+
+  const fetchVocab = async (setId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_flashcards')
+        .select('*')
+        .eq('flashcard_set_id', setId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setVocab(data || []);
+    } catch (error) {
+      console.error('Error fetching vocab:', error);
+    }
+  };
+
+  const handleVocabToggle = (vocabFront: string) => {
+    if (selectedVocab.includes(vocabFront)) {
+      setSelectedVocab(selectedVocab.filter(v => v !== vocabFront));
     } else if (selectedVocab.length < 10) {
-      setSelectedVocab([...selectedVocab, vocab]);
+      setSelectedVocab([...selectedVocab, vocabFront]);
     }
   };
 
   const handleRecommended = () => {
-    // Mock: Select 10 recommended vocab
-    const recommended = mockVocab.slice(0, 10).map(v => v.front);
+    // Select first 10 vocab
+    const recommended = vocab.slice(0, 10).map(v => v.front_text);
     setSelectedVocab(recommended);
   };
 
   const handleTodayReview = () => {
-    // Mock: Select 10 today's review vocab
-    const todayReview = mockVocab.slice(2, 12).map(v => v.front);
+    // Select random 10 vocab
+    const shuffled = [...vocab].sort(() => Math.random() - 0.5);
+    const todayReview = shuffled.slice(0, 10).map(v => v.front_text);
     setSelectedVocab(todayReview);
   };
 
-  const filteredVocab = mockVocab.filter(v =>
-    v.front.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    v.back.includes(searchTerm)
+  const filteredVocab = vocab.filter(v =>
+    v.front_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.back_text.includes(searchTerm)
   );
 
   return (
@@ -131,9 +166,9 @@ export default function VocabSelectionStep({ onNext }: VocabSelectionStepProps) 
                     <SelectValue placeholder="เลือก Folder" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockFolders.map(folder => (
+                    {folders.map(folder => (
                       <SelectItem key={folder.id} value={folder.id}>
-                        {folder.name}
+                        {folder.title}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -154,9 +189,9 @@ export default function VocabSelectionStep({ onNext }: VocabSelectionStepProps) 
                     <SelectValue placeholder="เลือก Deck" />
                   </SelectTrigger>
                   <SelectContent>
-                    {selectedFolder && mockDecks[selectedFolder as keyof typeof mockDecks]?.map(deck => (
-                      <SelectItem key={deck.id} value={deck.id}>
-                        {deck.name}
+                    {sets.map(set => (
+                      <SelectItem key={set.id} value={set.id}>
+                        {set.title}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -175,26 +210,34 @@ export default function VocabSelectionStep({ onNext }: VocabSelectionStepProps) 
             {/* Vocabulary List */}
             <ScrollArea className="h-[400px]">
               <div className="space-y-2">
-                {filteredVocab.map((vocab, index) => {
-                  const isSelected = selectedVocab.includes(vocab.front);
-                  return (
-                    <Card
-                      key={index}
-                      className={`p-3 cursor-pointer transition-all hover:shadow-md ${
-                        isSelected ? 'border-primary bg-primary/5' : ''
-                      }`}
-                      onClick={() => handleVocabToggle(vocab.front)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold">{vocab.front}</div>
-                          <div className="text-sm text-muted-foreground">{vocab.back}</div>
+                {loading ? (
+                  <p className="text-center text-muted-foreground py-8">กำลังโหลด...</p>
+                ) : filteredVocab.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    {selectedDeck ? 'ไม่พบคำศัพท์' : 'กรุณาเลือก Folder และ Deck'}
+                  </p>
+                ) : (
+                  filteredVocab.map((vocabItem, index) => {
+                    const isSelected = selectedVocab.includes(vocabItem.front_text);
+                    return (
+                      <Card
+                        key={index}
+                        className={`p-3 cursor-pointer transition-all hover:shadow-md ${
+                          isSelected ? 'border-primary bg-primary/5' : ''
+                        }`}
+                        onClick={() => handleVocabToggle(vocabItem.front_text)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-semibold">{vocabItem.front_text}</div>
+                            <div className="text-sm text-muted-foreground">{vocabItem.back_text}</div>
+                          </div>
+                          {isSelected && <CheckCircle2 className="w-5 h-5 text-primary" />}
                         </div>
-                        {isSelected && <CheckCircle2 className="w-5 h-5 text-primary" />}
-                      </div>
-                    </Card>
-                  );
-                })}
+                      </Card>
+                    );
+                  })
+                )}
               </div>
             </ScrollArea>
           </Card>
