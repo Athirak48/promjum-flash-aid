@@ -23,6 +23,7 @@ import FlashcardsReview from "./pages/FlashcardsReview";
 import DecksPage from "./pages/DecksPage";
 import SubDecksPage from "./pages/SubDecksPage";
 import AIRealtimePracticePage from "./pages/AIRealtimePracticePage";
+import AIPracticePage from "./pages/AIPracticePage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
@@ -152,6 +153,14 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <><Navbar /><AIRealtimePracticePage /></>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/ai-practice" 
+                element={
+                  <ProtectedRoute>
+                    <AIPracticePage />
                   </ProtectedRoute>
                 } 
               />
