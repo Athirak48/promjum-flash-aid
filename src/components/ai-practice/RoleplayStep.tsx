@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MessageSquare, CheckCircle2, Sparkles } from 'lucide-react';
+import { Mic, MessageSquare, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface RoleplayStepProps {
   vocab: string[];
@@ -18,54 +20,115 @@ interface Message {
 }
 
 export default function RoleplayStep({ vocab, phrases, onComplete }: RoleplayStepProps) {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'ai',
-      text: "สวัสดีค่ะ! วันนี้เรามาฝึกสถานการณ์การทำงานกัน คุณเป็นพนักงานที่ต้องประชุมกับทีม ลองใช้ประโยค 'Can you help me with this problem?' และคำศัพท์ที่เรียนมาในการตอบนะคะ"
+      text: "สวัสดีค่ะ! วันนี้เรามาฝึกสถานการณ์การทำงานกัน ลองใช้ประโยคที่เรียนมาในการตอบนะคะ"
     }
   ]);
   const [isRecording, setIsRecording] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [usedPhrases, setUsedPhrases] = useState<Set<string>>(new Set());
   const [isComplete, setIsComplete] = useState(false);
+  const [recognition, setRecognition] = useState<any>(null);
+
+  useEffect(() => {
+    // Initialize Web Speech API
+    if ('webkitSpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = false;
+      recognitionInstance.lang = 'en-US';
+      
+      recognitionInstance.onresult = async (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setIsRecording(false);
+        await handleUserMessage(transcript);
+      };
+
+      recognitionInstance.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        toast({
+          title: 'เกิดข้อผิดพลาด',
+          description: 'ไม่สามารถบันทึกเสียงได้',
+          variant: 'destructive'
+        });
+      };
+
+      setRecognition(recognitionInstance);
+    }
+  }, [messages]);
+
+  const handleUserMessage = async (userText: string) => {
+    // Add user message
+    const userMessage: Message = { role: 'user', text: userText };
+    setMessages(prev => [...prev, userMessage]);
+
+    // Check which phrases are used
+    const newUsedPhrases = new Set(usedPhrases);
+    phrases.forEach(phrase => {
+      if (userText.toLowerCase().includes(phrase.text.toLowerCase())) {
+        newUsedPhrases.add(phrase.text);
+      }
+    });
+    setUsedPhrases(newUsedPhrases);
+
+    // Get AI response
+    try {
+      setIsSending(true);
+      const { data, error } = await supabase.functions.invoke('roleplay-chat', {
+        body: {
+          messages: [...messages, userMessage],
+          vocabulary: vocab,
+          phrases: phrases
+        }
+      });
+
+      if (error) throw error;
+
+      const aiMessage: Message = {
+        role: 'ai',
+        text: data.response
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+
+      // Check if complete (both phrases used)
+      if (newUsedPhrases.size >= phrases.length) {
+        setIsComplete(true);
+      }
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: 'ไม่สามารถรับคำตอบจาก AI ได้',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const handleRecord = () => {
+    if (!recognition) {
+      toast({
+        title: 'ไม่รองรับ',
+        description: 'เบราว์เซอร์ไม่รองรับการบันทึกเสียง',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsRecording(true);
-    // Mock recording
-    setTimeout(() => {
+    try {
+      recognition.start();
+    } catch (error) {
+      console.error('Error starting recognition:', error);
       setIsRecording(false);
-      // Mock user response
-      const userResponse = "Can you help me with this problem? I need to revise the report before the deadline.";
-      
-      // Check if phrase is used
-      const usedPhrase = phrases[0].text; // Mock checking first phrase
-      const newUsedPhrases = new Set(usedPhrases);
-      newUsedPhrases.add(usedPhrase);
-      setUsedPhrases(newUsedPhrases);
-
-      // Add user message
-      setMessages(prev => [...prev, {
-        role: 'user',
-        text: userResponse
-      }]);
-
-      // Add AI feedback
-      setTimeout(() => {
-        if (newUsedPhrases.size >= 2) {
-          setMessages(prev => [...prev, {
-            role: 'ai',
-            text: "ยอดเยี่ยมมาก! คุณใช้ประโยคและคำศัพท์ได้ถูกต้องและเหมาะสม ✨",
-            feedback: "คุณใช้ประโยคครบ 2 ประโยค และคำศัพท์ 8 จาก 10 คำ การใช้ grammar ถูกต้อง 95% เก่งมาก!"
-          }]);
-          setIsComplete(true);
-        } else {
-          setMessages(prev => [...prev, {
-            role: 'ai',
-            text: "ดีมากค่ะ! ตอนนี้ลองใช้ประโยคที่สอง 'I'm looking forward to meeting you.' ในบริบทการนัดหมายประชุมครั้งถัดไป",
-            feedback: "คุณใช้ประโยคแรกได้ดีแล้ว grammar ถูกต้อง ลองใช้ประโยคที่สองด้วยนะคะ"
-          }]);
-        }
-      }, 1000);
-    }, 2000);
+    }
   };
 
   return (
@@ -74,12 +137,11 @@ export default function RoleplayStep({ vocab, phrases, onComplete }: RoleplaySte
         <h2 className="text-3xl font-bold mb-2">💼 The Final Test: Roleplay</h2>
         <p className="text-muted-foreground">ทดสอบความสามารถในการใช้คำศัพท์และประโยคที่เรียนมา</p>
         <div className="flex gap-2 justify-center mt-4">
-          <Badge variant={usedPhrases.size >= 1 ? "default" : "secondary"}>
-            ประโยคที่ 1 {usedPhrases.size >= 1 && '✓'}
-          </Badge>
-          <Badge variant={usedPhrases.size >= 2 ? "default" : "secondary"}>
-            ประโยคที่ 2 {usedPhrases.size >= 2 && '✓'}
-          </Badge>
+          {phrases.map((phrase, idx) => (
+            <Badge key={idx} variant={usedPhrases.has(phrase.text) ? "default" : "secondary"}>
+              ประโยคที่ {idx + 1} {usedPhrases.has(phrase.text) && '✓'}
+            </Badge>
+          ))}
         </div>
       </div>
 
@@ -126,11 +188,25 @@ export default function RoleplayStep({ vocab, phrases, onComplete }: RoleplaySte
             <Button
               size="lg"
               onClick={handleRecord}
-              disabled={isRecording}
+              disabled={isRecording || isSending}
               className={isRecording ? 'bg-destructive hover:bg-destructive/90' : ''}
             >
-              <Mic className="w-5 h-5 mr-2" />
-              {isRecording ? 'กำลังบันทึก...' : 'กดพูด'}
+              {isRecording ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : isSending ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  AI กำลังตอบ...
+                </>
+              ) : (
+                <>
+                  <Mic className="w-5 h-5 mr-2" />
+                  กดพูด
+                </>
+              )}
             </Button>
           </div>
         )}
@@ -148,12 +224,12 @@ export default function RoleplayStep({ vocab, phrases, onComplete }: RoleplaySte
 
             <div className="grid md:grid-cols-3 gap-4 mb-6">
               <Card className="p-4 text-center">
-                <p className="text-3xl font-bold text-primary mb-1">2/2</p>
+                <p className="text-3xl font-bold text-primary mb-1">{usedPhrases.size}/{phrases.length}</p>
                 <p className="text-sm text-muted-foreground">ประโยคที่ใช้</p>
               </Card>
               <Card className="p-4 text-center">
-                <p className="text-3xl font-bold text-primary mb-1">8/10</p>
-                <p className="text-sm text-muted-foreground">คำศัพท์ที่ใช้</p>
+                <p className="text-3xl font-bold text-primary mb-1">{vocab.length}/10</p>
+                <p className="text-sm text-muted-foreground">คำศัพท์</p>
               </Card>
               <Card className="p-4 text-center">
                 <p className="text-3xl font-bold text-primary mb-1">95%</p>

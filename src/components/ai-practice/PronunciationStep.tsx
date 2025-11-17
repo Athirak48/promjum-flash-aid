@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Mic, Volume2, Eye, EyeOff, RotateCcw } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 
 interface PronunciationStepProps {
   phrases: any[];
@@ -11,28 +12,81 @@ interface PronunciationStepProps {
 }
 
 export default function PronunciationStep({ phrases, onNext }: PronunciationStepProps) {
+  const { toast } = useToast();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showText, setShowText] = useState(true);
   const [showTranslation, setShowTranslation] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [score, setScore] = useState<number | null>(null);
+  const [recognition, setRecognition] = useState<any>(null);
 
   const currentPhrase = phrases[currentIndex];
 
+  useEffect(() => {
+    // Initialize Web Speech API
+    if ('webkitSpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = false;
+      recognitionInstance.lang = 'en-US';
+      
+      recognitionInstance.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        const targetText = currentPhrase.text.toLowerCase();
+        
+        // Simple scoring
+        const targetWords = targetText.split(' ');
+        const spokenWords = transcript.split(' ');
+        const matchCount = targetWords.filter(word => 
+          spokenWords.some(spoken => spoken.includes(word) || word.includes(spoken))
+        ).length;
+        
+        const calculatedScore = Math.round((matchCount / targetWords.length) * 100);
+        setScore(Math.min(calculatedScore, 100));
+        setIsRecording(false);
+      };
+
+      recognitionInstance.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        toast({
+          title: 'เกิดข้อผิดพลาด',
+          description: 'ไม่สามารถบันทึกเสียงได้',
+          variant: 'destructive'
+        });
+      };
+
+      setRecognition(recognitionInstance);
+    }
+  }, [currentPhrase]);
+
   const handlePlayAudio = () => {
-    // Mock TTS
-    console.log('Playing audio:', currentPhrase.text);
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(currentPhrase.text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9;
+      speechSynthesis.speak(utterance);
+    }
   };
 
   const handleRecord = () => {
+    if (!recognition) {
+      toast({
+        title: 'ไม่รองรับ',
+        description: 'เบราว์เซอร์ไม่รองรับการบันทึกเสียง',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsRecording(true);
-    // Mock recording
-    setTimeout(() => {
+    try {
+      recognition.start();
+    } catch (error) {
+      console.error('Error starting recognition:', error);
       setIsRecording(false);
-      // Mock score (random between 70-100)
-      const mockScore = Math.floor(Math.random() * 31) + 70;
-      setScore(mockScore);
-    }, 2000);
+    }
   };
 
   const handleTryAgain = () => {
@@ -148,6 +202,7 @@ export default function PronunciationStep({ phrases, onNext }: PronunciationStep
       {score === null && (
         <div className="text-center text-sm text-muted-foreground">
           <p>คลิก "กดพูด" เพื่อเริ่มบันทึกเสียง</p>
+          <p className="mt-2 text-xs">ใช้ Web Speech API ของเบราว์เซอร์</p>
         </div>
       )}
     </div>

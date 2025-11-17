@@ -17,20 +17,12 @@ export default function AIPracticePage() {
 
   const handleVocabSelected = (vocab: string[]) => {
     setSelectedVocab(vocab);
-    // Mock: Generate 2 phrases using selected vocab
-    setGeneratedPhrases([
-      {
-        text: "Can you help me with this problem?",
-        thai: "คุณช่วยฉันแก้ปัญหานี้ได้ไหม",
-        context: "ใช้เมื่อต้องการขอความช่วยเหลือในสถานการณ์ทำงานหรือเรียน (Formal/Casual)"
-      },
-      {
-        text: "I'm looking forward to meeting you.",
-        thai: "ฉันรอคอยที่จะได้พบคุณ",
-        context: "ใช้เมื่อต้องการแสดงความตั้งใจรอคอยการพบกัน (Formal)"
-      }
-    ]);
     setCurrentStep(2);
+  };
+
+  const handlePhrasesGenerated = (phrases: any[]) => {
+    setGeneratedPhrases(phrases);
+    setCurrentStep(3);
   };
 
   const renderStep = () => {
@@ -38,7 +30,7 @@ export default function AIPracticePage() {
       case 1:
         return <VocabSelectionStep onNext={handleVocabSelected} />;
       case 2:
-        return <PowerPhrasesStep phrases={generatedPhrases} onNext={() => setCurrentStep(3)} />;
+        return <PowerPhrasesStep vocabulary={selectedVocab} onNext={handlePhrasesGenerated} />;
       case 3:
         return <FlashcardReviewStep vocab={selectedVocab} phrases={generatedPhrases} onNext={() => setCurrentStep(4)} />;
       case 4:

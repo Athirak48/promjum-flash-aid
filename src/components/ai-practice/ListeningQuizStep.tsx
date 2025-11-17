@@ -1,94 +1,96 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Volume2, CheckCircle2, XCircle } from 'lucide-react';
+import { Volume2, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ListeningQuizStepProps {
   vocab: string[];
   onNext: () => void;
 }
 
-const mockQuestions = [
-  {
-    story: "Yesterday, I had an important meeting with my colleagues. We discussed the project deadline and the budget. Everyone agreed to postpone the presentation until next week.",
-    storyThai: "เมื่อวานฉันมีการประชุมสำคัญกับเพื่อนร่วมงาน เราพูดคุยเกี่ยวกับกำหนดเวลาโครงการและงบประมาณ ทุกคนเห็นด้วยที่จะเลื่อนการนำเสนอไปสัปดาห์หน้า",
-    question: "What did they decide to do?",
-    options: [
-      "Cancel the meeting",
-      "Postpone the presentation",
-      "Increase the budget",
-      "Change the deadline"
-    ],
-    correct: 1,
-    explanation: "คำตอบคือ 'Postpone the presentation' เพราะในเรื่องระบุว่า everyone agreed to postpone the presentation"
-  },
-  {
-    story: "The report needs to be revised before we can submit it. I will forward the document to you after I confirm all the details with the manager.",
-    storyThai: "รายงานต้องได้รับการแก้ไขก่อนที่เราจะส่ง ฉันจะส่งต่อเอกสารให้คุณหลังจากที่ฉันยืนยันรายละเอียดทั้งหมดกับผู้จัดการ",
-    question: "What will happen to the document?",
-    options: [
-      "It will be deleted",
-      "It will be revised and forwarded",
-      "It will be approved immediately",
-      "It will be cancelled"
-    ],
-    correct: 1,
-    explanation: "คำตอบคือ 'It will be revised and forwarded' เพราะเรื่องระบุว่าต้อง revise และจะ forward หลังจาก confirm"
-  },
-  {
-    story: "This is an urgent matter with high priority. We need to approve the plan today so we can start working on it tomorrow.",
-    storyThai: "นี่เป็นเรื่องเร่งด่วนที่มีความสำคัญสูง เราต้องอนุมัติแผนวันนี้เพื่อที่เราจะได้เริ่มทำงานพรุ่งนี้",
-    question: "How is this matter described?",
-    options: [
-      "Low priority and delayed",
-      "Urgent and high priority",
-      "Cancelled and postponed",
-      "Normal and scheduled"
-    ],
-    correct: 1,
-    explanation: "คำตอบคือ 'Urgent and high priority' ตรงกับที่ระบุในเรื่องว่า urgent matter with high priority"
-  },
-  {
-    story: "Can you help me check the schedule? I need to confirm if the meeting room is available for our presentation next Monday.",
-    storyThai: "คุณช่วยฉันเช็คกำหนดการได้ไหม ฉันต้องยืนยันว่าห้องประชุมว่างสำหรับการนำเสนอของเราวันจันทร์หน้า",
-    question: "What does the speaker need to confirm?",
-    options: [
-      "The project deadline",
-      "The meeting room availability",
-      "The budget approval",
-      "The report revision"
-    ],
-    correct: 1,
-    explanation: "คำตอบคือ 'The meeting room availability' เพราะต้องการยืนยันว่าห้องประชุมว่าง"
-  },
-  {
-    story: "My colleague asked me to revise the report and forward it to the team. This project has a tight deadline, so we need to work efficiently.",
-    storyThai: "เพื่อนร่วมงานขอให้ฉันแก้ไขรายงานและส่งต่อให้ทีม โครงการนี้มีกำหนดเวลาแน่น ดังนั้นเราต้องทำงานอย่างมีประสิทธิภาพ",
-    question: "What is mentioned about the project?",
-    options: [
-      "It has unlimited time",
-      "It was cancelled",
-      "It has a tight deadline",
-      "It was postponed"
-    ],
-    correct: 2,
-    explanation: "คำตอบคือ 'It has a tight deadline' ตรงกับที่ระบุในเรื่องว่า tight deadline"
-  }
-];
-
 export default function ListeningQuizStep({ vocab, onNext }: ListeningQuizStepProps) {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const { toast } = useToast();
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [showStory, setShowStory] = useState(false);
 
-  const question = mockQuestions[currentQuestion];
+  useEffect(() => {
+    generateQuiz();
+  }, []);
+
+  const generateQuiz = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('generate-listening-quiz', {
+        body: { vocabulary: vocab }
+      });
+
+      if (error) throw error;
+
+      if (data?.questions && Array.isArray(data.questions)) {
+        setQuestions(data.questions);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('Error generating quiz:', error);
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: 'ไม่สามารถสร้างแบบทดสอบได้',
+        variant: 'destructive'
+      });
+      // Use fallback questions
+      setQuestions([
+        {
+          story: "I need to finish this project by the deadline.",
+          storyThai: "ฉันต้องทำโครงการนี้ให้เสร็จก่อนกำหนดเวลา",
+          question: "What does the speaker need to do?",
+          options: ["Cancel the project", "Finish by deadline", "Start tomorrow", "Ask for help"],
+          correct: 1,
+          explanation: "ต้อง finish ก่อน deadline"
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto text-center py-20">
+        <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+        <p className="text-lg text-muted-foreground">AI กำลังสร้างแบบทดสอบฟัง...</p>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto text-center py-20">
+        <p className="text-lg text-muted-foreground mb-4">ไม่สามารถสร้างแบบทดสอบได้</p>
+        <Button onClick={() => onNext()}>ข้ามไปขั้นตอนถัดไป</Button>
+      </div>
+    );
+  }
+
+  const question = questions[currentIndex];
 
   const handlePlayAudio = () => {
-    console.log('Playing story audio:', question.story);
+    // Use Web Speech API for TTS
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(question.story);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9;
+      speechSynthesis.speak(utterance);
+    }
   };
 
   const handleSubmit = () => {
@@ -97,8 +99,8 @@ export default function ListeningQuizStep({ vocab, onNext }: ListeningQuizStepPr
   };
 
   const handleNext = () => {
-    if (currentQuestion < mockQuestions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
       setSelectedAnswer(null);
       setShowResult(false);
       setShowStory(false);
@@ -115,7 +117,7 @@ export default function ListeningQuizStep({ vocab, onNext }: ListeningQuizStepPr
         <h2 className="text-3xl font-bold mb-2">👂 Story Application</h2>
         <p className="text-muted-foreground">ฝึกฟังและทำความเข้าใจเรื่องราว</p>
         <div className="mt-4">
-          <Badge>ข้อที่ {currentQuestion + 1}/{mockQuestions.length}</Badge>
+          <Badge>ข้อที่ {currentIndex + 1}/{questions.length}</Badge>
         </div>
       </div>
 
@@ -212,7 +214,7 @@ export default function ListeningQuizStep({ vocab, onNext }: ListeningQuizStepPr
             </Button>
           ) : (
             <Button size="lg" onClick={handleNext}>
-              {currentQuestion < mockQuestions.length - 1 ? 'ข้อถัดไป' : 'ไปต่อ'}
+              {currentIndex < questions.length - 1 ? 'ข้อถัดไป' : 'ไปต่อ'}
             </Button>
           )}
         </div>

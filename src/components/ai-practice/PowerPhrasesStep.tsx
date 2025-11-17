@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Sparkles, Info } from 'lucide-react';
+import { Sparkles, Info, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Phrase {
   text: string;
@@ -9,11 +12,66 @@ interface Phrase {
 }
 
 interface PowerPhrasesStepProps {
-  phrases: Phrase[];
-  onNext: () => void;
+  vocabulary: string[];
+  onNext: (phrases: Phrase[]) => void;
 }
 
-export default function PowerPhrasesStep({ phrases, onNext }: PowerPhrasesStepProps) {
+export default function PowerPhrasesStep({ vocabulary, onNext }: PowerPhrasesStepProps) {
+  const { toast } = useToast();
+  const [phrases, setPhrases] = useState<Phrase[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    generatePhrases();
+  }, []);
+
+  const generatePhrases = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('generate-power-phrases', {
+        body: { vocabulary }
+      });
+
+      if (error) throw error;
+
+      if (data?.phrases && Array.isArray(data.phrases)) {
+        setPhrases(data.phrases);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('Error generating phrases:', error);
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: 'ไม่สามารถสร้างประโยคได้ กรุณาลองใหม่อีกครั้ง',
+        variant: 'destructive'
+      });
+      // Use fallback phrases
+      setPhrases([
+        {
+          text: "Can you help me with this problem?",
+          thai: "คุณช่วยฉันแก้ปัญหานี้ได้ไหม",
+          context: "ใช้เมื่อต้องการขอความช่วยเหลือ (Formal/Casual)"
+        },
+        {
+          text: "I'm looking forward to seeing you.",
+          thai: "ฉันรอคอยที่จะได้พบคุณ",
+          context: "ใช้เมื่อต้องการแสดงความตั้งใจ (Formal)"
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto text-center py-20">
+        <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+        <p className="text-lg text-muted-foreground">AI กำลังสร้างประโยคที่เหมาะกับคุณ...</p>
+      </div>
+    );
+  }
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
@@ -55,7 +113,7 @@ export default function PowerPhrasesStep({ phrases, onNext }: PowerPhrasesStepPr
       </div>
 
       <div className="mt-8 text-center">
-        <Button size="lg" onClick={onNext}>
+        <Button size="lg" onClick={() => onNext(phrases)}>
           ดีมาก! ไปทบทวนกันเลย
         </Button>
       </div>
