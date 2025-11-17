@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
-import { Flame, Star, BookOpen, Play, Brain, GamepadIcon } from 'lucide-react';
+import { Flame, Star, BookOpen, Play, Brain, GamepadIcon, Sparkles } from 'lucide-react';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -292,7 +292,7 @@ export function DailyDeckQuickStart({
               </DialogTitle>
             </DialogHeader>
             
-            <div className="grid grid-cols-2 gap-4 py-6">
+            <div className="grid grid-cols-3 gap-4 py-6">
               {/* Review Mode */}
               <Card 
                 className="cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-large border-2 hover:border-primary group"
@@ -324,6 +324,27 @@ export function DailyDeckQuickStart({
                     <h3 className="text-xl font-bold mb-2">เล่นเกม</h3>
                     <p className="text-sm text-muted-foreground">
                       เรียนรู้ผ่านเกมสนุกๆ
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* AI Practice Mode */}
+              <Card 
+                className="cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-large border-2 hover:border-primary group"
+                onClick={() => {
+                  setShowModeDialog(false);
+                  navigate('/ai-practice');
+                }}
+              >
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-gradient-to-br from-purple-500/20 to-indigo-500/20 rounded-2xl flex items-center justify-center group-hover:from-purple-500/30 group-hover:to-indigo-500/30 transition-all">
+                    <Sparkles className="h-10 w-10 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">AI Practice</h3>
+                    <p className="text-sm text-muted-foreground">
+                      ฝึกภาษากับ AI
                     </p>
                   </div>
                 </CardContent>
