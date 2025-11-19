@@ -820,6 +820,50 @@ export type Database = {
           },
         ]
       }
+      user_decks: {
+        Row: {
+          card_count: number | null
+          created_at: string
+          description: string | null
+          folder_id: string | null
+          icon: string | null
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_count?: number | null
+          created_at?: string
+          description?: string | null
+          folder_id?: string | null
+          icon?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_count?: number | null
+          created_at?: string
+          description?: string | null
+          folder_id?: string | null
+          icon?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_decks_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "user_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_flashcard_progress: {
         Row: {
           created_at: string
@@ -935,6 +979,7 @@ export type Database = {
           front_image_url: string | null
           front_text: string
           id: string
+          subdeck_id: string | null
           updated_at: string
           user_id: string
         }
@@ -946,6 +991,7 @@ export type Database = {
           front_image_url?: string | null
           front_text: string
           id?: string
+          subdeck_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -957,6 +1003,7 @@ export type Database = {
           front_image_url?: string | null
           front_text?: string
           id?: string
+          subdeck_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -966,6 +1013,13 @@ export type Database = {
             columns: ["flashcard_set_id"]
             isOneToOne: false
             referencedRelation: "user_flashcard_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_flashcards_subdeck_id_fkey"
+            columns: ["subdeck_id"]
+            isOneToOne: false
+            referencedRelation: "user_subdecks"
             referencedColumns: ["id"]
           },
         ]
@@ -1202,6 +1256,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_subdecks: {
+        Row: {
+          card_count: number | null
+          created_at: string
+          deck_id: string
+          description: string | null
+          difficulty_level: string | null
+          display_order: number | null
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_count?: number | null
+          created_at?: string
+          deck_id: string
+          description?: string | null
+          difficulty_level?: string | null
+          display_order?: number | null
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_count?: number | null
+          created_at?: string
+          deck_id?: string
+          description?: string | null
+          difficulty_level?: string | null
+          display_order?: number | null
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subdecks_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "user_decks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
