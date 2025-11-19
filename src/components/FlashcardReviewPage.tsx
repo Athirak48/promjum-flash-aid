@@ -355,9 +355,9 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 variant="outline"
                 size="sm"
                 onClick={() => handleKnow(false)}
-                className="bg-red-100 hover:bg-red-200 border-red-300 flex-1 font-semibold text-red-700"
+                className="bg-red-100 hover:bg-red-200 border-red-300 flex-1 font-bold text-red-700 h-12 text-base"
               >
-                <ChevronLeft className="h-4 w-4 mr-1 text-red-700" />
+                <ChevronLeft className="h-5 w-5 mr-1 text-red-700" strokeWidth={2.5} />
                 จำไม่ได้
               </Button>
               
@@ -366,19 +366,19 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 size="icon" 
                 onClick={() => setIsFlipped(!isFlipped)}
                 title="พลิกการ์ด"
-                className="bg-blue-100 hover:bg-blue-200"
+                className="bg-blue-100 hover:bg-blue-200 h-12 w-12"
               >
-                <RotateCcw className="h-4 w-4 text-blue-700" />
+                <RotateCcw className="h-5 w-5 text-blue-700" strokeWidth={2.5} />
               </Button>
               
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleKnow(true)}
-                className="bg-green-100 hover:bg-green-200 border-green-300 flex-1 font-semibold text-green-700"
+                className="bg-green-100 hover:bg-green-200 border-green-300 flex-1 font-bold text-green-700 h-12 text-base"
               >
                 จำได้แล้ว
-                <ChevronRight className="h-4 w-4 ml-1 text-green-700" />
+                <ChevronRight className="h-5 w-5 ml-1 text-green-700" strokeWidth={2.5} />
               </Button>
             </div>
             
@@ -396,21 +396,21 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
               </div>
               
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} className="h-8 w-8">
-                  <SkipBack className="h-3 w-3" />
+                <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} className="h-10 w-10 text-gray-900">
+                  <SkipBack className="h-4 w-4" strokeWidth={2.5} />
                 </Button>
                 
-                <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === cards.length - 1} className="h-8 w-8">
-                  <SkipForward className="h-3 w-3" />
+                <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === cards.length - 1} className="h-10 w-10 text-gray-900">
+                  <SkipForward className="h-4 w-4" strokeWidth={2.5} />
                 </Button>
                 
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsAutoPlay(!isAutoPlay)}
-                  className={`h-8 w-8 ${isAutoPlay ? 'bg-purple-100' : ''}`}
+                  className={`h-10 w-10 text-gray-900 ${isAutoPlay ? 'bg-purple-100' : ''}`}
                 >
-                  {isAutoPlay ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                  {isAutoPlay ? <Pause className="h-4 w-4" strokeWidth={2.5} /> : <Play className="h-4 w-4" strokeWidth={2.5} />}
                 </Button>
               </div>
             </div>
@@ -425,7 +425,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 onCheckedChange={setTrackProgress}
                 id="track-progress"
               />
-              <label htmlFor="track-progress" className="text-sm font-semibold text-gray-900">
+              <label htmlFor="track-progress" className="text-base font-bold text-gray-900">
                 Track progress
               </label>
             </div>
@@ -436,32 +436,32 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 variant="outline"
                 size="icon"
                 onClick={() => handleKnow(false)}
-                className="bg-red-100 hover:bg-red-200 border-red-300"
+                className="bg-red-100 hover:bg-red-200 border-red-300 h-11 w-11"
                 title="จำไม่ได้ (←)"
               >
-                <ChevronLeft className="h-4 w-4 text-red-700" />
+                <ChevronLeft className="h-6 w-6 text-red-700" strokeWidth={2.5} />
               </Button>
               
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => handleKnow(true)}
-                className="bg-green-100 hover:bg-green-200 border-green-300"
+                className="bg-green-100 hover:bg-green-200 border-green-300 h-11 w-11"
                 title="จำได้ (→)"
               >
-                <ChevronRight className="h-4 w-4 text-green-700" />
+                <ChevronRight className="h-6 w-6 text-green-700" strokeWidth={2.5} />
               </Button>
               
-              <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} className="text-gray-900">
-                <SkipBack className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} className="text-gray-900 h-11 w-11">
+                <SkipBack className="h-5 w-5" strokeWidth={2.5} />
               </Button>
               
-              <div className="text-lg font-bold text-gray-900 px-4">
+              <div className="text-xl font-bold text-gray-900 px-4">
                 {currentIndex + 1} / {cards.length}
               </div>
               
-              <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === cards.length - 1}>
-                <SkipForward className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === cards.length - 1} className="text-gray-900 h-11 w-11">
+                <SkipForward className="h-5 w-5" strokeWidth={2.5} />
               </Button>
               
               <Button 
@@ -469,8 +469,9 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 size="icon" 
                 onClick={() => setIsFlipped(!isFlipped)}
                 title="พลิกการ์ด (Tab)"
+                className="text-gray-900 h-11 w-11"
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="h-5 w-5" strokeWidth={2.5} />
               </Button>
             </div>
 
@@ -480,17 +481,17 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsAutoPlay(!isAutoPlay)}
-                className={isAutoPlay ? 'bg-purple-100' : ''}
+                className={`h-11 w-11 text-gray-900 ${isAutoPlay ? 'bg-purple-100' : ''}`}
               >
-                {isAutoPlay ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                {isAutoPlay ? <Pause className="h-5 w-5" strokeWidth={2.5} /> : <Play className="h-5 w-5" strokeWidth={2.5} />}
               </Button>
               
-              <Button variant="ghost" size="icon">
-                <Maximize className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-11 w-11 text-gray-900">
+                <Maximize className="h-5 w-5" strokeWidth={2.5} />
               </Button>
               
-              <Button variant="ghost" size="icon">
-                <Settings className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-11 w-11 text-gray-900">
+                <Settings className="h-5 w-5" strokeWidth={2.5} />
               </Button>
             </div>
           </div>
