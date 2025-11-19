@@ -21,6 +21,7 @@ import UserDetailModal from '@/components/admin/UserDetailModal';
 import EditUserModal from '@/components/admin/EditUserModal';
 import BlockUserDialog from '@/components/admin/BlockUserDialog';
 import { UserFlashcardsDialog } from '@/components/admin/UserFlashcardsDialog';
+import AdminStatistics from '@/components/admin/AdminStatistics';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -176,10 +177,10 @@ export default function AdminDashboard() {
         <p className="text-muted-foreground">ภาพรวมและสถิติของระบบ</p>
       </div>
 
-      <Tabs defaultValue="users" className="space-y-6">
+      <Tabs defaultValue="stats" className="space-y-6">
         <TabsList className="bg-muted">
-          <TabsTrigger value="users">ข้อมูลผู้ใช้</TabsTrigger>
           <TabsTrigger value="stats">สถิติผู้ใช้</TabsTrigger>
+          <TabsTrigger value="users">ข้อมูลผู้ใช้</TabsTrigger>
           <TabsTrigger value="notifications">แจ้งเตือน</TabsTrigger>
         </TabsList>
 
@@ -281,46 +282,7 @@ export default function AdminDashboard() {
 
         {/* Statistics Tab */}
         <TabsContent value="stats" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatsChart
-              title="ผู้ใช้ทั้งหมด"
-              value={stats.totalUsers}
-              unit="คน"
-              icon="chart"
-              percentage={12}
-            />
-            <StatsChart
-              title="สมาชิก"
-              value={stats.totalMembers}
-              unit="คน"
-              icon="trending"
-              percentage={8}
-            />
-            <StatsChart
-              title="รายได้"
-              value={stats.totalRevenue}
-              unit="บาท"
-              icon="target"
-              percentage={15}
-            />
-            <StatsChart
-              title="Feedback"
-              value={stats.totalFeedback}
-              unit="รายการ"
-              icon="clock"
-              percentage={5}
-            />
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>สถิติโดยรวม</CardTitle>
-              <CardDescription>ข้อมูลสถิติและแนวโน้มการใช้งาน</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">กราฟและข้อมูลสถิติเพิ่มเติมจะแสดงที่นี่</p>
-            </CardContent>
-          </Card>
+          <AdminStatistics />
         </TabsContent>
 
         {/* Notifications Tab */}
