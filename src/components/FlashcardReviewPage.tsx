@@ -338,13 +338,13 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
 
       {/* Bottom Controls */}
       <div className="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between bg-white/90 backdrop-blur-sm rounded-2xl p-3 sm:p-4 shadow-lg gap-3 sm:gap-0">
+        <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-2xl p-3 sm:p-4 shadow-xl border border-gray-200 gap-3 sm:gap-0">
           
           {/* Mobile: Stacked layout */}
           <div className="w-full sm:hidden">
             {/* Card Counter */}
             <div className="text-center mb-3">
-              <div className="text-lg font-semibold">
+              <div className="text-lg font-bold text-gray-900">
                 {currentIndex + 1} / {cards.length}
               </div>
             </div>
@@ -355,9 +355,9 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 variant="outline"
                 size="sm"
                 onClick={() => handleKnow(false)}
-                className="bg-red-100 hover:bg-red-200 border-red-200 flex-1"
+                className="bg-red-100 hover:bg-red-200 border-red-300 flex-1 font-semibold text-red-700"
               >
-                <ChevronLeft className="h-4 w-4 mr-1 text-red-600" />
+                <ChevronLeft className="h-4 w-4 mr-1 text-red-700" />
                 จำไม่ได้
               </Button>
               
@@ -368,17 +368,17 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 title="พลิกการ์ด"
                 className="bg-blue-100 hover:bg-blue-200"
               >
-                <RotateCcw className="h-4 w-4 text-blue-600" />
+                <RotateCcw className="h-4 w-4 text-blue-700" />
               </Button>
               
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleKnow(true)}
-                className="bg-green-100 hover:bg-green-200 border-green-200 flex-1"
+                className="bg-green-100 hover:bg-green-200 border-green-300 flex-1 font-semibold text-green-700"
               >
                 จำได้แล้ว
-                <ChevronRight className="h-4 w-4 ml-1 text-green-600" />
+                <ChevronRight className="h-4 w-4 ml-1 text-green-700" />
               </Button>
             </div>
             
@@ -390,7 +390,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                   onCheckedChange={setTrackProgress}
                   id="track-progress-mobile"
                 />
-                <label htmlFor="track-progress-mobile" className="text-xs font-medium">
+                <label htmlFor="track-progress-mobile" className="text-xs font-semibold text-gray-900">
                   Track
                 </label>
               </div>
@@ -425,7 +425,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 onCheckedChange={setTrackProgress}
                 id="track-progress"
               />
-              <label htmlFor="track-progress" className="text-sm font-medium">
+              <label htmlFor="track-progress" className="text-sm font-semibold text-gray-900">
                 Track progress
               </label>
             </div>
@@ -436,27 +436,27 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                 variant="outline"
                 size="icon"
                 onClick={() => handleKnow(false)}
-                className="bg-red-100 hover:bg-red-200 border-red-200"
+                className="bg-red-100 hover:bg-red-200 border-red-300"
                 title="จำไม่ได้ (←)"
               >
-                <ChevronLeft className="h-4 w-4 text-red-600" />
+                <ChevronLeft className="h-4 w-4 text-red-700" />
               </Button>
               
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => handleKnow(true)}
-                className="bg-green-100 hover:bg-green-200 border-green-200"
+                className="bg-green-100 hover:bg-green-200 border-green-300"
                 title="จำได้ (→)"
               >
-                <ChevronRight className="h-4 w-4 text-green-600" />
+                <ChevronRight className="h-4 w-4 text-green-700" />
               </Button>
               
-              <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0}>
+              <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} className="text-gray-900">
                 <SkipBack className="h-4 w-4" />
               </Button>
               
-              <div className="text-lg font-semibold px-4">
+              <div className="text-lg font-bold text-gray-900 px-4">
                 {currentIndex + 1} / {cards.length}
               </div>
               
