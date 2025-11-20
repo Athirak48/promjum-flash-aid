@@ -33,6 +33,7 @@ interface FlashcardReviewPageProps {
 }
 
 export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardReviewPageProps) {
+  const [reviewQueue, setReviewQueue] = useState<FlashcardData[]>(cards);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [trackProgress, setTrackProgress] = useState(true);
@@ -44,7 +45,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
   const [isCompleted, setIsCompleted] = useState(false);
   const isMobile = useIsMobile();
 
-  const currentCard = cards[currentIndex];
+  const currentCard = reviewQueue[currentIndex];
 
   // Auto-play functionality
   useEffect(() => {
@@ -84,7 +85,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
   }, [isFlipped, isCompleted]);
 
   const handleNext = () => {
-    if (currentIndex < cards.length - 1) {
+    if (currentIndex < reviewQueue.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setIsFlipped(false);
       setSwipeDirection(null);
@@ -119,7 +120,48 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
     // Hide feedback and move to next card after delay
     setTimeout(() => {
       setShowSwipeFeedback(null);
-      handleNext();
+      
+      if (!knows) {
+        // If user doesn't know, move card to end of queue
+        if (reviewQueue.length === 1) {
+          // Only one card left, mark as completed
+          setIsCompleted(true);
+        } else {
+          setReviewQueue(prev => {
+            const newQueue = [...prev];
+            const currentCard = newQueue[currentIndex];
+            // Remove current card and add to end
+            newQueue.splice(currentIndex, 1);
+            newQueue.push(currentCard);
+            return newQueue;
+          });
+          // Stay at same index (which now shows next card), unless we're at the end
+          if (currentIndex >= reviewQueue.length - 1) {
+            setCurrentIndex(0);
+          }
+          setIsFlipped(false);
+          setSwipeDirection(null);
+        }
+      } else {
+        // If user knows, remove card from queue
+        if (reviewQueue.length === 1) {
+          // Last card, mark as completed
+          setIsCompleted(true);
+        } else {
+          setReviewQueue(prev => {
+            const newQueue = [...prev];
+            newQueue.splice(currentIndex, 1);
+            return newQueue;
+          });
+          
+          // Adjust index if we removed the last card
+          if (currentIndex >= reviewQueue.length - 1) {
+            setCurrentIndex(Math.max(0, reviewQueue.length - 2));
+          }
+          setIsFlipped(false);
+          setSwipeDirection(null);
+        }
+      }
     }, 800);
   };
 
@@ -345,7 +387,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
             {/* Card Counter */}
             <div className="text-center mb-3">
               <div className="text-lg font-bold text-gray-900">
-                {currentIndex + 1} / {cards.length}
+                {currentIndex + 1} / {reviewQueue.length}
               </div>
             </div>
             
@@ -400,7 +442,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
                   <SkipBack className="h-4 w-4" strokeWidth={2.5} />
                 </Button>
                 
-                <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === cards.length - 1} className="h-10 w-10 text-gray-900">
+                <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === reviewQueue.length - 1} className="h-10 w-10 text-gray-900">
                   <SkipForward className="h-4 w-4" strokeWidth={2.5} />
                 </Button>
                 
@@ -457,10 +499,10 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
               </Button>
               
               <div className="text-xl font-bold text-gray-900 px-4">
-                {currentIndex + 1} / {cards.length}
+                {currentIndex + 1} / {reviewQueue.length}
               </div>
               
-              <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === cards.length - 1} className="text-gray-900 h-11 w-11">
+              <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === reviewQueue.length - 1} className="text-gray-900 h-11 w-11">
                 <SkipForward className="h-5 w-5" strokeWidth={2.5} />
               </Button>
               
