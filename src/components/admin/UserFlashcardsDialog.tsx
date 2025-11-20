@@ -31,6 +31,7 @@ interface Flashcard {
   id: string;
   front_text: string;
   back_text: string;
+  srs_score?: number;
 }
 
 export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: UserFlashcardsDialogProps) {
@@ -103,14 +104,42 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
   const fetchFlashcards = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // First, get the flashcards
+      const { data: cardsData, error: cardsError } = await supabase
         .from('user_flashcards')
         .select('*')
         .eq('flashcard_set_id', selectedSetId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setFlashcards(data || []);
+      if (cardsError) throw cardsError;
+
+      // Then get the progress data for these flashcards
+      if (cardsData && cardsData.length > 0) {
+        const flashcardIds = cardsData.map(card => card.id);
+        const { data: progressData, error: progressError } = await supabase
+          .from('user_flashcard_progress')
+          .select('flashcard_id, srs_score')
+          .eq('user_id', userId)
+          .in('flashcard_id', flashcardIds);
+
+        if (progressError) throw progressError;
+
+        // Create a map for quick lookup
+        const progressMap = new Map(
+          progressData?.map(p => [p.flashcard_id, p.srs_score]) || []
+        );
+
+        // Merge the data
+        const flashcardsWithProgress = cardsData.map(card => ({
+          ...card,
+          srs_score: progressMap.get(card.id) ?? 0
+        }));
+
+        setFlashcards(flashcardsWithProgress);
+      } else {
+        setFlashcards([]);
+      }
     } catch (error) {
       console.error('Error fetching flashcards:', error);
       toast.error('ไม่สามารถโหลดคำศัพท์ได้');
@@ -200,6 +229,7 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
                         <TableHead className="w-16">No.</TableHead>
                         <TableHead>Front</TableHead>
                         <TableHead>Back</TableHead>
+                        <TableHead className="w-24">SRS Score</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -208,6 +238,7 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
                           <TableCell className="font-medium">{index + 1}</TableCell>
                           <TableCell>{card.front_text}</TableCell>
                           <TableCell>{card.back_text}</TableCell>
+                          <TableCell className="font-semibold">{card.srs_score ?? 0}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
