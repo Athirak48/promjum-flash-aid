@@ -203,7 +203,11 @@ export function FolderDetail() {
       front: card.front_text,
       back: card.back_text
     }));
-    setSelectedFlashcards(converted);
+    
+    // Shuffle the flashcards array
+    const shuffled = [...converted].sort(() => Math.random() - 0.5);
+    
+    setSelectedFlashcards(shuffled);
     setShowReviewFlashcardSelection(false);
     setGameMode('review');
   };
