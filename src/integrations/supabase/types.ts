@@ -875,6 +875,7 @@ export type Database = {
           last_review_score: number | null
           next_review_date: string | null
           srs_level: number | null
+          srs_score: number | null
           times_correct: number | null
           times_reviewed: number | null
           updated_at: string
@@ -890,6 +891,7 @@ export type Database = {
           last_review_score?: number | null
           next_review_date?: string | null
           srs_level?: number | null
+          srs_score?: number | null
           times_correct?: number | null
           times_reviewed?: number | null
           updated_at?: string
@@ -905,6 +907,7 @@ export type Database = {
           last_review_score?: number | null
           next_review_date?: string | null
           srs_level?: number | null
+          srs_score?: number | null
           times_correct?: number | null
           times_reviewed?: number | null
           updated_at?: string
