@@ -211,6 +211,54 @@ export function FolderDetail() {
     setShowReviewFlashcardSelection(false);
     setGameMode('review');
   };
+  
+  const handleReviewComplete = () => {
+    // Refresh the flashcard sets to get updated progress
+    const refreshData = async () => {
+      if (!folderId) return;
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: setsData } = await supabase
+          .from('user_flashcard_sets')
+          .select('*')
+          .eq('folder_id', folderId)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (setsData) {
+          const setsWithCounts = await Promise.all(setsData.map(async (set) => {
+            const { count } = await supabase
+              .from('user_flashcards')
+              .select('*', { count: 'exact', head: true })
+              .eq('flashcard_set_id', set.id);
+
+            return {
+              id: set.id,
+              title: set.title,
+              cardCount: count || 0,
+              source: set.source,
+              progress: set.progress || 0,
+              lastReviewed: set.last_reviewed ? new Date(set.last_reviewed) : null,
+              nextReview: set.next_review ? new Date(set.next_review) : null,
+              isArchived: false,
+              folderId: set.folder_id || undefined
+            };
+          }));
+
+          setFlashcardSets(setsWithCounts);
+          setFilteredSets(setsWithCounts);
+        }
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+      }
+    };
+    
+    refreshData();
+    handleGameClose();
+  };
 
   const handleGameClose = () => {
     setSelectedSet(null);
@@ -335,7 +383,7 @@ export function FolderDetail() {
     }
 
     if (gameMode === 'review') {
-      return <FlashcardReviewPage cards={selectedFlashcards} onComplete={handleGameClose} onClose={handleGameClose} />;
+      return <FlashcardReviewPage cards={selectedFlashcards} onComplete={handleReviewComplete} onClose={handleGameClose} setId={selectedSet.id} />;
     }
 
     if (gameMode === 'quiz') {
