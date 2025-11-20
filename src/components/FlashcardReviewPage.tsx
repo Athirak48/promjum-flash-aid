@@ -30,9 +30,10 @@ interface FlashcardReviewPageProps {
   cards: FlashcardData[];
   onClose: () => void;
   onComplete?: (results: any) => void;
+  setId?: string;
 }
 
-export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardReviewPageProps) {
+export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: FlashcardReviewPageProps) {
   const [reviewQueue, setReviewQueue] = useState<FlashcardData[]>(cards);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -44,6 +45,39 @@ export function FlashcardReviewPage({ cards, onClose, onComplete }: FlashcardRev
   const [showSwipeFeedback, setShowSwipeFeedback] = useState<'left' | 'right' | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const isMobile = useIsMobile();
+  const [totalCards] = useState(cards.length);
+
+  // Save progress when review is completed
+  useEffect(() => {
+    const saveProgress = async () => {
+      if (!isCompleted || !setId || !trackProgress) return;
+      
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const progressPercentage = Math.round((progress.correct / totalCards) * 100);
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          await supabase
+            .from('user_flashcard_sets')
+            .update({
+              progress: progressPercentage,
+              last_reviewed: new Date().toISOString()
+            })
+            .eq('id', setId)
+            .eq('user_id', user.id);
+          
+          if (onComplete) {
+            onComplete({ progress: progressPercentage, ...progress });
+          }
+        }
+      } catch (error) {
+        console.error('Error updating progress:', error);
+      }
+    };
+    
+    saveProgress();
+  }, [isCompleted, setId, trackProgress, progress.correct, totalCards, onComplete]);
 
   const currentCard = reviewQueue[currentIndex];
 
