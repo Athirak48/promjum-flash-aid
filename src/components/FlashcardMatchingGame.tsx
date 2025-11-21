@@ -34,6 +34,7 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
   const [gameTime, setGameTime] = useState(0);
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [wrongMatch, setWrongMatch] = useState<Set<string>>(new Set());
+  const [flashcardScores, setFlashcardScores] = useState<Map<string, number>>(new Map());
 
   // Generate matching cards
   useEffect(() => {
@@ -101,11 +102,14 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
     } else {
       // Second card selection - check for match
       if (selectedCard.originalId === card.originalId && selectedCard.type !== card.type) {
-        // Correct match!
+        // Correct match! Q=3
         const newMatchedPairs = new Set(matchedPairs);
         newMatchedPairs.add(selectedCard.originalId);
         setMatchedPairs(newMatchedPairs);
         setScore(prev => prev + 1);
+        
+        // บันทึก Q=3 สำหรับจับคู่ถูก
+        flashcardScores.set(selectedCard.originalId, 3);
 
         setCards(prev =>
           prev.map(c => {
@@ -118,11 +122,18 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
 
         // Check if game is complete
         if (newMatchedPairs.size === cards.length / 2) {
+          saveAllProgress();
           setIsGameComplete(true);
         }
       } else {
-        // Wrong match
+        // Wrong match - Q=-1
         setWrongMatch(new Set([selectedCard.id, card.id]));
+        
+        // บันทึก Q=-1 สำหรับจับคู่ผิด (ถ้ายังไม่มีคะแนนหรือมีคะแนนติดลบน้อยกว่า)
+        const currentScore = flashcardScores.get(selectedCard.originalId) || 0;
+        if (currentScore <= 0) {
+          flashcardScores.set(selectedCard.originalId, currentScore - 1);
+        }
         
         // Reset selection after a short delay
         setTimeout(() => {
@@ -134,6 +145,51 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
       }
 
       setSelectedCard(null);
+    }
+  };
+
+  const saveAllProgress = async () => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        for (const [flashcardId, qScore] of flashcardScores.entries()) {
+          const { data: existing } = await supabase
+            .from('user_flashcard_progress')
+            .select('*')
+            .eq('flashcard_id', flashcardId)
+            .eq('user_id', user.id)
+            .single();
+
+          if (existing) {
+            const newSrsScore = Math.max(0, (existing.srs_score || 0) + qScore);
+            await supabase
+              .from('user_flashcard_progress')
+              .update({
+                srs_score: newSrsScore,
+                times_reviewed: (existing.times_reviewed || 0) + 1,
+                times_correct: qScore > 0 ? (existing.times_correct || 0) + 1 : existing.times_correct,
+                last_review_score: qScore,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existing.id);
+          } else {
+            await supabase
+              .from('user_flashcard_progress')
+              .insert({
+                user_id: user.id,
+                flashcard_id: flashcardId,
+                srs_score: Math.max(0, qScore),
+                times_reviewed: 1,
+                times_correct: qScore > 0 ? 1 : 0,
+                last_review_score: qScore
+              });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error saving progress:', error);
     }
   };
 
