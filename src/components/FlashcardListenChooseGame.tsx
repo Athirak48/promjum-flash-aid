@@ -20,6 +20,7 @@ interface Question {
   word: string;
   correctAnswer: string;
   choices: string[];
+  flashcardId: string;
 }
 
 export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardListenChooseGameProps) => {
@@ -32,6 +33,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [playCount, setPlayCount] = useState(0);
   const maxPlayCount = 3;
+  const [flashcardScores, setFlashcardScores] = useState<Map<string, { id: string, score: number }>>(new Map());
 
   useEffect(() => {
     // Generate questions from flashcards
@@ -51,7 +53,8 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
       return {
         word: card.front_text,
         correctAnswer,
-        choices
+        choices,
+        flashcardId: card.id
       };
     });
     
@@ -84,8 +87,58 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
     
     if (isCorrect) {
       setScore(score + 1);
+      // Calculate Q score: Q=5 if answered correctly on first play, Q=2 if replayed
+      const qScore = playCount === 1 ? 5 : 2;
+      flashcardScores.set(currentQuestion.flashcardId, { id: currentQuestion.flashcardId, score: qScore });
     } else {
       setWrongAnswers([...wrongAnswers, currentQuestion]);
+      // Q=0 for wrong answer
+      flashcardScores.set(currentQuestion.flashcardId, { id: currentQuestion.flashcardId, score: 0 });
+    }
+  };
+
+  const saveAllProgress = async () => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        for (const [_, data] of flashcardScores.entries()) {
+          const { data: existing } = await supabase
+            .from('user_flashcard_progress')
+            .select('*')
+            .eq('flashcard_id', data.id)
+            .eq('user_id', user.id)
+            .single();
+
+          if (existing) {
+            const newSrsScore = Math.max(0, (existing.srs_score || 0) + data.score);
+            await supabase
+              .from('user_flashcard_progress')
+              .update({
+                srs_score: newSrsScore,
+                times_reviewed: (existing.times_reviewed || 0) + 1,
+                times_correct: data.score > 0 ? (existing.times_correct || 0) + 1 : existing.times_correct,
+                last_review_score: data.score,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existing.id);
+          } else {
+            await supabase
+              .from('user_flashcard_progress')
+              .insert({
+                user_id: user.id,
+                flashcard_id: data.id,
+                srs_score: Math.max(0, data.score),
+                times_reviewed: 1,
+                times_correct: data.score > 0 ? 1 : 0,
+                last_review_score: data.score
+              });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error saving progress:', error);
     }
   };
 
@@ -96,6 +149,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
       setShowFeedback(false);
       setPlayCount(0);
     } else {
+      saveAllProgress();
       setIsGameComplete(true);
     }
   };

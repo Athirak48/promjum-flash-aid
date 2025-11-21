@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -15,7 +15,9 @@ import {
   Pause,
   Maximize,
   Settings,
-  RotateCcw
+  RotateCcw,
+  ThumbsUp,
+  ThumbsDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -38,14 +40,14 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [trackProgress, setTrackProgress] = useState(true);
-  const [isAutoPlay, setIsAutoPlay] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [progress, setProgress] = useState({ correct: 0, incorrect: 0 });
   const [showSwipeFeedback, setShowSwipeFeedback] = useState<'left' | 'right' | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const isMobile = useIsMobile();
   const [totalCards] = useState(cards.length);
+  const [showQScoreOptions, setShowQScoreOptions] = useState(false);
+  const [reviewCount, setReviewCount] = useState<Map<string, number>>(new Map());
 
   // Save progress when review is completed
   useEffect(() => {
@@ -81,134 +83,130 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
 
   const currentCard = reviewQueue[currentIndex];
 
-  // Auto-play functionality
-  useEffect(() => {
-    if (isAutoPlay && !isFlipped) {
-      const timer = setTimeout(() => {
-        setIsFlipped(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-    if (isAutoPlay && isFlipped) {
-      const timer = setTimeout(() => {
-        handleNext();
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [isAutoPlay, isFlipped, currentIndex]);
-
-  // Keyboard controls
-  useEffect(() => {
-    if (isCompleted) return; // Disable keyboard controls when completed
-    
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        setIsFlipped(!isFlipped);
-      } else if (e.key === 'ArrowLeft') {
-        handleKnow(false);
-      } else if (e.key === 'ArrowRight') {
-        handleKnow(true);
-      } else if (e.key === 'Escape') {
-        onClose();
+  const handleCardFlip = () => {
+    if (!isCompleted) {
+      setIsFlipped(!isFlipped);
+      if (!isFlipped) {
+        setShowQScoreOptions(true);
       }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isFlipped, isCompleted]);
-
-  const handleNext = () => {
-    if (currentIndex < reviewQueue.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setIsFlipped(false);
-      setSwipeDirection(null);
-    } else {
-      // Reached the end, mark as completed
-      setIsCompleted(true);
     }
   };
 
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setIsFlipped(false);
-      setSwipeDirection(null);
-    }
-  };
-
-  const handleKnow = (knows: boolean) => {
-    // Show feedback first
-    setShowSwipeFeedback(knows ? 'right' : 'left');
-    
-    if (trackProgress) {
-      setProgress(prev => ({
-        ...prev,
-        correct: knows ? prev.correct + 1 : prev.correct,
-        incorrect: !knows ? prev.incorrect + 1 : prev.incorrect
-      }));
-    }
-    
-    setSwipeDirection(knows ? 'right' : 'left');
-    
-    // Hide feedback and move to next card after delay
-    setTimeout(() => {
-      setShowSwipeFeedback(null);
+  const saveFlashcardProgress = async (flashcardId: string, qScore: number) => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (!knows) {
-        // If user doesn't know, move card to end of queue
-        if (reviewQueue.length === 1) {
-          // Only one card left, mark as completed
-          setIsCompleted(true);
+      if (user) {
+        // Check if progress exists
+        const { data: existing } = await supabase
+          .from('user_flashcard_progress')
+          .select('*')
+          .eq('flashcard_id', flashcardId)
+          .eq('user_id', user.id)
+          .single();
+
+        if (existing) {
+          // Update existing progress with Q score
+          const newSrsScore = Math.max(0, (existing.srs_score || 0) + qScore);
+          await supabase
+            .from('user_flashcard_progress')
+            .update({
+              srs_score: newSrsScore,
+              times_reviewed: (existing.times_reviewed || 0) + 1,
+              times_correct: qScore > 0 ? (existing.times_correct || 0) + 1 : existing.times_correct,
+              last_review_score: qScore,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existing.id);
         } else {
-          setReviewQueue(prev => {
-            const newQueue = [...prev];
-            const currentCard = newQueue[currentIndex];
-            // Remove current card and add to end
-            newQueue.splice(currentIndex, 1);
-            newQueue.push(currentCard);
-            return newQueue;
-          });
-          // Stay at same index (which now shows next card), unless we're at the end
-          if (currentIndex >= reviewQueue.length - 1) {
-            setCurrentIndex(0);
-          }
-          setIsFlipped(false);
-          setSwipeDirection(null);
-        }
-      } else {
-        // If user knows, remove card from queue
-        if (reviewQueue.length === 1) {
-          // Last card, mark as completed
-          setIsCompleted(true);
-        } else {
-          setReviewQueue(prev => {
-            const newQueue = [...prev];
-            newQueue.splice(currentIndex, 1);
-            return newQueue;
-          });
-          
-          // Adjust index if we removed the last card
-          if (currentIndex >= reviewQueue.length - 1) {
-            setCurrentIndex(Math.max(0, reviewQueue.length - 2));
-          }
-          setIsFlipped(false);
-          setSwipeDirection(null);
+          // Create new progress
+          await supabase
+            .from('user_flashcard_progress')
+            .insert({
+              user_id: user.id,
+              flashcard_id: flashcardId,
+              srs_score: Math.max(0, qScore),
+              times_reviewed: 1,
+              times_correct: qScore > 0 ? 1 : 0,
+              last_review_score: qScore
+            });
         }
       }
-    }, 800);
+    } catch (error) {
+      console.error('Error saving flashcard progress:', error);
+    }
   };
 
-  const handleSwipe = (direction: 'left' | 'right') => {
-    handleKnow(direction === 'right');
-  };
+  const handleQScore = useCallback(async (qScore: number) => {
+    if (!currentCard || isCompleted) return;
+
+    // Track review count for this card
+    const currentReviewCount = reviewCount.get(currentCard.id) || 0;
+    const newReviewCount = currentReviewCount + 1;
+    reviewCount.set(currentCard.id, newReviewCount);
+
+    // Calculate final Q score based on review count
+    let finalQScore = qScore;
+    if (newReviewCount === 1 && qScore === 5) {
+      finalQScore = 5; // จำได้ดี ครั้งแรก
+    } else if (newReviewCount === 1 && qScore === 2) {
+      finalQScore = 2; // จำได้บ้าง ครั้งแรก
+    } else if (newReviewCount > 1) {
+      finalQScore = 0; // ทวนซ้ำครั้งที่ 2, 3, 4...
+    }
+
+    // Save progress
+    await saveFlashcardProgress(currentCard.id, finalQScore);
+
+    if (trackProgress) {
+      if (qScore >= 2) {
+        // Q=5 หรือ Q=2 = จำได้
+        setProgress(prev => ({
+          ...prev,
+          correct: prev.correct + 1
+        }));
+      } else {
+        // Q=0 = จำไม่ได้
+        setProgress(prev => ({
+          ...prev,
+          incorrect: prev.incorrect + 1
+        }));
+      }
+    }
+
+    setIsFlipped(false);
+    setShowQScoreOptions(false);
+
+    // ถ้า Q >= 2 ถือว่าจำได้ ไม่ต้องทบทวนอีก
+    if (qScore >= 2) {
+      const newQueue = reviewQueue.filter((_, idx) => idx !== currentIndex);
+      if (newQueue.length === 0) {
+        setReviewQueue(newQueue);
+        setIsCompleted(true);
+      } else {
+        setReviewQueue(newQueue);
+        if (currentIndex >= newQueue.length) {
+          setCurrentIndex(Math.max(0, newQueue.length - 1));
+        }
+      }
+    } else {
+      // Q=0 = ย้ายไปท้ายคิว
+      const newQueue = [...reviewQueue];
+      const card = newQueue.splice(currentIndex, 1)[0];
+      newQueue.push(card);
+      setReviewQueue(newQueue);
+      if (currentIndex >= newQueue.length) {
+        setCurrentIndex(0);
+      }
+    }
+  }, [currentCard, reviewQueue, currentIndex, trackProgress, reviewCount, isCompleted]);
 
   const handleCardTap = (e?: React.MouseEvent | React.TouchEvent) => {
-    if (isCompleted) return; // Disable card interaction when completed
-    // Flip on all devices; ignore clicks on action buttons inside the card
+    if (isCompleted) return;
     const target = (e?.target as HTMLElement | null);
     if (target && target.closest('button,[role="button"]')) return;
-    setIsFlipped((prev) => !prev);
+    handleCardFlip();
   };
 
   if (!currentCard && !isCompleted) return null;
@@ -231,7 +229,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
               <div className="text-6xl mb-4">🎉</div>
               <h2 className="text-3xl font-bold text-gray-800 mb-2">ทบทวนจบแล้ว!</h2>
               <p className="text-gray-600 mb-6">
-                คุณได้ทบทวนแฟลชการ์ดครบทั้งหมด {cards.length} ใบแล้ว
+                คุณได้ทบทวนแฟลชการ์ดครบทั้งหมด {totalCards} ใบแล้ว
               </p>
             </motion.div>
             
@@ -288,72 +286,17 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
       {/* Main Card */}
       <div className="flex items-center justify-center min-h-screen p-3 sm:p-6">
         <div className="w-full max-w-2xl relative">
-          {/* Swipe Feedback Overlay */}
-          <AnimatePresence>
-            {showSwipeFeedback && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="absolute inset-0 z-20 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl"
-              >
-                <div className={`text-4xl sm:text-6xl font-bold px-6 py-4 rounded-2xl ${
-                  showSwipeFeedback === 'left' 
-                    ? 'text-red-500 bg-red-50/90' 
-                    : 'text-green-500 bg-green-50/90'
-                }`}>
-                  {showSwipeFeedback === 'left' ? 'จำไม่ได้' : 'จำได้แล้ว'}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
-              initial={{ 
-                opacity: 0, 
-                scale: 0.9,
-                x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0,
-                rotateY: swipeDirection === 'left' ? -15 : swipeDirection === 'right' ? 15 : 0
-              }}
-              animate={{ 
-                opacity: 1, 
-                scale: 1,
-                x: 0,
-                rotateY: 0
-              }}
-              exit={{ 
-                opacity: 0, 
-                scale: 0.9,
-                x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0,
-                rotateY: swipeDirection === 'left' ? -15 : swipeDirection === 'right' ? 15 : 0
-              }}
-              transition={{ 
-                duration: 0.4,
-                ease: "easeInOut"
-              }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
             >
               <Card 
                 className="relative min-h-[350px] sm:min-h-[400px] bg-white/95 backdrop-blur-sm border-0 shadow-2xl cursor-pointer overflow-hidden"
                 onClick={handleCardTap}
-                onTouchStart={(e) => {
-                  const touch = e.touches[0];
-                  const startX = touch.clientX;
-                  
-                  const handleTouchEnd = (endEvent: TouchEvent) => {
-                    const endTouch = endEvent.changedTouches[0];
-                    const diffX = endTouch.clientX - startX;
-                    
-                    if (Math.abs(diffX) > 100) {
-                      handleSwipe(diffX > 0 ? 'right' : 'left');
-                    }
-                    
-                    document.removeEventListener('touchend', handleTouchEnd);
-                  };
-                  
-                  document.addEventListener('touchend', handleTouchEnd);
-                }}
               >
                 {/* Card Actions */}
                 <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-2 z-10">
@@ -365,7 +308,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
                   </Button>
                 </div>
 
-                <CardContent className="flex items-center justify-center min-h-[350px] sm:min-h-[400px] p-4 sm:p-8">
+                <CardContent className="flex flex-col items-center justify-center min-h-[350px] sm:min-h-[400px] p-4 sm:p-8">
                   <motion.div
                     initial={{ rotateY: 0 }}
                     animate={{ rotateY: isFlipped ? 180 : 0 }}
@@ -386,7 +329,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
                         {currentCard.front}
                       </motion.h2>
                       <p className="text-gray-500 text-sm sm:text-base">
-                        {isMobile && window.innerWidth < 768 ? 'กดเพื่อดูคำตอบ' : 'คลิกการ์ดหรือกด Tab เพื่อพลิก'}
+                        คลิกการ์ดเพื่อดูคำตอบ
                       </p>
                     </div>
                     
@@ -402,9 +345,47 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
                       >
                         {currentCard.back}
                       </motion.h2>
-                      <p className="text-gray-500 text-sm sm:text-base">จำได้หรือไม่?</p>
+                      <p className="text-gray-500 text-sm sm:text-base mb-4">ประเมินความมั่นใจของคุณ</p>
                     </div>
                   </motion.div>
+
+                  {/* Q Score Options */}
+                  {showQScoreOptions && isFlipped && (
+                    <div className="flex flex-col gap-3 mt-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="default"
+                        onClick={() => handleQScore(5)}
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 h-auto py-4"
+                      >
+                        <ThumbsUp className="h-5 w-5" />
+                        <div className="text-left">
+                          <div className="font-bold">จำได้ดี (Q=5)</div>
+                          <div className="text-xs opacity-90">จำได้ชัดเจนทันที</div>
+                        </div>
+                      </Button>
+                      <Button
+                        variant="default"
+                        onClick={() => handleQScore(2)}
+                        className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 h-auto py-4"
+                      >
+                        <div className="text-left">
+                          <div className="font-bold">จำได้บ้าง (Q=2)</div>
+                          <div className="text-xs opacity-90">ต้องคิดนาน/เดาถูก</div>
+                        </div>
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleQScore(0)}
+                        className="flex items-center gap-2 h-auto py-4"
+                      >
+                        <ThumbsDown className="h-5 w-5" />
+                        <div className="text-left">
+                          <div className="font-bold">จำไม่ได้ (Q=0)</div>
+                          <div className="text-xs opacity-90">ลืม</div>
+                        </div>
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -412,180 +393,13 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
         </div>
       </div>
 
-      {/* Bottom Controls */}
+      {/* Bottom Progress Bar */}
       <div className="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-2xl p-3 sm:p-4 shadow-xl border border-gray-200 gap-3 sm:gap-0">
-          
-          {/* Mobile: Stacked layout */}
-          <div className="w-full sm:hidden">
-            {/* Card Counter */}
-            <div className="text-center mb-3">
-              <div className="text-lg font-bold text-gray-900">
-                {currentIndex + 1} / {reviewQueue.length}
-              </div>
-            </div>
-            
-            {/* Main Controls */}
-            <div className="flex items-center justify-center gap-4 mb-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleKnow(false)}
-                className="bg-red-100 hover:bg-red-200 border-red-300 flex-1 font-bold text-red-700 h-12 text-base"
-              >
-                <ChevronLeft className="h-5 w-5 mr-1 text-red-700" strokeWidth={2.5} />
-                จำไม่ได้
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setIsFlipped(!isFlipped)}
-                title="พลิกการ์ด"
-                className="bg-blue-100 hover:bg-blue-200 h-12 w-12"
-              >
-                <RotateCcw className="h-5 w-5 text-blue-700" strokeWidth={2.5} />
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleKnow(true)}
-                className="bg-green-100 hover:bg-green-200 border-green-300 flex-1 font-bold text-green-700 h-12 text-base"
-              >
-                จำได้แล้ว
-                <ChevronRight className="h-5 w-5 ml-1 text-green-700" strokeWidth={2.5} />
-              </Button>
-            </div>
-            
-            {/* Secondary Controls */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={trackProgress}
-                  onCheckedChange={setTrackProgress}
-                  id="track-progress-mobile"
-                />
-                <label htmlFor="track-progress-mobile" className="text-xs font-semibold text-gray-900">
-                  Track
-                </label>
-              </div>
-              
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} className="h-10 w-10 text-gray-900">
-                  <SkipBack className="h-4 w-4" strokeWidth={2.5} />
-                </Button>
-                
-                <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === reviewQueue.length - 1} className="h-10 w-10 text-gray-900">
-                  <SkipForward className="h-4 w-4" strokeWidth={2.5} />
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsAutoPlay(!isAutoPlay)}
-                  className={`h-10 w-10 text-gray-900 ${isAutoPlay ? 'bg-purple-100' : ''}`}
-                >
-                  {isAutoPlay ? <Pause className="h-4 w-4" strokeWidth={2.5} /> : <Play className="h-4 w-4" strokeWidth={2.5} />}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop: Horizontal layout */}
-          <div className="hidden sm:flex items-center justify-between w-full">
-            {/* Left: Track Progress Toggle */}
-            <div className="flex items-center gap-3">
-              <Switch
-                checked={trackProgress}
-                onCheckedChange={setTrackProgress}
-                id="track-progress"
-              />
-              <label htmlFor="track-progress" className="text-base font-bold text-gray-900">
-                Track progress
-              </label>
-            </div>
-
-            {/* Center: Card Counter & Navigation */}
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleKnow(false)}
-                className="bg-red-100 hover:bg-red-200 border-red-300 h-11 w-11"
-                title="จำไม่ได้ (←)"
-              >
-                <ChevronLeft className="h-6 w-6 text-red-700" strokeWidth={2.5} />
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleKnow(true)}
-                className="bg-green-100 hover:bg-green-200 border-green-300 h-11 w-11"
-                title="จำได้ (→)"
-              >
-                <ChevronRight className="h-6 w-6 text-green-700" strokeWidth={2.5} />
-              </Button>
-              
-              <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} className="text-gray-900 h-11 w-11">
-                <SkipBack className="h-5 w-5" strokeWidth={2.5} />
-              </Button>
-              
-              <div className="text-xl font-bold text-gray-900 px-4">
-                {currentIndex + 1} / {reviewQueue.length}
-              </div>
-              
-              <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === reviewQueue.length - 1} className="text-gray-900 h-11 w-11">
-                <SkipForward className="h-5 w-5" strokeWidth={2.5} />
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setIsFlipped(!isFlipped)}
-                title="พลิกการ์ด (Tab)"
-                className="text-gray-900 h-11 w-11"
-              >
-                <RotateCcw className="h-5 w-5" strokeWidth={2.5} />
-              </Button>
-            </div>
-
-            {/* Right: Control Buttons */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsAutoPlay(!isAutoPlay)}
-                className={`h-11 w-11 text-gray-900 ${isAutoPlay ? 'bg-purple-100' : ''}`}
-              >
-                {isAutoPlay ? <Pause className="h-5 w-5" strokeWidth={2.5} /> : <Play className="h-5 w-5" strokeWidth={2.5} />}
-              </Button>
-              
-              <Button variant="ghost" size="icon" className="h-11 w-11 text-gray-900">
-                <Maximize className="h-5 w-5" strokeWidth={2.5} />
-              </Button>
-              
-              <Button variant="ghost" size="icon" className="h-11 w-11 text-gray-900">
-                <Settings className="h-5 w-5" strokeWidth={2.5} />
-              </Button>
-            </div>
+        <div className="flex items-center justify-center bg-white rounded-2xl p-3 sm:p-4 shadow-xl border border-gray-200">
+          <div className="text-lg font-bold text-gray-900">
+            {currentIndex + 1} / {reviewQueue.length}
           </div>
         </div>
-
-        {/* Mobile Swipe Instructions */}
-        {isMobile && window.innerWidth < 768 && !isFlipped && (
-          <div className="text-center mt-3 text-xs text-gray-600 bg-white/70 backdrop-blur-sm rounded-lg px-3 py-2">
-            <p>ปัดซ้าย = จำไม่ได้ | ปัดขวา = จำได้แล้ว | กดการ์ด = พลิก</p>
-          </div>
-        )}
-
-        {/* Progress Display */}
-        {trackProgress && (
-          <div className="text-center mt-2 text-sm text-gray-600 bg-white/70 backdrop-blur-sm rounded-lg px-3 py-1">
-            จำได้: {progress.correct} | จำไม่ได้: {progress.incorrect}
-          </div>
-        )}
       </div>
     </div>
   );
