@@ -33,7 +33,6 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
   const [isGameComplete, setIsGameComplete] = useState(false);
-  const [flashcardScores, setFlashcardScores] = useState<Map<string, number>>(new Map());
 
   const currentCard = flashcards[currentIndex];
   const targetWord = currentCard.front_text.toUpperCase().trim();
@@ -135,56 +134,6 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
     if (correct) {
       const wordScore = targetWord.length * 10;
       setScore(score + wordScore);
-      // Q=3 for correct answer
-      flashcardScores.set(currentCard.id, 3);
-    } else {
-      // Q=0 for wrong answer
-      flashcardScores.set(currentCard.id, 0);
-    }
-  };
-
-  const saveAllProgress = async () => {
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        for (const [flashcardId, qScore] of flashcardScores.entries()) {
-          const { data: existing } = await supabase
-            .from('user_flashcard_progress')
-            .select('*')
-            .eq('flashcard_id', flashcardId)
-            .eq('user_id', user.id)
-            .single();
-
-          if (existing) {
-            const newSrsScore = Math.max(0, (existing.srs_score || 0) + qScore);
-            await supabase
-              .from('user_flashcard_progress')
-              .update({
-                srs_score: newSrsScore,
-                times_reviewed: (existing.times_reviewed || 0) + 1,
-                times_correct: qScore > 0 ? (existing.times_correct || 0) + 1 : existing.times_correct,
-                last_review_score: qScore,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', existing.id);
-          } else {
-            await supabase
-              .from('user_flashcard_progress')
-              .insert({
-                user_id: user.id,
-                flashcard_id: flashcardId,
-                srs_score: Math.max(0, qScore),
-                times_reviewed: 1,
-                times_correct: qScore > 0 ? 1 : 0,
-                last_review_score: qScore
-              });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error saving progress:', error);
     }
   };
 
@@ -203,7 +152,6 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
       setIsCorrect(false);
     } else {
       // Game finished - show summary
-      saveAllProgress();
       setIsGameComplete(true);
     }
   };

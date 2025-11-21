@@ -31,7 +31,6 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [isGameComplete, setIsGameComplete] = useState(false);
-  const [flashcardScores, setFlashcardScores] = useState<Map<string, number>>(new Map());
 
   // Generate quiz questions
   useEffect(() => {
@@ -76,60 +75,8 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
     if (!selectedAnswer || isAnswered) return;
     
     setIsAnswered(true);
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-    
-    if (isCorrect) {
+    if (selectedAnswer === currentQuestion.correctAnswer) {
       setScore(prev => prev + 1);
-      // Q=3 สำหรับตอบถูก
-      flashcardScores.set(currentQuestion.flashcard.id, 3);
-    } else {
-      // Q=0 สำหรับตอบผิด
-      flashcardScores.set(currentQuestion.flashcard.id, 0);
-    }
-  };
-
-  const saveAllProgress = async () => {
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        for (const [flashcardId, qScore] of flashcardScores.entries()) {
-          const { data: existing } = await supabase
-            .from('user_flashcard_progress')
-            .select('*')
-            .eq('flashcard_id', flashcardId)
-            .eq('user_id', user.id)
-            .single();
-
-          if (existing) {
-            const newSrsScore = Math.max(0, (existing.srs_score || 0) + qScore);
-            await supabase
-              .from('user_flashcard_progress')
-              .update({
-                srs_score: newSrsScore,
-                times_reviewed: (existing.times_reviewed || 0) + 1,
-                times_correct: qScore > 0 ? (existing.times_correct || 0) + 1 : existing.times_correct,
-                last_review_score: qScore,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', existing.id);
-          } else {
-            await supabase
-              .from('user_flashcard_progress')
-              .insert({
-                user_id: user.id,
-                flashcard_id: flashcardId,
-                srs_score: Math.max(0, qScore),
-                times_reviewed: 1,
-                times_correct: qScore > 0 ? 1 : 0,
-                last_review_score: qScore
-              });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error saving progress:', error);
     }
   };
 
@@ -139,7 +86,6 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
       setSelectedAnswer(null);
       setIsAnswered(false);
     } else {
-      saveAllProgress();
       setIsGameComplete(true);
     }
   };

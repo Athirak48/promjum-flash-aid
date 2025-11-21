@@ -28,7 +28,6 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
   const [wonCount, setWonCount] = useState(0);
   const [lostCount, setLostCount] = useState(0);
   const [isGameComplete, setIsGameComplete] = useState(false);
-  const [flashcardScores, setFlashcardScores] = useState<Map<string, number>>(new Map());
 
   const maxWrongGuesses = 7;
   const currentCard = flashcards[currentIndex];
@@ -70,8 +69,6 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
       if (newWrongGuesses >= maxWrongGuesses) {
         setGameStatus('lost');
         setShowResult(true);
-        // Q=0 for losing (wrong > 5)
-        flashcardScores.set(currentCard.id, 0);
       }
     } else {
       // Check if word is complete
@@ -84,17 +81,6 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
         setScore(score + wordScore);
         setGameStatus('won');
         setShowResult(true);
-        
-        // Calculate Q score: Q=5 if 100% correct, Q=2 if wrong <= 3, Q=0 if wrong > 5
-        let qScore = 0;
-        if (wrongGuesses === 0) {
-          qScore = 5; // เติมถูก 100%
-        } else if (wrongGuesses <= 3) {
-          qScore = 2; // กดผิดไม่เกิน 3 ตัว
-        } else {
-          qScore = 0; // ผิดเกิน 5 ตัว
-        }
-        flashcardScores.set(currentCard.id, qScore);
       }
     }
   };
@@ -110,51 +96,6 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
   };
 
   // Move to next word
-  const saveAllProgress = async () => {
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        for (const [flashcardId, qScore] of flashcardScores.entries()) {
-          const { data: existing } = await supabase
-            .from('user_flashcard_progress')
-            .select('*')
-            .eq('flashcard_id', flashcardId)
-            .eq('user_id', user.id)
-            .single();
-
-          if (existing) {
-            const newSrsScore = Math.max(0, (existing.srs_score || 0) + qScore);
-            await supabase
-              .from('user_flashcard_progress')
-              .update({
-                srs_score: newSrsScore,
-                times_reviewed: (existing.times_reviewed || 0) + 1,
-                times_correct: qScore > 0 ? (existing.times_correct || 0) + 1 : existing.times_correct,
-                last_review_score: qScore,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', existing.id);
-          } else {
-            await supabase
-              .from('user_flashcard_progress')
-              .insert({
-                user_id: user.id,
-                flashcard_id: flashcardId,
-                srs_score: Math.max(0, qScore),
-                times_reviewed: 1,
-                times_correct: qScore > 0 ? 1 : 0,
-                last_review_score: qScore
-              });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error saving progress:', error);
-    }
-  };
-
   const handleNext = () => {
     // Update stats
     if (gameStatus === 'won') {
@@ -171,7 +112,6 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
       setShowResult(false);
     } else {
       // Game finished - show summary
-      saveAllProgress();
       setIsGameComplete(true);
     }
   };
