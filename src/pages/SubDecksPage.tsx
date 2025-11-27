@@ -4,7 +4,7 @@ import { useSubDecks } from '@/hooks/useSubDecks';
 import { SubDeckCard } from '@/components/SubDeckCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
-import Navbar from '@/components/Navbar';
+
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ChevronRight, Home } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,8 +61,8 @@ export default function SubDecksPage() {
   return (
     <div className="min-h-screen bg-background relative">
       <BackgroundDecorations />
-      <Navbar />
-      
+
+
       <main className="container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-5xl mx-auto">
           {/* Breadcrumb Navigation */}

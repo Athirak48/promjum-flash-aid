@@ -23,6 +23,10 @@ import FlashcardsReview from "./pages/FlashcardsReview";
 import DecksPage from "./pages/DecksPage";
 import SubDecksPage from "./pages/SubDecksPage";
 import AIRealtimePracticePage from "./pages/AIRealtimePracticePage";
+import AIListeningGuidePage from "./pages/AIListeningGuidePage";
+import AIListeningSection1IntroPage from "./pages/AIListeningSection1IntroPage";
+import AIListeningVocabSelectionPage from "./pages/AIListeningVocabSelectionPage";
+import AIListeningSection2FlashcardPage from "./pages/AIListeningSection2FlashcardPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
@@ -45,124 +49,156 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <Routes>
-              <Route path="/" element={<><Navbar /><LandingPage /></>} />
-              <Route path="/auth" element={<><Navbar /><AuthPage /></>} />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <><Navbar /><Dashboard /></>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/flashcards" 
-                element={
-                  <ProtectedRoute>
-                    <><Navbar /><FlashcardsPage /></>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/flashcards/review" 
-                element={
-                  <ProtectedRoute>
-                    <><Navbar /><FlashcardsReview /></>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/flashcards/:folderId" 
-                element={
-                  <ProtectedRoute>
-                    <><Navbar /><FolderDetail /></>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/feedback" 
-                element={
-                  <ProtectedRoute>
-                    <><Navbar /><FeedbackPage /></>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/profile" 
-                element={
-                  <ProtectedRoute>
-                    <><Navbar /><Profile /></>
-                  </ProtectedRoute>
-                } 
-              />
-              {/* Admin Routes */}
-              <Route 
-                path="/admin" 
-                element={
-                  <AdminRoute>
-                    <AdminLayout />
-                  </AdminRoute>
-                }
-              >
-                <Route index element={<AdminDashboard />} />
-                <Route path="decks" element={<AdminDecks />} />
-                <Route path="members" element={<AdminMembers />} />
-                <Route path="promotions" element={<AdminPromotions />} />
-                <Route path="feedback" element={<AdminFeedback />} />
-              </Route>
-              <Route 
-                path="/admin/decks/:deckId" 
-                element={
-                  <AdminRoute>
-                    <AdminLayout />
-                  </AdminRoute>
-                }
-              >
-                <Route index element={<AdminDeckDetail />} />
-              </Route>
-              <Route 
-                path="/admin/decks/:deckId/subdecks/:subdeckId" 
-                element={
-                  <AdminRoute>
-                    <AdminLayout />
-                  </AdminRoute>
-                }
-              >
-                <Route index element={<AdminSubDeckDetail />} />
-              </Route>
-              
-              <Route
-                path="/decks" 
-                element={
-                  <ProtectedRoute>
-                    <><Navbar /><DecksPage /></>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/decks/:deckId/subdecks" 
-                element={
-                  <ProtectedRoute>
-                    <><Navbar /><SubDecksPage /></>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/practice" 
-                element={
-                  <ProtectedRoute>
-                    <><Navbar /><AIRealtimePracticePage /></>
-                  </ProtectedRoute>
-                } 
-              />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<><Navbar /><NotFoundPage /></>} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
-    </LanguageProvider>
-  </ThemeProvider>
+                  <Route path="/" element={<><Navbar /><LandingPage /></>} />
+                  <Route path="/auth" element={<><Navbar /><AuthPage /></>} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><Dashboard /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/flashcards"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><FlashcardsPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/flashcards/review"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><FlashcardsReview /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/flashcards/:folderId"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><FolderDetail /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/feedback"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><FeedbackPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><Profile /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* Admin Routes */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <AdminRoute>
+                        <AdminLayout />
+                      </AdminRoute>
+                    }
+                  >
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="decks" element={<AdminDecks />} />
+                    <Route path="members" element={<AdminMembers />} />
+                    <Route path="promotions" element={<AdminPromotions />} />
+                    <Route path="feedback" element={<AdminFeedback />} />
+                  </Route>
+                  <Route
+                    path="/admin/decks/:deckId"
+                    element={
+                      <AdminRoute>
+                        <AdminLayout />
+                      </AdminRoute>
+                    }
+                  >
+                    <Route index element={<AdminDeckDetail />} />
+                  </Route>
+                  <Route
+                    path="/admin/decks/:deckId/subdecks/:subdeckId"
+                    element={
+                      <AdminRoute>
+                        <AdminLayout />
+                      </AdminRoute>
+                    }
+                  >
+                    <Route index element={<AdminSubDeckDetail />} />
+                  </Route>
+
+                  <Route
+                    path="/decks"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><DecksPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/decks/:deckId/subdecks"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><SubDecksPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/practice"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIRealtimePracticePage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-guide"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningGuidePage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-section1-intro"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningSection1IntroPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-vocab-selection"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningVocabSelectionPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-section2-flashcard"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningSection2FlashcardPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<><Navbar /><NotFoundPage /></>} />
+                </Routes>
+              </BrowserRouter>
+            </AuthProvider>
+          </TooltipProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

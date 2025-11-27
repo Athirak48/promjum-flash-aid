@@ -29,7 +29,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     if (ref.current) {
       const itemHeight = 28;
       ref.current.scrollTo({
-        top: value * itemHeight - itemHeight,
+        top: value * itemHeight,
         behavior: 'auto'
       });
     }
@@ -45,19 +45,19 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
     setLocalHours(newHour);
     setTimeout(() => scrollToValue(hoursRef, newHour), 0);
   };
-  
+
   const decrementHours = () => {
     const newHour = (localHours - 1 + 24) % 24;
     setLocalHours(newHour);
     setTimeout(() => scrollToValue(hoursRef, newHour), 0);
   };
-  
+
   const incrementMinutes = () => {
     const newMinute = (localMinutes + 1) % 60;
     setLocalMinutes(newMinute);
     setTimeout(() => scrollToValue(minutesRef, newMinute), 0);
   };
-  
+
   const decrementMinutes = () => {
     const newMinute = (localMinutes - 1 + 60) % 60;
     setLocalMinutes(newMinute);
@@ -70,7 +70,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
       <div className="flex flex-col items-center gap-0.5">
         <button
           type="button"
-          onClick={incrementHours}
+          onClick={decrementHours}
           className="p-0.5 hover:bg-muted rounded transition-colors"
         >
           <ChevronUp className="w-3 h-3" />
@@ -78,8 +78,8 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         <div className="relative h-[84px] w-12">
           {/* Fixed selection box */}
           <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-7 border border-primary/50 bg-primary/10 rounded pointer-events-none z-10 mx-1" />
-          
-          <div 
+
+          <div
             ref={hoursRef}
             className="h-full w-full overflow-y-scroll scrollbar-hide"
             onScroll={(e) => {
@@ -97,8 +97,8 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
                   key={hour}
                   className={cn(
                     "h-7 flex items-center justify-center cursor-pointer transition-colors text-sm",
-                    hour === localHours 
-                      ? "text-primary font-semibold" 
+                    hour === localHours
+                      ? "text-primary font-semibold"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                   onClick={() => {
@@ -114,7 +114,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         </div>
         <button
           type="button"
-          onClick={decrementHours}
+          onClick={incrementHours}
           className="p-0.5 hover:bg-muted rounded transition-colors"
         >
           <ChevronDown className="w-3 h-3" />
@@ -127,7 +127,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
       <div className="flex flex-col items-center gap-0.5">
         <button
           type="button"
-          onClick={incrementMinutes}
+          onClick={decrementMinutes}
           className="p-0.5 hover:bg-muted rounded transition-colors"
         >
           <ChevronUp className="w-3 h-3" />
@@ -135,8 +135,8 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         <div className="relative h-[84px] w-12">
           {/* Fixed selection box */}
           <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-7 border border-primary/50 bg-primary/10 rounded pointer-events-none z-10 mx-1" />
-          
-          <div 
+
+          <div
             ref={minutesRef}
             className="h-full w-full overflow-y-scroll scrollbar-hide"
             onScroll={(e) => {
@@ -154,8 +154,8 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
                   key={minute}
                   className={cn(
                     "h-7 flex items-center justify-center cursor-pointer transition-colors text-sm",
-                    minute === localMinutes 
-                      ? "text-primary font-semibold" 
+                    minute === localMinutes
+                      ? "text-primary font-semibold"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                   onClick={() => {
@@ -171,7 +171,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         </div>
         <button
           type="button"
-          onClick={decrementMinutes}
+          onClick={incrementMinutes}
           className="p-0.5 hover:bg-muted rounded transition-colors"
         >
           <ChevronDown className="w-3 h-3" />

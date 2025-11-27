@@ -32,7 +32,7 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
       if (index !== -1) {
         const itemHeight = 28;
         scrollRef.current.scrollTo({
-          top: index * itemHeight - itemHeight,
+          top: index * itemHeight,
           behavior: 'auto'
         });
       }
@@ -91,7 +91,7 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
           type="button"
           onClick={() => {
             setIsCustom(false);
-            const nearest = presetDurations.reduce((prev, curr) => 
+            const nearest = presetDurations.reduce((prev, curr) =>
               Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
             );
             onChange(nearest);
@@ -108,17 +108,17 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
     <div className={cn("flex flex-col items-center gap-0.5", className)}>
       <button
         type="button"
-        onClick={incrementDuration}
+        onClick={decrementDuration}
         className="p-0.5 hover:bg-muted rounded transition-colors"
       >
         <ChevronUp className="w-3 h-3" />
       </button>
-      
+
       <div className="relative h-[84px] w-16">
         {/* Fixed selection box */}
         <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-7 border border-primary/50 bg-primary/10 rounded pointer-events-none z-10 mx-1" />
-        
-        <div 
+
+        <div
           ref={scrollRef}
           className="h-full w-full overflow-y-scroll scrollbar-hide"
           onScroll={(e) => {
@@ -139,8 +139,8 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
                 key={duration}
                 className={cn(
                   "h-7 flex items-center justify-center cursor-pointer transition-colors text-sm",
-                  duration === value 
-                    ? "text-primary font-semibold" 
+                  duration === value
+                    ? "text-primary font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 )}
                 onClick={() => {
@@ -157,7 +157,7 @@ export function DurationPicker({ value, onChange, className }: DurationPickerPro
 
       <button
         type="button"
-        onClick={decrementDuration}
+        onClick={incrementDuration}
         className="p-0.5 hover:bg-muted rounded transition-colors"
       >
         <ChevronDown className="w-3 h-3" />

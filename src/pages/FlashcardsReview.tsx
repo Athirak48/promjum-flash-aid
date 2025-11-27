@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { FlashcardReviewWithSidebar } from '@/components/FlashcardReviewWithSidebar';
 import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
 import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
@@ -82,7 +83,7 @@ export default function FlashcardsReview() {
         <div className="text-center space-y-4 relative z-10">
           <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300">ไม่มีแฟลชการ์ดสำหรับทบทวน</h2>
           <p className="text-gray-500 dark:text-gray-400">กรุณาสร้างแฟลชการ์ดก่อนที่จะเริ่มทบทวน</p>
-          <button 
+          <button
             onClick={handleClose}
             className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
@@ -158,12 +159,13 @@ export default function FlashcardsReview() {
     }
   }
 
-  // Default to review mode
+  // Default to review mode with sidebar
   return (
-    <FlashcardReviewPage
+    <FlashcardReviewWithSidebar
       cards={cards}
       onClose={handleClose}
       onComplete={handleComplete}
+      setId={state?.setId}
     />
   );
 }

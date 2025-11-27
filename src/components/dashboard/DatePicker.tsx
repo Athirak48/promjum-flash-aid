@@ -12,7 +12,7 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
   const [localDay, setLocalDay] = useState(value.getDate());
   const [localMonth, setLocalMonth] = useState(value.getMonth());
   const [localYear, setLocalYear] = useState(value.getFullYear());
-  
+
   const dayRef = useRef<HTMLDivElement>(null);
   const monthRef = useRef<HTMLDivElement>(null);
   const yearRef = useRef<HTMLDivElement>(null);
@@ -36,7 +36,7 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
     if (ref.current) {
       const itemHeight = 32;
       ref.current.scrollTo({
-        top: index * itemHeight - itemHeight,
+        top: index * itemHeight,
         behavior: 'auto'
       });
     }
@@ -96,15 +96,15 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
       <div className="flex flex-col items-center gap-0.5">
         <button
           type="button"
-          onClick={incrementDay}
+          onClick={decrementDay}
           className="p-1 hover:bg-muted rounded transition-colors"
         >
           <ChevronUp className="w-4 h-4" />
         </button>
         <div className="relative h-[96px] w-16">
           <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-8 border border-primary/50 bg-primary/10 rounded pointer-events-none z-10 mx-1" />
-          
-          <div 
+
+          <div
             ref={dayRef}
             className="h-full w-full overflow-y-scroll scrollbar-hide"
             onScroll={(e) => {
@@ -122,8 +122,8 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
                   key={day}
                   className={cn(
                     "h-8 flex items-center justify-center cursor-pointer transition-colors text-sm",
-                    day === localDay 
-                      ? "text-primary font-bold" 
+                    day === localDay
+                      ? "text-primary font-bold"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                   onClick={() => {
@@ -139,7 +139,7 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
         </div>
         <button
           type="button"
-          onClick={decrementDay}
+          onClick={incrementDay}
           className="p-1 hover:bg-muted rounded transition-colors"
         >
           <ChevronDown className="w-4 h-4" />
@@ -150,15 +150,15 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
       <div className="flex flex-col items-center gap-0.5">
         <button
           type="button"
-          onClick={incrementMonth}
+          onClick={decrementMonth}
           className="p-1 hover:bg-muted rounded transition-colors"
         >
           <ChevronUp className="w-4 h-4" />
         </button>
         <div className="relative h-[96px] w-24">
           <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-8 border border-primary/50 bg-primary/10 rounded pointer-events-none z-10 mx-1" />
-          
-          <div 
+
+          <div
             ref={monthRef}
             className="h-full w-full overflow-y-scroll scrollbar-hide"
             onScroll={(e) => {
@@ -176,8 +176,8 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
                   key={index}
                   className={cn(
                     "h-8 flex items-center justify-center cursor-pointer transition-colors text-xs",
-                    index === localMonth 
-                      ? "text-primary font-bold" 
+                    index === localMonth
+                      ? "text-primary font-bold"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                   onClick={() => {
@@ -193,7 +193,7 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
         </div>
         <button
           type="button"
-          onClick={decrementMonth}
+          onClick={incrementMonth}
           className="p-1 hover:bg-muted rounded transition-colors"
         >
           <ChevronDown className="w-4 h-4" />
@@ -204,15 +204,15 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
       <div className="flex flex-col items-center gap-0.5">
         <button
           type="button"
-          onClick={incrementYear}
+          onClick={decrementYear}
           className="p-1 hover:bg-muted rounded transition-colors"
         >
           <ChevronUp className="w-4 h-4" />
         </button>
         <div className="relative h-[96px] w-16">
           <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-8 border border-primary/50 bg-primary/10 rounded pointer-events-none z-10 mx-1" />
-          
-          <div 
+
+          <div
             ref={yearRef}
             className="h-full w-full overflow-y-scroll scrollbar-hide"
             onScroll={(e) => {
@@ -230,8 +230,8 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
                   key={year}
                   className={cn(
                     "h-8 flex items-center justify-center cursor-pointer transition-colors text-sm",
-                    year === localYear 
-                      ? "text-primary font-bold" 
+                    year === localYear
+                      ? "text-primary font-bold"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                   onClick={() => {
@@ -247,7 +247,7 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
         </div>
         <button
           type="button"
-          onClick={decrementYear}
+          onClick={incrementYear}
           className="p-1 hover:bg-muted rounded transition-colors"
         >
           <ChevronDown className="w-4 h-4" />

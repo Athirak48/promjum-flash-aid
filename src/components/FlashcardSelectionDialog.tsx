@@ -10,6 +10,8 @@ interface Flashcard {
   id: string;
   front_text: string;
   back_text: string;
+  front_image?: string | null;
+  back_image?: string | null;
 }
 
 interface FlashcardSelectionDialogProps {
@@ -19,11 +21,11 @@ interface FlashcardSelectionDialogProps {
   onConfirm: (selectedFlashcards: Flashcard[]) => void;
 }
 
-export function FlashcardSelectionDialog({ 
-  open, 
-  onOpenChange, 
+export function FlashcardSelectionDialog({
+  open,
+  onOpenChange,
   flashcards,
-  onConfirm 
+  onConfirm
 }: FlashcardSelectionDialogProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -129,11 +131,10 @@ export function FlashcardSelectionDialog({
               {flashcards.map((flashcard, index) => (
                 <div
                   key={flashcard.id}
-                  className={`group relative p-3 rounded-lg border transition-all cursor-pointer hover:shadow-md ${
-                    selectedIds.has(flashcard.id) 
-                      ? 'border-primary bg-primary/5 shadow-sm' 
+                  className={`group relative p-3 rounded-lg border transition-all cursor-pointer hover:shadow-md ${selectedIds.has(flashcard.id)
+                      ? 'border-primary bg-primary/5 shadow-sm'
                       : 'border-border hover:border-primary/50'
-                  }`}
+                    }`}
                   onClick={() => handleToggle(flashcard.id)}
                 >
                   <div className="absolute top-2 left-2 z-10">
@@ -146,12 +147,26 @@ export function FlashcardSelectionDialog({
                     <Badge variant="secondary" className="text-xs mb-2">
                       {index + 1}
                     </Badge>
-                    <p className="font-medium text-sm mb-2 line-clamp-2">
-                      {flashcard.front_text}
-                    </p>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {flashcard.back_text}
-                    </p>
+                    <div className="font-medium text-sm mb-2 line-clamp-2">
+                      {flashcard.front_image ? (
+                        <div className="flex items-center gap-1 text-blue-600">
+                          <span className="text-xs">[รูปภาพ]</span>
+                          <span>{flashcard.front_text}</span>
+                        </div>
+                      ) : (
+                        flashcard.front_text || <span className="text-muted-foreground italic">ไม่มีข้อความ</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground line-clamp-2">
+                      {flashcard.back_image ? (
+                        <div className="flex items-center gap-1 text-blue-600">
+                          <span className="text-xs">[รูปภาพ]</span>
+                          <span>{flashcard.back_text}</span>
+                        </div>
+                      ) : (
+                        flashcard.back_text || <span className="text-muted-foreground italic">ไม่มีข้อความ</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

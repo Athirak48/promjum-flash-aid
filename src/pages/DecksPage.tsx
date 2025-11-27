@@ -2,7 +2,7 @@ import { useDecks } from '@/hooks/useDecks';
 import { DeckCard } from '@/components/DeckCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
-import Navbar from '@/components/Navbar';
+
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -13,9 +13,9 @@ export default function DecksPage() {
 
   const filteredDecks = useMemo(() => {
     if (!searchTerm) return decks;
-    
+
     const search = searchTerm.toLowerCase();
-    return decks.filter(deck => 
+    return decks.filter(deck =>
       deck.name.toLowerCase().includes(search) ||
       deck.name_en.toLowerCase().includes(search) ||
       deck.description.toLowerCase().includes(search)
@@ -25,8 +25,8 @@ export default function DecksPage() {
   return (
     <div className="min-h-screen bg-background relative">
       <BackgroundDecorations />
-      <Navbar />
-      
+
+
       <main className="container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
@@ -36,7 +36,7 @@ export default function DecksPage() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
               เลือกหมวดที่คุณสนใจเพื่อเริ่มเรียนคำศัพท์และประโยคใหม่
             </p>
-            
+
             {/* Search Bar */}
             <div className="max-w-md mx-auto relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />

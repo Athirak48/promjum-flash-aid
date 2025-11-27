@@ -2,30 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, BookOpen, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useDecks } from "@/hooks/useDecks";
 
 export function SuggestedDeck() {
   const navigate = useNavigate();
+  const { decks } = useDecks();
 
-  const suggestedDecks = [
-    {
-      id: "1",
-      name: "ท่องเที่ยว",
-      name_en: "Travel",
-      total_flashcards: 400,
-      icon: "Plane",
-      category: "lifestyle",
-      isPopular: true
-    },
-    {
-      id: "2",
-      name: "งาน",
-      name_en: "Work",
-      total_flashcards: 600,
-      icon: "Briefcase",
-      category: "professional",
-      isNew: true
-    }
-  ];
+  const suggestedDecks = decks.slice(0, 2);
 
   return (
     <Card className="h-full bg-gradient-card backdrop-blur-sm border-border/50 shadow-soft">
@@ -40,7 +23,7 @@ export function SuggestedDeck() {
           <div
             key={deck.id}
             className="p-4 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-border/30 hover:border-primary/30 transition-all cursor-pointer group"
-            onClick={() => navigate(`/decks/${deck.id}`)}
+            onClick={() => navigate(`/decks/${deck.id}/subdecks`)}
           >
             <div className="flex items-start justify-between mb-2">
               <div>
@@ -49,27 +32,22 @@ export function SuggestedDeck() {
                 </h3>
                 <p className="text-xs text-muted-foreground">{deck.name_en}</p>
               </div>
-              {deck.isPopular && (
+              {deck.is_premium && (
                 <span className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-full flex items-center gap-1">
                   <Users className="h-3 w-3" />
                   ยอดนิยม
                 </span>
               )}
-              {deck.isNew && (
-                <span className="px-2 py-1 text-xs bg-secondary/10 text-secondary rounded-full">
-                  ใหม่
-                </span>
-              )}
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <BookOpen className="h-3 w-3" />
-              {deck.total_flashcards} คำ
+              <span>{deck.total_flashcards} คำ</span>
             </div>
           </div>
         ))}
-        
-        <Button 
-          variant="outline" 
+
+        <Button
+          variant="outline"
           className="w-full mt-4"
           onClick={() => navigate('/decks')}
         >
