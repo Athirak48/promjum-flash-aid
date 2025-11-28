@@ -638,8 +638,7 @@ export function FolderDetail() {
             id: c.id,
             front_text: c.front,
             back_text: c.back,
-            front_image: c.frontImage,
-            back_image: c.backImage
+            created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
         />
@@ -652,8 +651,7 @@ export function FolderDetail() {
             id: c.id,
             front_text: c.front,
             back_text: c.back,
-            front_image: c.frontImage,
-            back_image: c.backImage
+            created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
         />
@@ -661,15 +659,13 @@ export function FolderDetail() {
     }
     return (
       <FlashcardSwiper
-        flashcards={selectedFlashcards.map(c => ({
+        cards={selectedFlashcards.map(c => ({
           id: c.id,
-          front_text: c.front,
-          back_text: c.back,
-          front_image: c.frontImage,
-          back_image: c.backImage
+          front: c.front,
+          back: c.back
         }))}
         onClose={handleGameClose}
-        initialIndex={0}
+        onComplete={() => handleGameClose()}
       />
     );
   }

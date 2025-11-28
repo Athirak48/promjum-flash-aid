@@ -165,7 +165,6 @@ export default function FlashcardsReview() {
       cards={cards}
       onClose={handleClose}
       onComplete={handleComplete}
-      setId={state?.setId}
     />
   );
 }

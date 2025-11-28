@@ -2,10 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Layers } from 'lucide-react';
+import { ArrowLeft, Gamepad2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-export default function AIListeningSection2FlashcardPage() {
+export default function AIListeningSection3IntroPage() {
     const navigate = useNavigate();
     const { language } = useLanguage();
 
@@ -18,7 +18,7 @@ export default function AIListeningSection2FlashcardPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate('/ai-listening-vocab-selection')}
+                            onClick={() => navigate('/ai-listening-flashcard-summary')}
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
@@ -32,25 +32,25 @@ export default function AIListeningSection2FlashcardPage() {
             {/* Main Content */}
             <main className="flex-1 container mx-auto px-4 py-8 flex flex-col items-center justify-center">
                 <Card className="w-full max-w-md p-12 flex flex-col items-center text-center space-y-8 shadow-xl border-2 border-primary/10">
-                    <div className="p-6 bg-purple-50 dark:bg-purple-950/30 rounded-full">
-                        <Layers className="w-16 h-16 text-purple-500" />
+                    <div className="p-6 bg-orange-50 dark:bg-orange-950/30 rounded-full">
+                        <Gamepad2 className="w-16 h-16 text-orange-500" />
                     </div>
 
                     <div className="space-y-2">
                         <h2 className="text-3xl font-bold">
-                            {language === 'th' ? 'Section 2 – ทวนด้วย Flashcard' : 'Section 2 – Review with Flashcard'}
+                            {language === 'th' ? 'Section 3 – ทวนด้วย Game' : 'Section 3 – Review with Games'}
                         </h2>
                         <p className="text-muted-foreground">
                             {language === 'th'
-                                ? 'ทบทวนคำศัพท์ที่คุณเลือกด้วยแฟลชการ์ด'
-                                : 'Review your selected vocabulary with flashcards'}
+                                ? 'เล่นเกมสนุกๆ เพื่อทดสอบความจำของคุณ'
+                                : 'Play fun games to test your memory'}
                         </p>
                     </div>
 
                     <Button
                         size="lg"
                         className="w-full text-lg h-12"
-                        onClick={() => navigate('/ai-listening-flashcard-play')}
+                        onClick={() => navigate('/ai-listening-game-selection')}
                     >
                         {language === 'th' ? 'ไปกันต่อ' : 'Continue'}
                     </Button>

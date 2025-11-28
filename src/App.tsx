@@ -27,6 +27,14 @@ import AIListeningGuidePage from "./pages/AIListeningGuidePage";
 import AIListeningSection1IntroPage from "./pages/AIListeningSection1IntroPage";
 import AIListeningVocabSelectionPage from "./pages/AIListeningVocabSelectionPage";
 import AIListeningSection2FlashcardPage from "./pages/AIListeningSection2FlashcardPage";
+import AIListeningFlashcardPlayPage from "./pages/AIListeningFlashcardPlayPage";
+import AIListeningFlashcardSummaryPage from "./pages/AIListeningFlashcardSummaryPage";
+import AIListeningSection3IntroPage from "./pages/AIListeningSection3IntroPage";
+import AIListeningGameSelectionPage from "./pages/AIListeningGameSelectionPage";
+import AIListeningSection4IntroPage from "./pages/AIListeningSection4IntroPage";
+import AIListeningMCQPage from "./pages/AIListeningMCQPage";
+import AIListeningSummaryPage from "./pages/AIListeningSummaryPage";
+import AIListeningFinalSummaryPage from "./pages/AIListeningFinalSummaryPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
@@ -188,6 +196,70 @@ const App = () => {
                     element={
                       <ProtectedRoute>
                         <><Navbar /><AIListeningSection2FlashcardPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-flashcard-play"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningFlashcardPlayPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-flashcard-summary"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningFlashcardSummaryPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-section3-intro"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningSection3IntroPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-game-selection"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningGameSelectionPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-section4-intro"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningSection4IntroPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-mcq"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningMCQPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-summary"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningSummaryPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-listening-final-summary"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIListeningFinalSummaryPage /></>
                       </ProtectedRoute>
                     }
                   />
