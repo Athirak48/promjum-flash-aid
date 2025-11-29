@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
+import { useSRSProgress } from '@/hooks/useSRSProgress';
 
 interface Flashcard {
   id: string;
@@ -25,6 +26,7 @@ interface BlindedWord {
 
 export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVocabBlinderGameProps) {
   const { t } = useLanguage();
+  const { updateFromVocabBlinder } = useSRSProgress();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -121,7 +123,7 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
     return allAnswers;
   });
 
-  const handleAnswerSelect = (index: number) => {
+  const handleAnswerSelect = async (index: number) => {
     if (showResult) return;
 
     setSelectedAnswer(index);
@@ -135,6 +137,9 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
       const wordScore = targetWord.length * 10;
       setScore(score + wordScore);
     }
+    
+    // Update SRS: Q=3 for correct, Q=0 for wrong
+    await updateFromVocabBlinder(currentCard.id, correct);
   };
 
   const handleNext = () => {
