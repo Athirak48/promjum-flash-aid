@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
+import { useSRSProgress } from '@/hooks/useSRSProgress';
 
 interface Flashcard {
   id: string;
@@ -19,6 +20,7 @@ interface FlashcardHangmanGameProps {
 
 export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGameProps) {
   const { t } = useLanguage();
+  const { updateFromHangman } = useSRSProgress();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [guessedLetters, setGuessedLetters] = useState<string[]>([]);
   const [wrongGuesses, setWrongGuesses] = useState(0);
@@ -96,7 +98,10 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
   };
 
   // Move to next word
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Update SRS: Q=5 perfect (0 wrong), Q=2 (<=3 wrong), Q=0 (lost or >5 wrong)
+    await updateFromHangman(currentCard.id, gameStatus === 'won', wrongGuesses);
+    
     // Update stats
     if (gameStatus === 'won') {
       setWonCount(wonCount + 1);

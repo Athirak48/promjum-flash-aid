@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { X, CheckCircle, Clock, Trophy } from 'lucide-react';
+import { useSRSProgress } from '@/hooks/useSRSProgress';
 
 interface Flashcard {
   id: string;
@@ -26,6 +27,7 @@ interface MatchingCard {
 }
 
 export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatchingGameProps) {
+  const { updateFromMatching } = useSRSProgress();
   const [cards, setCards] = useState<MatchingCard[]>([]);
   const [selectedCard, setSelectedCard] = useState<MatchingCard | null>(null);
   const [matchedPairs, setMatchedPairs] = useState<Set<string>>(new Set());
@@ -34,6 +36,8 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
   const [gameTime, setGameTime] = useState(0);
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [wrongMatch, setWrongMatch] = useState<Set<string>>(new Set());
+  // Track first-try status for each card
+  const attemptedCards = useRef<Set<string>>(new Set());
 
   // Generate matching cards
   useEffect(() => {
@@ -100,6 +104,8 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
       );
     } else {
       // Second card selection - check for match
+      const isFirstTry = !attemptedCards.current.has(selectedCard.originalId);
+      
       if (selectedCard.originalId === card.originalId && selectedCard.type !== card.type) {
         // Correct match!
         const newMatchedPairs = new Set(matchedPairs);
@@ -116,12 +122,21 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
           })
         );
 
+        // Update SRS: Q=3 first try correct, Q=0 not first try
+        updateFromMatching(selectedCard.originalId, true, isFirstTry);
+
         // Check if game is complete
         if (newMatchedPairs.size === cards.length / 2) {
           setIsGameComplete(true);
         }
       } else {
-        // Wrong match
+        // Wrong match - mark as attempted and update SRS with Q=-1 (treated as Q=0)
+        attemptedCards.current.add(selectedCard.originalId);
+        attemptedCards.current.add(card.originalId);
+        
+        // Update SRS for wrong match (Q=-1 -> Q=0)
+        updateFromMatching(selectedCard.originalId, false, false);
+        
         setWrongMatch(new Set([selectedCard.id, card.id]));
         
         // Reset selection after a short delay

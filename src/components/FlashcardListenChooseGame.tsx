@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Volume2, CheckCircle2, XCircle, ArrowRight, Pause, RotateCcw, Home } from 'lucide-react';
+import { useSRSProgress } from '@/hooks/useSRSProgress';
 
 interface Flashcard {
   id: string;
@@ -17,12 +18,14 @@ interface FlashcardListenChooseGameProps {
 }
 
 interface Question {
+  flashcardId: string;
   word: string;
   correctAnswer: string;
   choices: string[];
 }
 
 export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardListenChooseGameProps) => {
+  const { updateFromListenChoose } = useSRSProgress();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -49,6 +52,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
       const choices = [correctAnswer, ...wrongChoices].sort(() => Math.random() - 0.5);
       
       return {
+        flashcardId: card.id,
         word: card.front_text,
         correctAnswer,
         choices
@@ -74,7 +78,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
     }
   };
 
-  const handleAnswerSelect = (answer: string) => {
+  const handleAnswerSelect = async (answer: string) => {
     if (showFeedback) return;
     
     setSelectedAnswer(answer);
@@ -87,6 +91,9 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
     } else {
       setWrongAnswers([...wrongAnswers, currentQuestion]);
     }
+    
+    // Update SRS: Q=5 first listen correct, Q=2 replayed, Q=0 wrong
+    await updateFromListenChoose(currentQuestion.flashcardId, isCorrect, playCount);
   };
 
   const handleNext = () => {

@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { X, CheckCircle, XCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSRSProgress } from '@/hooks/useSRSProgress';
 
 interface Flashcard {
   id: string;
@@ -25,6 +26,7 @@ interface QuizQuestion {
 
 export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProps) {
   const { t } = useLanguage();
+  const { updateFromQuiz } = useSRSProgress();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -71,13 +73,18 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
     setSelectedAnswer(answer);
   };
 
-  const handleConfirmAnswer = () => {
+  const handleConfirmAnswer = async () => {
     if (!selectedAnswer || isAnswered) return;
     
     setIsAnswered(true);
-    if (selectedAnswer === currentQuestion.correctAnswer) {
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+    
+    if (isCorrect) {
       setScore(prev => prev + 1);
     }
+    
+    // Update SRS score: Q=3 for correct, Q=0 for wrong
+    await updateFromQuiz(currentQuestion.flashcard.id, isCorrect);
   };
 
   const handleNextQuestion = () => {

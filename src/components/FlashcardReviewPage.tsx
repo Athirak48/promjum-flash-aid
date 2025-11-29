@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -18,6 +18,7 @@ import {
     RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSRSProgress } from '@/hooks/useSRSProgress';
 
 interface FlashcardData {
     id: string;
@@ -36,6 +37,7 @@ interface FlashcardReviewPageProps {
 }
 
 export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: FlashcardReviewPageProps) {
+    const { updateFromFlashcardReview } = useSRSProgress();
     const [reviewQueue, setReviewQueue] = useState<FlashcardData[]>(cards);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
@@ -48,6 +50,9 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
     const [isCompleted, setIsCompleted] = useState(false);
     const isMobile = useIsMobile();
     const [totalCards] = useState(cards.length);
+    
+    // Track attempt counts for each card (for SRS scoring)
+    const attemptCounts = useRef<Map<string, number>>(new Map());
 
     // Save progress when review is completed
     useEffect(() => {
@@ -139,7 +144,13 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
         }
     };
 
-    const handleKnow = (knows: boolean) => {
+    const handleKnow = async (knows: boolean) => {
+        const currentCard = reviewQueue[currentIndex];
+        
+        // Track attempt count for this card
+        const currentAttempts = attemptCounts.current.get(currentCard.id) || 0;
+        attemptCounts.current.set(currentCard.id, currentAttempts + 1);
+        
         // Show feedback first
         setShowSwipeFeedback(knows ? 'right' : 'left');
 
@@ -152,6 +163,13 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
         }
 
         setSwipeDirection(knows ? 'right' : 'left');
+        
+        // Update SRS when user remembers the card
+        if (knows) {
+            const attemptCount = attemptCounts.current.get(currentCard.id) || 1;
+            // Q=5 if first attempt, Q=0 if cycled back (attempt > 1)
+            await updateFromFlashcardReview(currentCard.id, true, attemptCount);
+        }
 
         // Hide feedback and move to next card after delay
         setTimeout(() => {
@@ -165,10 +183,10 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
                 } else {
                     setReviewQueue(prev => {
                         const newQueue = [...prev];
-                        const currentCard = newQueue[currentIndex];
+                        const card = newQueue[currentIndex];
                         // Remove current card and add to end
                         newQueue.splice(currentIndex, 1);
-                        newQueue.push(currentCard);
+                        newQueue.push(card);
                         return newQueue;
                     });
                     // Stay at same index (which now shows next card), unless we're at the end
