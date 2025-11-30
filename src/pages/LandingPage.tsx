@@ -113,13 +113,22 @@ const LandingPage = () => {
               ปลดล็อกศักยภาพการเรียนรู้ด้วย <span className="text-foreground font-semibold">Active Recall</span> และ <span className="text-foreground font-semibold">AI</span> ที่เข้าใจคุณ เปลี่ยนเรื่องยากให้เป็นเรื่องง่าย ซึมลึกสู่ความทรงจำระยะยาว
             </motion.p>
 
-            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-              <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all" asChild>
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
+              <Button
+                size="lg"
+                className="h-16 px-10 text-xl rounded-full bg-[#E0B0FF] hover:bg-[#D090FF] text-foreground shadow-lg shadow-purple-200/50 transition-all hover:scale-105"
+                asChild
+              >
                 <Link to="/auth">
                   เริ่มใช้งานฟรี <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="ghost" size="lg" className="h-14 px-8 text-lg rounded-full hover:bg-secondary/20" asChild>
+              <Button
+                variant="ghost"
+                size="lg"
+                className="h-16 px-8 text-xl rounded-full text-foreground/80 hover:text-foreground hover:bg-transparent"
+                asChild
+              >
                 <a href="#features">ดูฟีเจอร์ทั้งหมด</a>
               </Button>
             </motion.div>
