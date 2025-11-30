@@ -879,6 +879,7 @@ export type Database = {
           times_correct: number | null
           times_reviewed: number | null
           updated_at: string
+          user_flashcard_id: string | null
           user_id: string
         }
         Insert: {
@@ -895,6 +896,7 @@ export type Database = {
           times_correct?: number | null
           times_reviewed?: number | null
           updated_at?: string
+          user_flashcard_id?: string | null
           user_id: string
         }
         Update: {
@@ -911,6 +913,7 @@ export type Database = {
           times_correct?: number | null
           times_reviewed?: number | null
           updated_at?: string
+          user_flashcard_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -919,6 +922,13 @@ export type Database = {
             columns: ["flashcard_id"]
             isOneToOne: false
             referencedRelation: "flashcards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_flashcard_progress_user_flashcard_id_fkey"
+            columns: ["user_flashcard_id"]
+            isOneToOne: false
+            referencedRelation: "user_flashcards"
             referencedColumns: ["id"]
           },
         ]
