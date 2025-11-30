@@ -14,15 +14,17 @@ import {
 export interface FlashcardSRSResult {
   flashcardId: string;
   qualityScore: number;
+  isUserFlashcard?: boolean;
 }
 
 export function useSRSProgress() {
   /**
-   * Update SRS progress for a single flashcard
+   * Update SRS progress for a single flashcard (supports both system and user flashcards)
    */
   const updateFlashcardSRS = useCallback(async (
     flashcardId: string,
-    qualityScore: number
+    qualityScore: number,
+    isUserFlashcard: boolean = true // Default to user flashcard since most reviews are user cards
   ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -31,12 +33,15 @@ export function useSRSProgress() {
       // Normalize quality score
       const q = normalizeQuality(qualityScore);
 
+      // Build query based on flashcard type
+      const idColumn = isUserFlashcard ? 'user_flashcard_id' : 'flashcard_id';
+      
       // Get existing progress
       const { data: existing } = await supabase
         .from('user_flashcard_progress')
         .select('*')
         .eq('user_id', user.id)
-        .eq('flashcard_id', flashcardId)
+        .eq(idColumn, flashcardId)
         .single();
 
       // Calculate new SRS values
@@ -47,9 +52,8 @@ export function useSRSProgress() {
         srsScore: existing?.srs_score ?? 0,
       }, q);
 
-      const updateData = {
+      const updateData: Record<string, any> = {
         user_id: user.id,
-        flashcard_id: flashcardId,
         easiness_factor: srsResult.easinessFactor,
         interval_days: srsResult.intervalDays,
         srs_level: srsResult.srsLevel,
@@ -60,6 +64,15 @@ export function useSRSProgress() {
         times_correct: (existing?.times_correct ?? 0) + (q >= 3 ? 1 : 0),
         updated_at: new Date().toISOString()
       };
+
+      // Set the appropriate flashcard ID column
+      if (isUserFlashcard) {
+        updateData.user_flashcard_id = flashcardId;
+        updateData.flashcard_id = null;
+      } else {
+        updateData.flashcard_id = flashcardId;
+        updateData.user_flashcard_id = null;
+      }
 
       if (existing) {
         // Update existing record
@@ -73,7 +86,7 @@ export function useSRSProgress() {
         // Insert new record
         const { error } = await supabase
           .from('user_flashcard_progress')
-          .insert(updateData);
+          .insert(updateData as any);
 
         if (error) throw error;
       }
@@ -92,21 +105,22 @@ export function useSRSProgress() {
     results: FlashcardSRSResult[]
   ) => {
     const promises = results.map(result => 
-      updateFlashcardSRS(result.flashcardId, result.qualityScore)
+      updateFlashcardSRS(result.flashcardId, result.qualityScore, result.isUserFlashcard ?? true)
     );
     return Promise.all(promises);
   }, [updateFlashcardSRS]);
 
   /**
-   * Update SRS from Flashcard Review
+   * Update SRS from Flashcard Review (default: user flashcards)
    */
   const updateFromFlashcardReview = useCallback(async (
     flashcardId: string,
     isCorrect: boolean,
-    attemptCount: number
+    attemptCount: number,
+    isUserFlashcard: boolean = true
   ) => {
     const quality = getFlashcardReviewQuality(isCorrect, attemptCount);
-    return updateFlashcardSRS(flashcardId, quality);
+    return updateFlashcardSRS(flashcardId, quality, isUserFlashcard);
   }, [updateFlashcardSRS]);
 
   /**
@@ -115,10 +129,11 @@ export function useSRSProgress() {
   const updateFromListenChoose = useCallback(async (
     flashcardId: string,
     isCorrect: boolean,
-    playCount: number
+    playCount: number,
+    isUserFlashcard: boolean = true
   ) => {
     const quality = getListenChooseQuality(isCorrect, playCount);
-    return updateFlashcardSRS(flashcardId, quality);
+    return updateFlashcardSRS(flashcardId, quality, isUserFlashcard);
   }, [updateFlashcardSRS]);
 
   /**
@@ -127,10 +142,11 @@ export function useSRSProgress() {
   const updateFromHangman = useCallback(async (
     flashcardId: string,
     isComplete: boolean,
-    wrongGuesses: number
+    wrongGuesses: number,
+    isUserFlashcard: boolean = true
   ) => {
     const quality = getHangmanQuality(isComplete, wrongGuesses);
-    return updateFlashcardSRS(flashcardId, quality);
+    return updateFlashcardSRS(flashcardId, quality, isUserFlashcard);
   }, [updateFlashcardSRS]);
 
   /**
@@ -138,10 +154,11 @@ export function useSRSProgress() {
    */
   const updateFromVocabBlinder = useCallback(async (
     flashcardId: string,
-    isCorrect: boolean
+    isCorrect: boolean,
+    isUserFlashcard: boolean = true
   ) => {
     const quality = getVocabBlinderQuality(isCorrect);
-    return updateFlashcardSRS(flashcardId, quality);
+    return updateFlashcardSRS(flashcardId, quality, isUserFlashcard);
   }, [updateFlashcardSRS]);
 
   /**
@@ -149,10 +166,11 @@ export function useSRSProgress() {
    */
   const updateFromQuiz = useCallback(async (
     flashcardId: string,
-    isCorrect: boolean
+    isCorrect: boolean,
+    isUserFlashcard: boolean = true
   ) => {
     const quality = getQuizGameQuality(isCorrect);
-    return updateFlashcardSRS(flashcardId, quality);
+    return updateFlashcardSRS(flashcardId, quality, isUserFlashcard);
   }, [updateFlashcardSRS]);
 
   /**
@@ -161,30 +179,37 @@ export function useSRSProgress() {
   const updateFromMatching = useCallback(async (
     flashcardId: string,
     isCorrect: boolean,
-    isFirstTry: boolean
+    isFirstTry: boolean,
+    isUserFlashcard: boolean = true
   ) => {
     const quality = getMatchingGameQuality(isCorrect, isFirstTry);
-    return updateFlashcardSRS(flashcardId, quality);
+    return updateFlashcardSRS(flashcardId, quality, isUserFlashcard);
   }, [updateFlashcardSRS]);
 
   /**
-   * Get flashcards sorted by SRS score (lowest first = needs review)
+   * Get user flashcards sorted by SRS score (lowest first = needs review)
    */
-  const getFlashcardsByDifficulty = useCallback(async (flashcardIds: string[]) => {
+  const getFlashcardsByDifficulty = useCallback(async (
+    flashcardIds: string[],
+    isUserFlashcards: boolean = true
+  ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return flashcardIds;
 
+      const idColumn = isUserFlashcards ? 'user_flashcard_id' : 'flashcard_id';
+      
       const { data: progress } = await supabase
         .from('user_flashcard_progress')
-        .select('flashcard_id, srs_score')
+        .select(`${idColumn}, srs_score`)
         .eq('user_id', user.id)
-        .in('flashcard_id', flashcardIds);
+        .in(idColumn, flashcardIds);
 
       // Create a map of flashcard_id to srs_score
       const scoreMap = new Map<string, number | null>();
-      progress?.forEach(p => {
-        scoreMap.set(p.flashcard_id!, p.srs_score);
+      progress?.forEach((p: any) => {
+        const id = p[idColumn];
+        if (id) scoreMap.set(id, p.srs_score);
       });
 
       // Sort flashcards: null/none first (never reviewed), then by lowest score
@@ -204,25 +229,30 @@ export function useSRSProgress() {
    */
   const getRecommendedFlashcards = useCallback(async (
     flashcardIds: string[],
-    limit: number = 10
+    limit: number = 10,
+    isUserFlashcards: boolean = true
   ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return flashcardIds.slice(0, limit);
 
+      const idColumn = isUserFlashcards ? 'user_flashcard_id' : 'flashcard_id';
+
       const { data: progress } = await supabase
         .from('user_flashcard_progress')
-        .select('flashcard_id, srs_score, next_review_date')
+        .select(`${idColumn}, srs_score, next_review_date`)
         .eq('user_id', user.id)
-        .in('flashcard_id', flashcardIds);
+        .in(idColumn, flashcardIds);
 
       const now = new Date();
       const scoreMap = new Map<string, { score: number | null, isDue: boolean }>();
       
-      progress?.forEach(p => {
+      progress?.forEach((p: any) => {
+        const id = p[idColumn];
+        if (!id) return;
         const nextReview = p.next_review_date ? new Date(p.next_review_date) : null;
         const isDue = !nextReview || nextReview <= now;
-        scoreMap.set(p.flashcard_id!, { score: p.srs_score, isDue });
+        scoreMap.set(id, { score: p.srs_score, isDue });
       });
 
       // Sort: due for review first, then by lowest score, then never reviewed
