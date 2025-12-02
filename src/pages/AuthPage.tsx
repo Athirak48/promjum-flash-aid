@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,8 +21,9 @@ export default function AuthPage() {
   const { toast } = useToast();
   const { signIn, signUp, resetPassword, user, getUserRole } = useAuth();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'login';
+
+  // Simple local state for tabs, defaulting to 'login'
+  const [activeTab, setActiveTab] = useState("login");
 
   // Redirect if user is already logged in
   useEffect(() => {
@@ -36,20 +37,20 @@ export default function AuthPage() {
         }
       }
     };
-    
+
     checkUserRole();
   }, [user, navigate, getUserRole]);
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    
+
     const formData = new FormData(event.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
     const { error } = await signIn(email, password);
-    
+
     if (error) {
       toast({
         title: "เข้าสู่ระบบไม่สำเร็จ",
@@ -61,7 +62,7 @@ export default function AuthPage() {
         title: "เข้าสู่ระบบสำเร็จ!",
         description: "ยินดีต้อนรับสู่ Promjum",
       });
-      
+
       // Get current session to check user role
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
@@ -75,14 +76,14 @@ export default function AuthPage() {
         navigate('/dashboard');
       }
     }
-    
+
     setIsLoading(false);
   };
 
   const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    
+
     const formData = new FormData(event.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
@@ -101,7 +102,7 @@ export default function AuthPage() {
     }
 
     const { error } = await signUp(email, password, fullName);
-    
+
     if (error) {
       toast({
         title: "สมัครสมาชิกไม่สำเร็จ",
@@ -113,21 +114,21 @@ export default function AuthPage() {
         title: "สมัครสมาชิกสำเร็จ!",
         description: "กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชีก่อนเข้าสู่ระบบ",
       });
-      setSearchParams({ tab: 'login' });
+      setActiveTab('login');
     }
-    
+
     setIsLoading(false);
   };
 
   const handleForgotPassword = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    
+
     const formData = new FormData(event.currentTarget);
     const email = formData.get('email') as string;
 
     const { error } = await resetPassword(email);
-    
+
     if (error) {
       toast({
         title: "รีเซ็ตรหัสผ่านไม่สำเร็จ",
@@ -140,59 +141,59 @@ export default function AuthPage() {
         description: "กรุณาตรวจสอบอีเมลสำหรับคำแนะนำการรีเซ็ตรหัสผ่าน",
       });
     }
-    
+
     setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-secondary/30 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden font-prompt">
       <BackgroundDecorations />
       <div className="w-full max-w-md relative z-10">
         {/* Back button */}
-        <Button variant="ghost" asChild className="mb-6">
+        <Button variant="ghost" asChild className="mb-6 hover:bg-white/50">
           <Link to="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
             กลับหน้าหลัก
           </Link>
         </Button>
 
-        <Card className="bg-gradient-card shadow-large border-0">
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <img 
-                src={promjumLogo} 
-                alt="Promjum Logo" 
+        <Card className="bg-white/80 backdrop-blur-md shadow-large border-white/50 rounded-[2rem]">
+          <CardHeader className="text-center pb-2">
+            <div className="flex items-center justify-center space-x-2 mb-6">
+              <img
+                src={promjumLogo}
+                alt="Promjum Logo"
                 className="h-12 w-12 object-contain"
               />
               <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 Promjum
               </span>
             </div>
-            <CardTitle className="text-2xl">ยินดีต้อนรับ</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl font-bold">ยินดีต้อนรับ</CardTitle>
+            <CardDescription className="text-base">
               เข้าสู่ระบบหรือสมัครสมาชิกเพื่อเริ่มใช้งาน
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={(value) => setSearchParams({ tab: value })} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="login">เข้าสู่ระบบ</TabsTrigger>
-                <TabsTrigger value="signup">สมัครสมาชิก</TabsTrigger>
-                <TabsTrigger value="reset">รีเซ็ต</TabsTrigger>
+          <CardContent className="pt-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-8 bg-secondary/50 p-1 rounded-2xl h-auto">
+                <TabsTrigger value="login" className="rounded-xl py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">เข้าสู่ระบบ</TabsTrigger>
+                <TabsTrigger value="signup" className="rounded-xl py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">สมัครสมาชิก</TabsTrigger>
+                <TabsTrigger value="reset" className="rounded-xl py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">รีเซ็ต</TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
+
+              <TabsContent value="login" className="mt-0 focus-visible:outline-none">
+                <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="email">อีเมล</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="email"
                         name="email"
                         type="email"
                         placeholder="your@email.com"
-                        className="pl-10"
+                        className="pl-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
                         required
                       />
                     </div>
@@ -200,38 +201,39 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="password">รหัสผ่าน</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-10 pr-10"
+                        className="pl-10 pr-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
                         required
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-transparent"
+                        className="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4 text-muted-foreground" />
                         )}
                       </Button>
                     </div>
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="remember" 
+                    <Checkbox
+                      id="remember"
                       checked={rememberMe}
                       onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                      className="rounded-md border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                     />
-                    <Label htmlFor="remember" className="text-sm">
+                    <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
                       จำฉันไว้
                     </Label>
                   </div>
@@ -239,36 +241,36 @@ export default function AuthPage() {
                   <Button
                     type="submit"
                     variant="hero"
-                    className="w-full"
+                    className="w-full h-12 text-lg rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
                     disabled={isLoading}
                   >
                     {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
                   </Button>
-                  
-                  <div className="text-center">
+
+                  <div className="text-center pt-2">
                     <button
                       type="button"
-                      onClick={() => setSearchParams({ tab: 'reset' })}
-                      className="text-sm text-muted-foreground hover:text-primary"
+                      onClick={() => setActiveTab('reset')}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
                     >
                       ลืมรหัสผ่าน?
                     </button>
                   </div>
                 </form>
               </TabsContent>
-              
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
+
+              <TabsContent value="signup" className="mt-0 focus-visible:outline-none">
+                <form onSubmit={handleSignUp} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="fullname">ชื่อ-นามสกุล</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="fullname"
                         name="fullName"
                         type="text"
                         placeholder="ชื่อ นามสกุล"
-                        className="pl-10"
+                        className="pl-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
                         required
                       />
                     </div>
@@ -276,13 +278,13 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">อีเมล</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="signup-email"
                         name="email"
                         type="email"
                         placeholder="your@email.com"
-                        className="pl-10"
+                        className="pl-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
                         required
                       />
                     </div>
@@ -290,13 +292,13 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">รหัสผ่าน</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="signup-password"
                         name="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-10 pr-10"
+                        className="pl-10 pr-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
                         minLength={6}
                         required
                       />
@@ -304,13 +306,13 @@ export default function AuthPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-transparent"
+                        className="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4 text-muted-foreground" />
                         )}
                       </Button>
                     </div>
@@ -318,13 +320,13 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">ยืนยันรหัสผ่าน</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="confirm-password"
                         name="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-10 pr-10"
+                        className="pl-10 pr-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
                         minLength={6}
                         required
                       />
@@ -332,13 +334,13 @@ export default function AuthPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-transparent"
+                        className="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       >
                         {showConfirmPassword ? (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4 text-muted-foreground" />
                         )}
                       </Button>
                     </div>
@@ -346,52 +348,52 @@ export default function AuthPage() {
                   <Button
                     type="submit"
                     variant="hero"
-                    className="w-full"
+                    className="w-full h-12 text-lg rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
                     disabled={isLoading}
                   >
                     {isLoading ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
                   </Button>
-                  <p className="text-xs text-muted-foreground text-center">
+                  <p className="text-xs text-muted-foreground text-center leading-relaxed">
                     การสมัครสมาชิกแสดงว่าคุณยอมรับ{" "}
-                    <Button variant="link" size="sm" className="p-0 h-auto text-xs">
+                    <Button variant="link" size="sm" className="p-0 h-auto text-xs font-normal">
                       เงื่อนไขการใช้งาน
                     </Button>{" "}
                     และ{" "}
-                    <Button variant="link" size="sm" className="p-0 h-auto text-xs">
+                    <Button variant="link" size="sm" className="p-0 h-auto text-xs font-normal">
                       นโยบายความเป็นส่วนตัว
                     </Button>
                   </p>
                 </form>
               </TabsContent>
 
-              <TabsContent value="reset">
-                <div className="space-y-4">
-                  <div className="text-center">
+              <TabsContent value="reset" className="mt-0 focus-visible:outline-none">
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
                     <h3 className="text-lg font-semibold">รีเซ็ตรหัสผ่าน</h3>
                     <p className="text-sm text-muted-foreground">
                       กรอกอีเมลของคุณ เราจะส่งลิงก์สำหรับรีเซ็ตรหัสผ่านให้
                     </p>
                   </div>
-                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <form onSubmit={handleForgotPassword} className="space-y-5">
                     <div className="space-y-2">
                       <Label htmlFor="reset-email">อีเมล</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                         <Input
                           id="reset-email"
                           name="email"
                           type="email"
                           placeholder="your@email.com"
-                          className="pl-10"
+                          className="pl-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
                           required
                         />
                       </div>
                     </div>
-                    
+
                     <Button
                       type="submit"
                       variant="hero"
-                      className="w-full"
+                      className="w-full h-12 text-lg rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
                       disabled={isLoading}
                     >
                       {isLoading ? "กำลังส่ง..." : "ส่งลิงก์รีเซ็ต"}
@@ -400,8 +402,8 @@ export default function AuthPage() {
                     <div className="text-center">
                       <button
                         type="button"
-                        onClick={() => setSearchParams({ tab: 'login' })}
-                        className="text-sm text-muted-foreground hover:text-primary"
+                        onClick={() => setActiveTab('login')}
+                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
                       >
                         กลับไปเข้าสู่ระบบ
                       </button>
@@ -413,10 +415,10 @@ export default function AuthPage() {
           </CardContent>
         </Card>
 
-        <div className="text-center mt-6">
+        <div className="text-center mt-8">
           <p className="text-sm text-muted-foreground">
             ต้องการความช่วยเหลือ?{" "}
-            <Button variant="link" size="sm" className="p-0 h-auto text-sm">
+            <Button variant="link" size="sm" className="p-0 h-auto text-sm font-normal">
               ติดต่อทีมงาน
             </Button>
           </p>
@@ -424,4 +426,4 @@ export default function AuthPage() {
       </div>
     </div>
   );
-};
+}

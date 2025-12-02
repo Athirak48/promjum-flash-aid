@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
-import { X, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Trophy, CheckCircle, XCircle, Home } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 
 interface Flashcard {
   id: string;
   front_text: string;
   back_text: string;
+  created_at: string;
 }
 
 interface FlashcardQuizGameProps {
@@ -19,7 +20,7 @@ interface FlashcardQuizGameProps {
 }
 
 interface QuizQuestion {
-  flashcard: Flashcard;
+  card: Flashcard;
   options: string[];
   correctAnswer: string;
 }
@@ -27,69 +28,67 @@ interface QuizQuestion {
 export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProps) {
   const { t } = useLanguage();
   const { updateFromQuiz } = useSRSProgress();
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
-  const [score, setScore] = useState(0);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isGameComplete, setIsGameComplete] = useState(false);
 
-  // Generate quiz questions
+  // Stats
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+
   useEffect(() => {
-    if (flashcards.length < 4) return; // Need at least 4 cards for multiple choice
-
-    const generateQuestions = () => {
-      const quizQuestions: QuizQuestion[] = [];
-      const maxQuestions = Math.min(10, flashcards.length);
-      const selectedCards = [...flashcards].sort(() => 0.5 - Math.random()).slice(0, maxQuestions);
-
-      selectedCards.forEach(card => {
-        const correctAnswer = card.back_text;
-        const otherAnswers = flashcards
-          .filter(c => c.id !== card.id && c.back_text !== correctAnswer)
-          .map(c => c.back_text)
-          .sort(() => 0.5 - Math.random())
-          .slice(0, 3);
-
-        const options = [correctAnswer, ...otherAnswers].sort(() => 0.5 - Math.random());
-
-        quizQuestions.push({
-          flashcard: card,
-          options,
-          correctAnswer
-        });
-      });
-
-      setQuestions(quizQuestions);
-    };
-
     generateQuestions();
   }, [flashcards]);
 
-  const currentQuestion = questions[currentQuestionIndex];
+  const generateQuestions = () => {
+    const newQuestions = flashcards.map(card => {
+      const correctAnswer = card.back_text;
+      const otherCards = flashcards.filter(c => c.id !== card.id);
+      const wrongOptions = otherCards
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3)
+        .map(c => c.back_text);
+
+      const options = [...wrongOptions, correctAnswer].sort(() => Math.random() - 0.5);
+
+      return {
+        card,
+        options,
+        correctAnswer
+      };
+    });
+
+    setQuestions(newQuestions);
+  };
 
   const handleAnswerSelect = (answer: string) => {
     if (isAnswered) return;
+
     setSelectedAnswer(answer);
-  };
-
-  const handleConfirmAnswer = async () => {
-    if (!selectedAnswer || isAnswered) return;
-    
     setIsAnswered(true);
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-    
+
+    const isCorrect = answer === currentQuestion.correctAnswer;
+
     if (isCorrect) {
-      setScore(prev => prev + 1);
+      setScore(score + 10 + (streak * 2));
+      setStreak(streak + 1);
+      setCorrectCount(correctCount + 1);
+    } else {
+      setStreak(0);
+      setWrongCount(wrongCount + 1);
     }
-    
-    // Update SRS score: Q=3 for correct, Q=0 for wrong
-    await updateFromQuiz(currentQuestion.flashcard.id, isCorrect);
   };
 
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+  const handleNext = async () => {
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+    await updateFromQuiz(currentQuestion.card.id, isCorrect);
+
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
       setSelectedAnswer(null);
       setIsAnswered(false);
     } else {
@@ -97,217 +96,183 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
     }
   };
 
-  const getOptionStyle = (option: string) => {
-    if (!isAnswered) {
-      return selectedAnswer === option
-        ? "bg-primary/20 border-primary text-primary-foreground"
-        : "bg-card hover:bg-muted border-border text-foreground";
-    }
+  if (questions.length === 0) return null;
 
-    if (option === currentQuestion.correctAnswer) {
-      return "bg-green-500/20 border-green-500 text-green-700 dark:text-green-400";
-    }
+  const currentQuestion = questions[currentIndex];
 
-    if (option === selectedAnswer && option !== currentQuestion.correctAnswer) {
-      return "bg-red-500/20 border-red-500 text-red-700 dark:text-red-400";
-    }
+  if (isGameComplete) {
+    const total = correctCount + wrongCount;
+    const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
-    return "bg-muted border-border text-muted-foreground";
-  };
-
-  if (flashcards.length < 4) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-6 text-center">
-            <h3 className="text-lg font-semibold text-foreground mb-4">ไม่สามารถเล่นเกมได้</h3>
-            <p className="text-muted-foreground mb-4">
-              ต้องมีแฟลชการ์ดอย่างน้อย 4 ใบเพื่อเล่นเกม Quiz
-            </p>
-            <Button onClick={onClose}>ปิด</Button>
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-fuchsia-50 to-violet-100 dark:from-violet-950 dark:via-fuchsia-900 dark:to-violet-950 overflow-auto flex items-center justify-center p-4">
+        <BackgroundDecorations />
+        <Card className="max-w-xl w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-[2rem]">
+          <CardHeader className="text-center pb-2">
+            <div className="text-6xl mb-4 animate-bounce">🏆</div>
+            <CardTitle className="text-3xl font-bold text-foreground bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+              สรุปผล Quiz Challenge
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-2xl p-6 text-white text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+              <div className="text-6xl font-bold mb-2">{score}</div>
+              <div className="text-xl opacity-90 font-medium">คะแนนรวม</div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-2xl border border-green-100">
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  {correctCount}
+                </div>
+                <div className="text-sm text-green-700 dark:text-green-300 mt-1 font-medium">
+                  ถูกต้อง
+                </div>
+              </div>
+              <div className="text-center p-4 bg-red-50 dark:bg-red-900/30 rounded-2xl border border-red-100">
+                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                  {wrongCount}
+                </div>
+                <div className="text-sm text-red-700 dark:text-red-300 mt-1 font-medium">
+                  ผิด
+                </div>
+              </div>
+              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-2xl border border-blue-100">
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  {accuracy}%
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-300 mt-1 font-medium">
+                  ความแม่นยำ
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={onClose}
+                className="flex-1 rounded-xl h-12 text-lg font-medium"
+                size="lg"
+                variant="outline"
+              >
+                <Home className="h-5 w-5 mr-2" />
+                กลับหน้าหลัก
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (isGameComplete) {
-    const percentage = Math.round((score / questions.length) * 100);
-    const wrongAnswers = questions.length - score;
-    
-    return (
-      <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 z-50">
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center space-y-6 bg-card/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl max-w-lg w-full border border-border"
-          >
-            <div className="text-6xl mb-4">
-              {percentage >= 80 ? '🎉' : percentage >= 60 ? '👍' : '📚'}
-            </div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">สรุปผล Quiz Game</h2>
-            
-            {/* Main Score */}
-            <div className="bg-gradient-primary rounded-xl p-6 text-white">
-              <div className="text-5xl font-bold mb-2">
-                {score}/{questions.length}
-              </div>
-              <div className="text-2xl mb-1">
-                {percentage}%
-              </div>
-              <div className="text-lg opacity-90">
-                {percentage >= 80 ? '🏆 ยอดเยี่ยม!' : 
-                 percentage >= 60 ? '⭐ ดีมาก!' : 
-                 percentage >= 40 ? '👍 พอใช้' : '💪 ลองใหม่!'}
-              </div>
-            </div>
-
-            {/* Detailed Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <div className="text-3xl font-bold text-green-700 dark:text-green-300">
-                  {score}
-                </div>
-                <div className="text-sm text-green-900 dark:text-green-100 mt-1">
-                  ตอบถูก
-                </div>
-              </div>
-              <div className="text-center p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                <div className="text-3xl font-bold text-red-700 dark:text-red-300">
-                  {wrongAnswers}
-                </div>
-                <div className="text-sm text-red-900 dark:text-red-100 mt-1">
-                  ตอบผิด
-                </div>
-              </div>
-            </div>
-
-            {/* Knowledge Level */}
-            <div className="bg-muted rounded-xl p-4">
-              <p className="font-semibold text-foreground mb-2">ระดับความรู้</p>
-              <div className="flex justify-center items-center gap-2">
-                {percentage >= 90 ? '⭐⭐⭐⭐⭐' :
-                 percentage >= 70 ? '⭐⭐⭐⭐' :
-                 percentage >= 50 ? '⭐⭐⭐' :
-                 percentage >= 30 ? '⭐⭐' : '⭐'}
-                <span className="text-sm text-muted-foreground">
-                  ({percentage >= 90 ? 'ผู้เชี่ยวชาญ' :
-                    percentage >= 70 ? 'ดีเยี่ยม' :
-                    percentage >= 50 ? 'ดี' :
-                    percentage >= 30 ? 'พอใช้' : 'ต้องพัฒนา'})
-                </span>
-              </div>
-            </div>
-
-            <Button
-              onClick={onClose}
-              className="w-full py-3 text-lg font-semibold"
-            >
-              เสร็จสิ้น
-            </Button>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentQuestion) return null;
-
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 dark:from-blue-950 dark:via-indigo-900 dark:to-purple-950 z-50">
-      <div className="flex flex-col h-full">
+    <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-fuchsia-50 to-violet-100 dark:from-violet-950 dark:via-fuchsia-900 dark:to-violet-950 overflow-auto">
+      <BackgroundDecorations />
+
+      <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 relative z-10 min-h-screen flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-card/80 backdrop-blur-sm border-b border-border">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-bold text-foreground">Quiz Mode</h2>
-            <div className="text-sm text-muted-foreground">
-              คำถามที่ {currentQuestionIndex + 1}/{questions.length}
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <Button variant="ghost" onClick={onClose} className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors">
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            ออก
           </Button>
-        </div>
 
-        {/* Progress */}
-        <div className="px-4 py-2 bg-card/80 backdrop-blur-sm">
-          <Progress value={progress} className="w-full" />
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full space-y-6">
-            {/* Question */}
-            <motion.div
-              key={currentQuestionIndex}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-2xl p-6 shadow-lg text-center border border-border"
-            >
-              <h3 className="text-xl font-semibold text-foreground mb-4">คำถาม</h3>
-              <p className="text-lg text-foreground">{currentQuestion.flashcard.front_text}</p>
-            </motion.div>
-
-            {/* Options */}
-            <div className="grid grid-cols-1 gap-3">
-              <AnimatePresence mode="wait">
-                {currentQuestion.options.map((option, index) => (
-                  <motion.button
-                    key={`${currentQuestionIndex}-${index}`}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={() => handleAnswerSelect(option)}
-                    disabled={isAnswered}
-                    className={`p-4 rounded-xl border-2 text-left transition-all duration-200 ${getOptionStyle(option)} ${
-                      !isAnswered ? 'hover:scale-105 cursor-pointer' : 'cursor-not-allowed'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{option}</span>
-                      {isAnswered && option === currentQuestion.correctAnswer && (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      )}
-                      {isAnswered && option === selectedAnswer && option !== currentQuestion.correctAnswer && (
-                        <XCircle className="h-5 w-5 text-red-600" />
-                      )}
-                    </div>
-                  </motion.button>
-                ))}
-              </AnimatePresence>
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-1.5 md:gap-2 bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
+              <Trophy className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
+              <span className="font-bold text-base md:text-lg">{score}</span>
             </div>
-
-            {/* Action Button */}
-            <div className="text-center">
-              {!isAnswered ? (
-                <Button
-                  onClick={handleConfirmAnswer}
-                  disabled={!selectedAnswer}
-                  className="px-8 py-3 text-lg font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-                >
-                  ยืนยันคำตอบ
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleNextQuestion}
-                  className="px-8 py-3 text-lg font-semibold bg-purple-600 hover:bg-purple-700"
-                >
-                  {currentQuestionIndex < questions.length - 1 ? 'คำถามถัดไป' : 'ดูผลลัพธ์'}
-                </Button>
-              )}
-            </div>
-
-            {/* Score */}
-            <div className="text-center">
-              <div className="inline-flex items-center space-x-2 bg-card/80 rounded-full px-4 py-2 border border-border">
-                <span className="text-sm text-muted-foreground">คะแนน:</span>
-                <span className="font-bold text-primary">{score}/{questions.length}</span>
-              </div>
+            <div className="bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
+              <span className="font-bold text-base md:text-lg text-primary">
+                {currentIndex + 1} / {questions.length}
+              </span>
             </div>
           </div>
+        </div>
+
+        {/* Main Game Area */}
+        <div className="flex-1 flex items-center justify-center max-w-3xl mx-auto w-full">
+          <Card className="w-full bg-white/90 backdrop-blur-xl border-white/50 shadow-2xl rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="pb-0 md:pb-2 pt-4 md:pt-6">
+              <CardTitle className="text-center text-xl md:text-2xl font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+                <span className="text-2xl md:text-3xl">⚡</span> Quiz Challenge
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 md:space-y-8 p-4 md:p-8">
+
+              {/* Question Display */}
+              <div className="text-center py-4 md:py-6">
+                <div className="mb-2 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-widest">คำศัพท์</div>
+                <h2 className="text-3xl md:text-5xl font-bold text-violet-900 dark:text-violet-100 mb-2 md:mb-4 break-words">
+                  {currentQuestion.card.front_text}
+                </h2>
+                <div className="h-1 w-16 md:w-24 bg-gradient-to-r from-violet-500 to-fuchsia-500 mx-auto rounded-full opacity-50"></div>
+              </div>
+
+              {/* Options Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                <AnimatePresence mode="wait">
+                  {currentQuestion.options.map((option, index) => {
+                    const isSelected = selectedAnswer === option;
+                    const isCorrect = option === currentQuestion.correctAnswer;
+
+                    let buttonStyle = "bg-white hover:bg-violet-50 border-2 border-violet-100 text-violet-900";
+                    let icon = null;
+
+                    if (isAnswered) {
+                      if (isCorrect) {
+                        buttonStyle = "bg-green-500 border-green-600 text-white shadow-lg scale-105";
+                        icon = <CheckCircle className="ml-auto h-5 w-5 md:h-6 md:w-6" />;
+                      } else if (isSelected) {
+                        buttonStyle = "bg-red-500 border-red-600 text-white opacity-50";
+                        icon = <XCircle className="ml-auto h-5 w-5 md:h-6 md:w-6" />;
+                      } else {
+                        buttonStyle = "bg-gray-100 text-gray-400 border-gray-200 opacity-50";
+                      }
+                    } else if (isSelected) {
+                      buttonStyle = "bg-violet-600 border-violet-700 text-white shadow-lg scale-95";
+                    }
+
+                    return (
+                      <motion.button
+                        key={`${currentIndex}-${index}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        onClick={() => handleAnswerSelect(option)}
+                        disabled={isAnswered}
+                        className={`
+                          relative p-4 md:p-6 text-base md:text-lg font-medium rounded-xl md:rounded-2xl text-left transition-all duration-300 flex items-center
+                          ${buttonStyle}
+                          ${!isAnswered && 'hover:-translate-y-1 hover:shadow-md'}
+                        `}
+                      >
+                        <span className="mr-2">{option}</span>
+                        {icon}
+                      </motion.button>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+
+              {/* Next Button */}
+              {isAnswered && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="pt-2 md:pt-4"
+                >
+                  <Button
+                    onClick={handleNext}
+                    className="w-full h-12 md:h-14 text-lg md:text-xl rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all bg-gradient-to-r from-violet-600 to-fuchsia-600 border-0"
+                    size="lg"
+                  >
+                    {currentIndex < questions.length - 1 ? 'ข้อถัดไป' : 'ดูสรุปผล'}
+                  </Button>
+                </motion.div>
+              )}
+
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

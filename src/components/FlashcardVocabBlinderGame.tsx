@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trophy } from 'lucide-react';
+import { ArrowLeft, Trophy, Eye, EyeOff, Home } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
@@ -19,8 +19,9 @@ interface FlashcardVocabBlinderGameProps {
 }
 
 interface BlindedWord {
-  word: string;
-  hiddenPositions: number[];
+  original: string;
+  display: string;
+  hiddenIndices: number[];
   missingLetters: string[];
 }
 
@@ -29,213 +30,160 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
   const { updateFromVocabBlinder } = useSRSProgress();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [blindedWord, setBlindedWord] = useState<BlindedWord | null>(null);
+  const [options, setOptions] = useState<string[]>([]);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [streak, setStreak] = useState(0);
   const [showResult, setShowResult] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [wrongCount, setWrongCount] = useState(0);
   const [isGameComplete, setIsGameComplete] = useState(false);
 
-  const currentCard = flashcards[currentIndex];
-  const targetWord = currentCard.front_text.toUpperCase().trim();
+  // Stats
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
 
-  // Generate blinded word with 50% letters hidden
-  const generateBlindedWord = (word: string): BlindedWord => {
-    const wordLength = word.length;
-    const hideCount = Math.ceil(wordLength * 0.5);
-    
-    // Generate random positions to hide
-    const positions = Array.from({ length: wordLength }, (_, i) => i);
-    const hiddenPositions: number[] = [];
-    
-    for (let i = 0; i < hideCount; i++) {
-      const randomIndex = Math.floor(Math.random() * positions.length);
-      hiddenPositions.push(positions[randomIndex]);
-      positions.splice(randomIndex, 1);
+  const currentCard = flashcards[currentIndex];
+
+  // Override createBlindedWord for this specific simplified gameplay
+  const createBlindedWordSimple = (word: string): BlindedWord => {
+    // Hide exactly one non-space character
+    const indices: number[] = [];
+    const validIndices = word.split('').map((c, i) => c !== ' ' ? i : -1).filter(i => i !== -1);
+
+    if (validIndices.length > 0) {
+      const randomIdx = validIndices[Math.floor(Math.random() * validIndices.length)];
+      indices.push(randomIdx);
     }
-    
-    hiddenPositions.sort((a, b) => a - b);
-    
-    // Extract missing letters in order
-    const missingLetters = hiddenPositions.map(pos => word[pos]);
-    
+
+    const display = word.split('').map((char, i) =>
+      indices.includes(i) ? '_' : char
+    ).join('');
+
+    const missingLetters = indices.map(i => word[i]);
+
     return {
-      word,
-      hiddenPositions,
+      original: word,
+      display,
+      hiddenIndices: indices,
       missingLetters
     };
   };
 
-  const [blindedWord] = useState(() => generateBlindedWord(targetWord));
+  // Override generate options to match the simple single-letter hiding
+  const generateOptionsSimple = (correctLetter: string) => {
+    // Mix of similar looking letters or random ones
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+    const opts = [correctLetter];
 
-  // Display blinded word
-  const displayBlindedWord = () => {
-    return targetWord.split('').map((letter, index) => {
-      if (blindedWord.hiddenPositions.includes(index)) {
-        return '_';
+    while (opts.length < 4) {
+      const randomChar = alphabet[Math.floor(Math.random() * alphabet.length)];
+      // Try to match case
+      const charToUse = correctLetter === correctLetter.toUpperCase() ? randomChar.toUpperCase() : randomChar;
+
+      if (!opts.includes(charToUse)) {
+        opts.push(charToUse);
       }
-      return letter;
-    }).join(' ');
+    }
+    setOptions(opts.sort(() => Math.random() - 0.5));
   };
 
-  // Generate wrong answers
-  const generateWrongAnswers = (correctLetters: string[]): string[][] => {
-    const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    const wrongAnswers: string[][] = [];
-    
-    for (let i = 0; i < 3; i++) {
-      const wrongAnswer: string[] = [];
-      for (let j = 0; j < correctLetters.length; j++) {
-        // 50% chance to keep the correct letter, 50% to replace with similar/common letter
-        if (Math.random() > 0.5) {
-          wrongAnswer.push(correctLetters[j]);
-        } else {
-          // Get a different letter
-          let randomLetter;
-          do {
-            randomLetter = allLetters[Math.floor(Math.random() * allLetters.length)];
-          } while (randomLetter === correctLetters[j]);
-          wrongAnswer.push(randomLetter);
-        }
-      }
-      wrongAnswers.push(wrongAnswer);
-    }
-    
-    return wrongAnswers;
-  };
+  useEffect(() => {
+    if (!currentCard) return;
+    const word = currentCard.front_text.trim();
+    const blinded = createBlindedWordSimple(word);
+    setBlindedWord(blinded);
+    generateOptionsSimple(blinded.missingLetters[0]);
+    setSelectedOption(null);
+    setIsCorrect(null);
+    setShowResult(false);
+  }, [currentIndex]);
 
-  const [answers] = useState(() => {
-    const correctAnswer = blindedWord.missingLetters;
-    const wrongAnswers = generateWrongAnswers(correctAnswer);
-    
-    // Combine and shuffle
-    const allAnswers = [
-      { letters: correctAnswer, isCorrect: true },
-      ...wrongAnswers.map(letters => ({ letters, isCorrect: false }))
-    ];
-    
-    // Shuffle
-    for (let i = allAnswers.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [allAnswers[i], allAnswers[j]] = [allAnswers[j], allAnswers[i]];
-    }
-    
-    return allAnswers;
-  });
+  const handleOptionSelect = (option: string) => {
+    if (selectedOption) return;
 
-  const handleAnswerSelect = async (index: number) => {
-    if (showResult) return;
+    setSelectedOption(option);
+    const correct = option === blindedWord?.missingLetters[0];
 
-    setSelectedAnswer(index);
-    const answer = answers[index];
-    const correct = answer.isCorrect;
-    
     setIsCorrect(correct);
-    setShowResult(true);
-    
-    if (correct) {
-      const wordScore = targetWord.length * 10;
-      setScore(score + wordScore);
-    }
-    
-    // Update SRS: Q=3 for correct, Q=0 for wrong
-    await updateFromVocabBlinder(currentCard.id, correct);
-  };
 
-  const handleNext = () => {
-    // Update stats
-    if (isCorrect) {
+    if (correct) {
+      setScore(score + 10 + (streak * 2));
+      setStreak(streak + 1);
       setCorrectCount(correctCount + 1);
     } else {
+      setStreak(0);
       setWrongCount(wrongCount + 1);
     }
 
+    setShowResult(true);
+  };
+
+  const handleNext = async () => {
+    // Update SRS
+    await updateFromVocabBlinder(currentCard.id, isCorrect || false);
+
     if (currentIndex < flashcards.length - 1) {
       setCurrentIndex(currentIndex + 1);
-      setSelectedAnswer(null);
-      setShowResult(false);
-      setIsCorrect(false);
     } else {
-      // Game finished - show summary
       setIsGameComplete(true);
     }
   };
 
-  // Game Complete Summary
   if (isGameComplete) {
-    const totalQuestions = correctCount + wrongCount;
-    const successRate = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
-    const avgScore = totalQuestions > 0 ? Math.round(score / totalQuestions) : 0;
+    const total = correctCount + wrongCount;
+    const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 dark:from-blue-950 dark:via-indigo-900 dark:to-blue-950 overflow-auto flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100 dark:from-indigo-950 dark:via-purple-900 dark:to-indigo-950 overflow-auto flex items-center justify-center p-4">
         <BackgroundDecorations />
-        <Card className="max-w-xl w-full shadow-2xl relative z-10">
+        <Card className="max-w-xl w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-[2rem]">
           <CardHeader className="text-center pb-2">
-            <div className="text-6xl mb-4">👁️</div>
-            <CardTitle className="text-3xl font-bold text-foreground">
+            <div className="text-6xl mb-4 animate-bounce">👁️</div>
+            <CardTitle className="text-3xl font-bold text-foreground bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
               สรุปผล Vocab Blinder
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Score Summary */}
-            <div className="bg-gradient-primary rounded-xl p-6 text-white text-center">
-              <div className="text-5xl font-bold mb-2">{score}</div>
-              <div className="text-xl opacity-90">คะแนนรวม</div>
-              <div className="text-sm opacity-75 mt-1">เฉลี่ย {avgScore} คะแนน/ข้อ</div>
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl p-6 text-white text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+              <div className="text-6xl font-bold mb-2">{score}</div>
+              <div className="text-xl opacity-90 font-medium">คะแนนรวม</div>
             </div>
 
-            {/* Statistics */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <div className="text-3xl font-bold text-green-700 dark:text-green-300">
+              <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-2xl border border-green-100">
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
                   {correctCount}
                 </div>
-                <div className="text-sm text-green-900 dark:text-green-100 mt-1">
-                  ตอบถูก
+                <div className="text-sm text-green-700 dark:text-green-300 mt-1 font-medium">
+                  ถูกต้อง
                 </div>
               </div>
-              <div className="text-center p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                <div className="text-3xl font-bold text-red-700 dark:text-red-300">
+              <div className="text-center p-4 bg-red-50 dark:bg-red-900/30 rounded-2xl border border-red-100">
+                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
                   {wrongCount}
                 </div>
-                <div className="text-sm text-red-900 dark:text-red-100 mt-1">
-                  ตอบผิด
+                <div className="text-sm text-red-700 dark:text-red-300 mt-1 font-medium">
+                  ผิด
                 </div>
               </div>
-              <div className="text-center p-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">
-                  {successRate}%
+              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-2xl border border-blue-100">
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  {accuracy}%
                 </div>
-                <div className="text-sm text-blue-900 dark:text-blue-100 mt-1">
-                  อัตราความแม่นยำ
+                <div className="text-sm text-blue-700 dark:text-blue-300 mt-1 font-medium">
+                  ความแม่นยำ
                 </div>
               </div>
             </div>
 
-            {/* Performance Message */}
-            <div className="text-center p-4 bg-muted rounded-lg">
-              <p className="text-lg font-semibold text-foreground">
-                {successRate >= 90 ? '🌟 สุดยอด! คุณเห็นรายละเอียดได้แม่นยำมาก!' :
-                 successRate >= 70 ? '🎯 เยี่ยมมาก! สายตาคุณคมชัด' :
-                 successRate >= 50 ? '👍 ดี ฝึกฝนต่อไปจะเก่งขึ้น' :
-                 '💪 ยังไม่เป็นไร ลองอีกครั้งนะ!'}
-              </p>
-            </div>
-
-            {/* Total Cards Info */}
-            <div className="text-center text-sm text-muted-foreground">
-              เล่นทั้งหมด {totalQuestions} ข้อ
-            </div>
-
-            {/* Action Buttons */}
             <div className="flex gap-3">
               <Button
                 onClick={onClose}
-                className="flex-1"
+                className="flex-1 rounded-xl h-12 text-lg font-medium"
                 size="lg"
+                variant="outline"
               >
-                <ArrowLeft className="h-5 w-5 mr-2" />
+                <Home className="h-5 w-5 mr-2" />
                 กลับหน้าหลัก
               </Button>
             </div>
@@ -246,28 +194,24 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 overflow-auto">
+    <div className="fixed inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100 dark:from-indigo-950 dark:via-purple-900 dark:to-indigo-950 overflow-auto">
       <BackgroundDecorations />
-      
-      <div className="container mx-auto px-4 py-6 relative z-10">
+
+      <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 relative z-10 min-h-screen flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            กลับ
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <Button variant="ghost" onClick={onClose} className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors">
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            ออก
           </Button>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 px-4 py-2 rounded-lg">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              <span className="font-bold">{score}</span>
+
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-1.5 md:gap-2 bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
+              <Trophy className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
+              <span className="font-bold text-base md:text-lg">{score}</span>
             </div>
-            <div className="bg-white/80 dark:bg-gray-800/80 px-4 py-2 rounded-lg">
-              <span className="font-bold">
+            <div className="bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
+              <span className="font-bold text-base md:text-lg text-primary">
                 {currentIndex + 1} / {flashcards.length}
               </span>
             </div>
@@ -275,94 +219,89 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose }: FlashcardVoca
         </div>
 
         {/* Main Game Area */}
-        <div className="max-w-4xl mx-auto">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-center text-2xl">
-                👁️ The Vocab Blinder: Precision Test
+        <div className="flex-1 flex items-center justify-center max-w-2xl mx-auto w-full">
+          <Card className="w-full bg-white/90 backdrop-blur-xl border-white/50 shadow-2xl rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="pb-0 md:pb-2 pt-4 md:pt-6">
+              <CardTitle className="text-center text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+                <span className="text-2xl md:text-3xl">👁️</span> Vocab Blinder
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Blinded Word Display */}
-              <div className="text-center bg-gray-100 dark:bg-gray-800 p-8 rounded-lg">
-                <p className="text-5xl font-mono font-bold tracking-wider mb-4 text-gray-900 dark:text-gray-100">
-                  {displayBlindedWord()}
-                </p>
-                <p className="text-xl text-gray-600 dark:text-gray-400">
-                  คำใบ้: {currentCard.back_text}
-                </p>
+            <CardContent className="space-y-4 md:space-y-8 p-4 md:p-8">
+
+              {/* Word Display */}
+              <div className="text-center py-4 md:py-8">
+                <div className="mb-2 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-widest">เติมคำในช่องว่าง</div>
+                <div className="text-3xl md:text-6xl font-mono font-bold tracking-widest text-indigo-900 dark:text-indigo-100 mb-4 md:mb-6 break-words">
+                  {blindedWord?.display.split('').map((char, i) => (
+                    <span key={i} className={`inline-block transition-all duration-300 ${char === '_' ? 'text-indigo-500 animate-pulse' : ''}`}>
+                      {char}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="bg-indigo-50/80 px-4 py-2 md:px-6 md:py-4 rounded-xl md:rounded-2xl inline-block border border-indigo-100 max-w-full md:max-w-lg">
+                  <p className="text-gray-600 dark:text-gray-400 font-medium text-base md:text-lg">
+                    {currentCard.back_text}
+                  </p>
+                </div>
               </div>
 
-              {/* Instruction */}
-              <div className="text-center text-lg">
-                <p className="font-semibold">เลือกกลุ่มตัวอักษรที่หายไปตามลำดับ</p>
+              {/* Options Grid */}
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                {options.map((option, index) => {
+                  const isSelected = selectedOption === option;
+                  const isCorrectOption = option === blindedWord?.missingLetters[0];
+
+                  let buttonStyle = "bg-white hover:bg-indigo-50 border-2 border-indigo-100 text-indigo-900";
+
+                  if (showResult) {
+                    if (isCorrectOption) {
+                      buttonStyle = "bg-green-500 border-green-600 text-white shadow-lg scale-105";
+                    } else if (isSelected && !isCorrectOption) {
+                      buttonStyle = "bg-red-500 border-red-600 text-white opacity-50";
+                    } else {
+                      buttonStyle = "bg-gray-100 text-gray-400 border-gray-200";
+                    }
+                  } else if (isSelected) {
+                    buttonStyle = "bg-indigo-600 border-indigo-700 text-white shadow-lg scale-95";
+                  }
+
+                  return (
+                    <Button
+                      key={index}
+                      onClick={() => handleOptionSelect(option)}
+                      disabled={showResult}
+                      className={`
+                        h-14 md:h-20 text-xl md:text-3xl font-bold rounded-xl md:rounded-2xl transition-all duration-300
+                        ${buttonStyle}
+                        ${!showResult && 'hover:-translate-y-1 hover:shadow-md'}
+                      `}
+                    >
+                      {option}
+                    </Button>
+                  );
+                })}
               </div>
 
-              {/* Answer Choices */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {answers.map((answer, index) => (
-                  <Button
-                    key={index}
-                    onClick={() => handleAnswerSelect(index)}
-                    disabled={showResult}
-                    variant="outline"
-                    className={`
-                      h-auto py-6 text-2xl font-mono
-                      ${selectedAnswer === index && showResult
-                        ? isCorrect
-                          ? 'bg-green-500 text-white border-green-600'
-                          : 'bg-red-500 text-white border-red-600'
-                        : ''
-                      }
-                      ${showResult && answer.isCorrect && selectedAnswer !== index
-                        ? 'bg-green-100 border-green-400 dark:bg-green-900/30'
-                        : ''
-                      }
-                    `}
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="font-bold mr-2">
-                        {String.fromCharCode(65 + index)}.
-                      </span>
-                      <span className="tracking-widest">
-                        {answer.letters.join(', ')}
-                      </span>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-
-              {/* Result Message */}
+              {/* Result Feedback */}
               {showResult && (
-                <div className="text-center">
-                  {isCorrect ? (
-                    <div className="bg-green-100 dark:bg-green-900/30 p-4 rounded-lg">
-                      <p className="text-2xl font-bold text-green-700 dark:text-green-300 mb-2">
-                        ✅ ถูกต้อง! +{targetWord.length * 10} คะแนน
-                      </p>
-                      <p className="text-lg text-green-900 dark:text-green-100 font-semibold">คำตอบ: {targetWord}</p>
-                    </div>
-                  ) : (
-                    <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-lg">
-                      <p className="text-2xl font-bold text-red-700 dark:text-red-300 mb-2">
-                        ❌ ผิด!
-                      </p>
-                      <p className="text-lg text-red-900 dark:text-red-100 font-semibold">คำตอบที่ถูกต้อง: {targetWord}</p>
-                      <p className="text-sm mt-2 text-red-800 dark:text-red-200">
-                        ตัวอักษรที่หายไป: {blindedWord.missingLetters.join(', ')}
-                      </p>
-                    </div>
-                  )}
-                  
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 pt-2 md:pt-4">
+                  <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl text-center mb-3 md:mb-4 ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <p className="text-lg md:text-xl font-bold">
+                      {isCorrect ? '🎉 ถูกต้อง! เก่งมาก' : `😅 ผิดจ้า! คำที่ถูกคือ "${blindedWord?.original}"`}
+                    </p>
+                  </div>
+
                   <Button
                     onClick={handleNext}
-                    className="mt-4"
+                    className="w-full h-12 md:h-14 text-lg md:text-xl rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all bg-gradient-to-r from-indigo-600 to-purple-600 border-0"
                     size="lg"
                   >
-                    {currentIndex < flashcards.length - 1 ? 'ข้อถัดไป' : 'จบเกม'}
+                    {currentIndex < flashcards.length - 1 ? 'ข้อถัดไป' : 'ดูสรุปผล'}
                   </Button>
                 </div>
               )}
+
             </CardContent>
           </Card>
         </div>

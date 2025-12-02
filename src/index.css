@@ -8,181 +8,121 @@ All colors MUST be HSL for consistency and theming support.
 
 @layer base {
   :root {
-    /* Base colors - Clean minimal palette */
-    --background: 0 0% 99%;
-    --foreground: 240 10% 10%;
+    /* Base colors - Minimal Light Purple Theme (Duolingo-inspired) */
+    --background: 270 50% 98%; /* Very light purple tint */
+    --foreground: 270 10% 20%; /* Soft dark purple text */
 
-    /* Card system - Soft translucent cards */
+    /* Card system */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 15%;
+    --card-foreground: 270 10% 20%;
 
-    --popover: 0 0% 100%; 
-    --popover-foreground: 240 10% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 270 10% 20%;
 
-    /* Primary - Soft purple brand color */
-    --primary: 280 100% 85%;
-    --primary-foreground: 280 50% 15%;
-    --primary-glow: 280 100% 90%;
+    /* Primary - The main "Duolingo" purple */
+    --primary: 270 80% 60%; /* Vibrant but soft purple */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 270 80% 70%;
 
-    /* Secondary - Light lavender */
-    --secondary: 290 30% 95%;
-    --secondary-foreground: 280 50% 25%;
+    /* Secondary - Lighter accent */
+    --secondary: 270 30% 90%;
+    --secondary-foreground: 270 60% 40%;
 
     /* Muted elements */
-    --muted: 280 20% 96%;
-    --muted-foreground: 280 10% 50%;
+    --muted: 270 20% 95%;
+    --muted-foreground: 270 10% 60%;
 
-    /* Accent - Pink highlight */
-    --accent: 320 70% 90%;
-    --accent-foreground: 320 50% 25%;
+    /* Accent - For highlights/success */
+    --accent: 150 60% 45%; /* Soft green for success/accent */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Borders and inputs - Very subtle */
-    --border: 280 20% 92%;
-    --input: 280 20% 96%;
-    --ring: 280 100% 80%;
+    /* Borders and inputs */
+    --border: 270 20% 90%;
+    --input: 270 20% 95%;
+    --ring: 270 80% 60%;
 
-    /* Promjum specific design tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(280 100% 85%), hsl(320 90% 85%));
-    --gradient-secondary: linear-gradient(135deg, hsl(280 50% 96%), hsl(320 30% 96%));
-    --gradient-hero: linear-gradient(135deg, hsl(280 100% 85%) 0%, hsl(320 90% 85%) 50%, hsl(340 80% 90%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100% / 0.8), hsl(280 30% 98% / 0.6));
-    
-    /* Beautiful shadows with purple tint */
-    --shadow-soft: 0 4px 20px hsl(280 50% 85% / 0.15);
-    --shadow-medium: 0 8px 40px hsl(280 50% 80% / 0.2);
-    --shadow-large: 0 20px 60px hsl(280 40% 70% / 0.25);
-    --shadow-glow: 0 0 30px hsl(280 100% 85% / 0.4);
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(270 80% 60%), hsl(290 70% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(270 30% 90%), hsl(290 30% 90%));
+    --gradient-hero: linear-gradient(180deg, hsl(270 50% 98%) 0%, hsl(270 30% 95%) 100%);
+    --gradient-card: linear-gradient(145deg, #ffffff, #f8f5ff);
 
-    /* Smooth transitions */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    /* Shadows - Soft and playful */
+    --shadow-soft: 0 4px 12px -2px hsl(270 20% 80% / 0.3);
+    --shadow-medium: 0 8px 24px -4px hsl(270 20% 80% / 0.4);
+    --shadow-large: 0 12px 48px -6px hsl(270 20% 80% / 0.5);
+    --shadow-glow: 0 0 20px hsl(270 80% 60% / 0.3);
 
-    --radius: 0.75rem;
+    /* Transitions */
+    --transition-smooth: all 0.2s ease-in-out;
+    --transition-bounce: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
-    --sidebar-background: 0 0% 98%;
+    /* Radius - Rounded and friendly */
+    --radius: 1rem; /* More rounded */
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 270 10% 20%;
+    --sidebar-primary: 270 80% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 30% 95%;
+    --sidebar-accent-foreground: 270 80% 60%;
+    --sidebar-border: 270 20% 90%;
+    --sidebar-ring: 270 80% 60%;
   }
 
   .dark {
-    /* Dark mode - Elegant purple theme */
-    --background: 280 15% 8%;
-    --foreground: 280 20% 95%;
+    /* Dark mode - Deep purple/midnight */
+    --background: 270 30% 10%;
+    --foreground: 270 10% 95%;
 
-    --card: 280 15% 10%;
-    --card-foreground: 280 20% 95%;
+    --card: 270 25% 15%;
+    --card-foreground: 270 10% 95%;
 
-    --popover: 280 15% 10%;
-    --popover-foreground: 280 20% 95%;
+    --popover: 270 25% 15%;
+    --popover-foreground: 270 10% 95%;
 
-    --primary: 280 100% 75%;
-    --primary-foreground: 280 30% 15%;
-    --primary-glow: 280 100% 80%;
+    --primary: 270 70% 65%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 270 70% 75%;
 
-    --secondary: 280 20% 15%;
-    --secondary-foreground: 280 20% 90%;
+    --secondary: 270 20% 20%;
+    --secondary-foreground: 270 10% 90%;
 
-    --muted: 280 20% 12%;
-    --muted-foreground: 280 15% 60%;
+    --muted: 270 20% 18%;
+    --muted-foreground: 270 10% 65%;
 
-    --accent: 320 60% 75%;
-    --accent-foreground: 320 30% 15%;
+    --accent: 150 50% 50%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 280 20% 18%;
-    --input: 280 20% 15%;
-    --ring: 280 100% 75%;
+    --border: 270 20% 25%;
+    --input: 270 20% 20%;
+    --ring: 270 70% 65%;
 
-    /* Dark mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(280 100% 75%), hsl(320 80% 75%));
-    --gradient-secondary: linear-gradient(135deg, hsl(280 30% 15%), hsl(320 20% 18%));
-    --gradient-hero: linear-gradient(135deg, hsl(280 100% 75%) 0%, hsl(320 80% 75%) 50%, hsl(340 70% 80%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(280 20% 12% / 0.8), hsl(280 15% 10% / 0.9));
+    --gradient-primary: linear-gradient(135deg, hsl(270 70% 65%), hsl(290 60% 65%));
+    --gradient-secondary: linear-gradient(135deg, hsl(270 20% 20%), hsl(290 20% 20%));
+    --gradient-hero: linear-gradient(180deg, hsl(270 30% 10%) 0%, hsl(270 25% 15%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(270 25% 15%), hsl(270 25% 12%));
 
-    /* Dark mode shadows with purple glow */
-    --shadow-soft: 0 4px 20px hsl(280 50% 10% / 0.4);
-    --shadow-medium: 0 8px 40px hsl(280 50% 8% / 0.5);
-    --shadow-large: 0 20px 60px hsl(280 40% 5% / 0.6);
-    --shadow-glow: 0 0 30px hsl(280 100% 75% / 0.3);
+    --shadow-soft: 0 4px 12px -2px hsl(0 0% 0% / 0.3);
+    --shadow-medium: 0 8px 24px -4px hsl(0 0% 0% / 0.4);
+    --shadow-large: 0 12px 48px -6px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 20px hsl(270 70% 65% / 0.2);
 
-    --sidebar-background: 280 15% 8%;
-    --sidebar-foreground: 280 20% 90%;
-    --sidebar-primary: 280 100% 75%;
-    --sidebar-primary-foreground: 280 30% 15%;
-    --sidebar-accent: 280 20% 15%;
-    --sidebar-accent-foreground: 280 20% 90%;
-    --sidebar-border: 280 20% 18%;
-    --sidebar-ring: 280 100% 75%;
-  }
-
-  .warm {
-    /* Warm mode - Cozy orange-amber theme */
-    --background: 30 20% 12%;
-    --foreground: 30 30% 95%;
-
-    --card: 30 20% 15%;
-    --card-foreground: 30 30% 95%;
-
-    --popover: 30 20% 15%;
-    --popover-foreground: 30 30% 95%;
-
-    --primary: 35 100% 65%;
-    --primary-foreground: 30 20% 10%;
-    --primary-glow: 35 100% 70%;
-
-    --secondary: 30 25% 20%;
-    --secondary-foreground: 30 30% 90%;
-
-    --muted: 30 20% 18%;
-    --muted-foreground: 30 20% 60%;
-
-    --accent: 25 90% 60%;
-    --accent-foreground: 25 20% 10%;
-
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 30 20% 25%;
-    --input: 30 20% 20%;
-    --ring: 35 100% 65%;
-
-    /* Warm mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(35 100% 65%), hsl(25 90% 60%));
-    --gradient-secondary: linear-gradient(135deg, hsl(30 25% 20%), hsl(25 20% 22%));
-    --gradient-hero: linear-gradient(135deg, hsl(35 100% 65%) 0%, hsl(25 90% 60%) 50%, hsl(20 80% 55%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(30 20% 18% / 0.8), hsl(30 20% 15% / 0.9));
-
-    /* Warm mode shadows with orange glow */
-    --shadow-soft: 0 4px 20px hsl(30 50% 10% / 0.4);
-    --shadow-medium: 0 8px 40px hsl(30 50% 8% / 0.5);
-    --shadow-large: 0 20px 60px hsl(30 40% 5% / 0.6);
-    --shadow-glow: 0 0 30px hsl(35 100% 65% / 0.3);
-
-    --sidebar-background: 30 20% 12%;
-    --sidebar-foreground: 30 30% 90%;
-    --sidebar-primary: 35 100% 65%;
-    --sidebar-primary-foreground: 30 20% 10%;
-    --sidebar-accent: 30 25% 20%;
-    --sidebar-accent-foreground: 30 30% 90%;
-    --sidebar-border: 30 20% 25%;
-    --sidebar-ring: 35 100% 65%;
+    --sidebar-background: 270 30% 12%;
+    --sidebar-foreground: 270 10% 95%;
+    --sidebar-primary: 270 70% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 20% 20%;
+    --sidebar-accent-foreground: 270 10% 95%;
+    --sidebar-border: 270 20% 25%;
+    --sidebar-ring: 270 70% 65%;
   }
 }
 

@@ -19,6 +19,7 @@ import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
 import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGame';
 import { FlashcardHangmanGame } from '@/components/FlashcardHangmanGame';
 import { FlashcardVocabBlinderGame } from '@/components/FlashcardVocabBlinderGame';
+import { FlashcardWordSearchGame } from '@/components/FlashcardWordSearchGame';
 import { FlashcardSelectionDialog } from '@/components/FlashcardSelectionDialog';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,7 +83,7 @@ export function FolderDetail() {
   const [loading, setLoading] = useState(true);
   const [showNewCardDialog, setShowNewCardDialog] = useState(false);
   const [selectedSet, setSelectedSet] = useState<FlashcardSet | null>(null);
-  const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | null>(null);
+  const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch' | null>(null);
   const [showGameSelection, setShowGameSelection] = useState(false);
   const [showFlashcardSelection, setShowFlashcardSelection] = useState(false);
   const [showReviewFlashcardSelection, setShowReviewFlashcardSelection] = useState(false);
@@ -239,10 +240,11 @@ export function FolderDetail() {
       backImage: card.back_image
     }));
     setSelectedFlashcards(converted);
+    setShowFlashcardSelection(false);
     setShowGameSelection(true);
   };
 
-  const handleGameSelect = (game: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder') => {
+  const handleGameSelect = (game: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch') => {
     setGameMode(game);
     setShowGameSelection(false);
     setShowFlashcardSelection(false);
@@ -657,6 +659,19 @@ export function FolderDetail() {
         />
       );
     }
+    if (gameMode === 'wordSearch') {
+      return (
+        <FlashcardWordSearchGame
+          flashcards={selectedFlashcards.map(c => ({
+            id: c.id,
+            front_text: c.front,
+            back_text: c.back,
+            created_at: new Date().toISOString()
+          }))}
+          onClose={handleGameClose}
+        />
+      );
+    }
     return (
       <FlashcardSwiper
         cards={selectedFlashcards.map(c => ({
@@ -951,7 +966,7 @@ export function FolderDetail() {
             front_image: card.frontImage,
             back_image: card.backImage
           }))}
-          onConfirm={handleFlashcardsSelected}
+          onSelect={handleFlashcardsSelected}
         />
       )}
 
@@ -966,7 +981,7 @@ export function FolderDetail() {
             front_image: card.frontImage,
             back_image: card.backImage
           }))}
-          onConfirm={handleReviewFlashcardsSelected}
+          onSelect={handleReviewFlashcardsSelected}
         />
       )}
 
