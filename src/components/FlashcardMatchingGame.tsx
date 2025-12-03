@@ -1,310 +1,301 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
-import { X, CheckCircle, Clock, Trophy } from 'lucide-react';
+import { ArrowLeft, Trophy, Home, RotateCcw, ArrowRight, Gamepad2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '@/contexts/LanguageContext';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 
 interface Flashcard {
   id: string;
   front_text: string;
   back_text: string;
+  created_at: string;
 }
 
 interface FlashcardMatchingGameProps {
   flashcards: Flashcard[];
   onClose: () => void;
+  onNext?: () => void;
 }
 
 interface MatchingCard {
   id: string;
-  text: string;
-  type: 'question' | 'answer';
-  originalId: string;
+  content: string;
+  type: 'front' | 'back';
+  pairId: string;
   isMatched: boolean;
-  isSelected: boolean;
 }
 
-export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatchingGameProps) {
+export function FlashcardMatchingGame({ flashcards, onClose, onNext }: FlashcardMatchingGameProps) {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
   const { updateFromMatching } = useSRSProgress();
   const [cards, setCards] = useState<MatchingCard[]>([]);
-  const [selectedCard, setSelectedCard] = useState<MatchingCard | null>(null);
-  const [matchedPairs, setMatchedPairs] = useState<Set<string>>(new Set());
+  const [selectedCards, setSelectedCards] = useState<MatchingCard[]>([]);
+  const [matchedPairs, setMatchedPairs] = useState<string[]>([]);
   const [score, setScore] = useState(0);
-  const [startTime, setStartTime] = useState<number>(Date.now());
-  const [gameTime, setGameTime] = useState(0);
-  const [isGameComplete, setIsGameComplete] = useState(false);
-  const [wrongMatch, setWrongMatch] = useState<Set<string>>(new Set());
-  // Track first-try status for each card
-  const attemptedCards = useRef<Set<string>>(new Set());
+  const [startTime, setStartTime] = useState(Date.now());
+  const [endTime, setEndTime] = useState<number | null>(null);
+  const [wrongMatch, setWrongMatch] = useState<string[]>([]); // IDs of cards currently showing wrong state
 
-  // Generate matching cards
+  const handleRestart = () => {
+    setMatchedPairs([]);
+    setScore(0);
+    setEndTime(null);
+    setWrongMatch([]);
+    setSelectedCards([]);
+    setStartTime(Date.now());
+    initializeGame();
+  };
+
+  // Game config
+  const maxPairs = 6; // 12 cards total for better mobile fit
+
   useEffect(() => {
-    if (flashcards.length < 2) return;
+    initializeGame();
+  }, [flashcards]);
 
-    const maxPairs = Math.min(6, flashcards.length);
+  const initializeGame = () => {
+    // Select random cards
     const selectedFlashcards = [...flashcards]
-      .sort(() => 0.5 - Math.random())
+      .sort(() => Math.random() - 0.5)
       .slice(0, maxPairs);
 
+    // Create matching pairs
     const gameCards: MatchingCard[] = [];
-
-    selectedFlashcards.forEach(flashcard => {
+    selectedFlashcards.forEach(card => {
       gameCards.push({
-        id: `q-${flashcard.id}`,
-        text: flashcard.front_text,
-        type: 'question',
-        originalId: flashcard.id,
-        isMatched: false,
-        isSelected: false
+        id: `${card.id}-front`,
+        content: card.front_text,
+        type: 'front',
+        pairId: card.id,
+        isMatched: false
       });
       gameCards.push({
-        id: `a-${flashcard.id}`,
-        text: flashcard.back_text,
-        type: 'answer',
-        originalId: flashcard.id,
-        isMatched: false,
-        isSelected: false
+        id: `${card.id}-back`,
+        content: card.back_text,
+        type: 'back',
+        pairId: card.id,
+        isMatched: false
       });
     });
 
-    // Shuffle cards
-    const shuffledCards = gameCards.sort(() => 0.5 - Math.random());
-    setCards(shuffledCards);
-    setStartTime(Date.now());
-  }, [flashcards]);
-
-  // Update game timer
-  useEffect(() => {
-    if (isGameComplete) return;
-
-    const interval = setInterval(() => {
-      setGameTime(Date.now() - startTime);
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [startTime, isGameComplete]);
+    // Shuffle
+    setCards(gameCards.sort(() => Math.random() - 0.5));
+  };
 
   const handleCardClick = (card: MatchingCard) => {
-    if (card.isMatched || card.isSelected) return;
+    if (
+      card.isMatched ||
+      selectedCards.find(c => c.id === card.id) ||
+      selectedCards.length >= 2 ||
+      wrongMatch.length > 0
+    ) return;
 
-    // Clear any wrong match highlighting
-    setWrongMatch(new Set());
+    const newSelected = [...selectedCards, card];
+    setSelectedCards(newSelected);
 
-    if (!selectedCard) {
-      // First card selection
-      setSelectedCard(card);
-      setCards(prev => 
-        prev.map(c => 
-          c.id === card.id 
-            ? { ...c, isSelected: true }
-            : { ...c, isSelected: false }
-        )
-      );
-    } else {
-      // Second card selection - check for match
-      const isFirstTry = !attemptedCards.current.has(selectedCard.originalId);
-      
-      if (selectedCard.originalId === card.originalId && selectedCard.type !== card.type) {
-        // Correct match!
-        const newMatchedPairs = new Set(matchedPairs);
-        newMatchedPairs.add(selectedCard.originalId);
-        setMatchedPairs(newMatchedPairs);
-        setScore(prev => prev + 1);
+    if (newSelected.length === 2) {
+      checkMatch(newSelected[0], newSelected[1]);
+    }
+  };
 
-        setCards(prev =>
-          prev.map(c => {
-            if (c.originalId === card.originalId) {
-              return { ...c, isMatched: true, isSelected: false };
-            }
-            return { ...c, isSelected: false };
-          })
-        );
+  const checkMatch = async (card1: MatchingCard, card2: MatchingCard) => {
+    if (card1.pairId === card2.pairId) {
+      // Match found
+      const newMatched = [...matchedPairs, card1.pairId];
+      setMatchedPairs(newMatched);
+      setScore(score + 10);
 
-        // Update SRS: Q=3 first try correct, Q=0 not first try
-        updateFromMatching(selectedCard.originalId, true, isFirstTry);
+      setCards(cards.map(c =>
+        c.pairId === card1.pairId ? { ...c, isMatched: true } : c
+      ));
 
-        // Check if game is complete
-        if (newMatchedPairs.size === cards.length / 2) {
-          setIsGameComplete(true);
-        }
-      } else {
-        // Wrong match - mark as attempted and update SRS with Q=-1 (treated as Q=0)
-        attemptedCards.current.add(selectedCard.originalId);
-        attemptedCards.current.add(card.originalId);
-        
-        // Update SRS for wrong match (Q=-1 -> Q=0)
-        updateFromMatching(selectedCard.originalId, false, false);
-        
-        setWrongMatch(new Set([selectedCard.id, card.id]));
-        
-        // Reset selection after a short delay
-        setTimeout(() => {
-          setCards(prev =>
-            prev.map(c => ({ ...c, isSelected: false }))
-          );
-          setWrongMatch(new Set());
-        }, 1000);
+      setSelectedCards([]);
+
+      // Update SRS
+      await updateFromMatching(card1.pairId, true, true); // Assume first try for now
+
+      // Check win
+      if (newMatched.length === Math.min(flashcards.length, maxPairs)) {
+        setEndTime(Date.now());
       }
+    } else {
+      // No match
+      setWrongMatch([card1.id, card2.id]);
+      setTimeout(() => {
+        setSelectedCards([]);
+        setWrongMatch([]);
+      }, 1000);
 
-      setSelectedCard(null);
+      // Update SRS penalty? Maybe not for matching game unless repeated errors
     }
   };
 
   const getCardStyle = (card: MatchingCard) => {
     if (card.isMatched) {
-      return "bg-green-500/20 border-green-500 text-green-700 dark:text-green-400 cursor-not-allowed";
+      return "opacity-0 pointer-events-none"; // Hide matched cards
     }
-    
-    if (wrongMatch.has(card.id)) {
-      return "bg-red-500/20 border-red-500 text-red-700 dark:text-red-400 animate-pulse";
+
+    const isSelected = selectedCards.find(c => c.id === card.id);
+    const isWrong = wrongMatch.includes(card.id);
+
+    if (isWrong) {
+      return "bg-red-500 border-red-600 text-white animate-shake";
     }
-    
-    if (card.isSelected) {
-      return "bg-primary/20 border-primary text-primary-foreground ring-2 ring-primary/50";
+
+    if (isSelected) {
+      return "bg-cyan-600 border-cyan-700 text-white shadow-lg scale-105 ring-4 ring-cyan-200";
     }
-    
-    if (card.type === 'question') {
-      return "bg-card border-border hover:bg-muted text-foreground";
-    } else {
-      return "bg-card border-border hover:bg-muted text-foreground";
-    }
+
+    return "bg-white hover:bg-cyan-50 border-2 border-cyan-100 text-cyan-900 hover:-translate-y-1 hover:shadow-md";
   };
 
-  const formatTime = (milliseconds: number) => {
-    const seconds = Math.floor(milliseconds / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
+  if (endTime) {
+    const timeSpent = Math.floor((endTime - startTime) / 1000);
+    const minutes = Math.floor(timeSpent / 60);
+    const seconds = timeSpent % 60;
 
-  if (flashcards.length < 2) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-6 text-center">
-            <h3 className="text-lg font-semibold text-foreground mb-4">ไม่สามารถเล่นเกมได้</h3>
-            <p className="text-muted-foreground mb-4">
-              ต้องมีแฟลชการ์ดอย่างน้อย 2 ใบเพื่อเล่นเกมจับคู่
-            </p>
-            <Button onClick={onClose}>ปิด</Button>
+      <div className="fixed inset-0 bg-gradient-to-br from-cyan-50 via-sky-50 to-cyan-100 dark:from-cyan-950 dark:via-sky-900 dark:to-cyan-950 overflow-auto flex items-center justify-center p-4">
+        <BackgroundDecorations />
+        <Card className="max-w-xl w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-[2rem]">
+          <CardHeader className="text-center pb-2">
+            <div className="text-6xl mb-4 animate-bounce">🧩</div>
+            <CardTitle className="text-3xl font-bold text-foreground bg-gradient-to-r from-cyan-600 to-sky-600 bg-clip-text text-transparent">
+              ยอดเยี่ยม! จับคู่ครบแล้ว
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="bg-gradient-to-r from-cyan-500 to-sky-500 rounded-2xl p-6 text-white text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+              <div className="text-6xl font-bold mb-2">{score}</div>
+              <div className="text-xl opacity-90 font-medium">คะแนนรวม</div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-2xl border border-blue-100">
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  {minutes}:{seconds.toString().padStart(2, '0')}
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-300 mt-1 font-medium">
+                  เวลาที่ใช้
+                </div>
+              </div>
+              <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-2xl border border-green-100">
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  {matchedPairs.length}
+                </div>
+                <div className="text-sm text-green-700 dark:text-green-300 mt-1 font-medium">
+                  คู่ที่จับได้
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-row gap-3 justify-center">
+              <Button
+                onClick={handleRestart}
+                className="flex-1 bg-gradient-to-r from-cyan-600 to-sky-600 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-sm md:text-base"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                เล่นอีกครั้ง
+              </Button>
+
+              <Button
+                onClick={() => {
+                  const selectedVocab = flashcards.map(f => ({
+                    id: f.id,
+                    word: f.front_text,
+                    meaning: f.back_text
+                  }));
+                  navigate('/ai-listening-section3-intro', {
+                    state: { selectedVocab }
+                  });
+                }}
+                variant="outline"
+                className="flex-1 rounded-xl h-12 text-sm md:text-base border-cyan-200 text-cyan-700 hover:bg-cyan-50"
+              >
+                <Gamepad2 className="h-4 w-4 mr-2" />
+                เลือกเกมใหม่
+              </Button>
+
+              <Button
+                onClick={onNext || onClose}
+                variant="outline"
+                className="flex-1 rounded-xl h-12 text-sm md:text-base border-gray-200"
+              >
+                ถัดไป
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (isGameComplete) {
-    const finalTime = formatTime(gameTime);
-    return (
-      <div className="fixed inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 dark:from-green-950 dark:via-emerald-900 dark:to-green-950 z-50">
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center space-y-6 bg-card/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl max-w-md w-full border border-border"
-          >
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">ยินดีด้วย!</h2>
-            <div className="bg-muted rounded-xl p-6 space-y-4">
-              <div className="flex items-center justify-center space-x-2">
-                <Trophy className="h-6 w-6 text-yellow-500" />
-                <span className="text-xl font-bold text-foreground">จับคู่ครบทุกคู่!</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">{score}</div>
-                  <div className="text-muted-foreground">คู่ที่ถูกต้อง</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-accent">{finalTime}</div>
-                  <div className="text-muted-foreground">เวลาที่ใช้</div>
-                </div>
-              </div>
-            </div>
-            <Button
-              onClick={onClose}
-              className="w-full py-3 text-lg font-semibold"
-            >
-              เสร็จสิ้น
-            </Button>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-  const progress = (matchedPairs.size / (cards.length / 2)) * 100;
-
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-100 dark:from-purple-950 dark:via-pink-900 dark:to-indigo-950 z-50">
-      <div className="flex flex-col h-full">
+    <div className="fixed inset-0 bg-gradient-to-br from-cyan-50 via-sky-50 to-cyan-100 dark:from-cyan-950 dark:via-sky-900 dark:to-cyan-950 overflow-auto">
+      <BackgroundDecorations />
+
+      <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 relative z-10 min-h-screen flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-card/80 backdrop-blur-sm border-b border-border">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-bold text-foreground">Matching Game</h2>
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-              <div className="flex items-center space-x-1">
-                <Clock className="h-4 w-4" />
-                <span>{formatTime(gameTime)}</span>
-              </div>
-              <div>
-                {matchedPairs.size}/{cards.length / 2} คู่
-              </div>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <Button variant="ghost" onClick={onClose} className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors">
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            ออก
           </Button>
-        </div>
 
-        {/* Progress */}
-        <div className="px-4 py-2 bg-card/80 backdrop-blur-sm">
-          <Progress value={progress} className="w-full" />
-        </div>
-
-        {/* Game Board */}
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="max-w-4xl w-full">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              <AnimatePresence>
-                {cards.map((card, index) => (
-                  <motion.div
-                    key={card.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${getCardStyle(card)} ${
-                      !card.isMatched && !wrongMatch.has(card.id) ? 'hover:scale-105' : ''
-                    }`}
-                    onClick={() => handleCardClick(card)}
-                  >
-                    <div className="text-center">
-                      <div className={`text-xs font-medium mb-2 ${
-                        card.type === 'question' ? 'text-primary' : 'text-accent'
-                      }`}>
-                        {card.type === 'question' ? 'คำถาม' : 'คำตอบ'}
-                      </div>
-                      <div className="text-sm font-medium break-words text-foreground">
-                        {card.text}
-                      </div>
-                      {card.isMatched && (
-                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mx-auto mt-2" />
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-1.5 md:gap-2 bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
+              <Trophy className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
+              <span className="font-bold text-base md:text-lg">{score}</span>
             </div>
-
-            {/* Instructions */}
-            <div className="text-center mt-6">
-              <div className="inline-flex items-center space-x-2 bg-card/80 rounded-full px-4 py-2 text-sm text-muted-foreground border border-border">
-                <span>คลิกการ์ดเพื่อจับคู่คำถามกับคำตอบ</span>
-              </div>
+            <div className="bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
+              <span className="font-bold text-base md:text-lg text-primary">
+                {matchedPairs.length} / {Math.min(flashcards.length, maxPairs)}
+              </span>
             </div>
           </div>
+        </div>
+
+        {/* Main Game Area */}
+        <div className="flex-1 flex items-center justify-center max-w-5xl mx-auto w-full">
+          <Card className="w-full bg-white/90 backdrop-blur-xl border-white/50 shadow-2xl rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="pb-0 md:pb-2 pt-4 md:pt-6">
+              <CardTitle className="text-center text-xl md:text-2xl font-bold bg-gradient-to-r from-cyan-600 to-sky-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+                <span className="text-2xl md:text-3xl">🧩</span> Matching Pair
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 md:p-8">
+
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-4">
+                <AnimatePresence>
+                  {cards.map((card) => (
+                    <motion.button
+                      key={card.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: card.isMatched ? 0 : 1, scale: card.isMatched ? 0.8 : 1 }}
+                      exit={{ opacity: 0, scale: 0 }}
+                      onClick={() => handleCardClick(card)}
+                      className={`
+                        aspect-[4/3] md:aspect-video rounded-lg md:rounded-xl p-1 md:p-4 flex items-center justify-center text-center transition-all duration-300
+                        ${getCardStyle(card)}
+                      `}
+                    >
+                      <span className="text-xs md:text-lg font-bold line-clamp-3 break-words w-full">
+                        {card.content}
+                      </span>
+                    </motion.button>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

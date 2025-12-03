@@ -7,17 +7,9 @@ import { ScheduleCalendar } from "@/components/dashboard/ScheduleCalendar";
 import { GoalsMotivation } from "@/components/dashboard/GoalsMotivation";
 import { AITips } from "@/components/dashboard/AITips";
 import { useAuth } from "@/hooks/useAuth";
+
 export default function Dashboard() {
-  const {
-    user
-  } = useAuth();
-  const userProfile = user ? {
-    id: user.id,
-    email: user.email,
-    full_name: user.user_metadata?.full_name || 'ผู้ใช้',
-    role: user.app_metadata?.role || 'user',
-    subscription: 'normal'
-  } : null;
+  const { user } = useAuth();
 
   // Mock data - in real app, fetch from backend
   const userStats = {
@@ -32,65 +24,59 @@ export default function Dashboard() {
     subdecksCompleted: 0,
     totalSubdecks: 25
   };
-  return <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 relative overflow-hidden">
+
+  return (
+    <div className="min-h-screen bg-background relative overflow-hidden font-prompt">
       <BackgroundDecorations />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 relative z-10 max-w-7xl">
-        
-        {/* แถว 1: Header / Top Bar */}
-        <div className="mb-6 animate-fade-in">
-          
+
+        {/* Header / Top Bar */}
+        <div className="mb-8 animate-fade-in">
+          <TopBar user={user} />
         </div>
 
-        {/* แถว 2: Quick Start & Friends Leaderboard */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 animate-fade-in" style={{
-        animationDelay: '0.1s'
-      }}>
+        {/* Quick Start & Friends Leaderboard */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           {/* Daily Progress (Column 1-2) */}
           <div className="lg:col-span-2">
-            <DailyDeckQuickStart streak={userStats.streak} totalXP={userStats.totalXP} wordsLearnedToday={userStats.wordsLearnedToday} />
+            <DailyDeckQuickStart
+              streak={userStats.streak}
+              totalXP={userStats.totalXP}
+              wordsLearnedToday={userStats.wordsLearnedToday}
+            />
           </div>
 
           {/* Friends Leaderboard (Column 3) */}
-          <div>
+          <div className="h-full">
             <FriendsLeaderboard />
           </div>
         </div>
 
-        {/* แถว 3: Calendar & Suggested Deck + Goals */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6 mb-6">
+        {/* Calendar & Suggested Deck + Goals */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
           {/* Calendar (3/5 width) */}
-          <div className="lg:col-span-3 animate-fade-in" style={{
-          animationDelay: '0.2s'
-        }}>
+          <div className="lg:col-span-3 animate-fade-in h-[700px]" style={{ animationDelay: '0.2s' }}>
             <ScheduleCalendar />
           </div>
-          
+
           {/* Suggested Deck & Goals (2/5 width) */}
-          <div className="lg:col-span-2 flex flex-col gap-4 sm:gap-6">
-            <div className="animate-fade-in" style={{
-            animationDelay: '0.25s'
-          }}>
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            <div className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
               <SuggestedDeck />
             </div>
-            <div className="animate-fade-in" style={{
-            animationDelay: '0.3s'
-          }}>
+            <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
               <GoalsMotivation />
             </div>
           </div>
         </div>
 
-        {/* แถว 4: AI Tips */}
-        <div className="mb-6 animate-fade-in" style={{
-        animationDelay: '0.4s'
-      }}>
+        {/* AI Tips */}
+        <div className="mb-8 animate-fade-in" style={{ animationDelay: '0.4s' }}>
           <AITips />
         </div>
 
-        {/* แถว 8: Footer (Optional) */}
-        <div className="mt-12 pt-6 border-t border-border/30 animate-fade-in" style={{
-        animationDelay: '0.8s'
-      }}>
+        {/* Footer */}
+        <div className="mt-12 pt-6 border-t border-border/30 animate-fade-in" style={{ animationDelay: '0.8s' }}>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p>© 2024 Promjum. All rights reserved.</p>
             <div className="flex items-center gap-4">
@@ -101,5 +87,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 }

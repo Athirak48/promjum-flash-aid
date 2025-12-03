@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, Archive, ImagePlus, X, GamepadIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, ImagePlus, X, GamepadIcon, Check } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
@@ -19,6 +19,7 @@ import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
 import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGame';
 import { FlashcardHangmanGame } from '@/components/FlashcardHangmanGame';
 import { FlashcardVocabBlinderGame } from '@/components/FlashcardVocabBlinderGame';
+import { FlashcardWordSearchGame } from '@/components/FlashcardWordSearchGame';
 import { FlashcardSelectionDialog } from '@/components/FlashcardSelectionDialog';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,7 +83,7 @@ export function FolderDetail() {
   const [loading, setLoading] = useState(true);
   const [showNewCardDialog, setShowNewCardDialog] = useState(false);
   const [selectedSet, setSelectedSet] = useState<FlashcardSet | null>(null);
-  const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | null>(null);
+  const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch' | null>(null);
   const [showGameSelection, setShowGameSelection] = useState(false);
   const [showFlashcardSelection, setShowFlashcardSelection] = useState(false);
   const [showReviewFlashcardSelection, setShowReviewFlashcardSelection] = useState(false);
@@ -98,7 +99,10 @@ export function FolderDetail() {
   const [showEditSetDialog, setShowEditSetDialog] = useState(false);
   const [editingSetTitle, setEditingSetTitle] = useState('');
   const [selectedSetForEdit, setSelectedSetForEdit] = useState<FlashcardSet | null>(null);
+
   const [setToDelete, setSetToDelete] = useState<FlashcardSet | null>(null);
+
+
 
   // Fetch folder data from Supabase
   useEffect(() => {
@@ -239,10 +243,11 @@ export function FolderDetail() {
       backImage: card.back_image
     }));
     setSelectedFlashcards(converted);
+    setShowFlashcardSelection(false);
     setShowGameSelection(true);
   };
 
-  const handleGameSelect = (game: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder') => {
+  const handleGameSelect = (game: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch') => {
     setGameMode(game);
     setShowGameSelection(false);
     setShowFlashcardSelection(false);
@@ -373,9 +378,9 @@ export function FolderDetail() {
     const validRows = flashcardRows.filter(row =>
       (row.front.trim() || row.frontImage) && (row.back.trim() || row.backImage)
     );
-    if (validRows.length < 5) {
+    if (validRows.length < 1) {
       toast({
-        title: "กรุณาเพิ่มแฟลชการ์ดอย่างน้อย 5 ใบ",
+        title: "กรุณาเพิ่มแฟลชการ์ดอย่างน้อย 1 ใบ",
         variant: "destructive"
       });
       return;
@@ -398,9 +403,7 @@ export function FolderDetail() {
           user_id: user.id,
           folder_id: folderId,
           title: newSetTitle.trim(),
-          source: 'สร้างเอง',
-          is_public: false,
-          description: ''
+          source: 'สร้างเอง'
         })
         .select()
         .single();
@@ -408,53 +411,55 @@ export function FolderDetail() {
       if (setError) throw setError;
 
       // 2. Create flashcards with image upload
-      const flashcardsToInsert = await Promise.all(validRows.map(async (row) => {
-        let frontImageUrl = null;
-        let backImageUrl = null;
+      if (validRows.length > 0) {
+        const flashcardsToInsert = await Promise.all(validRows.map(async (row) => {
+          let frontImageUrl = null;
+          let backImageUrl = null;
 
-        if (row.frontImage) {
-          const fileName = `${user.id}/${Date.now()}_front_${row.id}`;
-          const { data, error } = await supabase.storage
-            .from('flashcard-images')
-            .upload(fileName, row.frontImage);
-
-          if (!error && data) {
-            const { data: { publicUrl } } = supabase.storage
+          if (row.frontImage) {
+            const fileName = `${user.id}/${Date.now()}_front_${row.id}`;
+            const { data, error } = await supabase.storage
               .from('flashcard-images')
-              .getPublicUrl(fileName);
-            frontImageUrl = publicUrl;
+              .upload(fileName, row.frontImage);
+
+            if (!error && data) {
+              const { data: { publicUrl } } = supabase.storage
+                .from('flashcard-images')
+                .getPublicUrl(fileName);
+              frontImageUrl = publicUrl;
+            }
           }
-        }
 
-        if (row.backImage) {
-          const fileName = `${user.id}/${Date.now()}_back_${row.id}`;
-          const { data, error } = await supabase.storage
-            .from('flashcard-images')
-            .upload(fileName, row.backImage);
-
-          if (!error && data) {
-            const { data: { publicUrl } } = supabase.storage
+          if (row.backImage) {
+            const fileName = `${user.id}/${Date.now()}_back_${row.id}`;
+            const { data, error } = await supabase.storage
               .from('flashcard-images')
-              .getPublicUrl(fileName);
-            backImageUrl = publicUrl;
+              .upload(fileName, row.backImage);
+
+            if (!error && data) {
+              const { data: { publicUrl } } = supabase.storage
+                .from('flashcard-images')
+                .getPublicUrl(fileName);
+              backImageUrl = publicUrl;
+            }
           }
-        }
 
-        return {
-          user_id: user.id,
-          flashcard_set_id: newSet.id,
-          front_text: row.front.trim(),
-          back_text: row.back.trim(),
-          front_image_url: frontImageUrl,
-          back_image_url: backImageUrl
-        };
-      }));
+          return {
+            user_id: user.id,
+            flashcard_set_id: newSet.id,
+            front_text: row.front.trim(),
+            back_text: row.back.trim(),
+            front_image_url: frontImageUrl,
+            back_image_url: backImageUrl
+          };
+        }));
 
-      const { error: cardsError } = await supabase
-        .from('user_flashcards')
-        .insert(flashcardsToInsert);
+        const { error: cardsError } = await supabase
+          .from('user_flashcards')
+          .insert(flashcardsToInsert);
 
-      if (cardsError) throw cardsError;
+        if (cardsError) throw cardsError;
+      }
 
       // 3. Update local state
       const newSetWithCount: FlashcardSet = {
@@ -520,17 +525,66 @@ export function FolderDetail() {
     }
   };
 
-  const handleMoveOutOfFolder = async (set: FlashcardSet) => {
+  const handleMoveClick = async (set: FlashcardSet) => {
+    setSetToMove(set);
+    setShowMoveDialog(true);
+    setMoveSearchTerm('');
+    fetchFolders();
+  };
+
+  const fetchFolders = async () => {
     try {
-      const { error } = await supabase
-        .from('user_flashcard_sets')
-        .update({ folder_id: null })
-        .eq('id', set.id);
+      setLoadingFolders(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('user_folders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('title');
 
       if (error) throw error;
 
-      setFlashcardSets(prev => prev.filter(s => s.id !== set.id));
-      toast({ title: "ย้ายสำเร็จ", description: "ย้ายชุดแฟลชการ์ดออกจากโฟลเดอร์แล้ว" });
+      // Map to Folder interface (simplified)
+      const folders: Folder[] = data.map(f => ({
+        id: f.id,
+        title: f.title,
+        cardSetsCount: 0 // Not needed for this list
+      }));
+
+      setAllFolders(folders);
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+      toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถดึงข้อมูลโฟลเดอร์ได้", variant: "destructive" });
+    } finally {
+      setLoadingFolders(false);
+    }
+  };
+
+  const handleConfirmMove = async (targetFolderId: string | null) => {
+    if (!setToMove) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_flashcard_sets')
+        .update({ folder_id: targetFolderId })
+        .eq('id', setToMove.id);
+
+      if (error) throw error;
+
+      // Remove from current view if moved to a different folder (or root)
+      // If targetFolderId is null (root) and we are in a folder, it should be removed.
+      // If targetFolderId is different from current folderId, it should be removed.
+      // Since we are in FolderDetail, any move out of THIS folder means removal.
+      if (targetFolderId !== folderId) {
+        setFlashcardSets(prev => prev.filter(s => s.id !== setToMove.id));
+        setFilteredSets(prev => prev.filter(s => s.id !== setToMove.id));
+      }
+
+      setShowMoveDialog(false);
+      setSetToMove(null);
+      toast({ title: "ย้ายสำเร็จ", description: "ย้ายชุดแฟลชการ์ดเรียบร้อยแล้ว" });
     } catch (error) {
       console.error('Error moving set:', error);
       toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถย้ายชุดแฟลชการ์ดได้", variant: "destructive" });
@@ -657,6 +711,19 @@ export function FolderDetail() {
         />
       );
     }
+    if (gameMode === 'wordSearch') {
+      return (
+        <FlashcardWordSearchGame
+          flashcards={selectedFlashcards.map(c => ({
+            id: c.id,
+            front_text: c.front,
+            back_text: c.back,
+            created_at: new Date().toISOString()
+          }))}
+          onClose={handleGameClose}
+        />
+      );
+    }
     return (
       <FlashcardSwiper
         cards={selectedFlashcards.map(c => ({
@@ -724,77 +791,76 @@ export function FolderDetail() {
                   </div>
 
                   {flashcardRows.map((row, index) => (
-                    <div key={row.id} className="grid grid-cols-12 gap-4 items-start p-4 border rounded-lg bg-card/50">
-                      <div className="col-span-1 flex justify-center pt-3">
-                        <span className="bg-muted text-muted-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                    <div key={row.id} className="group flex items-start gap-3 p-3 border rounded-lg bg-card/50 hover:bg-accent/5 transition-colors">
+                      <div className="flex items-center justify-center w-8 h-10 pt-1">
+                        <span className="text-xs font-medium text-muted-foreground">
                           {index + 1}
                         </span>
                       </div>
-                      <div className="col-span-5 space-y-2">
-                        <Label className="text-xs text-muted-foreground">ด้านหน้า (คำศัพท์)</Label>
-                        <div className="relative">
-                          <Textarea
-                            value={row.front}
-                            onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
-                            placeholder="ใส่คำศัพท์..."
-                            className="min-h-[100px] pb-10 resize-none"
-                          />
-                          <div className="absolute bottom-2 right-2 flex items-center gap-2">
-                            {row.frontImage && (
-                              <span className="text-[10px] text-green-600 truncate max-w-[60px]">
-                                {row.frontImage.name}
-                              </span>
-                            )}
+
+                      <div className="flex-1 grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <div className="relative">
+                            <Input
+                              value={row.front}
+                              onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
+                              placeholder="คำศัพท์ (ด้านหน้า)"
+                              className="pr-8 h-10 bg-background/50 focus:bg-background transition-colors"
+                            />
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              className={`absolute right-1 top-1 h-8 w-8 ${row.frontImage ? 'text-green-600' : 'text-muted-foreground hover:text-primary'}`}
                               onClick={() => handleImageUpload(row.id, 'front')}
                               title={row.frontImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
                             >
                               <ImagePlus className="h-4 w-4" />
                             </Button>
                           </div>
+                          {row.frontImage && (
+                            <div className="text-[10px] text-green-600 truncate px-1 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                              {row.frontImage.name}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      <div className="col-span-5 space-y-2">
-                        <Label className="text-xs text-muted-foreground">ด้านหลัง (ความหมาย)</Label>
-                        <div className="relative">
-                          <Textarea
-                            value={row.back}
-                            onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
-                            placeholder="ใส่ความหมาย..."
-                            className="min-h-[100px] pb-10 resize-none"
-                          />
-                          <div className="absolute bottom-2 right-2 flex items-center gap-2">
-                            {row.backImage && (
-                              <span className="text-[10px] text-green-600 truncate max-w-[60px]">
-                                {row.backImage.name}
-                              </span>
-                            )}
+
+                        <div className="space-y-1.5">
+                          <div className="relative">
+                            <Input
+                              value={row.back}
+                              onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
+                              placeholder="ความหมาย (ด้านหลัง)"
+                              className="pr-8 h-10 bg-background/50 focus:bg-background transition-colors"
+                            />
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              className={`absolute right-1 top-1 h-8 w-8 ${row.backImage ? 'text-green-600' : 'text-muted-foreground hover:text-primary'}`}
                               onClick={() => handleImageUpload(row.id, 'back')}
                               title={row.backImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
                             >
                               <ImagePlus className="h-4 w-4" />
                             </Button>
                           </div>
+                          {row.backImage && (
+                            <div className="text-[10px] text-green-600 truncate px-1 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                              {row.backImage.name}
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="col-span-1 flex justify-center pt-8">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-muted-foreground hover:text-destructive"
-                          onClick={() => handleRemoveFlashcardRow(row.id)}
-                          disabled={flashcardRows.length === 1}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive h-10 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleRemoveFlashcardRow(row.id)}
+                        disabled={flashcardRows.length === 1}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
 
@@ -872,10 +938,6 @@ export function FolderDetail() {
                           <Edit className="h-4 w-4 mr-2" />
                           แก้ไข
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleMoveOutOfFolder(set)}>
-                          <Archive className="h-4 w-4 mr-2" />
-                          ย้ายออกจากโฟลเดอร์
-                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDeleteSetClick(set)} className="text-destructive">
                           <Trash className="h-4 w-4 mr-2" />
                           ลบ
@@ -951,7 +1013,7 @@ export function FolderDetail() {
             front_image: card.frontImage,
             back_image: card.backImage
           }))}
-          onConfirm={handleFlashcardsSelected}
+          onSelect={handleFlashcardsSelected}
         />
       )}
 
@@ -966,7 +1028,7 @@ export function FolderDetail() {
             front_image: card.frontImage,
             back_image: card.backImage
           }))}
-          onConfirm={handleReviewFlashcardsSelected}
+          onSelect={handleReviewFlashcardsSelected}
         />
       )}
 
@@ -1003,6 +1065,8 @@ export function FolderDetail() {
         </DialogContent>
       </Dialog>
 
+
+
       <AlertDialog open={!!setToDelete} onOpenChange={(open) => !open && setSetToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1019,6 +1083,6 @@ export function FolderDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </div >
   );
 }

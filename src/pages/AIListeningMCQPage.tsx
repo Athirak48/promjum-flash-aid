@@ -89,8 +89,8 @@ export default function AIListeningMCQPage() {
             setSelectedAnswer(null);
             setShowFeedback(false);
         } else {
-            // Navigate to summary
-            navigate('/ai-listening-summary', { state: { answers, questions } });
+            // Navigate to grand summary
+            navigate('/ai-listening-final-summary', { state: { answers, questions } });
         }
     };
 
@@ -102,147 +102,131 @@ export default function AIListeningMCQPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
-            {/* Header */}
-            <header className="border-b bg-card sticky top-0 z-10">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => navigate('/ai-listening-section4-intro')}
-                            >
-                                <ArrowLeft className="h-5 w-5" />
-                            </Button>
-                            <h1 className="text-xl font-bold">AI Listening</h1>
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                            {language === 'th' ? `ข้อที่ ${currentQuestion + 1}/${questions.length}` : `Question ${currentQuestion + 1}/${questions.length}`}
-                        </span>
-                    </div>
-                    <Progress value={progress} className="mt-2 h-2" />
+        <div className="min-h-screen bg-background flex flex-col items-center">
+            {/* Minimal Header */}
+            <header className="w-full max-w-3xl mx-auto px-6 py-6 flex items-center justify-between">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full hover:bg-secondary/80"
+                    onClick={() => navigate('/ai-listening-section4-intro')}
+                >
+                    <ArrowLeft className="h-6 w-6 text-muted-foreground" />
+                </Button>
+                <div className="w-32">
+                    <Progress value={progress} className="h-1.5 bg-secondary" indicatorClassName="bg-green-500" />
                 </div>
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 container mx-auto px-4 py-6">
-                <div className="max-w-2xl mx-auto space-y-6">
-                    {/* Audio Button */}
-                    <Card className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="font-semibold">
-                                {language === 'th' ? 'ฟังเรื่องสั้น' : 'Listen to the Story'}
-                            </h2>
-                            <Button onClick={handlePlayAudio} variant="outline" size="sm">
-                                <Volume2 className="w-4 h-4 mr-2" />
-                                {language === 'th' ? 'เล่นเสียง' : 'Play Audio'}
-                            </Button>
-                        </div>
-                        
+            <main className="flex-1 w-full max-w-2xl px-6 flex flex-col justify-center pb-20">
+                <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+                    {/* Audio Section - Minimal */}
+                    <div className="flex flex-col items-center space-y-6">
+                        <Button
+                            onClick={handlePlayAudio}
+                            variant="outline"
+                            className="h-16 w-16 rounded-full border-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 shadow-sm"
+                        >
+                            <Volume2 className="w-8 h-8 text-primary" />
+                        </Button>
+                        <p className="text-sm text-muted-foreground font-medium tracking-wide uppercase">
+                            {language === 'th' ? 'ฟังเรื่องราว' : 'Listen to the story'}
+                        </p>
+
+                        {/* Hidden Story for reference/debugging or if user wants to peek */}
                         {showFeedback && (
                             <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
-                                className="bg-secondary/50 p-4 rounded-lg text-sm"
+                                className="text-center max-w-lg text-muted-foreground/80 text-sm leading-relaxed"
                             >
-                                <p className="font-medium mb-2">{language === 'th' ? 'เรื่องเต็ม:' : 'Full Story:'}</p>
-                                <p className="text-muted-foreground">{question.story}</p>
-                                <p className="text-muted-foreground mt-2 text-xs">{question.storyTh}</p>
+                                "{question.story}"
                             </motion.div>
                         )}
-                    </Card>
+                    </div>
 
-                    {/* Question */}
-                    <Card className="p-6">
-                        <h3 className="font-semibold text-lg mb-4">
+                    {/* Question - Large & Centered */}
+                    <div className="text-center space-y-4">
+                        <h2 className="text-2xl md:text-3xl font-semibold leading-tight text-foreground">
                             {language === 'th' ? question.questionTh : question.question}
-                        </h3>
+                        </h2>
+                    </div>
 
-                        {/* Options */}
-                        <div className="space-y-3">
-                            {question.options.map((option, index) => {
-                                const isSelected = selectedAnswer === index;
-                                const isCorrectOption = index === question.correctAnswer;
-                                let optionClass = "p-4 border rounded-lg cursor-pointer transition-all";
+                    {/* Options - Clean Cards */}
+                    <div className="grid gap-4">
+                        {question.options.map((option, index) => {
+                            const isSelected = selectedAnswer === index;
+                            const isCorrectOption = index === question.correctAnswer;
 
-                                if (showFeedback) {
-                                    if (isCorrectOption) {
-                                        optionClass += " bg-green-50 dark:bg-green-950/30 border-green-500";
-                                    } else if (isSelected && !isCorrectOption) {
-                                        optionClass += " bg-red-50 dark:bg-red-950/30 border-red-500";
-                                    } else {
-                                        optionClass += " opacity-50";
-                                    }
+                            let cardStyle = "group relative p-5 rounded-2xl border-2 text-left transition-all duration-200 cursor-pointer hover:shadow-md";
+
+                            if (showFeedback) {
+                                if (isCorrectOption) {
+                                    cardStyle += " bg-green-50/50 border-green-500/50 dark:bg-green-900/20";
+                                } else if (isSelected && !isCorrectOption) {
+                                    cardStyle += " bg-red-50/50 border-red-500/50 dark:bg-red-900/20";
                                 } else {
-                                    optionClass += " hover:bg-secondary/50";
-                                    if (isSelected) {
-                                        optionClass += " border-primary bg-primary/10";
-                                    }
+                                    cardStyle += " border-transparent bg-secondary/30 opacity-50";
                                 }
+                            } else {
+                                cardStyle += isSelected
+                                    ? " border-primary bg-primary/5 shadow-sm"
+                                    : " border-transparent bg-secondary/50 hover:bg-secondary hover:border-primary/20";
+                            }
 
-                                return (
-                                    <div
-                                        key={index}
-                                        className={optionClass}
-                                        onClick={() => handleSelectAnswer(index)}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <span className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center font-medium">
-                                                    {String.fromCharCode(65 + index)}
-                                                </span>
-                                                <span>{option}</span>
-                                            </div>
-                                            {showFeedback && isCorrectOption && (
-                                                <CheckCircle className="w-5 h-5 text-green-500" />
-                                            )}
-                                            {showFeedback && isSelected && !isCorrectOption && (
-                                                <XCircle className="w-5 h-5 text-red-500" />
-                                            )}
-                                        </div>
+                            return (
+                                <div
+                                    key={index}
+                                    className={cardStyle}
+                                    onClick={() => handleSelectAnswer(index)}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className={`text-lg font-medium ${isSelected || (showFeedback && isCorrectOption) ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                                            {option}
+                                        </span>
+
+                                        {/* Status Icons */}
+                                        {showFeedback && isCorrectOption && (
+                                            <CheckCircle className="w-6 h-6 text-green-500" />
+                                        )}
+                                        {showFeedback && isSelected && !isCorrectOption && (
+                                            <XCircle className="w-6 h-6 text-red-500" />
+                                        )}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                </div>
+                            );
+                        })}
+                    </div>
 
-                        {/* Feedback */}
+                    {/* Feedback & Next Action */}
+                    <div className="h-24 flex items-center justify-center">
                         {showFeedback && (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className={`mt-6 p-4 rounded-lg ${isCorrect ? 'bg-green-50 dark:bg-green-950/30' : 'bg-red-50 dark:bg-red-950/30'}`}
+                                className="w-full"
                             >
-                                <div className="flex items-start gap-3">
-                                    {isCorrect ? (
-                                        <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
-                                    ) : (
-                                        <XCircle className="w-5 h-5 text-red-500 mt-0.5" />
-                                    )}
-                                    <div>
-                                        <p className={`font-medium ${isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
-                                            {isCorrect 
-                                                ? (language === 'th' ? 'ถูกต้อง!' : 'Correct!') 
-                                                : (language === 'th' ? 'ไม่ถูกต้อง' : 'Incorrect')}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground mt-1">
-                                            {language === 'th' ? question.explanationTh : question.explanation}
-                                        </p>
-                                    </div>
-                                </div>
+                                <Button
+                                    size="lg"
+                                    className="w-full h-14 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
+                                    onClick={handleNext}
+                                >
+                                    {currentQuestion < questions.length - 1
+                                        ? (language === 'th' ? 'ข้อถัดไป' : 'Next Question')
+                                        : (language === 'th' ? 'ดูสรุปผล' : 'View Summary')}
+                                    <ArrowRight className="w-5 h-5 ml-2" />
+                                </Button>
+                                <p className="text-center mt-4 text-muted-foreground text-sm">
+                                    {isCorrect
+                                        ? (language === 'th' ? 'ถูกต้อง! ' : 'Correct! ')
+                                        : (language === 'th' ? 'ผิด! ' : 'Incorrect! ')}
+                                    {language === 'th' ? question.explanationTh : question.explanation}
+                                </p>
                             </motion.div>
                         )}
-                    </Card>
-
-                    {/* Next Button */}
-                    {showFeedback && (
-                        <Button size="lg" className="w-full" onClick={handleNext}>
-                            {currentQuestion < questions.length - 1 
-                                ? (language === 'th' ? 'ข้อถัดไป' : 'Next Question')
-                                : (language === 'th' ? 'ดูสรุปผล' : 'View Summary')}
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                    )}
+                    </div>
                 </div>
             </main>
         </div>

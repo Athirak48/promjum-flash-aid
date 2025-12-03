@@ -7,6 +7,7 @@ import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
 import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGame';
 import { FlashcardHangmanGame } from '@/components/FlashcardHangmanGame';
 import { FlashcardVocabBlinderGame } from '@/components/FlashcardVocabBlinderGame';
+import { FlashcardWordSearchGame } from '@/components/FlashcardWordSearchGame';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,9 +28,10 @@ export default function FlashcardsReview() {
   // Check if this is a quick review from dashboard
   const state = location.state as {
     mode?: 'review' | 'game';
-    gameType?: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder';
+    gameType?: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch';
     cards?: FlashcardData[];
     isQuickReview?: boolean;
+    fromAIListening?: boolean;
   } | null;
 
   useEffect(() => {
@@ -103,12 +105,22 @@ export default function FlashcardsReview() {
       created_at: new Date().toISOString()
     }));
 
+    const handleNext = () => {
+      if (state?.fromAIListening) {
+        // Navigate to Section 4 Intro instead of MCQ directly
+        navigate('/ai-listening-section4-intro', { state: { cards } });
+      } else {
+        handleClose();
+      }
+    };
+
     if (state.gameType === 'quiz') {
       return (
         <div className="min-h-screen bg-background">
           <FlashcardQuizGame
             flashcards={gameFlashcards}
             onClose={handleClose}
+            onNext={handleNext}
           />
         </div>
       );
@@ -120,6 +132,7 @@ export default function FlashcardsReview() {
           <FlashcardMatchingGame
             flashcards={gameFlashcards}
             onClose={handleClose}
+            onNext={handleNext}
           />
         </div>
       );
@@ -131,6 +144,7 @@ export default function FlashcardsReview() {
           <FlashcardListenChooseGame
             flashcards={gameFlashcards}
             onClose={handleClose}
+            onNext={handleNext}
           />
         </div>
       );
@@ -142,6 +156,7 @@ export default function FlashcardsReview() {
           <FlashcardHangmanGame
             flashcards={gameFlashcards}
             onClose={handleClose}
+            onNext={handleNext}
           />
         </div>
       );
@@ -153,6 +168,19 @@ export default function FlashcardsReview() {
           <FlashcardVocabBlinderGame
             flashcards={gameFlashcards}
             onClose={handleClose}
+            onNext={handleNext}
+          />
+        </div>
+      );
+    }
+
+    if (state.gameType === 'wordSearch') {
+      return (
+        <div className="min-h-screen bg-background">
+          <FlashcardWordSearchGame
+            flashcards={gameFlashcards}
+            onClose={handleClose}
+            onNext={handleNext}
           />
         </div>
       );
@@ -161,7 +189,7 @@ export default function FlashcardsReview() {
 
   // Default to review mode with sidebar
   return (
-    <FlashcardReviewWithSidebar
+    <FlashcardReviewPage
       cards={cards}
       onClose={handleClose}
       onComplete={handleComplete}

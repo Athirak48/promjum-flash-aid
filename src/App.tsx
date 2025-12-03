@@ -23,17 +23,16 @@ import FlashcardsReview from "./pages/FlashcardsReview";
 import DecksPage from "./pages/DecksPage";
 import SubDecksPage from "./pages/SubDecksPage";
 import AIRealtimePracticePage from "./pages/AIRealtimePracticePage";
+import AIPracticeLandingPage from "./pages/AIPracticeLandingPage";
 import AIListeningGuidePage from "./pages/AIListeningGuidePage";
 import AIListeningSection1IntroPage from "./pages/AIListeningSection1IntroPage";
 import AIListeningVocabSelectionPage from "./pages/AIListeningVocabSelectionPage";
-import AIListeningSection2FlashcardPage from "./pages/AIListeningSection2FlashcardPage";
+import AIListeningSection2IntroPage from "./pages/AIListeningSection2IntroPage";
 import AIListeningFlashcardPlayPage from "./pages/AIListeningFlashcardPlayPage";
 import AIListeningFlashcardSummaryPage from "./pages/AIListeningFlashcardSummaryPage";
 import AIListeningSection3IntroPage from "./pages/AIListeningSection3IntroPage";
-import AIListeningGameSelectionPage from "./pages/AIListeningGameSelectionPage";
 import AIListeningSection4IntroPage from "./pages/AIListeningSection4IntroPage";
 import AIListeningMCQPage from "./pages/AIListeningMCQPage";
-import AIListeningSummaryPage from "./pages/AIListeningSummaryPage";
 import AIListeningFinalSummaryPage from "./pages/AIListeningFinalSummaryPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -163,7 +162,7 @@ const App = () => {
                     path="/practice"
                     element={
                       <ProtectedRoute>
-                        <><Navbar /><AIRealtimePracticePage /></>
+                        <><Navbar /><AIPracticeLandingPage /></>
                       </ProtectedRoute>
                     }
                   />
@@ -192,10 +191,10 @@ const App = () => {
                     }
                   />
                   <Route
-                    path="/ai-listening-section2-flashcard"
+                    path="/ai-listening-section2-intro"
                     element={
                       <ProtectedRoute>
-                        <><Navbar /><AIListeningSection2FlashcardPage /></>
+                        <><Navbar /><AIListeningSection2IntroPage /></>
                       </ProtectedRoute>
                     }
                   />
@@ -224,10 +223,10 @@ const App = () => {
                     }
                   />
                   <Route
-                    path="/ai-listening-game-selection"
+                    path="/ai-listening-practice"
                     element={
                       <ProtectedRoute>
-                        <><Navbar /><AIListeningGameSelectionPage /></>
+                        <><Navbar /><AIRealtimePracticePage /></>
                       </ProtectedRoute>
                     }
                   />
@@ -244,14 +243,6 @@ const App = () => {
                     element={
                       <ProtectedRoute>
                         <><Navbar /><AIListeningMCQPage /></>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/ai-listening-summary"
-                    element={
-                      <ProtectedRoute>
-                        <><Navbar /><AIListeningSummaryPage /></>
                       </ProtectedRoute>
                     }
                   />

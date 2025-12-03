@@ -1,25 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trophy } from 'lucide-react';
+import { ArrowLeft, Trophy, Home, Lightbulb, X, RotateCcw, Gamepad2, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Flashcard {
   id: string;
   front_text: string;
   back_text: string;
   created_at: string;
+  front_image?: string | null;
 }
 
 interface FlashcardHangmanGameProps {
   flashcards: Flashcard[];
   onClose: () => void;
+  onNext?: () => void;
 }
 
-export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGameProps) {
+export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardHangmanGameProps) {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const { updateFromHangman } = useSRSProgress();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [guessedLetters, setGuessedLetters] = useState<string[]>([]);
@@ -30,6 +35,7 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
   const [wonCount, setWonCount] = useState(0);
   const [lostCount, setLostCount] = useState(0);
   const [isGameComplete, setIsGameComplete] = useState(false);
+  const [hintPositions, setHintPositions] = useState<number[]>([]);
 
   const maxWrongGuesses = 7;
   const currentCard = flashcards[currentIndex];
@@ -40,7 +46,7 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
     const wordLength = word.length;
     const hintCount = wordLength <= 6 ? 1 : 2;
     const positions: number[] = [];
-    
+
     // Randomly select hint positions
     const availablePositions = Array.from({ length: wordLength }, (_, i) => i);
     for (let i = 0; i < hintCount; i++) {
@@ -48,11 +54,25 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
       positions.push(availablePositions[randomIndex]);
       availablePositions.splice(randomIndex, 1);
     }
-    
+
     return positions;
   };
 
-  const [hintPositions] = useState(() => getHintPositions(targetWord));
+  useEffect(() => {
+    setHintPositions(getHintPositions(targetWord));
+  }, [currentIndex, flashcards]);
+
+  const handleRestart = () => {
+    setCurrentIndex(0);
+    setGuessedLetters([]);
+    setWrongGuesses(0);
+    setScore(0);
+    setGameStatus('playing');
+    setShowResult(false);
+    setWonCount(0);
+    setLostCount(0);
+    setIsGameComplete(false);
+  };
 
   // Generate alphabet buttons
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -101,7 +121,7 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
   const handleNext = async () => {
     // Update SRS: Q=5 perfect (0 wrong), Q=2 (<=3 wrong), Q=0 (lost or >5 wrong)
     await updateFromHangman(currentCard.id, gameStatus === 'won', wrongGuesses);
-    
+
     // Update stats
     if (gameStatus === 'won') {
       setWonCount(wonCount + 1);
@@ -121,99 +141,98 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
     }
   };
 
-  // Draw hangman
-  const drawHangman = () => {
-    const stages = [
-      // Stage 0 - empty
-      <div key="0" className="text-6xl">🎯</div>,
-      // Stage 1
-      <div key="1" className="text-6xl">😐</div>,
-      // Stage 2
-      <div key="2" className="text-6xl">😟</div>,
-      // Stage 3
-      <div key="3" className="text-6xl">😧</div>,
-      // Stage 4
-      <div key="4" className="text-6xl">😨</div>,
-      // Stage 5
-      <div key="5" className="text-6xl">😰</div>,
-      // Stage 6
-      <div key="6" className="text-6xl">😱</div>,
-      // Stage 7 - complete (lost)
-      <div key="7" className="text-6xl">💀</div>,
-    ];
-
-    return stages[wrongGuesses];
-  };
-
   // Game Complete Summary
   if (isGameComplete) {
     const totalGames = wonCount + lostCount;
     const successRate = totalGames > 0 ? Math.round((wonCount / totalGames) * 100) : 0;
 
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 overflow-auto flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-orange-50/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <BackgroundDecorations />
-        <Card className="max-w-xl w-full shadow-2xl relative z-10">
-          <CardHeader className="text-center pb-2">
-            <div className="text-6xl mb-4">🎮</div>
-            <CardTitle className="text-3xl font-bold text-foreground">
-              สรุปผล Hangman Game
+        <Card className="max-w-lg w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-[2.5rem] overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-orange-100/50 to-transparent pointer-events-none" />
+          <CardHeader className="text-center pb-2 pt-8 relative">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="text-7xl mb-4 mx-auto bg-white rounded-full w-24 h-24 flex items-center justify-center shadow-lg"
+            >
+              🎮
+            </motion.div>
+            <CardTitle className="text-2xl font-bold text-orange-800">
+              สรุปผล Hangman
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 p-8">
             {/* Score Summary */}
-            <div className="bg-gradient-primary rounded-xl p-6 text-white text-center">
-              <div className="text-5xl font-bold mb-2">{score}</div>
-              <div className="text-xl opacity-90">คะแนนรวม</div>
+            <div className="bg-orange-500 rounded-3xl p-6 text-white text-center shadow-lg shadow-orange-200 transform hover:scale-105 transition-transform duration-300">
+              <div className="text-5xl font-black mb-1">{score}</div>
+              <div className="text-sm font-medium opacity-90">คะแนนรวม</div>
             </div>
 
             {/* Statistics */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <div className="text-3xl font-bold text-green-700 dark:text-green-300">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-3 bg-green-50 rounded-2xl border border-green-100">
+                <div className="text-2xl font-bold text-green-600">
                   {wonCount}
                 </div>
-                <div className="text-sm text-green-900 dark:text-green-100 mt-1">
+                <div className="text-xs text-green-700 mt-1 font-medium">
                   ชนะ
                 </div>
               </div>
-              <div className="text-center p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                <div className="text-3xl font-bold text-red-700 dark:text-red-300">
+              <div className="text-center p-3 bg-red-50 rounded-2xl border border-red-100">
+                <div className="text-2xl font-bold text-red-600">
                   {lostCount}
                 </div>
-                <div className="text-sm text-red-900 dark:text-red-100 mt-1">
+                <div className="text-xs text-red-700 mt-1 font-medium">
                   แพ้
                 </div>
               </div>
-              <div className="text-center p-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">
+              <div className="text-center p-3 bg-blue-50 rounded-2xl border border-blue-100">
+                <div className="text-2xl font-bold text-blue-600">
                   {successRate}%
                 </div>
-                <div className="text-sm text-blue-900 dark:text-blue-100 mt-1">
-                  อัตราสำเร็จ
+                <div className="text-xs text-blue-700 mt-1 font-medium">
+                  สำเร็จ
                 </div>
               </div>
             </div>
 
-            {/* Performance Message */}
-            <div className="text-center p-4 bg-muted rounded-lg">
-              <p className="text-lg font-semibold text-foreground">
-                {successRate >= 80 ? '🏆 ยอดเยี่ยม! คุณเก่งมาก!' :
-                 successRate >= 60 ? '👍 ดีมาก! คุณทำได้ดี' :
-                 successRate >= 40 ? '📖 พอใช้ ควรฝึกฝนเพิ่มเติม' :
-                 '💪 ลองใหม่อีกครั้ง อย่าท้อนะ!'}
-              </p>
-            </div>
-
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex flex-row gap-3 justify-center">
               <Button
-                onClick={onClose}
-                className="flex-1"
-                size="lg"
+                onClick={handleRestart}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-sm md:text-base"
               >
-                <ArrowLeft className="h-5 w-5 mr-2" />
-                กลับหน้าหลัก
+                <RotateCcw className="h-4 w-4 mr-2" />
+                เล่นอีกครั้ง
+              </Button>
+
+              <Button
+                onClick={() => {
+                  const selectedVocab = flashcards.map(f => ({
+                    id: f.id,
+                    word: f.front_text,
+                    meaning: f.back_text
+                  }));
+                  navigate('/ai-listening-section3-intro', {
+                    state: { selectedVocab }
+                  });
+                }}
+                variant="outline"
+                className="flex-1 rounded-xl h-12 text-sm md:text-base border-orange-200 text-orange-700 hover:bg-orange-50"
+              >
+                <Gamepad2 className="h-4 w-4 mr-2" />
+                เลือกเกมใหม่
+              </Button>
+
+              <Button
+                onClick={onNext || onClose}
+                variant="outline"
+                className="flex-1 rounded-xl h-12 text-sm md:text-base border-gray-200"
+              >
+                ถัดไป
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </CardContent>
@@ -223,120 +242,135 @@ export function FlashcardHangmanGame({ flashcards, onClose }: FlashcardHangmanGa
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 overflow-auto">
+    <div className="fixed inset-0 bg-orange-50/90 backdrop-blur-sm z-50 overflow-y-auto">
       <BackgroundDecorations />
-      
-      <div className="container mx-auto px-4 py-6 relative z-10">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-2xl bg-white shadow-2xl rounded-[2.5rem] border-4 border-white overflow-hidden relative">
+          {/* Close Button */}
           <Button
-            onClick={onClose}
             variant="ghost"
-            className="gap-2"
+            size="icon"
+            onClick={onClose}
+            className="absolute top-4 left-4 z-20 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600"
           >
-            <ArrowLeft className="h-4 w-4" />
-            กลับ
+            <ArrowLeft className="h-6 w-6" />
           </Button>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 px-4 py-2 rounded-lg">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              <span className="font-bold">{score}</span>
-            </div>
-            <div className="bg-white/80 dark:bg-gray-800/80 px-4 py-2 rounded-lg">
-              <span className="font-bold">
-                {currentIndex + 1} / {flashcards.length}
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {/* Main Game Area */}
-        <div className="max-w-4xl mx-auto">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-center text-2xl">
-                🎮 Hangman Master: The Vocabulary Duel
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Hangman Drawing */}
-              <div className="flex justify-center items-center py-8">
-                {drawHangman()}
-              </div>
-
-              {/* Wrong Guesses Counter */}
-              <div className="text-center">
-                <p className="text-lg font-semibold">
-                  เดาผิด: {wrongGuesses} / {maxWrongGuesses}
-                </p>
-              </div>
-
-              {/* Word Display */}
-              <div className="text-center">
-                <p className="text-4xl font-mono font-bold tracking-wider mb-4">
-                  {displayWord()}
-                </p>
-                <p className="text-gray-600 dark:text-gray-400">
-                  คำใบ้: {currentCard.back_text}
-                </p>
-              </div>
-
-              {/* Result Message */}
-              {showResult && (
-                <div className="text-center">
-                  {gameStatus === 'won' ? (
-                    <div className="bg-green-100 dark:bg-green-900/30 p-4 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
-                        🎉 ชนะแล้ว! +{targetWord.length * 10} คะแนน
-                      </p>
-                      <p className="text-lg">คำตอบ: {targetWord}</p>
-                    </div>
-                  ) : (
-                    <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-lg">
-                      <p className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">
-                        💀 แพ้แล้ว!
-                      </p>
-                      <p className="text-lg">คำตอบ: {targetWord}</p>
-                    </div>
-                  )}
-                  
-                  <Button
-                    onClick={handleNext}
-                    className="mt-4"
-                    size="lg"
-                  >
-                    {currentIndex < flashcards.length - 1 ? 'ข้อถัดไป' : 'จบเกม'}
-                  </Button>
+          <CardContent className="p-0">
+            {/* Header */}
+            <div className="pt-8 pb-4 px-8 flex items-center justify-center relative">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white">
+                  <span className="text-lg">🍊</span>
                 </div>
-              )}
+                <h1 className="text-2xl font-bold text-orange-600">Hangman Master</h1>
+              </div>
 
-              {/* Alphabet Buttons */}
-              {!showResult && (
-                <div className="grid grid-cols-7 gap-2">
-                  {alphabet.map((letter) => (
-                    <Button
-                      key={letter}
-                      onClick={() => handleLetterClick(letter)}
-                      disabled={guessedLetters.includes(letter)}
-                      variant={guessedLetters.includes(letter) ? 'outline' : 'default'}
-                      className={`
-                        ${guessedLetters.includes(letter) 
-                          ? targetWord.includes(letter) 
-                            ? 'bg-green-500 text-white' 
-                            : 'bg-red-500 text-white'
-                          : ''
-                        }
-                      `}
-                    >
-                      {letter}
-                    </Button>
+              <div className="absolute right-8 top-8 bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-bold">
+                {currentIndex + 1}/{flashcards.length}
+              </div>
+            </div>
+
+            {/* Main Game Area */}
+            <div className="flex flex-col items-center px-4 pb-8">
+
+              {/* Target Icon/Image */}
+              <div className="mb-6 relative">
+                <div className="w-32 h-32 rounded-full bg-orange-50 border-4 border-orange-100 flex items-center justify-center shadow-inner overflow-hidden">
+                  {currentCard.front_image ? (
+                    <img src={currentCard.front_image} alt="Target" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-6xl animate-bounce-slow">🎯</div>
+                  )}
+                </div>
+                {/* Mistakes Badge */}
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white px-4 py-1 rounded-full shadow-md border border-orange-100 text-xs font-bold text-orange-500 whitespace-nowrap">
+                  ผิดได้อีก {maxWrongGuesses - wrongGuesses} ครั้ง
+                </div>
+              </div>
+
+              {/* Word Puzzle */}
+              <div className="mb-8 mt-4 text-center">
+                <div className="flex flex-wrap justify-center gap-2 mb-2">
+                  {displayWord().split(' ').map((char, i) => (
+                    <span key={i} className={`
+                                    text-4xl font-bold w-10 text-center border-b-4 rounded-sm
+                                    ${char === '_' ? 'border-gray-200 text-transparent' : 'border-orange-400 text-orange-600'}
+                                    transition-all duration-300
+                                `}>
+                      {char === '_' ? 'A' : char}
+                    </span>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+
+              {/* Hint */}
+              <div className="mb-8 bg-orange-50/80 px-6 py-3 rounded-2xl border border-orange-100 flex items-center gap-3">
+                <Lightbulb className="w-5 h-5 text-orange-400 fill-orange-400" />
+                <span className="text-orange-800 font-medium">คำใบ้: <span className="font-bold text-orange-900">{currentCard.back_text}</span></span>
+              </div>
+
+              {/* Result Overlay */}
+              <AnimatePresence>
+                {showResult && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute inset-0 bg-white/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-8 text-center"
+                  >
+                    <div className={`text-6xl mb-4 ${gameStatus === 'won' ? 'animate-bounce' : 'animate-shake'}`}>
+                      {gameStatus === 'won' ? '🎉' : '💀'}
+                    </div>
+                    <h2 className={`text-3xl font-bold mb-2 ${gameStatus === 'won' ? 'text-green-600' : 'text-red-600'}`}>
+                      {gameStatus === 'won' ? 'ถูกต้อง!' : 'เสียใจด้วย!'}
+                    </h2>
+                    <p className="text-gray-600 mb-8 text-lg">
+                      คำตอบคือ <span className="font-bold text-gray-900">{targetWord}</span>
+                    </p>
+                    <Button
+                      onClick={handleNext}
+                      className="h-14 px-8 rounded-2xl text-lg font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-200"
+                    >
+                      {currentIndex < flashcards.length - 1 ? 'ไปข้อถัดไป' : 'ดูสรุปผล'}
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Keyboard */}
+              <div className="w-full max-w-lg">
+                <div className="flex flex-wrap justify-center gap-2">
+                  {alphabet.map((letter) => {
+                    const isGuessed = guessedLetters.includes(letter);
+                    const isCorrect = isGuessed && targetWord.includes(letter);
+
+                    return (
+                      <button
+                        key={letter}
+                        onClick={() => handleLetterClick(letter)}
+                        disabled={isGuessed}
+                        className={`
+                                            w-10 h-12 rounded-xl font-bold text-lg transition-all duration-200 shadow-[0_2px_0_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-[2px]
+                                            ${isGuessed
+                            ? isCorrect
+                              ? 'bg-green-500 text-white border-green-600'
+                              : 'bg-red-100 text-red-300 border-red-100'
+                            : 'bg-white border border-gray-200 text-gray-600 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600'
+                          }
+                                        `}
+                      >
+                        {letter}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

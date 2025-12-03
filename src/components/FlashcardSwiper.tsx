@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, RotateCcw, X, Check, AlertCircle, Undo } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import {
+  X, ChevronLeft, ChevronRight, RotateCcw, Undo2,
+  Play, Pause, Flame, Check, MoreHorizontal, ArrowLeft
+} from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
+import { toast } from 'sonner';
 
 interface FlashcardData {
   id: string;
@@ -14,247 +19,541 @@ interface FlashcardData {
 interface FlashcardSwiperProps {
   cards: FlashcardData[];
   onClose: () => void;
-  onComplete: (results: { correct: number; incorrect: number; needsReview: number }) => void;
+  onComplete: (results: {
+    correct: number;
+    incorrect: number;
+    needsReview: number;
+    cardStats: Record<string, { missCount: number }>;
+  }) => void;
 }
 
 export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [results, setResults] = useState({ correct: 0, incorrect: 0, needsReview: 0 });
-  const [swipeHistory, setSwipeHistory] = useState<Array<{ cardIndex: number; direction: 'left' | 'right' | 'up'; results: any }>>([]);
-  const [overlayText, setOverlayText] = useState<string>('');
-  const [overlayColor, setOverlayColor] = useState<string>('');
   const { t } = useLanguage();
 
-  const currentCard = cards[currentIndex];
+  // Core state
+  const [masteredCards, setMasteredCards] = useState<string[]>([]);
+  const [reviewQueue, setReviewQueue] = useState<FlashcardData[]>([...cards]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [hasViewedAnswer, setHasViewedAnswer] = useState(false);
 
-  const handleSwipe = (direction: 'left' | 'right' | 'up') => {
-    if (!isFlipped) {
-      setIsFlipped(true);
+  // Swipe state
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [swipeRotation, setSwipeRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+
+  // Statistics
+  const [rememberedCount, setRememberedCount] = useState(0);
+  const [needPracticeCount, setNeedPracticeCount] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [cardStats, setCardStats] = useState<Record<string, { missCount: number }>>({});
+
+
+  // Auto-play state
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const [autoPlaySpeed, setAutoPlaySpeed] = useState<1 | 1.5 | 2>(1);
+  const [countdown, setCountdown] = useState(0);
+
+  // History for undo
+  const [history, setHistory] = useState<Array<{
+    masteredCards: string[];
+    reviewQueue: FlashcardData[];
+    currentIndex: number;
+    stats: { remember: number; needPractice: number; streak: number };
+  }>>([]);
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef(0);
+  const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const currentCard = reviewQueue[currentIndex];
+  const totalCards = cards.length;
+  const progress = (masteredCards.length / totalCards) * 100;
+  const isComplete = reviewQueue.length === 0;
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isComplete) return;
+
+      switch (e.key) {
+        case 'Tab':
+        case ' ':
+          e.preventDefault();
+          if (isAutoPlaying) {
+            setIsAutoPlaying(false);
+          } else {
+            const newFlipped = !isFlipped;
+            setIsFlipped(newFlipped);
+            if (newFlipped) setHasViewedAnswer(true);
+          }
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (isFlipped || hasViewedAnswer) handleAnswer(false);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          if (isFlipped || hasViewedAnswer) handleAnswer(true);
+          break;
+        case 'p':
+        case 'P':
+          e.preventDefault();
+          setIsAutoPlaying(!isAutoPlaying);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          if (isAutoPlaying) {
+            setIsAutoPlaying(false);
+          }
+          break;
+        case '1':
+          setAutoPlaySpeed(1);
+          break;
+        case '2':
+          setAutoPlaySpeed(1.5);
+          break;
+        case '3':
+          setAutoPlaySpeed(2);
+          break;
+      }
+
+      // Ctrl+Z for undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        handleUndo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFlipped, currentIndex, isComplete, isAutoPlaying]);
+
+  // Mouse/Touch handlers
+  const handleStart = (clientX: number) => {
+    if (!isFlipped && !hasViewedAnswer) {
+      toast.error("กรุณาพลิกการ์ดเพื่อดูเฉลยก่อน");
       return;
     }
+    setIsDragging(true);
+    startXRef.current = clientX;
+  };
 
-    // Save current state to history for undo
-    setSwipeHistory(prev => [...prev, { 
-      cardIndex: currentIndex, 
-      direction, 
-      results: { ...results } 
+  const handleMove = (clientX: number) => {
+    if (!isDragging) return;
+
+    const deltaX = clientX - startXRef.current;
+    setSwipeOffset(deltaX);
+    setSwipeRotation(deltaX * 0.05);
+
+    if (Math.abs(deltaX) > 50) {
+      setSwipeDirection(deltaX > 0 ? 'right' : 'left');
+    } else {
+      setSwipeDirection(null);
+    }
+  };
+
+  const handleEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    const threshold = 100;
+    if (Math.abs(swipeOffset) > threshold) {
+      handleAnswer(swipeOffset > 0);
+    } else {
+      resetSwipe();
+    }
+  };
+
+  const resetSwipe = () => {
+    setSwipeOffset(0);
+    setSwipeRotation(0);
+    setSwipeDirection(null);
+  };
+
+  const handleAnswer = (remembered: boolean) => {
+    if (!currentCard) return;
+
+    // Update stats if incorrect
+    if (!remembered) {
+      console.log('Incorrect answer for card:', currentCard.id);
+      setCardStats(prev => {
+        const newStats = {
+          ...prev,
+          [currentCard.id]: {
+            missCount: (prev[currentCard.id]?.missCount || 0) + 1
+          }
+        };
+        console.log('Updated cardStats:', newStats);
+        return newStats;
+      });
+    } else {
+      console.log('Correct answer for card:', currentCard.id);
+    }
+
+    // Save state for undo
+    setHistory(prev => [...prev, {
+      masteredCards: [...masteredCards],
+      reviewQueue: [...reviewQueue],
+      currentIndex,
+      stats: { remember: rememberedCount, needPractice: needPracticeCount, streak },
+      cardStats: { ...cardStats }
     }]);
 
-    const newResults = { ...results };
-    
-    if (direction === 'left') {
-      newResults.incorrect++;
-    } else if (direction === 'right') {
-      newResults.correct++;
-    } else if (direction === 'up') {
-      newResults.needsReview++;
-    }
+    // Animate card out
+    const targetOffset = remembered ? 1000 : -1000;
+    setSwipeOffset(targetOffset);
+    setSwipeRotation(remembered ? 30 : -30);
+    setSwipeDirection(remembered ? 'right' : 'left');
 
-    setResults(newResults);
+    setTimeout(() => {
+      if (remembered) {
+        // Mastered!
+        setMasteredCards(prev => [...prev, currentCard.id]);
+        setRememberedCount(prev => prev + 1);
+        setStreak(prev => prev + 1);
 
-    if (currentIndex < cards.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+        // Remove from queue
+        const newQueue = reviewQueue.filter((_, i) => i !== currentIndex);
+        setReviewQueue(newQueue);
+
+        if (newQueue.length === 0) {
+          // All mastered!
+          onComplete({
+            correct: rememberedCount + 1,
+            incorrect: needPracticeCount,
+            needsReview: 0,
+            cardStats
+          });
+        } else {
+          // Move to next (or loop to start)
+          setCurrentIndex(prev => prev >= newQueue.length ? 0 : prev);
+        }
+      } else {
+        // Need more practice - add to end of queue
+        setNeedPracticeCount(prev => prev + 1);
+        setStreak(0);
+
+        const newQueue = [...reviewQueue];
+        const cardToReview = newQueue.splice(currentIndex, 1)[0];
+        newQueue.push(cardToReview);
+        setReviewQueue(newQueue);
+
+        // Stay at same index (which now has different card)
+        if (currentIndex >= newQueue.length) {
+          setCurrentIndex(0);
+        }
+      }
+
+      resetSwipe();
+      resetSwipe();
       setIsFlipped(false);
-    } else {
-      onComplete(newResults);
-    }
+      setHasViewedAnswer(false);
+    }, 300);
   };
 
   const handleUndo = () => {
-    if (swipeHistory.length === 0) return;
-    
-    const lastAction = swipeHistory[swipeHistory.length - 1];
-    setCurrentIndex(lastAction.cardIndex);
-    setResults(lastAction.results);
-    setSwipeHistory(prev => prev.slice(0, -1));
+    if (history.length === 0) return;
+
+    const lastState = history[history.length - 1];
+    setMasteredCards(lastState.masteredCards);
+    setReviewQueue(lastState.reviewQueue);
+    setCurrentIndex(lastState.currentIndex);
+    setRememberedCount(lastState.stats.remember);
+    setNeedPracticeCount(lastState.stats.needPractice);
+    setStreak(lastState.stats.streak);
+    if ((lastState as any).cardStats) {
+      setCardStats((lastState as any).cardStats);
+    }
+    setHistory(prev => prev.slice(0, -1));
+    setHistory(prev => prev.slice(0, -1));
     setIsFlipped(false);
+    setHasViewedAnswer(false); // Reset for the undone card? Or should we keep it? Usually reset.
+    resetSwipe();
   };
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
-    const { offset, velocity } = info;
-    const swipeThreshold = 100;
-    const swipeVelocityThreshold = 500;
+  if (isComplete) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-purple-950 dark:to-slate-900 flex items-center justify-center p-4">
+        <BackgroundDecorations />
+        <Card className="max-w-lg w-full shadow-2xl relative z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-0 rounded-3xl">
+          <div className="p-8 text-center space-y-6">
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              เสร็จสิ้น!
+            </h2>
 
-    setOverlayText('');
-    setOverlayColor('');
+            <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-6 text-white">
+              <div className="text-5xl font-bold mb-2">{totalCards}/{totalCards}</div>
+              <div className="text-lg opacity-90">จำได้ทั้งหมด</div>
+            </div>
 
-    if (Math.abs(offset.x) > swipeThreshold || Math.abs(velocity.x) > swipeVelocityThreshold) {
-      if (offset.x > 0) {
-        handleSwipe('right');
-      } else {
-        handleSwipe('left');
-      }
-    } else if (offset.y < -swipeThreshold || velocity.y < -swipeVelocityThreshold) {
-      handleSwipe('up');
-    }
-  };
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-green-50 dark:bg-green-900/30 rounded-2xl p-4 border border-green-200 dark:border-green-800">
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400">{rememberedCount}</div>
+                <div className="text-sm text-green-700 dark:text-green-300 mt-1">รอบที่ตอบถูก</div>
+              </div>
+              <div className="bg-orange-50 dark:bg-orange-900/30 rounded-2xl p-4 border border-orange-200 dark:border-orange-800">
+                <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{needPracticeCount}</div>
+                <div className="text-sm text-orange-700 dark:text-orange-300 mt-1">รอบที่ทวน</div>
+              </div>
+            </div>
 
-  const handleDrag = (event: any, info: PanInfo) => {
-    const { offset } = info;
-    const swipeThreshold = 50;
+            <div className="flex gap-3 pt-4">
+              <Button onClick={() => window.location.reload()} className="flex-1 h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                เล่นอีกครั้ง
+              </Button>
+              <Button onClick={onClose} variant="outline" className="flex-1 h-12 rounded-xl border-2">
+                <X className="h-4 w-4 mr-2" />
+                ปิด
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
-    if (Math.abs(offset.x) > swipeThreshold) {
-      if (offset.x > 0) {
-        setOverlayText('จำได้ ✓');
-        setOverlayColor('bg-emerald-500/20 text-emerald-600');
-      } else {
-        setOverlayText('จำไม่ได้ ✗');
-        setOverlayColor('bg-rose-500/20 text-rose-600');
-      }
-    } else if (offset.y < -swipeThreshold) {
-      setOverlayText('เกือบได้ ~');
-      setOverlayColor('bg-amber-500/20 text-amber-600');
-    } else {
-      setOverlayText('');
-      setOverlayColor('');
-    }
-  };
-
-  const progress = ((currentIndex + 1) / cards.length) * 100;
+  if (!currentCard) return null;
 
   return (
-    <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Back
-          </Button>
-          <div className="text-sm text-muted-foreground">
-            {currentIndex + 1} / {cards.length}
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleUndo}
-              disabled={swipeHistory.length === 0}
-            >
-              <Undo className="h-4 w-4" />
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-purple-950 dark:to-slate-900">
+      <BackgroundDecorations />
+
+      <div className="relative z-10 h-full flex flex-col">
+        {/* Top Bar */}
+        <div className="flex items-center justify-between mb-4 md:mb-6 px-2 pt-4 relative">
+          {/* Left: Back Button & Progress Label */}
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={onClose} className="h-10 w-10 rounded-xl bg-white dark:bg-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setIsFlipped(false)}>
-              <RotateCcw className="h-4 w-4" />
+
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">ความคืบหน้า</span>
+              <div className="h-1.5 w-[30vw] rounded-full bg-white dark:bg-slate-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-300 ease-in-out"
+                  style={{ width: `${(masteredCards.length / totalCards) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Center: Count */}
+          <div className="absolute left-1/2 -translate-x-1/2 font-medium text-slate-500 dark:text-slate-400">
+            {masteredCards.length} / {totalCards}
+          </div>
+
+          {/* Stats Section */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 bg-green-100 dark:bg-green-900/30 px-3 py-1.5 rounded-full">
+              <div className="bg-green-500 rounded-full p-0.5">
+                <Check className="h-3 w-3 text-white" />
+              </div>
+              <span className="font-bold text-green-700 dark:text-green-400">{rememberedCount}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-red-100 dark:bg-red-900/30 px-3 py-1.5 rounded-full">
+              <div className="bg-red-500 rounded-full p-0.5">
+                <X className="h-3 w-3 text-white" />
+              </div>
+              <span className="font-bold text-red-700 dark:text-red-400">{needPracticeCount}</span>
+            </div>
+
+            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600">
+              <MoreHorizontal className="h-6 w-6" />
             </Button>
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="w-full bg-muted rounded-full h-2 mb-8">
-          <div 
-            className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+
 
         {/* Card Stack */}
-        <div className="relative h-80 mb-8">
-          {/* Next card preview */}
-          {currentIndex + 1 < cards.length && (
-            <Card className="absolute inset-0 bg-gradient-card/50 shadow-medium border-0 transform translate-x-2 translate-y-2 rotate-1">
-              <CardContent className="h-full flex items-center justify-center p-6 opacity-50">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
-                    การ์ดถัดไป...
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Current card */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${currentIndex}-${isFlipped}`}
-              initial={{ rotateY: isFlipped ? -90 : 90, opacity: 0 }}
-              animate={{ rotateY: 0, opacity: 1 }}
-              exit={{ rotateY: isFlipped ? 90 : -90, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              drag={isFlipped}
-              dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-              dragElastic={0.7}
-              onDrag={handleDrag}
-              onDragEnd={handleDragEnd}
-              whileDrag={{ scale: 1.05 }}
-              className="absolute inset-0 cursor-grab active:cursor-grabbing"
+        <div className="flex-1 flex items-center justify-center px-4 pb-32">
+          <div className="relative w-full max-w-md aspect-[3/4] max-h-[500px]">
+            {/* Stacked cards behind */}
+            {[2, 1].map((offset) => {
+              const nextIndex = currentIndex + offset;
+              if (nextIndex >= reviewQueue.length) return null;
+
+              return (
+                <div
+                  key={nextIndex}
+                  className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700"
+                  style={{
+                    transform: `translateY(${offset * 8}px) scale(${1 - offset * 0.05})`,
+                    opacity: 1 - offset * 0.2,
+                    zIndex: -offset,
+                  }}
+                />
+              );
+            })}
+
+            {/* Main card */}
+            <div
+              ref={cardRef}
+              className="absolute inset-0 cursor-grab active:cursor-grabbing touch-none"
+              style={{
+                transform: `translateX(${swipeOffset}px) rotate(${swipeRotation}deg)`,
+                transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+                zIndex: 10,
+              }}
+              onMouseDown={(e) => handleStart(e.clientX)}
+              onMouseMove={(e) => handleMove(e.clientX)}
+              onMouseUp={handleEnd}
+              onMouseLeave={handleEnd}
+              onTouchStart={(e) => handleStart(e.touches[0].clientX)}
+              onTouchMove={(e) => handleMove(e.touches[0].clientX)}
+              onTouchEnd={handleEnd}
+              onClick={() => {
+                if (!isDragging) {
+                  const newFlipped = !isFlipped;
+                  setIsFlipped(newFlipped);
+                  if (newFlipped) setHasViewedAnswer(true);
+                }
+              }}
             >
-              <Card 
-                className="h-full bg-gradient-card shadow-large border-0 cursor-pointer relative overflow-hidden"
-                onClick={() => !isFlipped && setIsFlipped(true)}
-              >
-                {/* Overlay Text */}
-                {overlayText && (
-                  <div className={`absolute inset-0 flex items-center justify-center z-10 ${overlayColor} backdrop-blur-sm`}>
-                    <div className="text-2xl font-bold">
-                      {overlayText}
-                    </div>
-                  </div>
-                )}
-                
-                <CardContent className="h-full flex items-center justify-center p-6">
-                  <div className="text-center">
-                    <p className="text-lg font-medium leading-relaxed">
-                      {isFlipped ? currentCard.back : currentCard.front}
-                    </p>
-                    {!isFlipped && (
-                      <p className="text-sm text-muted-foreground mt-4">
-                        แตะเพื่อดูคำตอบ
-                      </p>
+              <div className="relative w-full h-full" style={{ perspective: '1000px' }}>
+                <div
+                  className="relative w-full h-full transition-transform duration-500"
+                  style={{
+                    transformStyle: 'preserve-3d',
+                    transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                  }}
+                >
+                  {/* Front */}
+                  <Card className="absolute inset-0 backface-hidden bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-2xl rounded-3xl flex items-center justify-center p-8">
+                    {/* Auto Badge on Card */}
+                    {isAutoPlaying && (
+                      <div className="absolute top-6 right-6 flex items-center gap-1.5">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                        <span className="text-xs font-bold text-green-500 tracking-wider">AUTO</span>
+                      </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </AnimatePresence>
+
+                    <div className="text-center">
+                      <div className="text-5xl font-bold text-slate-800 dark:text-white mb-4 tracking-tight">{currentCard.front}</div>
+                      <div className="text-sm text-slate-400 font-medium">แตะเพื่อดูความหมาย</div>
+                    </div>
+                  </Card>
+
+                  {/* Back */}
+                  <Card
+                    className="absolute inset-0 backface-hidden bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-2xl rounded-3xl flex items-center justify-center p-8"
+                    style={{ transform: 'rotateY(180deg)' }}
+                  >
+                    <div className="text-center">
+                      <div className="text-4xl font-bold text-slate-800 dark:text-white mb-6">{currentCard.back}</div>
+                      <div className="text-lg text-slate-500 dark:text-slate-400 font-medium">{currentCard.front}</div>
+                    </div>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Swipe indicators */}
+              {swipeDirection === 'left' && (
+                <div className="absolute top-12 right-12 bg-red-500 text-white px-6 py-2 rounded-xl font-bold text-xl shadow-lg rotate-[15deg] border-4 border-white">
+                  AGAIN
+                </div>
+              )}
+              {swipeDirection === 'right' && (
+                <div className="absolute top-12 left-12 bg-green-500 text-white px-6 py-2 rounded-xl font-bold text-xl shadow-lg rotate-[-15deg] border-4 border-white">
+                  GOOD
+                </div>
+              )}
+            </div>
+
+            {/* Countdown below card */}
+            {isAutoPlaying && countdown > 0 && (
+              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
+                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm px-4 py-1.5 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                  <span className="text-xs font-medium text-slate-500">Next: {countdown}s</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Controls */}
-        {isFlipped && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center space-x-4"
-          >
-            <Button 
-              variant="outline" 
-              size="lg"
-              onClick={() => handleSwipe('left')}
-              className="bg-red-500/20 border-red-500 hover:bg-red-500/30 text-red-700 dark:text-red-400"
+        {/* Bottom Controls */}
+        <div className="absolute bottom-0 left-0 right-0 p-8 pb-10">
+          <div className="max-w-md mx-auto flex items-center justify-center gap-6">
+            {/* 1. Don't Know (Red X) */}
+            <Button
+              onClick={() => handleAnswer(false)}
+              disabled={!isFlipped && !hasViewedAnswer}
+              className="h-14 w-14 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg hover:scale-110 transition-all disabled:opacity-30 border-4 border-white dark:border-slate-900"
             >
-              <X className="h-5 w-5 mr-2" />
-              Don't Know
+              <X className="h-6 w-6" />
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              onClick={() => handleSwipe('up')}
-              className="bg-yellow-500/20 border-yellow-500 hover:bg-yellow-500/30 text-yellow-700 dark:text-yellow-400"
-            >
-              <AlertCircle className="h-5 w-5 mr-2" />
-              Almost
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              onClick={() => handleSwipe('right')}
-              className="bg-green-500/20 border-green-500 hover:bg-green-500/30 text-green-700 dark:text-green-400"
-            >
-              <Check className="h-5 w-5 mr-2" />
-              Know It
-            </Button>
-          </motion.div>
-        )}
 
-        {/* Instructions */}
-        <div className="text-center mt-6 text-sm text-muted-foreground">
-          {!isFlipped ? (
-            "แตะการ์ดเพื่อดูคำตอบ"
-          ) : (
-            "ปัดซ้าย (จำไม่ได้) • ปัดขึ้น (เกือบได้) • ปัดขวา (จำได้)"
-          )}
+            {/* 2. Previous (Gray Left) */}
+            <Button
+              onClick={() => {
+                // If we want this to be "Previous Card" without undo logic, we might need new logic.
+                // But typically "Left" in these apps means "Back" or "Undo".
+                // The image has a "Undo" in header too.
+                // Let's make this "Previous" in queue if possible, or just Undo.
+                // For now, mapping to Undo as per plan assumption.
+                handleUndo();
+              }}
+              disabled={history.length === 0}
+              className="h-14 w-14 rounded-full bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 shadow-md border-4 border-white dark:border-slate-900 disabled:opacity-30"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+
+            {/* 3. Play/Pause (Large Purple) */}
+            <Button
+              onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+              className="h-20 w-20 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white shadow-xl hover:scale-105 transition-all border-4 border-white dark:border-slate-900 flex items-center justify-center"
+            >
+              {isAutoPlaying ? (
+                <Pause className="h-8 w-8 fill-current" />
+              ) : (
+                <Play className="h-8 w-8 fill-current ml-1" />
+              )}
+            </Button>
+
+            {/* 4. Next (Gray Right) */}
+            <Button
+              onClick={() => {
+                if (!isFlipped && !hasViewedAnswer) {
+                  toast.error("กรุณาพลิกการ์ดเพื่อดูเฉลยก่อน");
+                  return;
+                }
+                if (currentIndex < reviewQueue.length - 1) {
+                  setCurrentIndex(prev => prev + 1);
+                  setIsFlipped(false);
+                  resetSwipe();
+                }
+              }}
+              disabled={currentIndex >= reviewQueue.length - 1 || (!isFlipped && !hasViewedAnswer)}
+              className="h-14 w-14 rounded-full bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 shadow-md border-4 border-white dark:border-slate-900 disabled:opacity-30"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </Button>
+
+            {/* 5. Know (Green Check) */}
+            <Button
+              onClick={() => handleAnswer(true)}
+              disabled={!isFlipped && !hasViewedAnswer}
+              className="h-14 w-14 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg hover:scale-110 transition-all disabled:opacity-30 border-4 border-white dark:border-slate-900"
+            >
+              <Check className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
       </div>
+
+      <style>{`
+        .backface-hidden {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
+      `}</style>
     </div>
   );
 }

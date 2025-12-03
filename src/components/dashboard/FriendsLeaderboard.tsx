@@ -15,36 +15,40 @@ export function FriendsLeaderboard() {
   ];
 
   const getRankColor = (rank: number) => {
-    if (rank === 1) return "text-yellow-500";
-    if (rank === 2) return "text-gray-400";
-    if (rank === 3) return "text-amber-600";
-    return "text-muted-foreground";
+    if (rank === 1) return "text-yellow-500 bg-yellow-100 ring-4 ring-yellow-50";
+    if (rank === 2) return "text-gray-500 bg-gray-100 ring-4 ring-gray-50";
+    if (rank === 3) return "text-amber-600 bg-amber-100 ring-4 ring-amber-50";
+    return "text-muted-foreground bg-muted/50";
   };
 
   return (
-    <Card className="bg-gradient-card backdrop-blur-sm border-border/50 shadow-soft">
-      <CardHeader>
+    <Card className="h-full bg-white/80 backdrop-blur-xl border border-white/50 shadow-soft rounded-[2rem] overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Users className="h-5 w-5 text-primary" />
-            เพื่อน & อันดับ
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <div className="p-2 rounded-xl bg-blue-50 shadow-inner">
+              <Users className="h-6 w-6 text-blue-600" />
+            </div>
+            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-bold">
+              เพื่อน & อันดับ
+            </span>
           </CardTitle>
-          <Button size="sm" variant="outline" className="gap-2">
+          <Button size="sm" variant="ghost" className="gap-2 text-primary hover:bg-primary/10 rounded-xl">
             <UserPlus className="h-4 w-4" />
-            เชิญเพื่อน
+            <span className="hidden sm:inline">เชิญเพื่อน</span>
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[300px] pr-4">
-          <div className="space-y-3">
+      <CardContent className="flex-1 min-h-0 p-0">
+        <ScrollArea className="h-[300px] px-6 pb-6">
+          <div className="space-y-3 pt-2">
             {friends.map((friend) => (
               <div
                 key={friend.id}
-                className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-secondary/5 border border-border/30 hover:border-primary/30 transition-all"
+                className="flex items-center gap-4 p-3 rounded-2xl bg-white border border-border/30 hover:border-primary/30 hover:shadow-md transition-all group"
               >
                 {/* Rank */}
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${getRankColor(friend.rank)}`}>
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm transition-transform group-hover:scale-110 ${getRankColor(friend.rank)}`}>
                   {friend.rank <= 3 ? (
                     <Trophy className="h-5 w-5" />
                   ) : (
@@ -53,19 +57,19 @@ export function FriendsLeaderboard() {
                 </div>
 
                 {/* Avatar */}
-                <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+                <Avatar className="h-10 w-10 ring-2 ring-white shadow-sm group-hover:ring-primary/20 transition-all">
                   <AvatarImage src={friend.avatar} />
-                  <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm font-semibold">
+                  <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm font-bold">
                     {friend.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
 
                 {/* Name & XP */}
                 <div className="flex-1">
-                  <p className="font-semibold text-foreground">{friend.name}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Star className="h-3 w-3 text-primary" />
-                    {friend.xp} XP
+                  <p className="font-bold text-foreground text-sm">{friend.name}</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
+                    <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                    {friend.xp.toLocaleString()} XP
                   </p>
                 </div>
               </div>

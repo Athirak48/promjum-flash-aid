@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Target, Trophy, Zap, Plus, BookOpen, Star, Award, Flame, Heart, Brain, Rocket, Crown, Medal, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { LucideIcon } from "lucide-react";
@@ -55,7 +54,7 @@ export function GoalsMotivation() {
       current: 1,
       target: 7,
       color: "text-blue-500",
-      bgColor: "bg-blue-500/10"
+      bgColor: "bg-blue-50"
     },
     {
       id: 2,
@@ -64,7 +63,7 @@ export function GoalsMotivation() {
       current: 20,
       target: 1000,
       color: "text-yellow-500",
-      bgColor: "bg-yellow-500/10"
+      bgColor: "bg-yellow-50"
     },
     {
       id: 3,
@@ -73,7 +72,7 @@ export function GoalsMotivation() {
       current: 0,
       target: 10,
       color: "text-purple-500",
-      bgColor: "bg-purple-500/10"
+      bgColor: "bg-purple-50"
     }
   ]);
 
@@ -88,7 +87,7 @@ export function GoalsMotivation() {
     }
 
     const selectedIcon = availableIcons.find(i => i.value === newGoal.iconValue) || availableIcons[0];
-    
+
     const goalToAdd: Goal = {
       id: Date.now(),
       title: newGoal.title,
@@ -97,13 +96,13 @@ export function GoalsMotivation() {
       current: 0,
       target: parseInt(newGoal.target),
       color: selectedIcon.color,
-      bgColor: selectedIcon.bgColor
+      bgColor: selectedIcon.bgColor.replace('/10', '') // Adjust opacity for solid bg
     };
 
     setGoals([...goals, goalToAdd]);
     setIsDialogOpen(false);
     setNewGoal({ title: '', description: '', target: '', iconValue: 'Target' });
-    
+
     toast({
       title: "เพิ่มเป้าหมายสำเร็จ",
       description: `เพิ่ม "${newGoal.title}" แล้ว`
@@ -111,32 +110,39 @@ export function GoalsMotivation() {
   };
 
   return (
-    <Card className="bg-gradient-card backdrop-blur-sm border-border/50 shadow-soft">
-      <CardHeader>
+    <Card className="h-full bg-white/80 backdrop-blur-xl border border-white/50 shadow-soft rounded-[2rem] overflow-hidden hover:shadow-lg transition-all duration-300">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">เป้าหมายการเรียน</CardTitle>
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <div className="p-2 rounded-xl bg-purple-50 shadow-inner">
+              <Target className="h-6 w-6 text-purple-600" />
+            </div>
+            <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-bold">
+              เป้าหมายการเรียน
+            </span>
+          </CardTitle>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Plus className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-purple-50 text-purple-600 rounded-full">
+                <Plus className="h-5 w-5" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] bg-white/95 backdrop-blur-xl border-white/50 rounded-[2rem] p-6">
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold">✨ เพิ่มเป้าหมายใหม่</DialogTitle>
+                <DialogTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">✨ เพิ่มเป้าหมายใหม่</DialogTitle>
               </DialogHeader>
-              
+
               <div className="space-y-6 py-4">
                 {/* Preview Card */}
                 {newGoal.title && (
-                  <div className="p-4 rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-dashed border-primary/20 animate-fade-in">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-dashed border-primary/20 animate-fade-in">
                     <div className="flex items-center gap-3">
                       {(() => {
                         const selectedIcon = availableIcons.find(i => i.value === newGoal.iconValue);
                         if (selectedIcon) {
                           const PreviewIcon = selectedIcon.icon;
                           return (
-                            <div className={`p-3 rounded-lg ${selectedIcon.bgColor}`}>
+                            <div className={`p-3 rounded-xl ${selectedIcon.bgColor}`}>
                               <PreviewIcon className={`h-6 w-6 ${selectedIcon.color}`} />
                             </div>
                           );
@@ -144,16 +150,16 @@ export function GoalsMotivation() {
                         return null;
                       })()}
                       <div className="flex-1">
-                        <h4 className="font-semibold text-sm">{newGoal.title}</h4>
+                        <h4 className="font-bold text-sm text-foreground">{newGoal.title}</h4>
                         {newGoal.description && (
                           <p className="text-xs text-muted-foreground mt-1">{newGoal.description}</p>
                         )}
                         {newGoal.target && (
                           <div className="flex items-center gap-2 mt-2">
-                            <div className="h-1.5 flex-1 bg-muted rounded-full overflow-hidden">
+                            <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
                               <div className="h-full w-0 bg-primary rounded-full" />
                             </div>
-                            <span className="text-xs font-semibold text-muted-foreground">
+                            <span className="text-xs font-bold text-muted-foreground">
                               0 / {newGoal.target}
                             </span>
                           </div>
@@ -166,7 +172,7 @@ export function GoalsMotivation() {
                 {/* Form Fields */}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="title" className="text-sm font-semibold">
+                    <Label htmlFor="title" className="text-sm font-bold">
                       หัวข้อเป้าหมาย <span className="text-destructive">*</span>
                     </Label>
                     <Input
@@ -175,13 +181,13 @@ export function GoalsMotivation() {
                       value={newGoal.title}
                       onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
                       maxLength={100}
-                      className="h-11"
+                      className="h-11 rounded-xl bg-muted/30 border-border/50 focus:bg-white transition-all"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description" className="text-sm font-semibold">
-                      รายละเอียด <span className="text-xs text-muted-foreground">(ไม่บังคับ)</span>
+                    <Label htmlFor="description" className="text-sm font-bold">
+                      รายละเอียด <span className="text-xs text-muted-foreground font-normal">(ไม่บังคับ)</span>
                     </Label>
                     <Input
                       id="description"
@@ -189,12 +195,12 @@ export function GoalsMotivation() {
                       value={newGoal.description}
                       onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
                       maxLength={200}
-                      className="h-11"
+                      className="h-11 rounded-xl bg-muted/30 border-border/50 focus:bg-white transition-all"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="target" className="text-sm font-semibold">
+                    <Label htmlFor="target" className="text-sm font-bold">
                       จำนวนเป้าหมาย <span className="text-destructive">*</span>
                     </Label>
                     <Input
@@ -205,12 +211,12 @@ export function GoalsMotivation() {
                       onChange={(e) => setNewGoal({ ...newGoal, target: e.target.value })}
                       min="1"
                       max="10000"
-                      className="h-11"
+                      className="h-11 rounded-xl bg-muted/30 border-border/50 focus:bg-white transition-all"
                     />
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold">
+                    <Label className="text-sm font-bold">
                       เลือกไอคอน <span className="text-destructive">*</span>
                     </Label>
                     <div className="grid grid-cols-6 gap-2">
@@ -223,16 +229,16 @@ export function GoalsMotivation() {
                             type="button"
                             onClick={() => setNewGoal({ ...newGoal, iconValue: iconOption.value })}
                             className={`
-                              aspect-square p-3 rounded-lg border-2 transition-all duration-200
-                              hover:scale-110 hover:shadow-soft
-                              ${isSelected 
-                                ? `${iconOption.bgColor} ${iconOption.color} border-current ring-2 ring-offset-2 ring-current shadow-soft` 
-                                : 'bg-muted/30 border-border hover:border-primary/50'
+                              aspect-square p-2.5 rounded-xl border-2 transition-all duration-200
+                              hover:scale-110 hover:shadow-md flex items-center justify-center
+                              ${isSelected
+                                ? `${iconOption.bgColor} ${iconOption.color} border-current ring-2 ring-offset-2 ring-current shadow-md`
+                                : 'bg-muted/30 border-transparent hover:bg-muted/50'
                               }
                             `}
                             title={iconOption.label}
                           >
-                            <IconComponent className={`w-full h-full ${isSelected ? '' : 'text-muted-foreground'}`} />
+                            <IconComponent className={`w-5 h-5 ${isSelected ? '' : 'text-muted-foreground'}`} />
                           </button>
                         );
                       })}
@@ -241,23 +247,23 @@ export function GoalsMotivation() {
                 </div>
               </div>
 
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button 
-                  variant="outline" 
+              <DialogFooter className="gap-3 sm:gap-0">
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setIsDialogOpen(false);
                     setNewGoal({ title: '', description: '', target: '', iconValue: 'Target' });
                   }}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto rounded-xl h-11"
                 >
                   ยกเลิก
                 </Button>
-                <Button 
+                <Button
                   onClick={handleAddGoal}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto rounded-xl h-11 bg-gradient-primary hover:shadow-lg transition-all"
                   disabled={!newGoal.title || !newGoal.target}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-5 w-5 mr-2" />
                   เพิ่มเป้าหมาย
                 </Button>
               </DialogFooter>
@@ -270,24 +276,26 @@ export function GoalsMotivation() {
           {goals.map((goal) => {
             const Icon = goal.icon;
             const progress = (goal.current / goal.target) * 100;
-            
+
             return (
-              <div key={goal.id} className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className={`p-3 rounded-lg ${goal.bgColor} flex-shrink-0`}>
-                  <Icon className={`h-5 w-5 ${goal.color}`} />
+              <div key={goal.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-border/30 hover:border-primary/30 hover:shadow-md transition-all group">
+                <div className={`p-3 rounded-xl ${goal.bgColor} flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                  <Icon className={`h-6 w-6 ${goal.color}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-foreground text-sm">{goal.title}</h3>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                    <h3 className="font-bold text-foreground text-sm">{goal.title}</h3>
+                    <span className="text-xs font-bold text-muted-foreground whitespace-nowrap ml-2 bg-muted/50 px-2 py-0.5 rounded-md">
                       {goal.current} / {goal.target}
                     </span>
                   </div>
-                  <Progress value={progress} className="h-2 mb-1" />
-                  <div className="flex justify-between text-xs">
+                  <Progress value={progress} className="h-2.5 mb-1 rounded-full bg-muted/50" />
+                  <div className="flex justify-between text-[10px] font-medium mt-1">
                     <span className="text-muted-foreground">{Math.round(progress)}% เสร็จสมบูรณ์</span>
                     {progress === 100 && (
-                      <span className="text-primary font-semibold animate-pulse">✨ สำเร็จ!</span>
+                      <span className="text-primary font-bold animate-pulse flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" /> สำเร็จ!
+                      </span>
                     )}
                   </div>
                 </div>

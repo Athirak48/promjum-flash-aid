@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { WordPreviewDialog } from './WordPreviewDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { FolderSelectionDialog } from './FolderSelectionDialog';
 
 interface SubDeckCardProps {
   subdeck: SubDeck;
@@ -22,6 +23,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
   const [loadingFlashcards, setLoadingFlashcards] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [checkingPurchase, setCheckingPurchase] = useState(false);
+  const [showFolderSelection, setShowFolderSelection] = useState(false);
 
   // Check if user has purchased this subdeck
   useEffect(() => {
@@ -80,7 +82,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
         .order('created_at');
 
       if (error) throw error;
-      
+
       setFlashcards(data || []);
       setShowPreview(true);
     } catch (error) {
@@ -97,9 +99,9 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       toast({
         title: "กรุณาเข้าสู่ระบบ",
@@ -118,18 +120,25 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
       return;
     }
 
-    // Implement download logic here
+    // Open folder selection dialog
+    setShowFolderSelection(true);
+  };
+
+  const handleSaveToFolder = async (folderId: string, folderName: string) => {
+    setShowFolderSelection(false);
+
+    // Mock saving logic - in a real app, you would copy flashcards to the selected deck
     toast({
-      title: "ดาวน์โหลดสำเร็จ!",
-      description: `เพิ่ม "${subdeck.name}" ไปยังแฟลชการ์ดของคุณแล้ว`,
+      title: "บันทึกสำเร็จ!",
+      description: `บันทึก "${subdeck.name}" ลงในโฟลเดอร์ "${folderName}" เรียบร้อยแล้ว`,
     });
   };
 
   const handlePurchase = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       toast({
         title: "กรุณาเข้าสู่ระบบ",
@@ -167,7 +176,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
 
   return (
     <>
-      <Card 
+      <Card
         className="hover:shadow-lg transition-all duration-300 cursor-pointer group border-l-4"
         onClick={handleCardClick}
       >
@@ -217,8 +226,8 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                       {subdeck.progress.cards_learned}/{subdeck.flashcard_count} คำ
                     </span>
                   </div>
-                  <Progress 
-                    value={(subdeck.progress.cards_learned / subdeck.flashcard_count) * 100} 
+                  <Progress
+                    value={(subdeck.progress.cards_learned / subdeck.flashcard_count) * 100}
                   />
                 </div>
               )}
@@ -239,7 +248,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                 <Eye className="w-4 h-4" />
                 {loadingFlashcards ? 'กำลังโหลด...' : 'Preview'}
               </Button>
-              
+
               {!subdeck.is_free && !hasPurchased ? (
                 <Button
                   size="sm"
@@ -273,6 +282,12 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
         onOpenChange={setShowPreview}
         flashcards={flashcards}
         subdeckName={subdeck.name}
+      />
+
+      <FolderSelectionDialog
+        open={showFolderSelection}
+        onOpenChange={setShowFolderSelection}
+        onSelectFolder={handleSaveToFolder}
       />
     </>
   );

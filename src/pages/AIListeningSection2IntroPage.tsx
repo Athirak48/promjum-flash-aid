@@ -1,13 +1,19 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Layers } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-export default function AIListeningSection2FlashcardPage() {
+export default function AIListeningSection2IntroPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { language } = useLanguage();
+
+    // Get the selected vocabulary from state (passed from previous pages)
+    const state = location.state as {
+        selectedVocab?: { id: string; word: string; meaning: string }[];
+    } | null;
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
@@ -18,7 +24,7 @@ export default function AIListeningSection2FlashcardPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate('/ai-listening-vocab-selection')}
+                            onClick={() => navigate('/ai-listening-section1-intro')}
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
@@ -31,8 +37,8 @@ export default function AIListeningSection2FlashcardPage() {
 
             {/* Main Content */}
             <main className="flex-1 container mx-auto px-4 py-8 flex flex-col items-center justify-center">
-                <Card className="w-full max-w-md p-12 flex flex-col items-center text-center space-y-8 shadow-xl border-2 border-primary/10">
-                    <div className="p-6 bg-purple-50 dark:bg-purple-950/30 rounded-full">
+                <Card className="w-full max-w-md p-12 flex flex-col items-center text-center space-y-8 shadow-xl border-2 border-primary/10 animate-in zoom-in fade-in duration-500 slide-in-from-bottom-4">
+                    <div className="p-6 bg-purple-50 dark:bg-purple-950/30 rounded-full animate-bounce duration-1000">
                         <Layers className="w-16 h-16 text-purple-500" />
                     </div>
 
@@ -50,7 +56,9 @@ export default function AIListeningSection2FlashcardPage() {
                     <Button
                         size="lg"
                         className="w-full text-lg h-12"
-                        onClick={() => navigate('/ai-listening-flashcard-play')}
+                        onClick={() => navigate('/ai-listening-flashcard-play', {
+                            state: { selectedVocab: state?.selectedVocab }
+                        })}
                     >
                         {language === 'th' ? 'ไปกันต่อ' : 'Continue'}
                     </Button>
