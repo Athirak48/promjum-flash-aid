@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,10 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, ChevronDown, Bell, CheckCircle, PenTool, Mic, Video, Music, Star, Heart, Zap, Coffee, Sun, Moon, X, Trash2, LucideIcon, Trophy, Flame, TrendingUp, CalendarDays } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, ChevronDown, Bell, CheckCircle, PenTool, Mic, Video, Music, Star, Heart, Zap, Coffee, Sun, Moon, X, Trash2, LucideIcon, Trophy, Flame, TrendingUp, CalendarDays, Plus, ChevronLeft, ChevronRight, ChevronsUpDown, Check, Brain, GraduationCap, Lightbulb, Puzzle, Timer, Layers, FileText, Award, Repeat, Bookmark } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
@@ -17,10 +18,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { TimePicker } from './TimePicker';
 import { DurationPicker } from './DurationPicker';
 import { DatePicker } from './DatePicker';
-import { format, startOfWeek, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday } from 'date-fns';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useFlashcards, Flashcard } from '@/hooks/useFlashcards';
+import { useScheduledReviews } from '@/hooks/useScheduledReviews';
 
 interface Activity {
     id: string;
@@ -75,30 +78,30 @@ const activityTypes = [{
 
 const AVAILABLE_ICONS = {
     book: BookOpen,
-    message: MessageCircle,
-    headphones: Headphones,
+    brain: Brain,
+    graduation: GraduationCap,
+    lightbulb: Lightbulb,
+    puzzle: Puzzle,
     target: Target,
-    pen: PenTool,
-    mic: Mic,
-    video: Video,
-    music: Music,
+    timer: Timer,
+    layers: Layers,
+    file: FileText,
+    award: Award,
+    repeat: Repeat,
+    bookmark: Bookmark,
     star: Star,
-    heart: Heart,
-    zap: Zap,
-    coffee: Coffee,
-    sun: Sun,
-    moon: Moon
+    zap: Zap
 };
 
 const AVAILABLE_COLORS = [
-    { value: 'blue', label: 'Blue', class: 'bg-blue-500/10 text-blue-600 border-blue-200', ring: 'ring-blue-500' },
-    { value: 'purple', label: 'Purple', class: 'bg-purple-500/10 text-purple-600 border-purple-200', ring: 'ring-purple-500' },
-    { value: 'green', label: 'Green', class: 'bg-green-500/10 text-green-600 border-green-200', ring: 'ring-green-500' },
-    { value: 'orange', label: 'Orange', class: 'bg-orange-500/10 text-orange-600 border-orange-200', ring: 'ring-orange-500' },
-    { value: 'pink', label: 'Pink', class: 'bg-pink-500/10 text-pink-600 border-pink-200', ring: 'ring-pink-500' },
-    { value: 'red', label: 'Red', class: 'bg-red-500/10 text-red-600 border-red-200', ring: 'ring-red-500' },
-    { value: 'teal', label: 'Teal', class: 'bg-teal-500/10 text-teal-600 border-teal-200', ring: 'ring-teal-500' },
-    { value: 'indigo', label: 'Indigo', class: 'bg-indigo-500/10 text-indigo-600 border-indigo-200', ring: 'ring-indigo-500' }
+    { value: 'blue', label: 'Blue', class: 'bg-blue-100 text-blue-700 border-blue-200', ring: 'ring-blue-500' },
+    { value: 'purple', label: 'Purple', class: 'bg-purple-100 text-purple-700 border-purple-200', ring: 'ring-purple-500' },
+    { value: 'green', label: 'Green', class: 'bg-green-100 text-green-700 border-green-200', ring: 'ring-green-500' },
+    { value: 'orange', label: 'Orange', class: 'bg-orange-100 text-orange-700 border-orange-200', ring: 'ring-orange-500' },
+    { value: 'pink', label: 'Pink', class: 'bg-pink-100 text-pink-700 border-pink-200', ring: 'ring-pink-500' },
+    { value: 'red', label: 'Red', class: 'bg-red-100 text-red-700 border-red-200', ring: 'ring-red-500' },
+    { value: 'teal', label: 'Teal', class: 'bg-teal-100 text-teal-700 border-teal-200', ring: 'ring-teal-500' },
+    { value: 'indigo', label: 'Indigo', class: 'bg-indigo-100 text-indigo-700 border-indigo-200', ring: 'ring-indigo-500' }
 ];
 
 type ViewMode = 'day' | 'week' | 'month' | 'year';
@@ -106,22 +109,18 @@ type ViewMode = 'day' | 'week' | 'month' | 'year';
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const PIXELS_PER_HOUR = 60;
 
-const initialSchedule: DaySchedule[] = [
-    { dayIndex: 1, activities: [{ id: '1', type: 'vocabulary', time: '08:00', duration: 30, title: 'Morning Vocab', icon: BookOpen, color: 'bg-blue-500/10 text-blue-600 border-blue-200' }] },
-    { dayIndex: 3, activities: [{ id: '2', type: 'listening', time: '18:00', duration: 45, title: 'English Podcast', icon: Headphones, color: 'bg-green-500/10 text-green-600 border-green-200' }] },
-    { dayIndex: 5, activities: [{ id: '3', type: 'review', time: '20:00', duration: 60, title: 'Weekly Quiz', icon: Target, color: 'bg-orange-500/10 text-orange-600 border-orange-200' }] }
-];
-
 export function ScheduleCalendar() {
     const { toast } = useToast();
     const { flashcards } = useFlashcards();
+    const { reviews, addReview, updateReview, deleteReview } = useScheduledReviews();
 
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>('week');
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
-    const [scheduleData, setScheduleData] = useState<DaySchedule[]>(initialSchedule);
+    const [openDuration, setOpenDuration] = useState(false);
+    const [scheduleData, setScheduleData] = useState<DaySchedule[]>([]);
 
     // Review Dialog State
     const [reviewDate, setReviewDate] = useState<Date>(new Date());
@@ -140,7 +139,6 @@ export function ScheduleCalendar() {
     const [recommendedCards, setRecommendedCards] = useState<Flashcard[]>([]);
     const [isLoadingRecommended, setIsLoadingRecommended] = useState(false);
 
-    // Changed from ID array to Object array to support the new column
     const [selectedItems, setSelectedItems] = useState<Flashcard[]>([]);
 
     // Customization State
@@ -150,6 +148,67 @@ export function ScheduleCalendar() {
 
     // Tab State
     const [activeTab, setActiveTab] = useState<string>("latest");
+
+    // Fetch Recommended Cards
+    useEffect(() => {
+        const fetchRecommended = async () => {
+            setIsLoadingRecommended(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const today = new Date().toISOString();
+            const { data: progressData } = await supabase
+                .from('user_flashcard_progress')
+                .select('*')
+                .eq('user_id', user.id)
+                .lte('next_review_date', today);
+
+            if (progressData) {
+                const systemCardIds = progressData.filter(p => p.flashcard_id).map(p => p.flashcard_id);
+                const userCardIds = progressData.filter(p => p.user_flashcard_id).map(p => p.user_flashcard_id);
+
+                let combinedCards: Flashcard[] = [];
+
+                if (systemCardIds.length > 0) {
+                    const { data: systemCards } = await supabase
+                        .from('flashcards')
+                        .select('*')
+                        .in('id', systemCardIds);
+
+                    if (systemCards) {
+                        combinedCards = [...combinedCards, ...systemCards.map(c => ({
+                            id: c.id,
+                            front_text: c.front_text,
+                            back_text: c.back_text,
+                            created_at: c.created_at,
+                        }))];
+                    }
+                }
+
+                if (userCardIds.length > 0) {
+                    const { data: userCards } = await supabase
+                        .from('user_flashcards')
+                        .select('*')
+                        .in('id', userCardIds);
+
+                    if (userCards) {
+                        combinedCards = [...combinedCards, ...userCards.map(c => ({
+                            id: c.id,
+                            front_text: c.front_text,
+                            back_text: c.back_text,
+                            created_at: c.created_at,
+                            user_id: c.user_id,
+                            set_id: c.flashcard_set_id,
+                            image_url: c.front_image_url || undefined
+                        }))];
+                    }
+                }
+                setRecommendedCards(combinedCards);
+            }
+            setIsLoadingRecommended(false);
+        };
+        fetchRecommended();
+    }, []);
 
     // Fetch User Folders
     useEffect(() => {
@@ -176,12 +235,12 @@ export function ScheduleCalendar() {
         }
         const fetchSets = async () => {
             const { data } = await supabase
-                .from('user_sets')
+                .from('user_flashcard_sets')
                 .select('*')
                 .eq('folder_id', selectedFolderId)
                 .order('created_at', { ascending: false });
 
-            if (data) setUserSets(data as UserSet[]);
+            if (data) setUserSets(data as unknown as UserSet[]);
         };
         fetchSets();
     }, [selectedFolderId]);
@@ -195,97 +254,61 @@ export function ScheduleCalendar() {
         const fetchVocab = async () => {
             setIsLoadingLibrary(true);
             const { data } = await supabase
-                .from('flashcards')
+                .from('user_flashcards')
                 .select('*')
-                .eq('set_id', selectedSetId);
+                .eq('flashcard_set_id', selectedSetId);
 
             if (data) {
-                // Map to Flashcard type
                 const mappedData: Flashcard[] = data.map(item => ({
                     id: item.id,
                     front_text: item.front_text,
                     back_text: item.back_text,
-                    set_id: item.set_id,
+                    set_id: item.flashcard_set_id,
                     created_at: item.created_at,
                     user_id: item.user_id,
-                    image_url: item.image_url,
-                    audio_url: item.audio_url,
-                    difficulty_level: item.difficulty_level,
-                    next_review: item.next_review,
-                    interval: item.interval,
-                    ease_factor: item.ease_factor,
-                    repetitions: item.repetitions
+                    image_url: item.front_image_url || undefined,
                 }));
                 setLibraryVocabulary(mappedData);
             }
             setIsLoadingLibrary(false);
-        };
-        fetchVocab();
-    }, [selectedSetId]);
+            const mappedSchedule: DaySchedule[] = [];
 
-    // Fetch Recommended Cards
-    useEffect(() => {
-        const fetchRecommended = async () => {
-            setIsLoadingRecommended(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            reviews.forEach(review => {
+                const date = new Date(review.scheduled_date);
+                const dayIndex = date.getDay();
 
-            // Fetch cards that are due for review (next_review <= now)
-            const { data: progressData } = await supabase
-                .from('user_flashcard_progress')
-                .select('flashcard_id, next_review')
-                .eq('user_id', user.id)
-                .lte('next_review', new Date().toISOString())
-                .limit(20);
+                const activity: Activity = {
+                    id: review.id,
+                    type: (review.activity_type as Activity['type']) || 'vocabulary',
+                    time: review.scheduled_time.substring(0, 5),
+                    duration: review.duration_minutes || 30,
+                    title: review.title || 'Review Session',
+                    icon: AVAILABLE_ICONS[review.icon as keyof typeof AVAILABLE_ICONS] || BookOpen,
+                    color: review.color || 'blue'
+                };
 
-            if (progressData && progressData.length > 0) {
-                const cardIds = progressData.map(p => p.flashcard_id);
-                const { data: cards } = await supabase
-                    .from('flashcards')
-                    .select('*')
-                    .in('id', cardIds);
-
-                if (cards) {
-                    const mappedCards: Flashcard[] = cards.map(item => ({
-                        id: item.id,
-                        front_text: item.front_text,
-                        back_text: item.back_text,
-                        set_id: item.set_id,
-                        created_at: item.created_at,
-                        user_id: item.user_id,
-                        image_url: item.image_url,
-                        audio_url: item.audio_url,
-                        difficulty_level: item.difficulty_level,
-                        next_review: item.next_review,
-                        interval: item.interval,
-                        ease_factor: item.ease_factor,
-                        repetitions: item.repetitions
-                    }));
-                    setRecommendedCards(mappedCards);
+                const existingDay = mappedSchedule.find(d => d.dayIndex === dayIndex);
+                if (existingDay) {
+                    existingDay.activities.push(activity);
+                } else {
+                    mappedSchedule.push({ dayIndex, activities: [activity] });
                 }
-            } else {
-                setRecommendedCards([]);
-            }
-            setIsLoadingRecommended(false);
-        };
+            });
 
-        if (activeTab === 'recommended') {
-            fetchRecommended();
+            setScheduleData(mappedSchedule);
         }
-    }, [activeTab]);
+    }, [reviews]);
 
     const getDaysToRender = () => {
         if (viewMode === 'day') {
             return [selectedDate];
         } else if (viewMode === 'week') {
-            const start = startOfWeek(selectedDate, { weekStartsOn: 0 }); // Sunday start
+            const start = startOfWeek(selectedDate, { weekStartsOn: 0 });
             return Array.from({ length: 7 }, (_, i) => addDays(start, i));
         } else if (viewMode === 'month') {
             const start = startOfWeek(startOfMonth(selectedDate), { weekStartsOn: 0 });
-            const end = endOfMonth(selectedDate);
             const days = [];
             let current = start;
-            // Generate 42 days (6 weeks) to fill the grid
             while (days.length < 42) {
                 days.push(current);
                 current = addDays(current, 1);
@@ -304,74 +327,59 @@ export function ScheduleCalendar() {
         setIsDialogOpen(true);
     };
 
-    const handleUpdateActivityTitle = (dayIndex: number, activityId: string, newTitle: string) => {
-        setScheduleData(prev => prev.map(day => {
-            if (day.dayIndex === dayIndex) {
-                return {
-                    ...day,
-                    activities: day.activities.map(act => act.id === activityId ? { ...act, title: newTitle } : act)
-                };
-            }
-            return day;
-        }));
+    const handleUpdateActivityTitle = async (dayIndex: number, activityId: string, newTitle: string) => {
+        await updateReview(activityId, { title: newTitle });
     };
 
-    const handleUpdateActivityTime = (dayIndex: number, activityId: string, newTime: string) => {
-        setScheduleData(prev => prev.map(day => {
-            if (day.dayIndex === dayIndex) {
-                return {
-                    ...day,
-                    activities: day.activities.map(act => act.id === activityId ? { ...act, time: newTime } : act)
-                };
-            }
-            return day;
-        }));
+    const handleUpdateActivityTime = async (dayIndex: number, activityId: string, newTime: string) => {
+        await updateReview(activityId, { scheduled_time: newTime });
     };
 
-    const handleUpdateActivityDuration = (dayIndex: number, activityId: string, newDuration: number) => {
-        setScheduleData(prev => prev.map(day => {
-            if (day.dayIndex === dayIndex) {
-                return {
-                    ...day,
-                    activities: day.activities.map(act => act.id === activityId ? { ...act, duration: newDuration } : act)
-                };
-            }
-            return day;
-        }));
+    const handleUpdateActivityDuration = async (dayIndex: number, activityId: string, newDuration: number) => {
+        await updateReview(activityId, { duration_minutes: newDuration });
     };
 
-    const handleRemoveActivity = (dayIndex: number, activityId: string) => {
-        setScheduleData(prev => prev.map(day => {
-            if (day.dayIndex === dayIndex) {
-                return {
-                    ...day,
-                    activities: day.activities.filter(act => act.id !== activityId)
-                };
-            }
-            return day;
-        }));
+    const handleRemoveActivity = async (dayIndex: number, activityId: string) => {
+        await deleteReview(activityId);
     };
 
-    const handleAddActivity = () => {
+    const handleAddActivity = async () => {
         if (selectedDay === null) return;
-        const newActivity: Activity = {
-            id: Math.random().toString(36).substr(2, 9),
-            type: 'vocabulary',
-            time: '09:00',
-            duration: 30,
+
+        const targetDate = new Date(selectedDate);
+        const currentDay = targetDate.getDay();
+        const diff = selectedDay - currentDay;
+        targetDate.setDate(targetDate.getDate() + diff);
+
+        const newReview = {
+            scheduled_date: format(targetDate, 'yyyy-MM-dd'),
+            scheduled_time: '09:00',
+            duration_minutes: 30,
             title: 'New Activity',
-            icon: BookOpen,
-            color: 'bg-blue-500/10 text-blue-600 border-blue-200'
+            activity_type: 'vocabulary' as const,
+            icon: 'book',
+            color: 'blue',
+            vocabulary_ids: []
         };
 
-        setScheduleData(prev => {
-            const dayExists = prev.find(d => d.dayIndex === selectedDay);
-            if (dayExists) {
-                return prev.map(d => d.dayIndex === selectedDay ? { ...d, activities: [...d.activities, newActivity] } : d);
-            } else {
-                return [...prev, { dayIndex: selectedDay, activities: [newActivity] }];
-            }
-        });
+        await addReview(newReview);
+    };
+
+    const handleSaveReview = async () => {
+        const newReview = {
+            scheduled_date: format(reviewDate, 'yyyy-MM-dd'),
+            scheduled_time: reviewTime,
+            duration_minutes: reviewDuration,
+            title: reviewTitle,
+            activity_type: 'vocabulary' as const,
+            icon: reviewIcon,
+            color: reviewColor,
+            vocabulary_ids: selectedItems.map(i => i.id)
+        };
+
+        await addReview(newReview);
+        setIsReviewDialogOpen(false);
+        toast({ title: "บันทึกสำเร็จ", description: "สร้างกิจกรรมทบทวนเรียบร้อยแล้ว" });
     };
 
     const getPixelPosition = (time: string) => {
@@ -383,610 +391,707 @@ export function ScheduleCalendar() {
         return (duration / 60) * PIXELS_PER_HOUR;
     };
 
-    const weekDays = [
-        new Date(2024, 0, 7), // Sun
-        new Date(2024, 0, 1), // Mon
-        new Date(2024, 0, 2), // Tue
-        new Date(2024, 0, 3), // Wed
-        new Date(2024, 0, 4), // Thu
-        new Date(2024, 0, 5), // Fri
-        new Date(2024, 0, 6), // Sat
-    ];
+    const handleNavigate = (direction: 'prev' | 'next') => {
+        if (viewMode === 'day') {
+            setSelectedDate(prev => direction === 'prev' ? addDays(prev, -1) : addDays(prev, 1));
+        } else if (viewMode === 'week') {
+            setSelectedDate(prev => direction === 'prev' ? subWeeks(prev, 1) : addWeeks(prev, 1));
+        } else if (viewMode === 'month') {
+            setSelectedDate(prev => direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1));
+        } else if (viewMode === 'year') {
+            setSelectedDate(prev => direction === 'prev' ? subMonths(prev, 12) : addMonths(prev, 12));
+        }
+    };
 
     return (
-        <Card className="w-full h-full min-h-[600px] flex flex-col bg-white/80 backdrop-blur-xl border border-white/50 shadow-soft rounded-[2rem] overflow-hidden hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-4 space-y-4 border-b border-border/10">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-blue-50 rounded-xl shadow-inner">
-                            <CalendarIcon className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                            <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                ตารางเรียนรู้
-                            </CardTitle>
-                            <p className="text-xs text-muted-foreground font-medium mt-0.5">จัดการเวลาเรียนรู้ของคุณ</p>
-                        </div>
+        <div className="h-full flex flex-col gap-6 p-6 bg-background/50">
+            {/* Header Row 1: Title and Main Action */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-purple-100/50 rounded-2xl text-purple-600 shadow-sm border border-purple-100">
+                        <CalendarIcon className="w-6 h-6" />
                     </div>
-
-                    <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button size="sm" className="w-full sm:w-auto gap-1.5 shadow-lg hover:shadow-primary/25 transition-all duration-300">
-                                <Clock className="w-4 h-4" />
-                                ตั้งเวลาทบทวน
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl">
-                            <DialogHeader className="p-6 pb-2 border-b bg-muted/30">
-                                <DialogTitle className="flex items-center gap-2 text-xl">
-                                    <Sparkles className="w-5 h-5 text-primary" />
-                                    ตั้งเวลาทบทวนอัตโนมัติ
-                                </DialogTitle>
-                            </DialogHeader>
-
-                            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
-                                {/* Column 1: Selection (Left) - 4 cols */}
-                                <div className="lg:col-span-4 border-r bg-muted/10 flex flex-col h-full">
-                                    <Tabs defaultValue="latest" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-                                        <div className="p-4 pb-2">
-                                            <TabsList className="w-full grid grid-cols-3">
-                                                <TabsTrigger value="latest">ล่าสุด</TabsTrigger>
-                                                <TabsTrigger value="recommended">แนะนำ</TabsTrigger>
-                                                <TabsTrigger value="library">คลัง</TabsTrigger>
-                                            </TabsList>
-                                        </div>
-
-                                        <div className="flex-1 overflow-hidden relative">
-                                            <TabsContent value="latest" className="h-full absolute inset-0 m-0 p-4 pt-0 overflow-auto">
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs text-muted-foreground">คำศัพท์ที่เพิ่งเรียนรู้</Label>
-                                                    {flashcards.slice(0, 5).map((card) => (
-                                                        <div key={card.id} className="flex items-center gap-3 p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer group" onClick={() => {
-                                                            if (selectedItems.find(i => i.id === card.id)) {
-                                                                setSelectedItems(selectedItems.filter(i => i.id !== card.id));
-                                                            } else {
-                                                                setSelectedItems([...selectedItems, card]);
-                                                            }
-                                                        }}>
-                                                            <div className={cn("w-4 h-4 border-2 rounded flex items-center justify-center transition-colors", selectedItems.find(i => i.id === card.id) ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50")}>
-                                                                {selectedItems.find(i => i.id === card.id) && <CheckCircle className="w-3 h-3 text-primary-foreground" />}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-medium truncate">{card.front_text}</p>
-                                                                <p className="text-xs text-muted-foreground truncate">{card.back_text}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </TabsContent>
-
-                                            <TabsContent value="recommended" className="h-full absolute inset-0 m-0 p-4 pt-0 overflow-auto">
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs text-muted-foreground">คำศัพท์ที่ควรทบทวน (Spaced Repetition)</Label>
-                                                    {isLoadingRecommended ? (
-                                                        <div className="flex justify-center p-4"><span className="loading loading-spinner loading-sm"></span></div>
-                                                    ) : recommendedCards.length > 0 ? (
-                                                        recommendedCards.map((card) => (
-                                                            <div key={card.id} className="flex items-center gap-3 p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer group" onClick={() => {
-                                                                if (selectedItems.find(i => i.id === card.id)) {
-                                                                    setSelectedItems(selectedItems.filter(i => i.id !== card.id));
-                                                                } else {
-                                                                    setSelectedItems([...selectedItems, card]);
-                                                                }
-                                                            }}>
-                                                                <div className={cn("w-4 h-4 border-2 rounded flex items-center justify-center transition-colors", selectedItems.find(i => i.id === card.id) ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50")}>
-                                                                    {selectedItems.find(i => i.id === card.id) && <CheckCircle className="w-3 h-3 text-primary-foreground" />}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="flex justify-between items-center">
-                                                                        <p className="text-sm font-medium truncate">{card.front_text}</p>
-                                                                        <Badge variant="outline" className="text-[10px] h-4 px-1 bg-orange-50 text-orange-600 border-orange-200">Due</Badge>
-                                                                    </div>
-                                                                    <p className="text-xs text-muted-foreground truncate">{card.back_text}</p>
-                                                                </div>
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <div className="text-center text-xs text-muted-foreground py-8 border-2 border-dashed rounded-lg">
-                                                            <Sparkles className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
-                                                            <p>ไม่มีคำศัพท์ที่ต้องทบทวนในขณะนี้</p>
-                                                            <p className="text-[10px] mt-1">เก่งมาก! คุณทบทวนครบแล้ว</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TabsContent>
-
-                                            <TabsContent value="library" className="h-full absolute inset-0 m-0 p-4 pt-0 overflow-auto">
-                                                <div className="space-y-3">
-                                                    <div className="space-y-2">
-                                                        <Label className="text-xs">โฟลเดอร์</Label>
-                                                        <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="เลือกโฟลเดอร์" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {userFolders.map(folder => (
-                                                                    <SelectItem key={folder.id} value={folder.id}>{folder.title}</SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    {selectedFolderId && (
-                                                        <div className="space-y-2">
-                                                            <Label className="text-xs">ชุดคำศัพท์</Label>
-                                                            <Select value={selectedSetId} onValueChange={setSelectedSetId}>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder="เลือกชุดคำศัพท์" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {userSets.map(set => (
-                                                                        <SelectItem key={set.id} value={set.id}>{set.title}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="space-y-2">
-                                                        <Label className="text-xs">รายการคำศัพท์</Label>
-                                                        <ScrollArea className="h-[200px] w-full rounded-md border p-2 bg-background">
-                                                            {isLoadingLibrary ? (
-                                                                <div className="flex justify-center p-4"><span className="loading loading-spinner loading-sm"></span></div>
-                                                            ) : libraryVocabulary.length > 0 ? (
-                                                                <div className="space-y-1">
-                                                                    {libraryVocabulary.map((card) => (
-                                                                        <div key={card.id} className="flex items-center gap-2 p-1.5 hover:bg-accent rounded-md cursor-pointer" onClick={() => {
-                                                                            if (selectedItems.find(i => i.id === card.id)) {
-                                                                                setSelectedItems(selectedItems.filter(i => i.id !== card.id));
-                                                                            } else {
-                                                                                setSelectedItems([...selectedItems, card]);
-                                                                            }
-                                                                        }}>
-                                                                            <div className="w-3 h-3 border rounded flex items-center justify-center">
-                                                                                {selectedItems.find(i => i.id === card.id) && <div className="w-1.5 h-1.5 bg-primary rounded-sm" />}
-                                                                            </div>
-                                                                            <span className="text-xs truncate">{card.front_text}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="text-center text-xs text-muted-foreground py-4">เลือกชุดคำศัพท์เพื่อแสดงรายการ</div>
-                                                            )}
-                                                        </ScrollArea>
-                                                    </div>
-                                                </div>
-                                            </TabsContent>
-                                        </div>
-                                    </Tabs>
-                                </div>
-
-                                {/* Column 2: Configuration (Right) - 8 cols */}
-                                <div className="lg:col-span-8 p-6 flex flex-col h-full overflow-auto">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label>ชื่อกิจกรรม</Label>
-                                                <Input value={reviewTitle} onChange={(e) => setReviewTitle(e.target.value)} placeholder="เช่น ทบทวนคำศัพท์บทที่ 1" />
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label>วันที่ทบทวน</Label>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !reviewDate && "text-muted-foreground")}>
-                                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                                            {reviewDate ? format(reviewDate, "PPP", { locale: th }) : <span>เลือกวันที่</span>}
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0">
-                                                        <Calendar mode="single" selected={reviewDate} onSelect={(date) => date && setReviewDate(date)} initialFocus />
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label>เวลา</Label>
-                                                    <TimePicker value={reviewTime} onChange={setReviewTime} />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>ระยะเวลา (นาที)</Label>
-                                                    <DurationPicker value={reviewDuration} onChange={setReviewDuration} />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label>ไอคอน</Label>
-                                                <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/20">
-                                                    {Object.entries(AVAILABLE_ICONS).map(([key, Icon]) => (
-                                                        <div
-                                                            key={key}
-                                                            className={cn(
-                                                                "p-2 rounded-md cursor-pointer hover:bg-accent transition-colors",
-                                                                reviewIcon === key && "bg-primary/20 ring-2 ring-primary"
-                                                            )}
-                                                            onClick={() => setReviewIcon(key)}
-                                                        >
-                                                            <Icon className="w-4 h-4" />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label>สี</Label>
-                                                <div className="flex flex-wrap gap-3 p-3 border rounded-lg bg-muted/20">
-                                                    {AVAILABLE_COLORS.map((color) => (
-                                                        <div
-                                                            key={color.value}
-                                                            className={cn(
-                                                                "w-6 h-6 rounded-full cursor-pointer hover:scale-110 transition-transform",
-                                                                color.class.split(' ')[0],
-                                                                reviewColor === color.value && "ring-2 ring-offset-2 ring-primary"
-                                                            )}
-                                                            onClick={() => setReviewColor(color.value)}
-                                                            title={color.label}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-auto pt-6 border-t flex justify-between items-center">
-                                        <div className="text-sm text-muted-foreground">
-                                            เลือกแล้ว {selectedItems.length} รายการ
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Button onClick={() => setIsReviewDialogOpen(false)} variant="outline">ยกเลิก</Button>
-                                            <Button onClick={() => {
-                                                toast({
-                                                    title: "บันทึกการทบทวนสำเร็จ",
-                                                    description: `ตั้งเวลาทบทวน ${reviewTitle} เรียบร้อยแล้ว`,
-                                                });
-                                                setIsReviewDialogOpen(false);
-                                            }}>บันทึก</Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center justify-end gap-2">
-                    <div className="w-full sm:w-auto flex items-center justify-center gap-2 p-1.5 bg-muted/50 rounded-lg border border-border/50">
-                        <div className="flex items-center bg-background rounded-md border border-border/50 p-1 shadow-sm">
-                            <Button
-                                variant={viewMode === 'day' ? 'secondary' : 'ghost'}
-                                size="sm"
-                                onClick={() => setViewMode('day')}
-                                className={cn("h-7 px-3 text-xs font-medium transition-all", viewMode === 'day' && "bg-primary/10 text-primary hover:bg-primary/20")}
-                            >
-                                วัน
-                            </Button>
-                            <Button
-                                variant={viewMode === 'week' ? 'secondary' : 'ghost'}
-                                size="sm"
-                                onClick={() => setViewMode('week')}
-                                className={cn("h-7 px-3 text-xs font-medium transition-all", viewMode === 'week' && "bg-primary/10 text-primary hover:bg-primary/20")}
-                            >
-                                สัปดาห์
-                            </Button>
-                            <Button
-                                variant={viewMode === 'month' ? 'secondary' : 'ghost'}
-                                size="sm"
-                                onClick={() => setViewMode('month')}
-                                className={cn("h-7 px-3 text-xs font-medium transition-all", viewMode === 'month' && "bg-primary/10 text-primary hover:bg-primary/20")}
-                            >
-                                เดือน
-                            </Button>
-                            <Button
-                                variant={viewMode === 'year' ? 'secondary' : 'ghost'}
-                                size="sm"
-                                onClick={() => setViewMode('year')}
-                                className={cn("h-7 px-3 text-xs font-medium transition-all", viewMode === 'year' && "bg-primary/10 text-primary hover:bg-primary/20")}
-                            >
-                                ปี
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className="w-full sm:w-auto">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className={cn(
-                                        "w-full sm:w-[240px] justify-start text-left font-normal bg-background hover:bg-accent/50",
-                                        !selectedDate && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-                                    {selectedDate ? format(selectedDate, "PPP", { locale: th }) : <span>เลือกวันที่</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={(date) => date && setSelectedDate(date)}
-                                    initialFocus
-                                    className="rounded-md border shadow-md"
-                                />
-                            </PopoverContent>
-                        </Popover>
+                    <div>
+                        <h1 className="text-2xl font-bold text-foreground tracking-tight">ตารางเรียนรู้</h1>
+                        <p className="text-muted-foreground text-sm font-medium">จัดการเวลาเรียนรู้ของคุณ</p>
                     </div>
                 </div>
-            </CardHeader>
+                <div className="w-full md:w-auto flex justify-end">
+                    <Button
+                        onClick={() => setIsReviewDialogOpen(true)}
+                        className="bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-300 rounded-xl"
+                    >
+                        <Clock className="w-4 h-4 mr-2" />
+                        ตั้งเวลาทบทวน
+                    </Button>
+                </div>
+            </div>
 
-            {viewMode === 'year' ? (
-                <ScrollArea className="h-[600px]">
-                    <div className="p-6 space-y-8 max-w-7xl mx-auto w-full">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100 shadow-sm">
-                                <CardContent className="p-4 flex items-center gap-4">
-                                    <div className="p-3 bg-blue-500/10 rounded-full text-blue-600"><BookOpen className="w-6 h-6" /></div>
-                                    <div><p className="text-xs text-muted-foreground font-medium">คำศัพท์ที่จำได้ทั้งปี</p><h3 className="text-2xl font-bold text-blue-700">2,543 <span className="text-xs font-normal text-muted-foreground">คำ</span></h3></div>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-gradient-to-br from-orange-50 to-red-50 border-orange-100 shadow-sm">
-                                <CardContent className="p-4 flex items-center gap-4">
-                                    <div className="p-3 bg-orange-500/10 rounded-full text-orange-600"><Flame className="w-6 h-6" /></div>
-                                    <div><p className="text-xs text-muted-foreground font-medium">เข้าใช้งานต่อเนื่องสูงสุด</p><h3 className="text-2xl font-bold text-orange-700">45 <span className="text-xs font-normal text-muted-foreground">วัน</span></h3></div>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-100 shadow-sm">
-                                <CardContent className="p-4 flex items-center gap-4">
-                                    <div className="p-3 bg-green-500/10 rounded-full text-green-600"><CalendarDays className="w-6 h-6" /></div>
-                                    <div><p className="text-xs text-muted-foreground font-medium">วันที่เรียนรู้ทั้งหมด</p><h3 className="text-2xl font-bold text-green-700">280 <span className="text-xs font-normal text-muted-foreground">วัน</span></h3></div>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-100 shadow-sm">
-                                <CardContent className="p-4 flex items-center gap-4">
-                                    <div className="p-3 bg-purple-500/10 rounded-full text-purple-600"><Trophy className="w-6 h-6" /></div>
-                                    <div><p className="text-xs text-muted-foreground font-medium">คะแนนเฉลี่ยแบบทดสอบ</p><h3 className="text-2xl font-bold text-purple-700">85%</h3></div>
-                                </CardContent>
-                            </Card>
+            {/* Header Row 2: Controls */}
+            <div className="flex flex-wrap items-center justify-end gap-3 w-full">
+                <div className="flex flex-wrap items-center justify-end gap-3 w-full sm:w-auto">
+                    {/* View Switcher */}
+                    <div className="bg-card p-1 rounded-2xl border shadow-sm flex items-center gap-1 overflow-x-auto max-w-full">
+                        {(['day', 'week', 'month', 'year'] as const).map((mode) => (
+                            <button
+                                key={mode}
+                                onClick={() => setViewMode(mode)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200",
+                                    viewMode === mode
+                                        ? "bg-purple-100 text-purple-700 shadow-sm"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}
+                            >
+                                {mode === 'day' && 'วัน'}
+                                {mode === 'week' && 'สัปดาห์'}
+                                {mode === 'month' && 'เดือน'}
+                                {mode === 'year' && 'ปี'}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Date Picker / Navigation */}
+                    <div className="flex items-center gap-2 bg-pink-50/50 p-1 pr-3 rounded-2xl border border-pink-100/50 shadow-sm">
+                        <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-xl" onClick={() => handleNavigate('prev')}>
+                                <ChevronLeft className="w-4 h-4" />
+                            </Button>
+
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" className="h-8 px-3 text-pink-700 hover:bg-pink-100 hover:text-pink-800 font-semibold text-sm rounded-xl">
+                                        <CalendarIcon className="w-3.5 h-3.5 mr-2 opacity-70" />
+                                        {format(selectedDate, 'd MMMM yyyy', { locale: th })}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={(date) => date && setSelectedDate(date)}
+                                        initialFocus
+                                        className="p-3 pointer-events-auto"
+                                    />
+                                </PopoverContent>
+                            </Popover>
+
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-xl" onClick={() => handleNavigate('next')}>
+                                <ChevronRight className="w-4 h-4" />
+                            </Button>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <Card className="border-border/50 shadow-sm">
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary" /> สถิติการจำคำศัพท์รายเดือน</CardTitle>
+
+            {
+                viewMode === 'year' ? (
+                    <ScrollArea className="flex-1 min-h-0 w-full border rounded-xl bg-card shadow-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 p-4">
+                            <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-300">
+                                <CardContent className="p-5 flex items-center gap-4">
+                                    <div className="p-3 bg-blue-500/10 rounded-xl text-blue-600"><BookOpen className="w-5 h-5" /></div>
+                                    <div><p className="text-xs text-muted-foreground font-medium mb-0.5">คำศัพท์ที่จำได้</p><h3 className="text-2xl font-bold text-foreground">2,543</h3></div>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-300">
+                                <CardContent className="p-5 flex items-center gap-4">
+                                    <div className="p-3 bg-orange-500/10 rounded-xl text-orange-600"><Flame className="w-5 h-5" /></div>
+                                    <div><p className="text-xs text-muted-foreground font-medium mb-0.5">ต่อเนื่องสูงสุด</p><h3 className="text-2xl font-bold text-foreground">45 <span className="text-sm font-normal text-muted-foreground">วัน</span></h3></div>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-300">
+                                <CardContent className="p-5 flex items-center gap-4">
+                                    <div className="p-3 bg-green-500/10 rounded-xl text-green-600"><CalendarDays className="w-5 h-5" /></div>
+                                    <div><p className="text-xs text-muted-foreground font-medium mb-0.5">วันที่เรียนรู้</p><h3 className="text-2xl font-bold text-foreground">280 <span className="text-sm font-normal text-muted-foreground">วัน</span></h3></div>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-300">
+                                <CardContent className="p-5 flex items-center gap-4">
+                                    <div className="p-3 bg-purple-500/10 rounded-xl text-purple-600"><Trophy className="w-5 h-5" /></div>
+                                    <div><p className="text-xs text-muted-foreground font-medium mb-0.5">คะแนนเฉลี่ย</p><h3 className="text-2xl font-bold text-foreground">85%</h3></div>
+                                </CardContent>
+                            </Card>
+                        </div >
+
+                        <Card className="border-border/40 shadow-sm mb-8 mx-4">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-base font-medium flex items-center gap-2 text-muted-foreground"><TrendingUp className="w-4 h-4" /> สถิติการจำคำศัพท์รายเดือน</CardTitle>
                             </CardHeader>
                             <CardContent className="h-[300px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={Array.from({ length: 12 }, (_, i) => ({ name: format(new Date(2025, i, 1), 'MMM', { locale: th }), words: Math.floor(Math.random() * 300) + 100 }))}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                                        <Tooltip cursor={{ fill: 'transparent' }} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} dy={10} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                                        <Tooltip
+                                            cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
+                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                        />
                                         <Bar dataKey="words" radius={[4, 4, 0, 0]}>
-                                            {Array.from({ length: 12 }).map((_, index) => <Cell key={index} fill={`hsl(var(--primary) / ${0.4 + (index % 2) * 0.2})`} />)}
+                                            {Array.from({ length: 12 }).map((_, index) => <Cell key={index} fill={`hsl(var(--primary) / ${0.6 + (index % 2) * 0.2})`} />)}
                                         </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
                             </CardContent>
                         </Card>
-                    </div>
-                </ScrollArea>
-            ) : (viewMode === 'week' || viewMode === 'day') ? (
-                <ScrollArea className="h-[600px] border rounded-md">
-                    <div className="flex flex-col min-w-full overflow-x-auto">
-                        <div className={cn("grid gap-1 mb-1 sticky top-0 z-40 bg-background border-b pb-2 pt-2 min-w-[800px] sm:min-w-full", (viewMode === 'week' || viewMode === 'day') ? "grid-cols-[60px_1fr]" : "grid-cols-7")}>
-                            <div className="text-center text-xs font-bold py-2 text-muted-foreground sticky left-0 z-50 bg-background">เวลา</div>
-                            <div className={cn("grid gap-1", viewMode === 'day' ? "grid-cols-1" : "grid-cols-7")}>
-                                {getDaysToRender().map((date, index) => {
-                                    if (!date) return null;
-                                    const isCurrentDay = isToday(date);
-                                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
-                                    if (viewMode === 'day') {
-                                        return (
-                                            <div key={index} className={`text-center text-xs font-bold py-2 rounded-md ${isCurrentDay ? 'text-primary' : isWeekend ? 'text-destructive' : 'text-muted-foreground'}`}>
-                                                {format(date, 'EEEE d MMMM yyyy', { locale: th })}
-                                            </div>
-                                        );
-                                    }
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-4 pb-8">
+                            {Array.from({ length: 12 }).map((_, monthIndex) => {
+                                const currentYear = selectedDate.getFullYear();
+                                const monthStart = new Date(currentYear, monthIndex, 1);
+                                const monthEnd = endOfMonth(monthStart);
+                                const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+                                const startDayOfWeek = monthStart.getDay(); // 0 for Sunday
 
-                                    return (
-                                        <div key={index} className="flex flex-col items-center justify-center py-2 gap-1">
-                                            <span className={`text-[10px] uppercase font-medium ${isCurrentDay ? 'text-primary' : isWeekend ? 'text-destructive' : 'text-muted-foreground'}`}>
-                                                {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()]}
-                                            </span>
-                                            <div className={cn(
-                                                "w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold transition-colors",
-                                                isCurrentDay
-                                                    ? "bg-primary text-primary-foreground shadow-sm"
-                                                    : "text-foreground hover:bg-muted"
-                                            )}>
-                                                {date.getDate()}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <div className="flex relative flex-1 min-w-[800px] sm:min-w-full">
-                            <div className="w-[60px] flex-shrink-0 border-r bg-muted/5 sticky left-0 z-30 bg-background">
-                                {HOURS.map(hour => (
-                                    <div key={hour} className="h-[60px] border-b text-xs text-muted-foreground p-1 text-right pr-2 relative">
-                                        <span className="-top-2 relative">{hour}:00</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className={cn("flex-1 grid", viewMode === 'day' ? "grid-cols-1" : "grid-cols-7")}>
-                                {getDaysToRender().map((date, dayIndex) => {
-                                    if (!date) return null;
-                                    const daySchedule = getDaySchedule(date.getDay());
-                                    const isCurrentDay = isToday(date);
-
-                                    return (
-                                        <div key={dayIndex} className={`border-r relative min-h-[1440px] ${isCurrentDay ? 'bg-primary/5' : ''}`}>
-                                            {HOURS.map(hour => (
-                                                <div key={hour} className="h-[60px] border-b border-dashed border-border/50" />
-                                            ))}
-
-                                            {daySchedule?.activities.map(activity => (
-                                                <div
-                                                    key={activity.id}
-                                                    className={`absolute left-1 right-1 rounded-md p-2 text-xs border overflow-hidden cursor-pointer hover:brightness-95 transition-all shadow-sm z-10 ${activity.color}`}
-                                                    style={{
-                                                        top: `${getPixelPosition(activity.time)}px`,
-                                                        height: `${Math.max(getPixelHeight(activity.duration), viewMode === 'day' ? 50 : 30)}px`
-                                                    }}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleEditSchedule(date.getDay());
-                                                    }}
-                                                >
-                                                    <div className={cn("font-semibold flex items-center gap-1", viewMode === 'day' ? "text-sm mb-1" : "")}>
-                                                        <activity.icon className={cn("flex-shrink-0", viewMode === 'day' ? "w-4 h-4" : "w-3 h-3")} />
-                                                        <span className="truncate">{activity.time} - {activity.title}</span>
-                                                    </div>
-                                                    {viewMode === 'day' && (
-                                                        <div className="text-xs opacity-80 pl-5">
-                                                            ระยะเวลา: {activity.duration} นาที
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-
-                                            <div
-                                                className="absolute inset-0 z-0"
-                                                onClick={() => handleEditSchedule(date.getDay())}
-                                            />
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </ScrollArea>
-            ) : (
-                <div className={cn("grid gap-1", "grid-cols-7")}>
-                    {getDaysToRender().map((date, index) => {
-                        if (!date) {
-                            return <div key={`empty-${index}`} className="aspect-square min-h-[80px]" />;
-                        }
-                        const daySchedule = getDaySchedule(date.getDay());
-                        const isCurrentDay = isToday(date);
-                        const hasActivities = daySchedule && daySchedule.activities.length > 0;
-                        const totalActivities = daySchedule?.activities.length || 0;
-                        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                        return (
-                            <div key={date.toDateString()} className={`
-                                                  relative min-h-[80px] p-2 rounded-lg border-2 transition-all duration-200 cursor-pointer
-                                                  hover:shadow-soft hover:scale-[1.02] hover:z-10
-                                                  ${isCurrentDay ? 'bg-primary/10 border-primary shadow-sm ring-2 ring-primary/20' : hasActivities ? 'bg-accent/10 border-accent/50 hover:bg-accent/20' : 'bg-background border-border/30 hover:bg-muted/20'}
-                                                `} onClick={() => handleEditSchedule(date.getDay())}>
-                                <div className="flex justify-between items-start">
-                                    <span className={`text-sm font-medium w-6 h-6 flex items-center justify-center rounded-full ${isCurrentDay ? 'bg-primary text-primary-foreground' : isWeekend ? 'text-destructive' : 'text-foreground'}`}>
-                                        {date.getDate()}
-                                    </span>
-                                    {totalActivities > 0 && (
-                                        <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-primary/10 text-primary hover:bg-primary/20">
-                                            {totalActivities}
-                                        </Badge>
-                                    )}
-                                </div>
-
-                                <div className="mt-1 space-y-1">
-                                    {daySchedule?.activities.slice(0, 2).map((activity, i) => {
-                                        const Icon = activity.icon;
-                                        return (
-                                            <div key={i} className={`text-[10px] px-1.5 py-0.5 rounded truncate flex items-center gap-1 ${activity.color}`}>
-                                                <Icon className="w-3 h-3 flex-shrink-0" />
-                                                <span className="truncate">{activity.title}</span>
-                                            </div>
-                                        );
-                                    })}
-                                    {totalActivities > 2 && (
-                                        <div className="text-[10px] text-muted-foreground pl-1">
-                                            +{totalActivities - 2} รายการ
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <CalendarIcon className="w-5 h-5 text-primary" />
-                            แก้ไขตารางเวลา
-                            {selectedDay !== null && <span className="text-sm text-muted-foreground ml-2">
-                                {weekDays[selectedDay]?.toLocaleDateString('th-TH', { weekday: 'long' })}
-                            </span>}
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <ScrollArea className="max-h-[60vh] pr-4">
-                        <div className="space-y-4">
-                            {selectedDay !== null && getDaySchedule(selectedDay)?.activities.map(activity => {
-                                const Icon = activity.icon;
                                 return (
-                                    <div key={activity.id} className={`p-4 rounded-lg border ${activity.color}`}>
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex items-center gap-2 flex-1">
-                                                <Icon className="w-4 h-4 flex-shrink-0" />
-                                                <Input
-                                                    value={activity.title}
-                                                    onChange={e => handleUpdateActivityTitle(selectedDay, activity.id, e.target.value)}
-                                                    className="font-medium text-sm h-8 bg-background/50"
-                                                    placeholder="ชื่อกิจกรรม"
-                                                />
-                                            </div>
-                                            <Button variant="ghost" size="sm" onClick={() => handleRemoveActivity(selectedDay, activity.id)}>
-                                                ลบ
-                                            </Button>
+                                    <div key={monthIndex} className="flex flex-col gap-3 p-4 rounded-2xl bg-card/50 border border-border/30 hover:border-border/60 hover:bg-card transition-all duration-300 shadow-sm">
+                                        <h3 className="text-sm font-bold text-center text-foreground/90">{format(monthStart, 'MMMM', { locale: th })}</h3>
+                                        <div className="grid grid-cols-7 gap-1 text-center text-[10px] mb-1">
+                                            {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map(d => <div key={d} className="text-muted-foreground/60 font-medium">{d}</div>)}
                                         </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <Label className="text-xs mb-1.5 block text-center">เวลาทบทวน</Label>
-                                                <div className="flex justify-center p-2 bg-muted/20 rounded-lg border border-border/50">
-                                                    <TimePicker
-                                                        value={activity.time}
-                                                        onChange={newTime => handleUpdateActivityTime(selectedDay, activity.id, newTime)}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <Label className="text-xs mb-1.5 block text-center">ระยะเวลาทบทวน</Label>
-                                                <div className="flex justify-center p-2 bg-muted/20 rounded-lg border border-border/50">
-                                                    <DurationPicker
-                                                        value={activity.duration}
-                                                        onChange={newDuration => handleUpdateActivityDuration(selectedDay, activity.id, newDuration)}
-                                                    />
-                                                </div>
-                                            </div>
+                                        <div className="grid grid-cols-7 gap-1 text-center text-[10px]">
+                                            {Array.from({ length: startDayOfWeek }).map((_, i) => <div key={`empty-${i}`} />)}
+                                            {daysInMonth.map(date => {
+                                                const hasActivity = reviews.some(r => isSameDay(new Date(r.scheduled_date), date));
+                                                const isTodayDate = isToday(date);
+                                                return (
+                                                    <div
+                                                        key={date.toISOString()}
+                                                        title={format(date, 'd MMMM yyyy', { locale: th })}
+                                                        className={cn(
+                                                            "aspect-square flex items-center justify-center rounded-full transition-all duration-300 cursor-default",
+                                                            hasActivity
+                                                                ? "bg-primary text-primary-foreground font-bold shadow-sm scale-105"
+                                                                : "text-muted-foreground/70 hover:bg-accent hover:text-foreground",
+                                                            isTodayDate && !hasActivity && "ring-1 ring-primary text-primary font-medium bg-primary/5"
+                                                        )}
+                                                    >
+                                                        {date.getDate()}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 );
                             })}
-
-                            <Button variant="outline" className="w-full" onClick={handleAddActivity}>
-                                + เพิ่มกิจกรรม
-                            </Button>
                         </div>
-                    </ScrollArea>
+                    </ScrollArea >
+                ) : viewMode === 'month' ? (
+                    <ScrollArea className="flex-1 min-h-0 w-full border rounded-xl bg-card shadow-sm">
+                        <div className="p-2 md:p-4 w-full min-w-0">
+                            <div className="grid grid-cols-7 gap-1 md:gap-4 mb-2 md:mb-4">
+                                {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map((day) => (
+                                    <div key={day} className="text-center text-xs md:text-sm font-semibold text-muted-foreground/70">
+                                        {day}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-7 gap-px bg-border/30 rounded-lg overflow-hidden border border-border/30">
+                                {getDaysToRender().map((date, index) => {
+                                    const isCurrentMonth = isSameMonth(date, selectedDate);
+                                    const isCurrentDay = isToday(date);
+                                    const dayReviews = reviews?.filter(r => isSameDay(new Date(r.scheduled_date), date)) || [];
 
-                    <DialogFooter>
-                        <Button onClick={() => setIsDialogOpen(false)} className="w-full">
-                            ตกลง
+                                    return (
+                                        <div
+                                            key={index}
+                                            className={cn(
+                                                "min-h-[60px] md:min-h-[120px] p-1 md:p-2 bg-card transition-colors hover:bg-accent/20 cursor-pointer flex flex-col gap-1",
+                                                !isCurrentMonth && "bg-muted/10 text-muted-foreground/50",
+                                                isCurrentDay && "bg-primary/5"
+                                            )}
+                                            onClick={() => {
+                                                setSelectedDate(date);
+                                                setViewMode('day');
+                                            }}
+                                        >
+                                            <div className={cn(
+                                                "text-right text-xs md:text-sm font-medium mb-1 w-5 h-5 md:w-7 md:h-7 flex items-center justify-center ml-auto rounded-full",
+                                                isCurrentDay && "bg-primary text-primary-foreground"
+                                            )}>
+                                                {date.getDate()}
+                                            </div>
+
+                                            {/* Mobile View: Dots */}
+                                            <div className="flex md:hidden flex-wrap justify-end gap-1">
+                                                {dayReviews.map(review => {
+                                                    const colorClass = AVAILABLE_COLORS.find(c => c.value === review.color)?.class || 'bg-primary';
+                                                    // Extract background color for the dot
+                                                    const bgClass = colorClass.split(' ').find(c => c.startsWith('bg-')) || 'bg-primary';
+                                                    // Remove opacity modifier if present to make dot visible
+                                                    const solidBg = bgClass.replace('/10', '').replace('/50', '');
+
+                                                    return (
+                                                        <div key={review.id} className={cn("w-1.5 h-1.5 rounded-full", solidBg)} />
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* Desktop View: Pills */}
+                                            <div className="hidden md:flex flex-col gap-1">
+                                                {dayReviews.map(review => {
+                                                    const colorClass = AVAILABLE_COLORS.find(c => c.value === review.color)?.class || 'bg-primary/10 text-primary';
+                                                    return (
+                                                        <div key={review.id} className={cn("text-[10px] px-2 py-1 rounded-md truncate font-medium border-l-2", colorClass)}>
+                                                            {review.scheduled_time.substring(0, 5)} {review.title}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                ) : (viewMode === 'week' || viewMode === 'day') ? (
+                    <ScrollArea className="flex-1 min-h-0 w-full border rounded-xl bg-card shadow-sm">
+                        <div className="flex flex-col min-w-full">
+                            <div className={cn("grid gap-0 sticky top-0 z-40 bg-card border-b pb-2 pt-4", (viewMode === 'week' || viewMode === 'day') ? "grid-cols-[60px_1fr]" : "grid-cols-7", viewMode === 'week' ? "min-w-full" : "min-w-full")}>
+                                <div className="text-center text-xs font-bold py-2 text-muted-foreground/50 sticky left-0 z-50 bg-card"></div>
+                                <div className={cn("grid gap-0", viewMode === 'day' ? "grid-cols-1" : "grid-cols-7")}>
+                                    {getDaysToRender().map((date, index) => {
+                                        if (!date) return null;
+                                        const isCurrentDay = isToday(date);
+                                        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
+                                        if (viewMode === 'day') {
+                                            return (
+                                                <div key={index} className={`text-center text-sm font-bold py-2 rounded-md ${isCurrentDay ? 'text-primary' : isWeekend ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                                    {format(date, 'EEEE d MMMM yyyy', { locale: th })}
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <div key={index} className="flex flex-col items-center justify-center py-2 gap-1 border-l border-transparent">
+                                                <span className={`text-sm uppercase font-bold ${isCurrentDay ? 'text-primary' : 'text-foreground'}`}>
+                                                    {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()]}
+                                                </span>
+                                                <div className={cn(
+                                                    "w-9 h-9 flex items-center justify-center rounded-full text-lg font-semibold transition-colors",
+                                                    isCurrentDay
+                                                        ? "bg-primary text-primary-foreground shadow-md"
+                                                        : "text-foreground hover:bg-muted"
+                                                )}>
+                                                    {date.getDate()}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className={cn("flex relative flex-1", viewMode === 'week' ? "min-w-full" : "min-w-full")}>
+                                <div className="w-[60px] flex-shrink-0 border-r border-border/40 bg-muted sticky left-0 z-30">
+                                    {HOURS.map(hour => (
+                                        <div key={hour} className="h-[60px] text-sm text-foreground p-1 text-right pr-3 relative font-semibold">
+                                            <span className="-top-2 relative">{hour}:00</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className={cn("flex-1 grid", viewMode === 'day' ? "grid-cols-1" : "grid-cols-7")}>
+                                    {getDaysToRender().map((date, dayIndex) => {
+                                        if (!date) return null;
+                                        const daySchedule = getDaySchedule(date.getDay());
+                                        const isCurrentDay = isToday(date);
+
+                                        return (
+                                            <div key={dayIndex} className={`border-r border-border/30 relative min-h-[1440px] ${isCurrentDay ? 'bg-primary/[0.02]' : ''}`}>
+                                                {HOURS.map(hour => (
+                                                    <div key={hour} className="h-[60px] border-b border-dashed border-border/30" />
+                                                ))}
+
+                                                {/* Current Time Indicator (Visual only, static for now) */}
+                                                {isCurrentDay && (
+                                                    <div
+                                                        className="absolute w-full border-t-2 border-red-500 z-20 pointer-events-none flex items-center"
+                                                        style={{ top: `${getPixelPosition(format(new Date(), 'HH:mm'))}px` }}
+                                                    >
+                                                        <div className="w-2 h-2 rounded-full bg-red-500 -ml-1"></div>
+                                                    </div>
+                                                )}
+
+                                                {daySchedule?.activities.map(activity => (
+                                                    <div
+                                                        key={activity.id}
+                                                        className={`absolute left-1 right-1 rounded-lg p-2 text-xs border-l-4 overflow-hidden cursor-pointer hover:brightness-95 transition-all shadow-sm z-10 ${activity.color}`}
+                                                        style={{
+                                                            top: `${getPixelPosition(activity.time)}px`,
+                                                            height: `${Math.max(getPixelHeight(activity.duration), viewMode === 'day' ? 50 : 30)}px`
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleEditSchedule(date.getDay());
+                                                        }}
+                                                    >
+                                                        <div className={cn("font-semibold flex items-center gap-1.5", viewMode === 'day' ? "text-sm mb-1" : "")}>
+                                                            <activity.icon className={cn("flex-shrink-0 opacity-70", viewMode === 'day' ? "w-4 h-4" : "w-3 h-3")} />
+                                                            <span className="truncate">{activity.time} - {activity.title}</span>
+                                                        </div>
+                                                        {viewMode === 'day' && (
+                                                            <div className="text-xs opacity-70 pl-6">
+                                                                {activity.duration} นาที
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                ) : null
+            }
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="sm:max-w-[425px] rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle>แก้ไขกิจกรรม</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        {selectedDay !== null && getDaySchedule(selectedDay).activities.map((activity) => (
+                            <div key={activity.id} className="grid grid-cols-4 items-center gap-4 border-b pb-4 last:border-0">
+                                <Input
+                                    id={`time-${activity.id}`}
+                                    defaultValue={activity.time}
+                                    className="col-span-1"
+                                    onChange={(e) => handleUpdateActivityTime(selectedDay, activity.id, e.target.value)}
+                                />
+                                <Input
+                                    id={`title-${activity.id}`}
+                                    defaultValue={activity.title}
+                                    className="col-span-2"
+                                    onChange={(e) => handleUpdateActivityTitle(selectedDay, activity.id, e.target.value)}
+                                />
+                                <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    onClick={() => handleRemoveActivity(selectedDay, activity.id)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                        <Button onClick={handleAddActivity} className="w-full">
+                            + เพิ่มกิจกรรม
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+                <DialogContent className="max-w-4xl h-[75vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border-none shadow-2xl">
+                    <DialogHeader className="px-5 py-3 border-b bg-white flex-shrink-0">
+                        <DialogTitle className="text-lg font-bold flex items-center gap-2 text-gray-800">
+                            <Clock className="w-5 h-5 text-purple-600" />
+                            ตั้งเวลาทบทวนคำศัพท์
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-hidden bg-gray-50/30">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 h-full">
+                            {/* Left Column: Selected Items Summary */}
+                            <div className="hidden lg:flex lg:col-span-3 flex-col border-r bg-white h-full">
+                                <div className="p-3 border-b flex items-center justify-between bg-purple-50/30">
+                                    <div className="flex items-center gap-2 text-purple-700 font-semibold text-sm">
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span>รายการที่เลือก</span>
+                                    </div>
+                                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-xs">
+                                        {selectedItems.length}
+                                    </Badge>
+                                </div>
+                                <ScrollArea className="flex-1 p-3">
+                                    {selectedItems.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {selectedItems.map((item) => (
+                                                <div key={item.id} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50 border border-gray-100 group hover:border-purple-200 hover:bg-purple-50/30 transition-all">
+                                                    <div className="mt-1 min-w-[3px] h-3 rounded-full bg-purple-400" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-medium text-gray-900 truncate">{item.front_text}</p>
+                                                        <p className="text-[10px] text-gray-500 truncate">{item.back_text}</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setSelectedItems(prev => prev.filter(i => i.id !== item.id))}
+                                                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-100 text-red-500 rounded transition-all"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center text-center p-4 text-gray-400 space-y-2">
+                                            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                                                <CheckCircle className="w-6 h-6 text-gray-300" />
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-gray-500 text-sm">ยังไม่ได้เลือกรายการ</p>
+                                                <p className="text-[10px]">เลือกคำศัพท์จากรายการด้านขวา</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </ScrollArea>
+                            </div>
+
+                            {/* Middle Column: Source Selection */}
+                            <div className="lg:col-span-5 flex flex-col border-r bg-white h-full">
+                                <Tabs defaultValue="latest" className="flex-1 flex flex-col h-full" onValueChange={setActiveTab}>
+                                    <div className="px-3 py-2 border-b bg-white">
+                                        <TabsList className="w-full grid grid-cols-2 bg-gray-100/50 p-1 h-9">
+                                            <TabsTrigger value="latest" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md text-xs">ล่าสุด</TabsTrigger>
+                                            <TabsTrigger value="library" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md text-xs">คลังคำศัพท์</TabsTrigger>
+                                        </TabsList>
+                                    </div>
+
+                                    <div className="flex-1 overflow-hidden relative">
+                                        <TabsContent value="latest" className="h-full m-0 absolute inset-0">
+                                            <ScrollArea className="h-full">
+                                                <div className="p-2">
+                                                    <div className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">คำศัพท์ที่เรียนล่าสุด</div>
+                                                    <div className="space-y-1 p-1">
+                                                        {flashcards.slice(0, 20).map((card) => (
+                                                            <div
+                                                                key={card.id}
+                                                                className={cn(
+                                                                    "flex items-center gap-3 p-2 rounded-lg border transition-all cursor-pointer hover:bg-gray-50",
+                                                                    selectedItems.some(i => i.id === card.id)
+                                                                        ? "bg-purple-50 border-purple-200 shadow-sm"
+                                                                        : "bg-white border-transparent hover:border-gray-200"
+                                                                )}
+                                                                onClick={() => {
+                                                                    setSelectedItems(prev =>
+                                                                        prev.some(i => i.id === card.id)
+                                                                            ? prev.filter(i => i.id !== card.id)
+                                                                            : [...prev, card]
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Checkbox
+                                                                    checked={selectedItems.some(i => i.id === card.id)}
+                                                                    onCheckedChange={() => { }} // Handled by parent div click
+                                                                    className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 w-4 h-4"
+                                                                />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className={cn("text-xs font-medium truncate", selectedItems.some(i => i.id === card.id) ? "text-purple-900" : "text-gray-700")}>
+                                                                        {card.front_text}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-gray-500 truncate">{card.back_text}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </ScrollArea>
+                                        </TabsContent>
+
+                                        <TabsContent value="library" className="h-full m-0 absolute inset-0">
+                                            <ScrollArea className="h-full">
+                                                <div className="p-2">
+                                                    <div className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">คำศัพท์ทั้งหมด</div>
+                                                    <div className="space-y-1 p-1">
+                                                        {flashcards.map((card) => (
+                                                            <div
+                                                                key={card.id}
+                                                                className={cn(
+                                                                    "flex items-center gap-3 p-2 rounded-lg border transition-all cursor-pointer hover:bg-gray-50",
+                                                                    selectedItems.some(i => i.id === card.id)
+                                                                        ? "bg-purple-50 border-purple-200 shadow-sm"
+                                                                        : "bg-white border-transparent hover:border-gray-200"
+                                                                )}
+                                                                onClick={() => {
+                                                                    setSelectedItems(prev =>
+                                                                        prev.some(i => i.id === card.id)
+                                                                            ? prev.filter(i => i.id !== card.id)
+                                                                            : [...prev, card]
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Checkbox
+                                                                    checked={selectedItems.some(i => i.id === card.id)}
+                                                                    onCheckedChange={() => { }}
+                                                                    className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 w-4 h-4"
+                                                                />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className={cn("text-xs font-medium truncate", selectedItems.some(i => i.id === card.id) ? "text-purple-900" : "text-gray-700")}>
+                                                                        {card.front_text}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-gray-500 truncate">{card.back_text}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </ScrollArea>
+                                        </TabsContent>
+                                    </div>
+                                </Tabs>
+                            </div>
+
+                            {/* Right Column: Settings */}
+                            <div className="lg:col-span-4 flex flex-col bg-white h-full overflow-y-auto">
+                                <div className="p-5 space-y-6">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="review-title" className="text-xs font-semibold text-gray-700">ชื่อกิจกรรม</Label>
+                                        <Input
+                                            id="review-title"
+                                            value={reviewTitle}
+                                            onChange={(e) => setReviewTitle(e.target.value)}
+                                            className="h-9 text-sm bg-gray-50 border-gray-200 focus:bg-white transition-all rounded-lg"
+                                            placeholder="เช่น ทบทวนคำศัพท์บทที่ 1"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold text-gray-700">ไอคอน</Label>
+                                        <div className="grid grid-cols-5 gap-2">
+                                            {Object.entries(AVAILABLE_ICONS).map(([key, Icon]) => (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    onClick={() => setReviewIcon(key)}
+                                                    className={cn(
+                                                        "aspect-square flex items-center justify-center rounded-lg transition-all duration-200",
+                                                        reviewIcon === key
+                                                            ? "bg-purple-100 text-purple-600 ring-2 ring-purple-500 ring-offset-2"
+                                                            : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                                                    )}
+                                                >
+                                                    <Icon className="w-4 h-4" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold text-gray-700">สี</Label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {AVAILABLE_COLORS.map((color) => (
+                                                <button
+                                                    key={color.value}
+                                                    type="button"
+                                                    onClick={() => setReviewColor(color.value)}
+                                                    className={cn(
+                                                        "w-6 h-6 rounded-full transition-all duration-200 ring-offset-2",
+                                                        color.class.split(' ')[0], // Use background color class
+                                                        reviewColor === color.value
+                                                            ? `ring-2 ${color.ring} scale-110`
+                                                            : "hover:scale-105 opacity-70 hover:opacity-100"
+                                                    )}
+                                                    title={color.label}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                                        <div className="space-y-2 min-w-0">
+                                            <Label className="text-xs font-semibold text-gray-700">วันที่ทบทวน</Label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant={"outline"}
+                                                        className={cn(
+                                                            "w-full h-9 justify-start text-left font-normal text-xs bg-gray-50 border-gray-200 hover:bg-white px-2",
+                                                            !reviewDate && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        <CalendarIcon className="mr-2 h-3.5 w-3.5 text-gray-500 shrink-0" />
+                                                        <span>
+                                                            {reviewDate ? format(reviewDate, "d MMM yyyy", { locale: th }) : "เลือกวันที่"}
+                                                        </span>
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={reviewDate}
+                                                        onSelect={(date) => date && setReviewDate(date)}
+                                                        initialFocus
+                                                        className="rounded-lg border shadow-lg"
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+
+                                        <div className="space-y-2 min-w-0">
+                                            <Label className="text-xs font-semibold text-gray-700">ระยะเวลา (นาที)</Label>
+                                            <Popover open={openDuration} onOpenChange={setOpenDuration}>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        aria-expanded={openDuration}
+                                                        className="w-full h-9 justify-between text-xs bg-gray-50 border-gray-200 hover:bg-white px-2"
+                                                    >
+                                                        <span className="truncate">
+                                                            {reviewDuration ? `${reviewDuration} นาที` : "เลือกเวลา"}
+                                                        </span>
+                                                        <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[200px] p-0">
+                                                    <Command>
+                                                        <CommandInput
+                                                            placeholder="ระบุเวลา..."
+                                                            className="h-9 text-xs"
+                                                            onValueChange={(v) => {
+                                                                const val = parseInt(v);
+                                                                if (!isNaN(val)) setReviewDuration(val);
+                                                            }}
+                                                        />
+                                                        <CommandList>
+                                                            <CommandEmpty>ไม่พบตัวเลือก</CommandEmpty>
+                                                            <CommandGroup>
+                                                                {[10, 15, 20, 30, 45, 60, 90, 120].map((time) => (
+                                                                    <CommandItem
+                                                                        key={time}
+                                                                        value={time.toString()}
+                                                                        onSelect={(currentValue) => {
+                                                                            setReviewDuration(parseInt(currentValue));
+                                                                            setOpenDuration(false);
+                                                                        }}
+                                                                        className="text-xs"
+                                                                    >
+                                                                        <Check
+                                                                            className={cn(
+                                                                                "mr-2 h-3 w-3",
+                                                                                reviewDuration === time ? "opacity-100" : "opacity-0"
+                                                                            )}
+                                                                        />
+                                                                        {time} นาที
+                                                                    </CommandItem>
+                                                                ))}
+                                                            </CommandGroup>
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="px-5 py-3 border-t bg-white flex-shrink-0 gap-2">
+                        <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)} className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 text-sm">
+                            ยกเลิก
+                        </Button>
+                        <Button onClick={handleSaveReview} className="h-9 px-6 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-200 hover:shadow-purple-300 transition-all text-sm">
+                            บันทึก
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </Card>
+        </div >
     );
 }

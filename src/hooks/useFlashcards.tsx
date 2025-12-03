@@ -8,6 +8,15 @@ export interface Flashcard {
     back_text: string;
     upload_id?: string;
     created_at: string;
+    set_id?: string;
+    user_id?: string;
+    image_url?: string;
+    audio_url?: string;
+    difficulty_level?: string;
+    next_review?: string;
+    interval?: number;
+    ease_factor?: number;
+    repetitions?: number;
 }
 
 export function useFlashcards() {
@@ -24,7 +33,7 @@ export function useFlashcards() {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            setFlashcards(data || []);
+            setFlashcards(data as Flashcard[] || []);
         } catch (error: any) {
             console.error('Error fetching flashcards:', error);
             toast({

@@ -1,13 +1,19 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Layers } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-export default function AIListeningSection2FlashcardPage() {
+export default function AIListeningSection2IntroPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { language } = useLanguage();
+
+    // Get the selected vocabulary from state (passed from previous pages)
+    const state = location.state as {
+        selectedVocab?: { id: string; word: string; meaning: string }[];
+    } | null;
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
@@ -50,7 +56,9 @@ export default function AIListeningSection2FlashcardPage() {
                     <Button
                         size="lg"
                         className="w-full text-lg h-12"
-                        onClick={() => navigate('/ai-listening-flashcard-play')}
+                        onClick={() => navigate('/ai-listening-flashcard-play', {
+                            state: { selectedVocab: state?.selectedVocab }
+                        })}
                     >
                         {language === 'th' ? 'ไปกันต่อ' : 'Continue'}
                     </Button>

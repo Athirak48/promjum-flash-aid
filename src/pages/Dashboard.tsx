@@ -55,7 +55,7 @@ export default function Dashboard() {
         {/* Calendar & Suggested Deck + Goals */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
           {/* Calendar (3/5 width) */}
-          <div className="lg:col-span-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <div className="lg:col-span-3 animate-fade-in h-[700px]" style={{ animationDelay: '0.2s' }}>
             <ScheduleCalendar />
           </div>
 

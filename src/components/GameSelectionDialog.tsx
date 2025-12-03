@@ -87,7 +87,7 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-xl border-white/50 rounded-[1.25rem] p-4 shadow-2xl">
+      <DialogContent className="max-w-5xl bg-white/95 backdrop-blur-xl border-white/50 rounded-[2rem] p-8 shadow-2xl">
         <DialogHeader className="mb-2">
           <DialogTitle className="flex items-center justify-center gap-2 text-xl font-bold">
             <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-md">
@@ -102,7 +102,7 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
           </p>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 p-0.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
           {games.map((game) => {
             const IconComponent = game.icon;
             return (

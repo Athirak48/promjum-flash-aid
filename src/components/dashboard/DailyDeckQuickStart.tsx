@@ -43,42 +43,6 @@ export function DailyDeckQuickStart({
   // Get 12 cards: prioritize cards due for review, then random from same folder
   const getReviewCards = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        // Return mock data if no user
-        return getMockFlashcards();
-      }
-
-      // Get cards that are due for review (next_review_date <= now)
-      const { data: dueCards } = await supabase
-        .from('user_flashcard_progress')
-        .select(`
-          flashcard_id,
-          flashcards:flashcard_id (
-            id,
-            front_text,
-            back_text,
-            upload_id
-          )
-        `)
-        .eq('user_id', user.id)
-        .lte('next_review_date', new Date().toISOString())
-        .order('next_review_date', { ascending: true })
-        .limit(12);
-
-      let reviewCards: Array<{ id: string; front: string; back: string; upload_id?: string }> = (dueCards || [])
-        .filter(item => item.flashcards)
-        .map(item => ({
-          id: item.flashcards.id,
-          front: item.flashcards.front_text,
-          back: item.flashcards.back_text,
-          upload_id: item.flashcards.upload_id || undefined,
-        }));
-
-      // If we have 12 or more cards, return the first 12
-      if (reviewCards.length >= 12) {
-        return reviewCards.slice(0, 12);
-      }
 
       // Need more cards - find the most common upload_id from existing cards
       const uploadIdCounts = reviewCards.reduce((acc, card) => {
@@ -127,16 +91,16 @@ export function DailyDeckQuickStart({
       if (reviewCards.length < 12) {
         const stillNeeded = 12 - reviewCards.length;
         const allExistingIds = reviewCards.map(c => c.id);
-        
+
         let query = supabase
           .from('flashcards')
           .select('id, front_text, back_text')
           .limit(stillNeeded);
-        
+
         if (allExistingIds.length > 0) {
           query = query.not('id', 'in', `(${allExistingIds.join(',')})`);
         }
-        
+
         const { data: randomCards } = await query;
 
         if (randomCards && randomCards.length > 0) {
@@ -175,10 +139,10 @@ export function DailyDeckQuickStart({
 
   const handleModeSelect = async (mode: 'review' | 'game') => {
     setShowModeDialog(false);
-    
+
     // Get cards for review/game
     const cards = await getReviewCards();
-    
+
     if (cards.length === 0) {
       toast({
         title: "ไม่มีคำศัพท์",
@@ -187,7 +151,7 @@ export function DailyDeckQuickStart({
       });
       return;
     }
-    
+
     // Navigate to fullpage review with cards data
     navigate('/flashcards-review', {
       state: {
@@ -200,10 +164,10 @@ export function DailyDeckQuickStart({
 
   const handleGameSelect = async (gameType: 'quiz' | 'matching' | 'listen') => {
     setShowGameSelection(false);
-    
+
     // Get cards for game
     const cards = await getReviewCards();
-    
+
     if (cards.length === 0) {
       toast({
         title: "ไม่มีคำศัพท์",
@@ -212,7 +176,7 @@ export function DailyDeckQuickStart({
       });
       return;
     }
-    
+
     // Navigate to fullpage review with game mode
     navigate('/flashcards-review', {
       state: {
@@ -224,120 +188,120 @@ export function DailyDeckQuickStart({
     });
   };
   return <Card className="bg-gradient-primary/10 backdrop-blur-sm shadow-glow border border-primary/30 hover:shadow-large transition-all h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-2xl">
-          <div className="p-3 rounded-xl bg-primary/20 shadow-soft">
-            <Flame className="w-8 h-8 text-primary" />
+    <CardHeader>
+      <CardTitle className="flex items-center gap-3 text-2xl">
+        <div className="p-3 rounded-xl bg-primary/20 shadow-soft">
+          <Flame className="w-8 h-8 text-primary" />
+        </div>
+        <div>
+          <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            ความก้าวหน้าต่อเนื่อง
           </div>
-          <div>
-            <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              ความก้าวหน้าต่อเนื่อง
-            </div>
-            <div className="text-sm text-muted-foreground font-normal mt-1">
-              สถิติการเรียนของคุณวันนี้
-            </div>
+          <div className="text-sm text-muted-foreground font-normal mt-1">
+            สถิติการเรียนของคุณวันนี้
           </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-4">
-          {/* Streak */}
-          <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-xl p-4 border border-orange-500/30">
-            <div className="flex flex-col items-center gap-2">
-              <Flame className="w-8 h-8 text-orange-500" />
-              <div className="text-3xl font-bold text-foreground">{streak}</div>
-              <div className="text-xs text-muted-foreground text-center">วันติดต่อกัน</div>
-            </div>
-          </div>
-
-          {/* Total XP */}
-          <div className="bg-gradient-to-br from-yellow-500/20 to-amber-500/20 rounded-xl p-4 border border-yellow-500/30">
-            <div className="flex flex-col items-center gap-2">
-              <Star className="w-8 h-8 text-yellow-500" />
-              <div className="text-3xl font-bold text-foreground">{totalXP.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground text-center">XP ทั้งหมด</div>
-            </div>
-          </div>
-
-          {/* Words Today */}
-          <div className="bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl p-4 border border-primary/40">
-            <div className="flex flex-col items-center gap-2">
-              <BookOpen className="w-8 h-8 text-primary" />
-              <div className="text-3xl font-bold text-foreground">{wordsLearnedToday}</div>
-              <div className="text-xs text-muted-foreground text-center">คำวันนี้</div>
-            </div>
+        </div>
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-6">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-3 gap-4">
+        {/* Streak */}
+        <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-xl p-4 border border-orange-500/30">
+          <div className="flex flex-col items-center gap-2">
+            <Flame className="w-8 h-8 text-orange-500" />
+            <div className="text-3xl font-bold text-foreground">{streak}</div>
+            <div className="text-xs text-muted-foreground text-center">วันติดต่อกัน</div>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        
+        {/* Total XP */}
+        <div className="bg-gradient-to-br from-yellow-500/20 to-amber-500/20 rounded-xl p-4 border border-yellow-500/30">
+          <div className="flex flex-col items-center gap-2">
+            <Star className="w-8 h-8 text-yellow-500" />
+            <div className="text-3xl font-bold text-foreground">{totalXP.toLocaleString()}</div>
+            <div className="text-xs text-muted-foreground text-center">XP ทั้งหมด</div>
+          </div>
+        </div>
 
-        {/* Review Button */}
-        <Button 
-          onClick={() => setShowModeDialog(true)} 
-          className="w-full bg-gradient-primary hover:shadow-glow transition-all text-lg py-6" 
-          size="lg"
-        >
-          <Play className="w-5 h-5 mr-2" />
-          ทบทวนทันที
-        </Button>
+        {/* Words Today */}
+        <div className="bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl p-4 border border-primary/40">
+          <div className="flex flex-col items-center gap-2">
+            <BookOpen className="w-8 h-8 text-primary" />
+            <div className="text-3xl font-bold text-foreground">{wordsLearnedToday}</div>
+            <div className="text-xs text-muted-foreground text-center">คำวันนี้</div>
+          </div>
+        </div>
+      </div>
 
-        {/* Mode Selection Dialog */}
-        <Dialog open={showModeDialog} onOpenChange={setShowModeDialog}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-center mb-2">
-                🎯 เลือกโหมดการเรียนรู้
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="grid grid-cols-2 gap-4 py-6">
-              {/* Review Mode */}
-              <Card 
-                className="cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-large border-2 hover:border-primary group"
-                onClick={() => handleModeSelect('review')}
-              >
-                <CardContent className="p-6 text-center space-y-4">
-                  <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center group-hover:from-blue-500/30 group-hover:to-purple-500/30 transition-all">
-                    <Brain className="h-10 w-10 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">ทบทวน</h3>
-                    <p className="text-sm text-muted-foreground">
-                      ทบทวนคำศัพท์แบบพลิกการ์ด
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+      {/* Progress Bar */}
 
-              {/* Game Mode */}
-              <Card 
-                className="cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-large border-2 hover:border-primary group"
-                onClick={() => handleModeSelect('game')}
-              >
-                <CardContent className="p-6 text-center space-y-4">
-                  <div className="w-20 h-20 mx-auto bg-gradient-to-br from-pink-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center group-hover:from-pink-500/30 group-hover:to-orange-500/30 transition-all">
-                    <GamepadIcon className="h-10 w-10 text-pink-600 dark:text-pink-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">เล่นเกม</h3>
-                    <p className="text-sm text-muted-foreground">
-                      เรียนรู้ผ่านเกมสนุกๆ
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </DialogContent>
-        </Dialog>
 
-        {/* Game Selection Dialog */}
-        <GameSelectionDialog
-          open={showGameSelection}
-          onOpenChange={setShowGameSelection}
-          onSelectGame={handleGameSelect}
-        />
-      </CardContent>
-    </Card>;
+      {/* Review Button */}
+      <Button
+        onClick={() => setShowModeDialog(true)}
+        className="w-full bg-gradient-primary hover:shadow-glow transition-all text-lg py-6"
+        size="lg"
+      >
+        <Play className="w-5 h-5 mr-2" />
+        ทบทวนทันที
+      </Button>
+
+      {/* Mode Selection Dialog */}
+      <Dialog open={showModeDialog} onOpenChange={setShowModeDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center mb-2">
+              🎯 เลือกโหมดการเรียนรู้
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-4 py-6">
+            {/* Review Mode */}
+            <Card
+              className="cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-large border-2 hover:border-primary group"
+              onClick={() => handleModeSelect('review')}
+            >
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center group-hover:from-blue-500/30 group-hover:to-purple-500/30 transition-all">
+                  <Brain className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">ทบทวน</h3>
+                  <p className="text-sm text-muted-foreground">
+                    ทบทวนคำศัพท์แบบพลิกการ์ด
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Game Mode */}
+            <Card
+              className="cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-large border-2 hover:border-primary group"
+              onClick={() => handleModeSelect('game')}
+            >
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="w-20 h-20 mx-auto bg-gradient-to-br from-pink-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center group-hover:from-pink-500/30 group-hover:to-orange-500/30 transition-all">
+                  <GamepadIcon className="h-10 w-10 text-pink-600 dark:text-pink-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">เล่นเกม</h3>
+                  <p className="text-sm text-muted-foreground">
+                    เรียนรู้ผ่านเกมสนุกๆ
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Game Selection Dialog */}
+      <GameSelectionDialog
+        open={showGameSelection}
+        onOpenChange={setShowGameSelection}
+        onSelectGame={handleGameSelect}
+      />
+    </CardContent>
+  </Card>;
 }

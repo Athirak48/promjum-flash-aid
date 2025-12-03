@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trophy, Home } from 'lucide-react';
+import { ArrowLeft, Trophy, Home, RotateCcw, ArrowRight, Gamepad2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
@@ -17,6 +18,7 @@ interface Flashcard {
 interface FlashcardMatchingGameProps {
   flashcards: Flashcard[];
   onClose: () => void;
+  onNext?: () => void;
 }
 
 interface MatchingCard {
@@ -27,16 +29,27 @@ interface MatchingCard {
   isMatched: boolean;
 }
 
-export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatchingGameProps) {
+export function FlashcardMatchingGame({ flashcards, onClose, onNext }: FlashcardMatchingGameProps) {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const { updateFromMatching } = useSRSProgress();
   const [cards, setCards] = useState<MatchingCard[]>([]);
   const [selectedCards, setSelectedCards] = useState<MatchingCard[]>([]);
   const [matchedPairs, setMatchedPairs] = useState<string[]>([]);
   const [score, setScore] = useState(0);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
   const [endTime, setEndTime] = useState<number | null>(null);
   const [wrongMatch, setWrongMatch] = useState<string[]>([]); // IDs of cards currently showing wrong state
+
+  const handleRestart = () => {
+    setMatchedPairs([]);
+    setScore(0);
+    setEndTime(null);
+    setWrongMatch([]);
+    setSelectedCards([]);
+    setStartTime(Date.now());
+    initializeGame();
+  };
 
   // Game config
   const maxPairs = 6; // 12 cards total for better mobile fit
@@ -104,7 +117,7 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
       setSelectedCards([]);
 
       // Update SRS
-      await updateFromMatching(card1.pairId, true, 2); // Assume medium speed for now
+      await updateFromMatching(card1.pairId, true, true); // Assume first try for now
 
       // Check win
       if (newMatched.length === Math.min(flashcards.length, maxPairs)) {
@@ -181,15 +194,40 @@ export function FlashcardMatchingGame({ flashcards, onClose }: FlashcardMatching
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-row gap-3 justify-center">
               <Button
-                onClick={onClose}
-                className="flex-1 rounded-xl h-12 text-lg font-medium"
-                size="lg"
-                variant="outline"
+                onClick={handleRestart}
+                className="flex-1 bg-gradient-to-r from-cyan-600 to-sky-600 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-sm md:text-base"
               >
-                <Home className="h-5 w-5 mr-2" />
-                กลับหน้าหลัก
+                <RotateCcw className="h-4 w-4 mr-2" />
+                เล่นอีกครั้ง
+              </Button>
+
+              <Button
+                onClick={() => {
+                  const selectedVocab = flashcards.map(f => ({
+                    id: f.id,
+                    word: f.front_text,
+                    meaning: f.back_text
+                  }));
+                  navigate('/ai-listening-section3-intro', {
+                    state: { selectedVocab }
+                  });
+                }}
+                variant="outline"
+                className="flex-1 rounded-xl h-12 text-sm md:text-base border-cyan-200 text-cyan-700 hover:bg-cyan-50"
+              >
+                <Gamepad2 className="h-4 w-4 mr-2" />
+                เลือกเกมใหม่
+              </Button>
+
+              <Button
+                onClick={onNext || onClose}
+                variant="outline"
+                className="flex-1 rounded-xl h-12 text-sm md:text-base border-gray-200"
+              >
+                ถัดไป
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </CardContent>

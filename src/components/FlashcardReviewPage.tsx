@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,10 +16,21 @@ import {
     Pause,
     Maximize,
     Settings,
-    RotateCcw
+    RotateCcw,
+    Check,
+    X as XIcon,
+    MoreHorizontal
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface FlashcardData {
     id: string;
@@ -43,16 +55,26 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
     const [isFlipped, setIsFlipped] = useState(false);
     const [trackProgress, setTrackProgress] = useState(true);
     const [isAutoPlay, setIsAutoPlay] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(false);
     const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
     const [progress, setProgress] = useState({ correct: 0, incorrect: 0 });
     const [showSwipeFeedback, setShowSwipeFeedback] = useState<'left' | 'right' | null>(null);
     const [isCompleted, setIsCompleted] = useState(false);
     const isMobile = useIsMobile();
     const [totalCards] = useState(cards.length);
-    
+
+    // Motion values for drag animation
+    const x = useMotionValue(0);
+    const rotate = useTransform(x, [-200, 200], [-25, 25]);
+    const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0.5, 1, 1, 1, 0.5]);
+
     // Track attempt counts for each card (for SRS scoring)
     const attemptCounts = useRef<Map<string, number>>(new Map());
+    const missedCardIds = useRef<Set<string>>(new Set());
+
+    // Reset x motion value when current index changes
+    useEffect(() => {
+        x.set(0);
+    }, [currentIndex, x]);
 
     // Save progress when review is completed
     useEffect(() => {
@@ -109,7 +131,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
         if (isCompleted) return; // Disable keyboard controls when completed
 
         const handleKeyPress = (e: KeyboardEvent) => {
-            if (e.key === 'Tab') {
+            if (e.key === 'Tab' || e.key === ' ') {
                 e.preventDefault();
                 setIsFlipped(!isFlipped);
             } else if (e.key === 'ArrowLeft') {
@@ -146,13 +168,17 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
 
     const handleKnow = async (knows: boolean) => {
         const currentCard = reviewQueue[currentIndex];
-        
+
         // Track attempt count for this card
         const currentAttempts = attemptCounts.current.get(currentCard.id) || 0;
         attemptCounts.current.set(currentCard.id, currentAttempts + 1);
-        
+
         // Show feedback first
         setShowSwipeFeedback(knows ? 'right' : 'left');
+
+        if (!knows) {
+            missedCardIds.current.add(currentCard.id);
+        }
 
         if (trackProgress) {
             setProgress(prev => ({
@@ -163,7 +189,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
         }
 
         setSwipeDirection(knows ? 'right' : 'left');
-        
+
         // Update SRS when user remembers the card
         if (knows) {
             const attemptCount = attemptCounts.current.get(currentCard.id) || 1;
@@ -216,7 +242,44 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
                     setSwipeDirection(null);
                 }
             }
-        }, 800);
+        }, 200); // Faster transition to match animation
+    };
+
+    const handleDragEnd = (event: any, info: any) => {
+        const offset = info.offset.x;
+        const velocity = info.velocity.x;
+
+        if (offset > 100 || velocity > 500) {
+            handleKnow(true);
+        } else if (offset < -100 || velocity < -500) {
+            handleKnow(false);
+        }
+    };
+
+    const handleRestart = () => {
+        setReviewQueue(cards);
+        setCurrentIndex(0);
+        setIsFlipped(false);
+        setSwipeDirection(null);
+        setProgress({ correct: 0, incorrect: 0 });
+        setIsCompleted(false);
+        missedCardIds.current.clear();
+        attemptCounts.current.clear();
+        x.set(0);
+    };
+
+    const handleReviewMissed = () => {
+        const missedCards = cards.filter(card => missedCardIds.current.has(card.id));
+        if (missedCards.length > 0) {
+            setReviewQueue(missedCards);
+            setCurrentIndex(0);
+            setIsFlipped(false);
+            setSwipeDirection(null);
+            setProgress({ correct: 0, incorrect: 0 });
+            setIsCompleted(false);
+            missedCardIds.current.clear();
+            x.set(0);
+        }
     };
 
     const handleSwipe = (direction: 'left' | 'right') => {
@@ -235,79 +298,239 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
 
     // Show completion screen when all cards are reviewed
     if (isCompleted) {
+        const accuracy = progress.correct + progress.incorrect > 0
+            ? Math.round((progress.correct / (progress.correct + progress.incorrect)) * 100)
+            : 0;
+
+        const circleCircumference = 2 * Math.PI * 40; // radius 40
+        const strokeDashoffset = circleCircumference - (accuracy / 100) * circleCircumference;
+
         return (
-            <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 z-50">
-                <div className="flex items-center justify-center min-h-screen p-4">
+            <div className="fixed inset-0 bg-background/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center space-y-8 bg-card rounded-[2rem] p-8 sm:p-12 shadow-2xl max-w-md w-full border border-border/50 relative overflow-hidden"
+                >
+                    {/* Background decoration */}
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-400 via-yellow-400 to-green-400" />
+
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="text-center space-y-6 bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl max-w-md w-full"
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="relative"
                     >
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            <div className="text-6xl mb-4">🎉</div>
-                            <h2 className="text-3xl font-bold text-gray-800 mb-2">ทบทวนจบแล้ว!</h2>
-                            <p className="text-gray-600 mb-6">
-                                คุณได้ทบทวนแฟลชการ์ดครบทั้งหมด {cards.length} ใบแล้ว
-                            </p>
-                        </motion.div>
+                        <div className="relative w-40 h-40 mx-auto mb-6 flex items-center justify-center">
+                            {/* Progress Ring */}
+                            <svg className="w-full h-full transform -rotate-90">
+                                <circle
+                                    cx="80"
+                                    cy="80"
+                                    r="40"
+                                    stroke="currentColor"
+                                    strokeWidth="8"
+                                    fill="transparent"
+                                    className="text-muted/20"
+                                />
+                                <circle
+                                    cx="80"
+                                    cy="80"
+                                    r="40"
+                                    stroke="currentColor"
+                                    strokeWidth="8"
+                                    fill="transparent"
+                                    strokeDasharray={circleCircumference}
+                                    strokeDashoffset={strokeDashoffset}
+                                    strokeLinecap="round"
+                                    className={`transition-all duration-1000 ease-out ${accuracy >= 80 ? 'text-green-500' :
+                                        accuracy >= 50 ? 'text-yellow-500' : 'text-red-500'
+                                        }`}
+                                />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-4xl font-bold">{accuracy}%</span>
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">ความแม่นยำ</span>
+                            </div>
+                        </div>
 
-                        {trackProgress && (
-                            <motion.div
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.4 }}
-                                className="bg-gray-50 rounded-xl p-4 space-y-2"
-                            >
-                                <h3 className="font-semibold text-gray-700">สรุปผลการทบทวน</h3>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-green-600">จำได้: {progress.correct} ใบ</span>
-                                    <span className="text-red-600">จำไม่ได้: {progress.incorrect} ใบ</span>
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                    ความแม่นยำ: {progress.correct + progress.incorrect > 0 ? Math.round((progress.correct / (progress.correct + progress.incorrect)) * 100) : 0}%
-                                </div>
-                            </motion.div>
-                        )}
-
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.6 }}
-                        >
-                            <Button
-                                onClick={onClose}
-                                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg font-semibold"
-                            >
-                                กลับไปหน้าแฟลชการ์ด
-                            </Button>
-                        </motion.div>
+                        <h2 className="text-3xl font-bold mb-2">ยอดเยี่ยมมาก! 🎉</h2>
+                        <p className="text-muted-foreground">
+                            คุณทบทวนครบ {cards.length} ใบแล้ว
+                        </p>
                     </motion.div>
-                </div>
+
+                    {trackProgress && (
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.4 }}
+                            className="grid grid-cols-2 gap-4"
+                        >
+                            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-2xl border border-green-100 dark:border-green-900/50">
+                                <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">{progress.correct}</div>
+                                <div className="text-xs font-medium text-green-700 dark:text-green-300">จำได้</div>
+                            </div>
+                            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl border border-red-100 dark:border-red-900/50">
+                                <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">{progress.incorrect}</div>
+                                <div className="text-xs font-medium text-red-700 dark:text-red-300">จำไม่ได้</div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                        className="space-y-3 pt-4"
+                    >
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button
+                                onClick={handleRestart}
+                                variant="outline"
+                                className="w-full py-6 text-base font-semibold rounded-xl hover:bg-muted border-2"
+                            >
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                                ทบทวนใหม่
+                            </Button>
+                            <Button
+                                onClick={handleReviewMissed}
+                                disabled={progress.incorrect === 0}
+                                variant="outline"
+                                className="w-full py-6 text-base font-semibold rounded-xl hover:bg-muted border-2 disabled:opacity-50"
+                            >
+                                <XIcon className="mr-2 h-4 w-4" />
+                                ทบทวนที่ผิด
+                            </Button>
+                        </div>
+
+                        <Button
+                            onClick={onClose}
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-lg font-bold rounded-xl shadow-lg shadow-primary/20"
+                        >
+                            กลับไปหน้าหลัก
+                        </Button>
+                    </motion.div>
+                </motion.div>
             </div>
         );
     }
 
     return (
-        <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-purple-950 dark:via-pink-900 dark:to-purple-950 z-50">
-            {/* Header */}
-            <div className="absolute top-4 right-4 z-10">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onClose}
-                    className="bg-white/20 backdrop-blur-sm hover:bg-white/30"
-                >
-                    <X className="h-5 w-5" />
-                </Button>
+        <div className="fixed inset-0 bg-background/95 backdrop-blur-md z-50 flex flex-col">
+            {/* Top Bar */}
+            <div className="flex items-center justify-between p-4 sm:p-6 z-10">
+                <div className="flex items-center gap-4 flex-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onClose}
+                        className="rounded-full hover:bg-muted shrink-0"
+                    >
+                        <X className="h-5 w-5" />
+                    </Button>
+
+                    {/* Progress Bar */}
+                    <div className="flex-1 max-w-xs sm:max-w-md">
+                        <div className="flex justify-between text-xs text-muted-foreground mb-1.5 font-medium">
+                            <span>ความคืบหน้า</span>
+                            <span>{progress.correct} / {totalCards}</span>
+                        </div>
+                        <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
+                            <motion.div
+                                className="h-full bg-primary rounded-full"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(progress.correct / totalCards) * 100}%` }}
+                                transition={{ duration: 0.3 }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {trackProgress && (
+                        <div className="flex items-center gap-3">
+                            <motion.div
+                                key={`correct-${progress.correct}`}
+                                initial={{ scale: 0.8 }}
+                                animate={{ scale: 1 }}
+                                className="flex items-center gap-1.5 bg-green-100 dark:bg-green-900/30 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-800"
+                            >
+                                <div className="p-0.5 bg-green-500 rounded-full text-white">
+                                    <Check className="w-3 h-3" strokeWidth={3} />
+                                </div>
+                                <span className="text-sm font-bold text-green-700 dark:text-green-400">{progress.correct}</span>
+                            </motion.div>
+
+                            <motion.div
+                                key={`incorrect-${progress.incorrect}`}
+                                initial={{ scale: 0.8 }}
+                                animate={{ scale: 1 }}
+                                className="flex items-center gap-1.5 bg-red-100 dark:bg-red-900/30 px-3 py-1.5 rounded-full border border-red-200 dark:border-red-800"
+                            >
+                                <div className="p-0.5 bg-red-500 rounded-full text-white">
+                                    <X className="w-3 h-3" strokeWidth={3} />
+                                </div>
+                                <span className="text-sm font-bold text-red-700 dark:text-red-400">{progress.incorrect}</span>
+                            </motion.div>
+                        </div>
+                    )}
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted">
+                                <MoreHorizontal className="h-5 w-5" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel>การตั้งค่า</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <div className="flex items-center justify-between px-2 py-2">
+                                <span className="text-sm">ติดตามผล</span>
+                                <Switch
+                                    checked={trackProgress}
+                                    onCheckedChange={setTrackProgress}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between px-2 py-2">
+                                <span className="text-sm">เล่นอัตโนมัติ</span>
+                                <Switch
+                                    checked={isAutoPlay}
+                                    onCheckedChange={setIsAutoPlay}
+                                />
+                            </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
 
-            {/* Main Card */}
-            <div className="flex items-center justify-center min-h-screen p-3 sm:p-6">
-                <div className="w-full max-w-2xl relative">
+            {/* Main Content Area */}
+            <div className="flex-1 flex items-center justify-center p-4 sm:p-8 relative overflow-hidden">
+                <div className="w-full max-w-3xl relative h-[60vh] sm:h-[65vh] perspective-1000">
+                    {/* Stacked Cards Effect */}
+                    <AnimatePresence>
+                        {reviewQueue.length > currentIndex + 1 && (
+                            <motion.div
+                                key="stack-1"
+                                initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                                animate={{ scale: 0.95, y: 10, opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-card border shadow-lg rounded-3xl z-0"
+                                style={{ transformOrigin: 'bottom center' }}
+                            />
+                        )}
+                        {reviewQueue.length > currentIndex + 2 && (
+                            <motion.div
+                                key="stack-2"
+                                initial={{ scale: 0.85, y: 40, opacity: 0 }}
+                                animate={{ scale: 0.9, y: 20, opacity: 0.5 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-card border shadow-md rounded-3xl -z-10"
+                                style={{ transformOrigin: 'bottom center' }}
+                            />
+                        )}
+                    </AnimatePresence>
+
                     {/* Swipe Feedback Overlay */}
                     <AnimatePresence>
                         {showSwipeFeedback && (
@@ -315,13 +538,13 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
-                                className="absolute inset-0 z-20 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl"
+                                className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
                             >
-                                <div className={`text-4xl sm:text-6xl font-bold px-6 py-4 rounded-2xl ${showSwipeFeedback === 'left'
-                                    ? 'text-red-500 bg-red-50/90'
-                                    : 'text-green-500 bg-green-50/90'
+                                <div className={`text-4xl sm:text-6xl font-bold px-8 py-6 rounded-3xl backdrop-blur-md shadow-2xl ${showSwipeFeedback === 'left'
+                                    ? 'text-red-500 bg-red-50/90 border-4 border-red-100'
+                                    : 'text-green-500 bg-green-50/90 border-4 border-green-100'
                                     }`}>
-                                    {showSwipeFeedback === 'left' ? 'จำไม่ได้' : 'จำได้แล้ว'}
+                                    {showSwipeFeedback === 'left' ? 'จำไม่ได้' : 'จำได้!'}
                                 </div>
                             </motion.div>
                         )}
@@ -329,121 +552,90 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
 
                     <AnimatePresence mode="wait">
                         <motion.div
-                            key={currentIndex}
+                            key={currentCard.id}
+                            style={{ x, rotate, opacity }}
+                            drag={swipeDirection ? false : "x"}
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={0.7}
+                            onDragEnd={handleDragEnd}
                             initial={{
-                                opacity: 0,
-                                scale: 0.9,
-                                x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0,
-                                rotateY: swipeDirection === 'left' ? -15 : swipeDirection === 'right' ? 15 : 0
+                                opacity: 1,
+                                scale: 0.95,
+                                y: 10,
+                                x: 0
                             }}
                             animate={{
                                 opacity: 1,
                                 scale: 1,
-                                x: 0,
-                                rotateY: 0
+                                y: 0,
+                                x: swipeDirection === 'left' ? -1000 : swipeDirection === 'right' ? 1000 : 0,
+                                rotate: swipeDirection === 'left' ? -45 : swipeDirection === 'right' ? 45 : 0
                             }}
                             exit={{
                                 opacity: 0,
-                                scale: 0.9,
-                                x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0,
-                                rotateY: swipeDirection === 'left' ? -15 : swipeDirection === 'right' ? 15 : 0
+                                scale: 0.5,
+                                x: swipeDirection === 'left' ? -1000 : swipeDirection === 'right' ? 1000 : 0,
+                                transition: { duration: 0.2 }
                             }}
                             transition={{
-                                duration: 0.4,
-                                ease: "easeInOut"
+                                type: "spring",
+                                stiffness: 400,
+                                damping: 20,
+                                mass: 0.8
                             }}
+                            className="h-full w-full absolute top-0 left-0 z-10"
                         >
                             <Card
-                                className="relative min-h-[350px] sm:min-h-[400px] bg-white/95 backdrop-blur-sm border-0 shadow-2xl cursor-pointer overflow-hidden"
+                                className="h-full w-full bg-card border shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-grab active:cursor-grabbing overflow-hidden rounded-3xl relative group"
                                 onClick={handleCardTap}
-                                onTouchStart={(e) => {
-                                    const touch = e.touches[0];
-                                    const startX = touch.clientX;
-
-                                    const handleTouchEnd = (endEvent: TouchEvent) => {
-                                        const endTouch = endEvent.changedTouches[0];
-                                        const diffX = endTouch.clientX - startX;
-
-                                        if (Math.abs(diffX) > 100) {
-                                            handleSwipe(diffX > 0 ? 'right' : 'left');
-                                        }
-
-                                        document.removeEventListener('touchend', handleTouchEnd);
-                                    };
-
-                                    document.addEventListener('touchend', handleTouchEnd);
-                                }}
                             >
-                                {/* Card Actions */}
-                                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-2 z-10">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/50 hover:bg-white/70">
-                                        <Edit3 className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/50 hover:bg-white/70">
-                                        <Star className={`h-4 w-4 ${currentCard.isFavorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                                    </Button>
-                                </div>
-
-                                <CardContent className="flex items-center justify-center min-h-[350px] sm:min-h-[400px] p-4 sm:p-8">
+                                <CardContent className="h-full p-0">
                                     <motion.div
-                                        initial={{ rotateY: 0 }}
+                                        initial={false}
                                         animate={{ rotateY: isFlipped ? 180 : 0 }}
-                                        transition={{ duration: 0.6, ease: "easeInOut" }}
-                                        className="text-center w-full"
+                                        transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
+                                        className="h-full w-full relative"
                                         style={{ transformStyle: 'preserve-3d' }}
                                     >
+                                        {/* Front Face */}
                                         <div
-                                            className={`${isFlipped ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300 flex flex-col items-center justify-center h-full`}
-                                            style={{ transform: 'rotateY(0deg)', backfaceVisibility: 'hidden' }}
+                                            className="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-8 sm:p-12 bg-gradient-to-br from-background via-background to-muted/30"
+                                            style={{ backfaceVisibility: 'hidden' }}
                                         >
-                                            {currentCard.frontImage ? (
-                                                <div className="relative w-full h-48 sm:h-64 mb-4">
+                                            {currentCard.frontImage && (
+                                                <div className="relative w-full h-1/2 mb-6">
                                                     <img
                                                         src={currentCard.frontImage}
                                                         alt="Front"
-                                                        className="w-full h-full object-contain rounded-lg"
+                                                        className="w-full h-full object-contain rounded-xl"
                                                     />
                                                 </div>
-                                            ) : null}
-                                            {currentCard.front && (
-                                                <motion.h2
-                                                    className="text-2xl sm:text-4xl font-bold text-gray-800 mb-4 leading-tight"
-                                                    initial={{ y: 10, opacity: 0 }}
-                                                    animate={{ y: 0, opacity: 1 }}
-                                                    transition={{ delay: 0.2 }}
-                                                >
-                                                    {currentCard.front}
-                                                </motion.h2>
                                             )}
-                                            <p className="text-gray-500 text-sm sm:text-base mt-auto">
-                                                {isMobile && window.innerWidth < 768 ? 'กดเพื่อดูคำตอบ' : 'คลิกการ์ดหรือกด Tab เพื่อพลิก'}
+                                            <h2 className="text-3xl sm:text-5xl font-bold text-foreground text-center leading-tight">
+                                                {currentCard.front}
+                                            </h2>
+                                            <p className="absolute bottom-8 text-sm text-muted-foreground font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                แตะเพื่อดูคำตอบ
                                             </p>
                                         </div>
 
+                                        {/* Back Face */}
                                         <div
-                                            className={`${isFlipped ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300 absolute inset-0 flex flex-col items-center justify-center`}
-                                            style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}
+                                            className="absolute inset-0 backface-hidden flex flex-col items-center justify-center p-8 sm:p-12 bg-gradient-to-br from-primary/5 via-background to-background"
+                                            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
                                         >
-                                            {currentCard.backImage ? (
-                                                <div className="relative w-full h-48 sm:h-64 mb-4">
+                                            {currentCard.backImage && (
+                                                <div className="relative w-full h-1/2 mb-6">
                                                     <img
                                                         src={currentCard.backImage}
                                                         alt="Back"
-                                                        className="w-full h-full object-contain rounded-lg"
+                                                        className="w-full h-full object-contain rounded-xl"
                                                     />
                                                 </div>
-                                            ) : null}
-                                            {currentCard.back && (
-                                                <motion.h2
-                                                    className="text-xl sm:text-3xl font-semibold text-purple-700 mb-4 leading-tight"
-                                                    initial={{ y: 10, opacity: 0 }}
-                                                    animate={{ y: 0, opacity: 1 }}
-                                                    transition={{ delay: 0.2 }}
-                                                >
-                                                    {currentCard.back}
-                                                </motion.h2>
                                             )}
-                                            <p className="text-gray-500 text-sm sm:text-base mt-auto">จำได้หรือไม่?</p>
+                                            <h2 className="text-3xl sm:text-5xl font-bold text-primary text-center leading-tight">
+                                                {currentCard.back}
+                                            </h2>
                                         </div>
                                     </motion.div>
                                 </CardContent>
@@ -453,180 +645,63 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
                 </div>
             </div>
 
-            {/* Bottom Controls */}
-            <div className="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6">
-                <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-2xl p-3 sm:p-4 shadow-xl border border-gray-200 gap-3 sm:gap-0">
+            {/* Bottom Floating Controls */}
+            <div className="p-6 flex justify-center pb-8 sm:pb-10">
+                <div className="flex items-center gap-4 sm:gap-6 bg-card/80 backdrop-blur-md border shadow-lg rounded-full px-6 py-3 sm:px-8 sm:py-4">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleKnow(false)}
+                        className="h-12 w-12 sm:h-14 sm:w-14 rounded-full border-2 border-red-100 bg-red-50 hover:bg-red-100 hover:border-red-200 text-red-600 transition-all hover:scale-105"
+                        title="จำไม่ได้"
+                    >
+                        <XIcon className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.5} />
+                    </Button>
 
-                    {/* Mobile: Stacked layout */}
-                    <div className="w-full sm:hidden">
-                        {/* Card Counter */}
-                        <div className="text-center mb-3">
-                            <div className="text-lg font-bold text-gray-900">
-                                {currentIndex + 1} / {reviewQueue.length}
-                            </div>
-                        </div>
+                    <div className="w-px h-8 bg-border mx-2" />
 
-                        {/* Main Controls */}
-                        <div className="flex items-center justify-center gap-4 mb-3">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleKnow(false)}
-                                className="bg-red-100 hover:bg-red-200 border-red-300 flex-1 font-bold text-red-700 h-12 text-base"
-                            >
-                                <ChevronLeft className="h-5 w-5 mr-1 text-red-700" strokeWidth={2.5} />
-                                จำไม่ได้
-                            </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handlePrevious}
+                        disabled={currentIndex === 0}
+                        className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground"
+                    >
+                        <SkipBack className="h-5 w-5" />
+                    </Button>
 
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setIsFlipped(!isFlipped)}
-                                title="พลิกการ์ด"
-                                className="bg-blue-100 hover:bg-blue-200 h-12 w-12"
-                            >
-                                <RotateCcw className="h-5 w-5 text-blue-700" strokeWidth={2.5} />
-                            </Button>
+                    <Button
+                        variant="default"
+                        size="icon"
+                        onClick={() => setIsFlipped(!isFlipped)}
+                        className="h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-glow bg-primary hover:bg-primary/90 transition-all hover:scale-105"
+                        title="พลิกการ์ด"
+                    >
+                        <RotateCcw className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.5} />
+                    </Button>
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleKnow(true)}
-                                className="bg-green-100 hover:bg-green-200 border-green-300 flex-1 font-bold text-green-700 h-12 text-base"
-                            >
-                                จำได้แล้ว
-                                <ChevronRight className="h-5 w-5 ml-1 text-green-700" strokeWidth={2.5} />
-                            </Button>
-                        </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleNext}
+                        disabled={currentIndex === reviewQueue.length - 1}
+                        className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground"
+                    >
+                        <SkipForward className="h-5 w-5" />
+                    </Button>
 
-                        {/* Secondary Controls */}
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Switch
-                                    checked={trackProgress}
-                                    onCheckedChange={setTrackProgress}
-                                    id="track-progress-mobile"
-                                />
-                                <label htmlFor="track-progress-mobile" className="text-xs font-semibold text-gray-900">
-                                    Track
-                                </label>
-                            </div>
+                    <div className="w-px h-8 bg-border mx-2" />
 
-                            <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} className="h-10 w-10 text-gray-900">
-                                    <SkipBack className="h-4 w-4" strokeWidth={2.5} />
-                                </Button>
-
-                                <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === reviewQueue.length - 1} className="h-10 w-10 text-gray-900">
-                                    <SkipForward className="h-4 w-4" strokeWidth={2.5} />
-                                </Button>
-
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setIsAutoPlay(!isAutoPlay)}
-                                    className={`h-10 w-10 text-gray-900 ${isAutoPlay ? 'bg-purple-100' : ''}`}
-                                >
-                                    {isAutoPlay ? <Pause className="h-4 w-4" strokeWidth={2.5} /> : <Play className="h-4 w-4" strokeWidth={2.5} />}
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Desktop: Horizontal layout */}
-                    <div className="hidden sm:flex items-center justify-between w-full">
-                        {/* Left: Track Progress Toggle */}
-                        <div className="flex items-center gap-3">
-                            <Switch
-                                checked={trackProgress}
-                                onCheckedChange={setTrackProgress}
-                                id="track-progress"
-                            />
-                            <label htmlFor="track-progress" className="text-base font-bold text-gray-900">
-                                Track progress
-                            </label>
-                        </div>
-
-                        {/* Center: Card Counter & Navigation */}
-                        <div className="flex items-center gap-4">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => handleKnow(false)}
-                                className="bg-red-100 hover:bg-red-200 border-red-300 h-11 w-11"
-                                title="จำไม่ได้ (←)"
-                            >
-                                <ChevronLeft className="h-6 w-6 text-red-700" strokeWidth={2.5} />
-                            </Button>
-
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => handleKnow(true)}
-                                className="bg-green-100 hover:bg-green-200 border-green-300 h-11 w-11"
-                                title="จำได้ (→)"
-                            >
-                                <ChevronRight className="h-6 w-6 text-green-700" strokeWidth={2.5} />
-                            </Button>
-
-                            <Button variant="ghost" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} className="text-gray-900 h-11 w-11">
-                                <SkipBack className="h-5 w-5" strokeWidth={2.5} />
-                            </Button>
-
-                            <div className="text-xl font-bold text-gray-900 px-4">
-                                {currentIndex + 1} / {reviewQueue.length}
-                            </div>
-
-                            <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === reviewQueue.length - 1} className="text-gray-900 h-11 w-11">
-                                <SkipForward className="h-5 w-5" strokeWidth={2.5} />
-                            </Button>
-
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setIsFlipped(!isFlipped)}
-                                title="พลิกการ์ด (Tab)"
-                                className="text-gray-900 h-11 w-11"
-                            >
-                                <RotateCcw className="h-5 w-5" strokeWidth={2.5} />
-                            </Button>
-                        </div>
-
-                        {/* Right: Control Buttons */}
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setIsAutoPlay(!isAutoPlay)}
-                                className={`h-11 w-11 text-gray-900 ${isAutoPlay ? 'bg-purple-100' : ''}`}
-                            >
-                                {isAutoPlay ? <Pause className="h-5 w-5" strokeWidth={2.5} /> : <Play className="h-5 w-5" strokeWidth={2.5} />}
-                            </Button>
-
-                            <Button variant="ghost" size="icon" className="h-11 w-11 text-gray-900">
-                                <Maximize className="h-5 w-5" strokeWidth={2.5} />
-                            </Button>
-
-                            <Button variant="ghost" size="icon" className="h-11 w-11 text-gray-900">
-                                <Settings className="h-5 w-5" strokeWidth={2.5} />
-                            </Button>
-                        </div>
-                    </div>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleKnow(true)}
+                        className="h-12 w-12 sm:h-14 sm:w-14 rounded-full border-2 border-green-100 bg-green-50 hover:bg-green-100 hover:border-green-200 text-green-600 transition-all hover:scale-105"
+                        title="จำได้"
+                    >
+                        <Check className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.5} />
+                    </Button>
                 </div>
-
-                {/* Mobile Swipe Instructions */}
-                {isMobile && window.innerWidth < 768 && !isFlipped && (
-                    <div className="text-center mt-3 text-xs text-gray-600 bg-white/70 backdrop-blur-sm rounded-lg px-3 py-2">
-                        <p>ปัดซ้าย = จำไม่ได้ | ปัดขวา = จำได้แล้ว | กดการ์ด = พลิก</p>
-                    </div>
-                )}
-
-                {/* Progress Display */}
-                {trackProgress && (
-                    <div className="text-center mt-2 text-sm text-gray-600 bg-white/70 backdrop-blur-sm rounded-lg px-3 py-1">
-                        จำได้: {progress.correct} | จำไม่ได้: {progress.incorrect}
-                    </div>
-                )}
             </div>
         </div>
     );

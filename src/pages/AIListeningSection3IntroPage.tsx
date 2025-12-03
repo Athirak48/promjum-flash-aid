@@ -1,13 +1,40 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Gamepad2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { GameSelectionDialog } from '@/components/GameSelectionDialog';
 
 export default function AIListeningSection3IntroPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { language } = useLanguage();
+    const [showGameDialog, setShowGameDialog] = useState(false);
+
+    // Get the selected vocabulary from state (passed from previous pages)
+    const state = location.state as {
+        selectedVocab?: { id: string; word: string; meaning: string }[];
+    } | null;
+
+    const handleSelectGame = (gameType: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch') => {
+        // Convert selectedVocab to cards format expected by FlashcardsReview
+        const cards = state?.selectedVocab?.map(vocab => ({
+            id: vocab.id,
+            front: vocab.word,
+            back: vocab.meaning
+        })) || [];
+
+        // Navigate to game with the selected vocabulary
+        navigate('/flashcards/review', {
+            state: {
+                mode: 'game',
+                gameType,
+                cards,
+                fromAIListening: true
+            }
+        });
+    };
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
@@ -50,12 +77,19 @@ export default function AIListeningSection3IntroPage() {
                     <Button
                         size="lg"
                         className="w-full text-lg h-12"
-                        onClick={() => navigate('/ai-listening-game-selection')}
+                        onClick={() => setShowGameDialog(true)}
                     >
                         {language === 'th' ? 'ไปกันต่อ' : 'Continue'}
                     </Button>
                 </Card>
             </main>
+
+            {/* Game Selection Dialog */}
+            <GameSelectionDialog
+                open={showGameDialog}
+                onOpenChange={setShowGameDialog}
+                onSelectGame={handleSelectGame}
+            />
         </div>
     );
 }

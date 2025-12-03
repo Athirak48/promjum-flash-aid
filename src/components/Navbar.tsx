@@ -80,10 +80,10 @@ const Navbar = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src={promjumLogo} 
-              alt="Promjum Logo" 
-              className="h-10 w-10 object-contain"
+            <img
+              src={promjumLogo}
+              alt="Promjum Logo"
+              className="h-10 w-10 object-contain dark:bg-white dark:rounded-full dark:p-1 transition-all"
             />
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Promjum
@@ -96,9 +96,8 @@ const Navbar = () => {
               <Link
                 key={item.href}
                 to={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isActive(item.href) ? "text-primary" : "text-muted-foreground"
-                }`}
+                className={`text-sm font-medium transition-colors hover:text-primary ${isActive(item.href) ? "text-primary" : "text-muted-foreground"
+                  }`}
               >
                 {item.label}
               </Link>
@@ -161,7 +160,7 @@ const Navbar = () => {
                 </Button>
               </div>
             )}
-            
+
             {/* Theme and Language toggles */}
             <div className="flex items-center space-x-1 ml-2">
               <ThemeToggle />
@@ -189,11 +188,10 @@ const Navbar = () => {
                 <Link
                   key={item.href}
                   to={item.href}
-                  className={`block rounded-md px-3 py-2 text-base font-medium transition-colors ${
-                    isActive(item.href)
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-primary"
-                  }`}
+                  className={`block rounded-md px-3 py-2 text-base font-medium transition-colors ${isActive(item.href)
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-primary"
+                    }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.label}
@@ -213,7 +211,7 @@ const Navbar = () => {
                   </Button>
                 </div>
               )}
-              
+
               {/* Mobile Theme and Language toggles */}
               <div className="flex items-center justify-center space-x-2 pt-4 border-t border-border/40">
                 <ThemeToggle />

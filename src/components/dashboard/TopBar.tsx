@@ -26,9 +26,14 @@ export function TopBar({ userProfile, streak = 0, starlightScore = 0, progressPe
     <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-[2rem] p-4 sm:p-6 shadow-soft hover:shadow-lg transition-all duration-300">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <img src={promjumLogo} alt="Promjum" className="h-10 w-10 sm:h-12 sm:w-12 object-contain" />
-          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+        {/* Logo */}
+        <div className="flex items-center gap-3 sm:gap-4 group cursor-pointer">
+          <img
+            src={promjumLogo}
+            alt="Promjum"
+            className="h-14 w-14 sm:h-16 sm:w-16 object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+          />
+          <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-primary via-violet-500 to-pink-500 bg-clip-text text-transparent tracking-tight drop-shadow-sm">
             Promjum
           </h1>
         </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Volume2, CheckCircle2, XCircle, ArrowRight, Pause, RotateCcw, Home, Trophy, ArrowLeft } from 'lucide-react';
+import { Volume2, CheckCircle2, XCircle, ArrowRight, Pause, RotateCcw, Home, Trophy, ArrowLeft, Gamepad2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
@@ -18,6 +19,7 @@ interface Flashcard {
 interface FlashcardListenChooseGameProps {
   flashcards: Flashcard[];
   onClose: () => void;
+  onNext?: () => void;
 }
 
 interface Question {
@@ -27,7 +29,8 @@ interface Question {
   choices: string[];
 }
 
-export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardListenChooseGameProps) => {
+export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: FlashcardListenChooseGameProps) => {
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const { updateFromListenChoose } = useSRSProgress();
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -182,24 +185,40 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose }: FlashcardList
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-row gap-3 justify-center">
               <Button
                 onClick={handleRestart}
-                className="w-full bg-gradient-to-r from-pink-600 to-rose-600 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-lg"
-                size="lg"
+                className="flex-1 bg-gradient-to-r from-pink-600 to-rose-600 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-sm md:text-base"
               >
-                <RotateCcw className="h-5 w-5 mr-2" />
+                <RotateCcw className="h-4 w-4 mr-2" />
                 เล่นอีกครั้ง
               </Button>
 
               <Button
-                onClick={onClose}
+                onClick={() => {
+                  const selectedVocab = flashcards.map(f => ({
+                    id: f.id,
+                    word: f.front_text,
+                    meaning: f.back_text
+                  }));
+                  navigate('/ai-listening-section3-intro', {
+                    state: { selectedVocab }
+                  });
+                }}
                 variant="outline"
-                className="w-full rounded-xl h-12 text-lg"
-                size="lg"
+                className="flex-1 rounded-xl h-12 text-sm md:text-base border-pink-200 text-pink-700 hover:bg-pink-50"
               >
-                <Home className="h-5 w-5 mr-2" />
-                กลับหน้าเมนูหลัก
+                <Gamepad2 className="h-4 w-4 mr-2" />
+                เลือกเกมใหม่
+              </Button>
+
+              <Button
+                onClick={onNext || onClose}
+                variant="outline"
+                className="flex-1 rounded-xl h-12 text-sm md:text-base border-gray-200"
+              >
+                ถัดไป
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </CardContent>

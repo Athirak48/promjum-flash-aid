@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trophy, CheckCircle, XCircle, Home } from 'lucide-react';
+import { ArrowLeft, Trophy, CheckCircle, XCircle, Home, RotateCcw, ArrowRight, Gamepad2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
@@ -17,6 +18,7 @@ interface Flashcard {
 interface FlashcardQuizGameProps {
   flashcards: Flashcard[];
   onClose: () => void;
+  onNext?: () => void;
 }
 
 interface QuizQuestion {
@@ -25,8 +27,9 @@ interface QuizQuestion {
   correctAnswer: string;
 }
 
-export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProps) {
+export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuizGameProps) {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const { updateFromQuiz } = useSRSProgress();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -39,6 +42,18 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
   // Stats
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
+
+  const handleRestart = () => {
+    setCurrentIndex(0);
+    setScore(0);
+    setStreak(0);
+    setSelectedAnswer(null);
+    setIsAnswered(false);
+    setIsGameComplete(false);
+    setCorrectCount(0);
+    setWrongCount(0);
+    generateQuestions();
+  };
 
   useEffect(() => {
     generateQuestions();
@@ -147,15 +162,40 @@ export function FlashcardQuizGame({ flashcards, onClose }: FlashcardQuizGameProp
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-row gap-3 justify-center">
               <Button
-                onClick={onClose}
-                className="flex-1 rounded-xl h-12 text-lg font-medium"
-                size="lg"
-                variant="outline"
+                onClick={handleRestart}
+                className="flex-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-sm md:text-base"
               >
-                <Home className="h-5 w-5 mr-2" />
-                กลับหน้าหลัก
+                <RotateCcw className="h-4 w-4 mr-2" />
+                เล่นอีกครั้ง
+              </Button>
+
+              <Button
+                onClick={() => {
+                  const selectedVocab = flashcards.map(f => ({
+                    id: f.id,
+                    word: f.front_text,
+                    meaning: f.back_text
+                  }));
+                  navigate('/ai-listening-section3-intro', {
+                    state: { selectedVocab }
+                  });
+                }}
+                variant="outline"
+                className="flex-1 rounded-xl h-12 text-sm md:text-base border-violet-200 text-violet-700 hover:bg-violet-50"
+              >
+                <Gamepad2 className="h-4 w-4 mr-2" />
+                เลือกเกมใหม่
+              </Button>
+
+              <Button
+                onClick={onNext || onClose}
+                variant="outline"
+                className="flex-1 rounded-xl h-12 text-sm md:text-base border-gray-200"
+              >
+                ถัดไป
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </CardContent>

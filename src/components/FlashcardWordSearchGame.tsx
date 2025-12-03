@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw, Trophy, Search } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trophy, Search, RotateCcw, Gamepad2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import BackgroundDecorations from '@/components/BackgroundDecorations';
 
 interface Flashcard {
     id: string;
@@ -16,6 +18,7 @@ interface Flashcard {
 interface FlashcardWordSearchGameProps {
     flashcards: Flashcard[];
     onClose: () => void;
+    onNext?: () => void;
 }
 
 interface GridCell {
@@ -42,7 +45,8 @@ const COLORS = [
     'bg-purple-400/50', 'bg-pink-400/50', 'bg-indigo-400/50', 'bg-orange-400/50'
 ];
 
-export function FlashcardWordSearchGame({ flashcards, onClose }: FlashcardWordSearchGameProps) {
+export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: FlashcardWordSearchGameProps) {
+    const navigate = useNavigate();
     const [grid, setGrid] = useState<GridCell[][]>([]);
     const [wordsToFind, setWordsToFind] = useState<Flashcard[]>([]);
     const [foundWords, setFoundWords] = useState<string[]>([]); // IDs of found flashcards
@@ -309,32 +313,39 @@ export function FlashcardWordSearchGame({ flashcards, onClose }: FlashcardWordSe
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-4 flex flex-col items-center font-sans text-slate-800">
+        <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 overflow-hidden flex flex-col font-sans text-slate-800">
+            <BackgroundDecorations />
+
             {/* Header */}
-            <div className="w-full max-w-6xl flex items-center justify-between mb-2 pt-2">
-                <Button variant="ghost" onClick={onClose} className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors">
-                    <ArrowLeft className="mr-2 h-5 w-5" />
+            <div className="shrink-0 w-full flex items-center justify-between p-3 relative z-10">
+                <Button variant="ghost" size="sm" onClick={onClose} className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors h-8 px-2">
+                    <ArrowLeft className="mr-1 h-4 w-4" />
                     ออก
                 </Button>
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600">
-                        <Search className="h-5 w-5" />
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full shadow-sm border border-white/50">
+                        <Search className="h-4 w-4 text-blue-600" />
+                        <span className="font-bold text-sm text-slate-800">Word Search</span>
                     </div>
-                    <span className="font-bold text-xl text-slate-800 tracking-tight">Word Search</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={initializeGame} className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors">
-                    <RefreshCw className="h-5 w-5" />
+                <Button variant="ghost" size="icon" onClick={initializeGame} className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors h-8 w-8">
+                    <RefreshCw className="h-4 w-4" />
                 </Button>
             </div>
 
-            <div className="w-full max-w-6xl flex flex-col lg:flex-row gap-8 items-start justify-center">
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col lg:flex-row gap-6 p-4 min-h-0 relative z-10 max-w-7xl mx-auto w-full items-center justify-center">
+
                 {/* Word List */}
-                <div className="w-full lg:w-72 shrink-0 order-2 lg:order-1">
-                    <div className="bg-transparent h-full max-h-[600px] overflow-y-auto pr-2">
-                        <div className="flex items-center justify-between mb-4 px-1">
-                            <span className="text-sm font-semibold text-slate-400 uppercase tracking-wider">คำศัพท์ ({foundWords.length}/{wordsToFind.length})</span>
+                <div className="w-full lg:w-80 shrink-0 order-2 lg:order-1 lg:h-full max-h-[160px] lg:max-h-none overflow-y-auto flex flex-col justify-center">
+                    <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/50 p-4 flex flex-col max-h-full">
+                        <div className="flex items-center justify-between mb-3 px-1 shrink-0">
+                            <span className="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                <Search className="h-4 w-4" />
+                                คำศัพท์ ({foundWords.length}/{wordsToFind.length})
+                            </span>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-1 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-3 overflow-y-auto pr-1 custom-scrollbar">
                             {wordsToFind.map((word, idx) => {
                                 const isFound = foundWords.includes(word.id);
                                 const location = wordLocations.find(l => l.id === word.id);
@@ -343,18 +354,18 @@ export function FlashcardWordSearchGame({ flashcards, onClose }: FlashcardWordSe
                                     <div
                                         key={word.id}
                                         className={`
-                        px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-between
-                        ${isFound
-                                                ? 'bg-white shadow-sm text-slate-800 opacity-60'
-                                                : 'bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 text-slate-700'
+                                            px-4 py-3 rounded-xl transition-all duration-300 flex items-center justify-between text-sm sm:text-base
+                                            ${isFound
+                                                ? 'bg-slate-100/50 text-slate-400'
+                                                : 'bg-white shadow-sm border border-slate-100 text-slate-700 hover:shadow-md hover:-translate-y-0.5'
                                             }
-                      `}
+                                        `}
                                     >
-                                        <span className={`font-medium ${isFound ? 'line-through decoration-slate-300' : ''}`}>
+                                        <span className={`font-medium truncate ${isFound ? 'line-through decoration-slate-300' : ''}`}>
                                             {word.front_text}
                                         </span>
                                         {isFound && (
-                                            <div className={`h-2 w-2 rounded-full ${location?.color.replace('/50', '')}`}></div>
+                                            <div className={`h-2 w-2 rounded-full shrink-0 ml-2 ${location?.color.replace('/50', '')}`}></div>
                                         )}
                                     </div>
                                 );
@@ -363,14 +374,18 @@ export function FlashcardWordSearchGame({ flashcards, onClose }: FlashcardWordSe
                     </div>
                 </div>
 
-                {/* Game Grid */}
-                <div className="flex-1 flex justify-center lg:justify-start w-full order-1 lg:order-2">
-                    <div className="bg-white rounded-3xl shadow-sm p-6 w-full max-w-xl border border-slate-100">
+                {/* Game Grid Container */}
+                <div className="flex-1 w-full max-w-2xl lg:max-w-3xl aspect-square flex items-center justify-center min-h-0 order-1 lg:order-2">
+                    <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-4 sm:p-6 w-full h-full border border-white/50 flex flex-col relative overflow-hidden">
+                        {/* Decorative background for grid */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent -z-10"></div>
+
                         <div
-                            className="grid gap-2 select-none touch-none mx-auto"
+                            className="grid gap-1.5 sm:gap-2 select-none touch-none mx-auto flex-1 aspect-square"
                             style={{
                                 gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-                                maxWidth: '100%'
+                                width: '100%',
+                                height: '100%'
                             }}
                             onMouseLeave={handleMouseUp}
                             onTouchEnd={handleMouseUp}
@@ -382,8 +397,9 @@ export function FlashcardWordSearchGame({ flashcards, onClose }: FlashcardWordSe
                                     const isFound = cell.isFound;
 
                                     // Find which word this found cell belongs to (for coloring)
-                                    let cellColor = 'bg-slate-50 text-slate-400';
+                                    let cellColor = 'bg-slate-50/80 text-slate-400';
                                     let textColor = 'text-slate-600';
+                                    let shadow = '';
 
                                     if (isFound) {
                                         // Find the word location that covers this cell
@@ -394,10 +410,12 @@ export function FlashcardWordSearchGame({ flashcards, onClose }: FlashcardWordSe
                                         if (loc) {
                                             cellColor = loc.color;
                                             textColor = 'text-slate-800 font-bold';
+                                            shadow = 'shadow-sm';
                                         }
                                     } else if (isSelected) {
-                                        cellColor = 'bg-blue-500 text-white shadow-md scale-105 z-10';
+                                        cellColor = 'bg-blue-500 text-white scale-105 z-20';
                                         textColor = 'text-white';
+                                        shadow = 'shadow-lg shadow-blue-200';
                                     }
 
                                     return (
@@ -406,12 +424,12 @@ export function FlashcardWordSearchGame({ flashcards, onClose }: FlashcardWordSe
                                             data-row={r}
                                             data-col={c}
                                             className={`
-                          aspect-square flex items-center justify-center
-                          text-sm sm:text-base font-semibold rounded-lg cursor-pointer
-                          transition-all duration-200
-                          ${cellColor} ${textColor}
-                          ${!isSelected && !isFound ? 'hover:bg-slate-100 hover:text-slate-800' : ''}
-                        `}
+                                                flex items-center justify-center
+                                                text-sm sm:text-lg md:text-xl font-bold rounded-lg sm:rounded-xl cursor-pointer
+                                                transition-all duration-200 select-none
+                                                ${cellColor} ${textColor} ${shadow}
+                                                ${!isSelected && !isFound ? 'hover:bg-white hover:shadow-md hover:scale-105 hover:text-blue-600 hover:z-10' : ''}
+                                            `}
                                             onMouseDown={() => handleMouseDown(r, c)}
                                             onMouseEnter={() => handleMouseEnter(r, c)}
                                             onMouseUp={handleMouseUp}
@@ -440,31 +458,58 @@ export function FlashcardWordSearchGame({ flashcards, onClose }: FlashcardWordSe
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
-                            className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
+                            className="bg-white rounded-[2rem] p-6 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
                         >
-                            {/* Decorative background elements */}
                             <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 to-transparent -z-10"></div>
 
-                            <div className="w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center mx-auto mb-6 rotate-3 border border-slate-50">
-                                <Trophy className="h-10 w-10 text-yellow-500 drop-shadow-sm" />
+                            <div className="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center mx-auto mb-4 rotate-3 border border-slate-50">
+                                <Trophy className="h-8 w-8 text-yellow-500 drop-shadow-sm" />
                             </div>
 
-                            <h2 className="text-3xl font-bold text-slate-800 mb-2 tracking-tight">ยอดเยี่ยม!</h2>
-                            <p className="text-slate-500 mb-6 font-medium">
+                            <h2 className="text-2xl font-bold text-slate-800 mb-1 tracking-tight">ยอดเยี่ยม!</h2>
+                            <p className="text-slate-500 mb-4 font-medium text-sm">
                                 คุณหาคำศัพท์ครบทั้งหมดแล้ว
                             </p>
 
-                            <div className="bg-slate-50 rounded-2xl p-4 mb-8 border border-slate-100">
-                                <p className="text-sm text-slate-400 uppercase tracking-wider font-semibold mb-1">เวลาที่ใช้</p>
-                                <p className="text-2xl font-bold text-blue-600">{elapsedTime}</p>
+                            <div className="bg-slate-50 rounded-2xl p-3 mb-6 border border-slate-100">
+                                <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">เวลาที่ใช้</p>
+                                <p className="text-xl font-bold text-blue-600">{elapsedTime}</p>
                             </div>
 
-                            <div className="flex gap-3">
-                                <Button variant="outline" className="flex-1 h-12 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium" onClick={onClose}>
-                                    ออก
-                                </Button>
-                                <Button className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 font-medium" onClick={initializeGame}>
+                            <div className="flex flex-row gap-3 justify-center">
+                                <Button
+                                    onClick={initializeGame}
+                                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-sm md:text-base"
+                                >
+                                    <RotateCcw className="h-4 w-4 mr-2" />
                                     เล่นอีกครั้ง
+                                </Button>
+
+                                <Button
+                                    onClick={() => {
+                                        const selectedVocab = flashcards.map(f => ({
+                                            id: f.id,
+                                            word: f.front_text,
+                                            meaning: f.back_text
+                                        }));
+                                        navigate('/ai-listening-section3-intro', {
+                                            state: { selectedVocab }
+                                        });
+                                    }}
+                                    variant="outline"
+                                    className="flex-1 rounded-xl h-12 text-sm md:text-base border-blue-200 text-blue-700 hover:bg-blue-50"
+                                >
+                                    <Gamepad2 className="h-4 w-4 mr-2" />
+                                    เลือกเกมใหม่
+                                </Button>
+
+                                <Button
+                                    onClick={onNext || onClose}
+                                    variant="outline"
+                                    className="flex-1 rounded-xl h-12 text-sm md:text-base border-gray-200"
+                                >
+                                    ถัดไป
+                                    <ArrowRight className="h-4 w-4 ml-2" />
                                 </Button>
                             </div>
                         </motion.div>
