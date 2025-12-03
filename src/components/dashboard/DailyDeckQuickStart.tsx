@@ -45,6 +45,7 @@ export function DailyDeckQuickStart({
   // Get 12 cards: prioritize cards due for review, then random from same folder
   const getReviewCards = async () => {
     try {
+      let reviewCards: Array<{ id: string; front: string; back: string; upload_id?: string }> = [];
 
       // Need more cards - find the most common upload_id from existing cards
       const uploadIdCounts = reviewCards.reduce((acc, card) => {

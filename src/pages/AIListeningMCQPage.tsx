@@ -114,7 +114,7 @@ export default function AIListeningMCQPage() {
                     <ArrowLeft className="h-6 w-6 text-muted-foreground" />
                 </Button>
                 <div className="w-32">
-                    <Progress value={progress} className="h-1.5 bg-secondary" indicatorClassName="bg-green-500" />
+                    <Progress value={progress} className="h-1.5 bg-secondary [&>div]:bg-green-500" />
                 </div>
             </header>
 

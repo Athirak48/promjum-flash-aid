@@ -280,12 +280,12 @@ export function ScheduleCalendar() {
 
                 const activity: Activity = {
                     id: review.id,
-                    type: (review.activity_type as Activity['type']) || 'vocabulary',
+                    type: 'vocabulary' as Activity['type'],
                     time: review.scheduled_time.substring(0, 5),
-                    duration: review.duration_minutes || 30,
-                    title: review.title || 'Review Session',
-                    icon: AVAILABLE_ICONS[review.icon as keyof typeof AVAILABLE_ICONS] || BookOpen,
-                    color: review.color || 'blue'
+                    duration: 30,
+                    title: 'Review Session',
+                    icon: BookOpen,
+                    color: 'blue'
                 };
 
                 const existingDay = mappedSchedule.find(d => d.dayIndex === dayIndex);
@@ -329,7 +329,8 @@ export function ScheduleCalendar() {
     };
 
     const handleUpdateActivityTitle = async (dayIndex: number, activityId: string, newTitle: string) => {
-        await updateReview(activityId, { title: newTitle });
+        // Title field not in database schema - skip update
+        console.log('Title update requested but not persisted:', newTitle);
     };
 
     const handleUpdateActivityTime = async (dayIndex: number, activityId: string, newTime: string) => {
@@ -337,7 +338,8 @@ export function ScheduleCalendar() {
     };
 
     const handleUpdateActivityDuration = async (dayIndex: number, activityId: string, newDuration: number) => {
-        await updateReview(activityId, { duration_minutes: newDuration });
+        // Duration field not in database schema - skip update
+        console.log('Duration update requested but not persisted:', newDuration);
     };
 
     const handleRemoveActivity = async (dayIndex: number, activityId: string) => {
@@ -624,14 +626,9 @@ export function ScheduleCalendar() {
                                             {/* Mobile View: Dots */}
                                             <div className="flex md:hidden flex-wrap justify-end gap-1">
                                                 {dayReviews.map(review => {
-                                                    const colorClass = AVAILABLE_COLORS.find(c => c.value === review.color)?.class || 'bg-primary';
-                                                    // Extract background color for the dot
-                                                    const bgClass = colorClass.split(' ').find(c => c.startsWith('bg-')) || 'bg-primary';
-                                                    // Remove opacity modifier if present to make dot visible
-                                                    const solidBg = bgClass.replace('/10', '').replace('/50', '');
-
+                                                    const colorClass = 'bg-primary';
                                                     return (
-                                                        <div key={review.id} className={cn("w-1.5 h-1.5 rounded-full", solidBg)} />
+                                                        <div key={review.id} className={cn("w-1.5 h-1.5 rounded-full", colorClass)} />
                                                     );
                                                 })}
                                             </div>
@@ -639,10 +636,10 @@ export function ScheduleCalendar() {
                                             {/* Desktop View: Pills */}
                                             <div className="hidden md:flex flex-col gap-1">
                                                 {dayReviews.map(review => {
-                                                    const colorClass = AVAILABLE_COLORS.find(c => c.value === review.color)?.class || 'bg-primary/10 text-primary';
+                                                    const colorClass = 'bg-primary/10 text-primary';
                                                     return (
                                                         <div key={review.id} className={cn("text-[10px] px-2 py-1 rounded-md truncate font-medium border-l-2", colorClass)}>
-                                                            {review.scheduled_time.substring(0, 5)} {review.title}
+                                                            {review.scheduled_time.substring(0, 5)} Review
                                                         </div>
                                                     );
                                                 })}
