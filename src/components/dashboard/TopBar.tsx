@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, Flame, Star } from "lucide-react";
+import { Flame, Star } from "lucide-react";
 import promjumLogo from "@/assets/promjum-logo.png";
 
 interface TopBarProps {
@@ -91,10 +91,7 @@ export function TopBar({ userProfile, streak = 0, starlightScore = 0, progressPe
 
         {/* Avatar + User Info */}
         <div className="hidden md:flex items-center gap-3 pl-4 border-l border-border/50">
-          <div className="relative group">
-            <Bell className="h-6 w-6 text-muted-foreground cursor-pointer hover:text-primary transition-all duration-300 group-hover:scale-110" />
-            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white" />
-          </div>
+
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 ring-2 ring-primary/20 transition-transform hover:scale-105">
               <AvatarImage src={displayProfile?.avatar_url} alt={displayProfile?.full_name} />

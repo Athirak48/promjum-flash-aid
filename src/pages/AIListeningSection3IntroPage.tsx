@@ -45,7 +45,7 @@ export default function AIListeningSection3IntroPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate('/ai-listening-flashcard-summary')}
+                            onClick={() => navigate('/ai-listening-section2-intro')}
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
@@ -58,8 +58,8 @@ export default function AIListeningSection3IntroPage() {
 
             {/* Main Content */}
             <main className="flex-1 container mx-auto px-4 py-8 flex flex-col items-center justify-center">
-                <Card className="w-full max-w-md p-12 flex flex-col items-center text-center space-y-8 shadow-xl border-2 border-primary/10">
-                    <div className="p-6 bg-orange-50 dark:bg-orange-950/30 rounded-full">
+                <Card className="w-full max-w-md p-12 flex flex-col items-center text-center space-y-8 shadow-xl border-2 border-primary/10 animate-in zoom-in fade-in duration-500 slide-in-from-bottom-4">
+                    <div className="p-6 bg-orange-50 dark:bg-orange-950/30 rounded-full animate-bounce duration-1000">
                         <Gamepad2 className="w-16 h-16 text-orange-500" />
                     </div>
 

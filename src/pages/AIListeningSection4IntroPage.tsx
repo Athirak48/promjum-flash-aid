@@ -24,7 +24,7 @@ export default function AIListeningSection4IntroPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate('/ai-listening-game-selection')}
+                            onClick={() => navigate('/ai-listening-section3-intro')}
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Button>

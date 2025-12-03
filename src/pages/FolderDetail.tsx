@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, Archive, ImagePlus, X, GamepadIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, ImagePlus, X, GamepadIcon, Check } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
@@ -99,7 +99,10 @@ export function FolderDetail() {
   const [showEditSetDialog, setShowEditSetDialog] = useState(false);
   const [editingSetTitle, setEditingSetTitle] = useState('');
   const [selectedSetForEdit, setSelectedSetForEdit] = useState<FlashcardSet | null>(null);
+
   const [setToDelete, setSetToDelete] = useState<FlashcardSet | null>(null);
+
+
 
   // Fetch folder data from Supabase
   useEffect(() => {
@@ -522,17 +525,66 @@ export function FolderDetail() {
     }
   };
 
-  const handleMoveOutOfFolder = async (set: FlashcardSet) => {
+  const handleMoveClick = async (set: FlashcardSet) => {
+    setSetToMove(set);
+    setShowMoveDialog(true);
+    setMoveSearchTerm('');
+    fetchFolders();
+  };
+
+  const fetchFolders = async () => {
     try {
-      const { error } = await supabase
-        .from('user_flashcard_sets')
-        .update({ folder_id: null })
-        .eq('id', set.id);
+      setLoadingFolders(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('user_folders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('title');
 
       if (error) throw error;
 
-      setFlashcardSets(prev => prev.filter(s => s.id !== set.id));
-      toast({ title: "ย้ายสำเร็จ", description: "ย้ายชุดแฟลชการ์ดออกจากโฟลเดอร์แล้ว" });
+      // Map to Folder interface (simplified)
+      const folders: Folder[] = data.map(f => ({
+        id: f.id,
+        title: f.title,
+        cardSetsCount: 0 // Not needed for this list
+      }));
+
+      setAllFolders(folders);
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+      toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถดึงข้อมูลโฟลเดอร์ได้", variant: "destructive" });
+    } finally {
+      setLoadingFolders(false);
+    }
+  };
+
+  const handleConfirmMove = async (targetFolderId: string | null) => {
+    if (!setToMove) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_flashcard_sets')
+        .update({ folder_id: targetFolderId })
+        .eq('id', setToMove.id);
+
+      if (error) throw error;
+
+      // Remove from current view if moved to a different folder (or root)
+      // If targetFolderId is null (root) and we are in a folder, it should be removed.
+      // If targetFolderId is different from current folderId, it should be removed.
+      // Since we are in FolderDetail, any move out of THIS folder means removal.
+      if (targetFolderId !== folderId) {
+        setFlashcardSets(prev => prev.filter(s => s.id !== setToMove.id));
+        setFilteredSets(prev => prev.filter(s => s.id !== setToMove.id));
+      }
+
+      setShowMoveDialog(false);
+      setSetToMove(null);
+      toast({ title: "ย้ายสำเร็จ", description: "ย้ายชุดแฟลชการ์ดเรียบร้อยแล้ว" });
     } catch (error) {
       console.error('Error moving set:', error);
       toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถย้ายชุดแฟลชการ์ดได้", variant: "destructive" });
@@ -886,10 +938,6 @@ export function FolderDetail() {
                           <Edit className="h-4 w-4 mr-2" />
                           แก้ไข
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleMoveOutOfFolder(set)}>
-                          <Archive className="h-4 w-4 mr-2" />
-                          ย้ายออกจากโฟลเดอร์
-                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDeleteSetClick(set)} className="text-destructive">
                           <Trash className="h-4 w-4 mr-2" />
                           ลบ
@@ -1017,6 +1065,8 @@ export function FolderDetail() {
         </DialogContent>
       </Dialog>
 
+
+
       <AlertDialog open={!!setToDelete} onOpenChange={(open) => !open && setSetToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1033,6 +1083,6 @@ export function FolderDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </div >
   );
 }

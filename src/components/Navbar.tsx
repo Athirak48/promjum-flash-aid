@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, User, LogOut, CreditCard, Star } from "lucide-react";
+import { Menu, X, User, LogOut, CreditCard, Star, Bell } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -107,49 +107,55 @@ const Navbar = () => {
           {/* Right side */}
           <div className="hidden md:flex items-center space-x-2">
             {userProfile ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="" alt={userProfile.full_name || userProfile.email} />
-                      <AvatarFallback>
-                        {userProfile.full_name?.charAt(0) || userProfile.email.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <div className="flex items-center justify-start gap-2 p-2">
-                    <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{userProfile.full_name || userProfile.email}</p>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground">{userProfile.email}</span>
-                        {userProfile.role === "admin" && (
-                          <Star className="h-3 w-3 text-yellow-500" />
-                        )}
+              <>
+                <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground hover:text-primary mr-2">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-white dark:border-slate-950" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src="" alt={userProfile.full_name || userProfile.email} />
+                        <AvatarFallback>
+                          {userProfile.full_name?.charAt(0) || userProfile.email.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        <p className="font-medium">{userProfile.full_name || userProfile.email}</p>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">{userProfile.email}</span>
+                          {userProfile.role === "admin" && (
+                            <Star className="h-3 w-3 text-yellow-500" />
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      {t('nav.profile')}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/checkout" className="cursor-pointer">
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      ชำระเงิน
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {t('nav.logout')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        {t('nav.profile')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/checkout" className="cursor-pointer">
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        ชำระเงิน
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      {t('nav.logout')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <div className="flex items-center space-x-2">
                 <Button variant="ghost" asChild>

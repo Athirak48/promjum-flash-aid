@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Volume2, CheckCircle2, XCircle, ArrowRight, Pause, RotateCcw, Home, Trophy, ArrowLeft, Gamepad2 } from 'lucide-react';
+import { Volume2, CheckCircle2, XCircle, ArrowRight, Pause, RotateCcw, Home, Trophy, ArrowLeft, Gamepad2, X, MoreHorizontal, Check, Flame } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
@@ -229,27 +229,53 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: Flash
 
   // Game Play
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 dark:from-pink-950 dark:via-rose-900 dark:to-pink-950 overflow-auto">
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 dark:from-pink-950 dark:via-rose-900 dark:to-pink-950 overflow-auto">
       <BackgroundDecorations />
 
       <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 relative z-10 min-h-screen flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4 md:mb-6">
-          <Button variant="ghost" onClick={onClose} className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors">
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            ออก
-          </Button>
+        <div className="flex items-center justify-between mb-4 md:mb-6 px-2 relative">
+          {/* Left: Back Button & Progress Label */}
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={onClose} className="h-10 w-10 rounded-xl bg-white dark:bg-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
 
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="flex items-center gap-1.5 md:gap-2 bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
-              <Trophy className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
-              <span className="font-bold text-base md:text-lg">{score}</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">ความคืบหน้า</span>
+              <div className="h-1.5 w-[30vw] rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-300 ease-in-out"
+                  style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                />
+              </div>
             </div>
-            <div className="bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
-              <span className="font-bold text-base md:text-lg text-primary">
-                {currentQuestionIndex + 1} / {questions.length}
-              </span>
+          </div>
+
+          {/* Center: Count */}
+          <div className="absolute left-1/2 -translate-x-1/2 font-medium text-slate-500 dark:text-slate-400">
+            {currentQuestionIndex + 1} / {questions.length}
+          </div>
+
+          {/* Right: Stats Section */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 bg-green-100 dark:bg-green-900/30 px-3 py-1.5 rounded-full">
+              <div className="bg-green-500 rounded-full p-0.5">
+                <Check className="h-3 w-3 text-white" />
+              </div>
+              <span className="font-bold text-green-700 dark:text-green-400">{score}</span>
             </div>
+
+            <div className="flex items-center gap-1.5 bg-red-100 dark:bg-red-900/30 px-3 py-1.5 rounded-full">
+              <div className="bg-red-500 rounded-full p-0.5">
+                <X className="h-3 w-3 text-white" />
+              </div>
+              <span className="font-bold text-red-700 dark:text-red-400">{wrongAnswers.length}</span>
+            </div>
+
+            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600">
+              <MoreHorizontal className="h-6 w-6" />
+            </Button>
           </div>
         </div>
 
