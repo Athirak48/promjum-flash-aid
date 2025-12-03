@@ -32,7 +32,7 @@ export default function Dashboard() {
 
         {/* Header / Top Bar */}
         <div className="mb-8 animate-fade-in">
-          <TopBar user={user} />
+          <TopBar user={user} userProfile={null} />
         </div>
 
         {/* Quick Start & Friends Leaderboard */}

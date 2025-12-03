@@ -102,7 +102,12 @@ export function FolderDetail() {
 
   const [setToDelete, setSetToDelete] = useState<FlashcardSet | null>(null);
 
-
+  // Move dialog states
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [setToMove, setSetToMove] = useState<FlashcardSet | null>(null);
+  const [moveSearchTerm, setMoveSearchTerm] = useState('');
+  const [loadingFolders, setLoadingFolders] = useState(false);
+  const [allFolders, setAllFolders] = useState<Folder[]>([]);
 
   // Fetch folder data from Supabase
   useEffect(() => {
@@ -651,7 +656,8 @@ export function FolderDetail() {
             front_text: c.front,
             back_text: c.back,
             front_image: c.frontImage,
-            back_image: c.backImage
+            back_image: c.backImage,
+            created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
         />
@@ -665,7 +671,8 @@ export function FolderDetail() {
             front_text: c.front,
             back_text: c.back,
             front_image: c.frontImage,
-            back_image: c.backImage
+            back_image: c.backImage,
+            created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
         />
@@ -679,7 +686,8 @@ export function FolderDetail() {
             front_text: c.front,
             back_text: c.back,
             front_image: c.frontImage,
-            back_image: c.backImage
+            back_image: c.backImage,
+            created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
         />
