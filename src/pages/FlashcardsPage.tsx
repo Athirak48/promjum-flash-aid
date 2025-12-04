@@ -156,7 +156,7 @@ function DraggableFlashcardSet({
         icon: Zap
       }
     };
-    const config = variants[source];
+    const config = variants[source] || variants.created;
     const Icon = config.icon;
     return <Badge variant={config.variant} className="flex items-center gap-1">
       <Icon className="h-3 w-3" />
