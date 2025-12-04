@@ -102,16 +102,16 @@ export function calculateSRS(
 
 /**
  * Get quality score for Flashcard Review
- * - Q=5: Remembered on first try (swipe right first time)
+ * - Q=4: Remembered well on first try (100% correct first review)
  * - Q=2: Took time or guessed correctly
- * - Q=0: Didn't remember (swiped left, cycled back)
+ * - Q=0: Didn't remember / cycled back (reviewed 2nd, 3rd, 4th... time)
  */
 export function getFlashcardReviewQuality(
   isCorrect: boolean,
   attemptCount: number
 ): number {
   if (!isCorrect) return 0;
-  if (attemptCount === 1) return 5;  // First try correct
+  if (attemptCount === 1) return 4;  // First try correct = Q=4
   return 0;  // Cycled back means Q=0
 }
 

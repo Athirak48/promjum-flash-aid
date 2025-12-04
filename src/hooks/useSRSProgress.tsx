@@ -282,6 +282,73 @@ export function useSRSProgress() {
     }
   }, []);
 
+  /**
+   * Get 15 flashcards with lowest SRS score for dashboard "words not remembered" section
+   * Returns flashcards sorted by srs_score ascending (lowest = hardest)
+   * null srs_score cards are treated as never played and shown first
+   */
+  const getLowestSRSFlashcards = useCallback(async (limit: number = 15) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      // Get all user's flashcard progress sorted by srs_score
+      const { data: progress, error } = await supabase
+        .from('user_flashcard_progress')
+        .select(`
+          id,
+          flashcard_id,
+          user_flashcard_id,
+          srs_score,
+          times_reviewed,
+          last_review_score,
+          next_review_date
+        `)
+        .eq('user_id', user.id)
+        .order('srs_score', { ascending: true, nullsFirst: true })
+        .limit(limit);
+
+      if (error) throw error;
+      return progress || [];
+    } catch (error) {
+      console.error('Error getting lowest SRS flashcards:', error);
+      return [];
+    }
+  }, []);
+
+  /**
+   * Get all SRS progress for admin view (for a specific user)
+   */
+  const getAllUserSRSProgress = useCallback(async (userId: string) => {
+    try {
+      const { data: progress, error } = await supabase
+        .from('user_flashcard_progress')
+        .select(`
+          id,
+          flashcard_id,
+          user_flashcard_id,
+          srs_score,
+          srs_level,
+          easiness_factor,
+          interval_days,
+          times_reviewed,
+          times_correct,
+          last_review_score,
+          next_review_date,
+          created_at,
+          updated_at
+        `)
+        .eq('user_id', userId)
+        .order('srs_score', { ascending: true, nullsFirst: true });
+
+      if (error) throw error;
+      return progress || [];
+    } catch (error) {
+      console.error('Error getting user SRS progress:', error);
+      return [];
+    }
+  }, []);
+
   return {
     updateFlashcardSRS,
     updateBatchSRS,
@@ -292,6 +359,8 @@ export function useSRSProgress() {
     updateFromQuiz,
     updateFromMatching,
     getFlashcardsByDifficulty,
-    getRecommendedFlashcards
+    getRecommendedFlashcards,
+    getLowestSRSFlashcards,
+    getAllUserSRSProgress
   };
 }
