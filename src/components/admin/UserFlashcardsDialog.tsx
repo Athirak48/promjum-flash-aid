@@ -31,7 +31,7 @@ interface Flashcard {
   id: string;
   front_text: string;
   back_text: string;
-  srs_score?: number;
+  srs_score?: number | null;
 }
 
 export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: UserFlashcardsDialogProps) {
@@ -65,14 +65,34 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
   const fetchUserFolders = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch folders
+      const { data: foldersData, error: foldersError } = await supabase
         .from('user_folders')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setFolders(data || []);
+      if (foldersError) throw foldersError;
+
+      // Fetch all flashcard sets to count per folder
+      const { data: setsData, error: setsError } = await supabase
+        .from('user_flashcard_sets')
+        .select('id, folder_id')
+        .eq('user_id', userId);
+
+      if (setsError) throw setsError;
+
+      // Calculate real counts per folder
+      const foldersWithCounts = (foldersData || []).map(folder => {
+        const setsInFolder = (setsData || []).filter(s => s.folder_id === folder.id).length;
+        return {
+          ...folder,
+          card_sets_count: setsInFolder
+        };
+      });
+
+      setFolders(foldersWithCounts);
     } catch (error) {
       console.error('Error fetching folders:', error);
       toast.error('ไม่สามารถโหลดโฟลเดอร์ได้');
@@ -84,15 +104,40 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
   const fetchFlashcardSets = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch flashcard sets
+      const { data: setsData, error: setsError } = await supabase
         .from('user_flashcard_sets')
         .select('*')
         .eq('user_id', userId)
         .eq('folder_id', selectedFolderId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setFlashcardSets(data || []);
+      if (setsError) throw setsError;
+
+      // Fetch all flashcards to count per set
+      if (setsData && setsData.length > 0) {
+        const setIds = setsData.map(s => s.id);
+        const { data: cardsData, error: cardsError } = await supabase
+          .from('user_flashcards')
+          .select('id, flashcard_set_id')
+          .in('flashcard_set_id', setIds);
+
+        if (cardsError) throw cardsError;
+
+        // Calculate real card counts per set
+        const setsWithCounts = setsData.map(set => {
+          const cardsInSet = (cardsData || []).filter(c => c.flashcard_set_id === set.id).length;
+          return {
+            ...set,
+            card_count: cardsInSet
+          };
+        });
+
+        setFlashcardSets(setsWithCounts);
+      } else {
+        setFlashcardSets([]);
+      }
     } catch (error) {
       console.error('Error fetching flashcard sets:', error);
       toast.error('ไม่สามารถโหลดชุดแฟลชการ์ดได้');
@@ -110,30 +155,30 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
         .from('user_flashcards')
         .select('*')
         .eq('flashcard_set_id', selectedSetId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
 
       if (cardsError) throw cardsError;
 
-      // Then get the progress data for these flashcards
+      // Then get the progress data for these flashcards using user_flashcard_id
       if (cardsData && cardsData.length > 0) {
         const flashcardIds = cardsData.map(card => card.id);
         const { data: progressData, error: progressError } = await supabase
           .from('user_flashcard_progress')
-          .select('flashcard_id, srs_score')
+          .select('user_flashcard_id, srs_score')
           .eq('user_id', userId)
-          .in('flashcard_id', flashcardIds);
+          .in('user_flashcard_id', flashcardIds);
 
         if (progressError) throw progressError;
 
-        // Create a map for quick lookup
+        // Create a map for quick lookup using user_flashcard_id
         const progressMap = new Map(
-          progressData?.map(p => [p.flashcard_id, p.srs_score]) || []
+          progressData?.map(p => [p.user_flashcard_id, p.srs_score]) || []
         );
 
         // Merge the data
         const flashcardsWithProgress = cardsData.map(card => ({
           ...card,
-          srs_score: progressMap.get(card.id) ?? 0
+          srs_score: progressMap.get(card.id) ?? null
         }));
 
         setFlashcards(flashcardsWithProgress);
@@ -238,7 +283,7 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
                           <TableCell className="font-medium">{index + 1}</TableCell>
                           <TableCell>{card.front_text}</TableCell>
                           <TableCell>{card.back_text}</TableCell>
-                          <TableCell className="font-semibold">{card.srs_score ?? 0}</TableCell>
+                          <TableCell className="font-semibold">{card.srs_score === null ? '-' : card.srs_score}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
