@@ -836,32 +836,17 @@ export default function FlashcardsPage() {
             </div>
           )}
 
-          {/* Flashcard Sets */}
-          {filteredSets.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
-                {t('flashcards.yourSets')}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredSets.map(set => (
-                  <DraggableFlashcardSet key={set.id} set={set} onMoveToFolder={handleMoveToFolder} />
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Empty State */}
-          {filteredSets.length === 0 && folders.length === 0 && (
+          {folders.length === 0 && (
             <div className="text-center py-12">
-              <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <Folder className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">{t('flashcards.noSets')}</h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm ? t('flashcards.noSearchResults') : t('flashcards.noSetsDesc')}
               </p>
-              <Button onClick={() => setShowCreateFlashcardDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t('flashcards.createFlashcard')}
+              <Button onClick={() => setShowNewFolderDialog(true)}>
+                <FolderPlus className="h-4 w-4 mr-2" />
+                {t('flashcards.createFolder')}
               </Button>
             </div>
           )}
