@@ -87,9 +87,9 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl bg-white/95 backdrop-blur-xl border-white/50 rounded-[2rem] p-8 shadow-2xl">
-        <DialogHeader className="mb-2">
-          <DialogTitle className="flex items-center justify-center gap-2 text-xl font-bold">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[85vh] overflow-y-auto bg-white/95 backdrop-blur-xl border-white/50 rounded-2xl p-4 sm:p-6 shadow-2xl">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl font-bold">
             <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-md">
               <GamepadIcon className="h-4 w-4 text-white" />
             </div>
@@ -97,12 +97,12 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
               เลือกเกมที่ต้องการเล่น
             </span>
           </DialogTitle>
-          <p className="text-center text-muted-foreground mt-0.5 text-xs">
+          <p className="text-center text-muted-foreground mt-1 text-xs sm:text-sm">
             ฝึกฝนภาษาอังกฤษผ่านมินิเกมแสนสนุก
           </p>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-1">
           {games.map((game) => {
             const IconComponent = game.icon;
             return (
@@ -117,33 +117,33 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
                 onClick={() => handleGameSelect(game.id as any)}
               >
                 <div className="absolute top-0 right-0 p-1.5 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <IconComponent className="h-12 w-12" />
+                  <IconComponent className="h-8 w-8" />
                 </div>
 
                 <CardHeader className="text-center pb-1 pt-3 relative z-10 p-2">
                   <div className={`
-                    w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2
+                    w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-1.5
                     bg-gradient-to-br ${game.gradient} shadow-sm
                     group-hover:shadow-glow transition-all duration-300
                   `}>
-                    <IconComponent className="h-5 w-5 text-white" />
+                    <IconComponent className="h-4 w-4 text-white" />
                   </div>
-                  <CardTitle className="text-sm font-bold text-gray-800 leading-tight">{game.title}</CardTitle>
-                  <CardDescription className="font-medium text-[9px] text-primary/80 flex items-center justify-center gap-1 mt-1">
-                    <Sparkles className="w-2.5 h-2.5" />
+                  <CardTitle className="text-xs font-bold text-gray-800 leading-tight">{game.title}</CardTitle>
+                  <CardDescription className="font-medium text-[8px] text-primary/80 flex items-center justify-center gap-1 mt-0.5">
+                    <Sparkles className="w-2 h-2" />
                     {game.subtitle}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="text-center pt-0 pb-3 relative z-10 px-2">
-                  <p className="text-[9px] text-gray-600 mb-2 min-h-[24px] line-clamp-2 leading-tight">
+                <CardContent className="text-center pt-0 pb-2 relative z-10 px-2">
+                  <p className="text-[8px] text-gray-600 mb-2 min-h-[20px] line-clamp-2 leading-tight">
                     {game.description}
                   </p>
                   <Button
                     className={`
                       w-full bg-gradient-to-r ${game.gradient} text-white border-0
                       shadow-sm group-hover:shadow-md transition-all duration-300
-                      rounded-md h-7 text-[10px] font-semibold
+                      rounded-md h-6 text-[9px] font-semibold
                     `}
                     onClick={(e) => {
                       e.stopPropagation();

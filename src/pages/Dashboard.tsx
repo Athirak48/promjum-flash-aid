@@ -1,5 +1,5 @@
 import BackgroundDecorations from "@/components/BackgroundDecorations";
-import { TopBar } from "@/components/dashboard/TopBar";
+
 import { DailyDeckQuickStart } from "@/components/dashboard/DailyDeckQuickStart";
 import { SuggestedDeck } from "@/components/dashboard/SuggestedDeck";
 import { FriendsLeaderboard } from "@/components/dashboard/FriendsLeaderboard";
@@ -29,11 +29,6 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background relative overflow-hidden font-prompt">
       <BackgroundDecorations />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 relative z-10 max-w-7xl">
-
-        {/* Header / Top Bar */}
-        <div className="mb-8 animate-fade-in">
-          <TopBar user={user} userProfile={null} />
-        </div>
 
         {/* Quick Start & Friends Leaderboard */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>

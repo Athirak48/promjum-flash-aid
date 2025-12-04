@@ -756,7 +756,7 @@ export function FolderDetail() {
               <ArrowLeft className="h-6 w-6" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
                 {folder?.title || 'Folder'}
               </h1>
               <p className="text-muted-foreground mt-1">
@@ -799,75 +799,92 @@ export function FolderDetail() {
                   </div>
 
                   {flashcardRows.map((row, index) => (
-                    <div key={row.id} className="group flex items-start gap-3 p-3 border rounded-lg bg-card/50 hover:bg-accent/5 transition-colors">
-                      <div className="flex items-center justify-center w-8 h-10 pt-1">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {index + 1}
-                        </span>
+                    <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-xl bg-card hover:shadow-md transition-all duration-200 relative">
+                      <div className="flex items-center justify-between w-full sm:w-auto sm:justify-center">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 sm:bg-transparent">
+                          <span className="text-sm sm:text-lg font-semibold text-muted-foreground/70">
+                            {index + 1}
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="sm:hidden text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-8 w-8 rounded-full"
+                          onClick={() => handleRemoveFlashcardRow(row.id)}
+                          disabled={flashcardRows.length === 1}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
                       </div>
 
-                      <div className="flex-1 grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <div className="relative">
-                            <Input
-                              value={row.front}
-                              onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
-                              placeholder="คำศัพท์ (ด้านหน้า)"
-                              className="pr-8 h-10 bg-background/50 focus:bg-background transition-colors"
-                            />
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full">
+                        <div className="relative group/input">
+                          <Input
+                            value={row.front}
+                            onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
+                            placeholder="คำศัพท์ (ด้านหน้า)"
+                            className="pr-10 h-10 sm:h-11 rounded-full bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 transition-all font-medium text-sm sm:text-base"
+                          />
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                            {row.frontImage && (
+                              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden border border-border">
+                                <img
+                                  src={URL.createObjectURL(row.frontImage)}
+                                  alt="Front"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
-                              className={`absolute right-1 top-1 h-8 w-8 ${row.frontImage ? 'text-green-600' : 'text-muted-foreground hover:text-primary'}`}
+                              className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${row.frontImage ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
                               onClick={() => handleImageUpload(row.id, 'front')}
                               title={row.frontImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
                             >
-                              <ImagePlus className="h-4 w-4" />
+                              <ImagePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </Button>
                           </div>
-                          {row.frontImage && (
-                            <div className="text-[10px] text-green-600 truncate px-1 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                              {row.frontImage.name}
-                            </div>
-                          )}
                         </div>
 
-                        <div className="space-y-1.5">
-                          <div className="relative">
-                            <Input
-                              value={row.back}
-                              onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
-                              placeholder="ความหมาย (ด้านหลัง)"
-                              className="pr-8 h-10 bg-background/50 focus:bg-background transition-colors"
-                            />
+                        <div className="relative group/input">
+                          <Input
+                            value={row.back}
+                            onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
+                            placeholder="ความหมาย (ด้านหลัง)"
+                            className="pr-10 h-10 sm:h-11 rounded-full bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 transition-all font-medium text-sm sm:text-base"
+                          />
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                            {row.backImage && (
+                              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden border border-border">
+                                <img
+                                  src={URL.createObjectURL(row.backImage)}
+                                  alt="Back"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
-                              className={`absolute right-1 top-1 h-8 w-8 ${row.backImage ? 'text-green-600' : 'text-muted-foreground hover:text-primary'}`}
+                              className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${row.backImage ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
                               onClick={() => handleImageUpload(row.id, 'back')}
                               title={row.backImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
                             >
-                              <ImagePlus className="h-4 w-4" />
+                              <ImagePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </Button>
                           </div>
-                          {row.backImage && (
-                            <div className="text-[10px] text-green-600 truncate px-1 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                              {row.backImage.name}
-                            </div>
-                          )}
                         </div>
                       </div>
 
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-muted-foreground hover:text-destructive h-10 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="hidden sm:flex text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-9 w-9 rounded-full opacity-0 group-hover:opacity-100 transition-all"
                         onClick={() => handleRemoveFlashcardRow(row.id)}
                         disabled={flashcardRows.length === 1}
                       >
-                        <X className="h-4 w-4" />
+                        <Trash className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}

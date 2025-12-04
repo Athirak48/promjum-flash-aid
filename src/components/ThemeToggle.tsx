@@ -33,6 +33,10 @@ export function ThemeToggle() {
           <Flame className="mr-2 h-4 w-4" />
           Warm
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("christmas")}>
+          <span className="mr-2 text-lg leading-none">❄️</span>
+          Christmas
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

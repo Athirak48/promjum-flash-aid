@@ -324,16 +324,19 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
 
       <div className="relative z-10 h-full flex flex-col">
         {/* Top Bar */}
-        <div className="flex items-center justify-between mb-4 md:mb-6 px-2 pt-4 relative">
-          {/* Left: Back Button & Progress Label */}
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={onClose} className="h-10 w-10 rounded-xl bg-white dark:bg-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
-              <ArrowLeft className="h-5 w-5" />
+        <div className="flex items-center justify-between mb-4 md:mb-6 px-3 pt-4 gap-2">
+          {/* Left: Back Button & Progress */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            <Button variant="ghost" onClick={onClose} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white dark:bg-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex-shrink-0">
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
 
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">ความคืบหน้า</span>
-              <div className="h-1.5 w-[30vw] rounded-full bg-white dark:bg-slate-800 overflow-hidden">
+            <div className="flex flex-col gap-0.5 sm:gap-1 flex-1 max-w-[120px] sm:max-w-[200px]">
+              <div className="flex items-center justify-between text-[10px] sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+                <span className="hidden sm:inline">ความคืบหน้า</span>
+                <span>{masteredCards.length} / {totalCards}</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-white dark:bg-slate-800 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-primary transition-all duration-300 ease-in-out"
                   style={{ width: `${(masteredCards.length / totalCards) * 100}%` }}
@@ -342,29 +345,24 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
             </div>
           </div>
 
-          {/* Center: Count */}
-          <div className="absolute left-1/2 -translate-x-1/2 font-medium text-slate-500 dark:text-slate-400">
-            {masteredCards.length} / {totalCards}
-          </div>
-
-          {/* Stats Section */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 bg-green-100 dark:bg-green-900/30 px-3 py-1.5 rounded-full">
+          {/* Right: Stats Section */}
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+            <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full">
               <div className="bg-green-500 rounded-full p-0.5">
-                <Check className="h-3 w-3 text-white" />
+                <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
               </div>
-              <span className="font-bold text-green-700 dark:text-green-400">{rememberedCount}</span>
+              <span className="font-bold text-xs sm:text-sm text-green-700 dark:text-green-400">{rememberedCount}</span>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-red-100 dark:bg-red-900/30 px-3 py-1.5 rounded-full">
+            <div className="flex items-center gap-1 bg-red-100 dark:bg-red-900/30 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full">
               <div className="bg-red-500 rounded-full p-0.5">
-                <X className="h-3 w-3 text-white" />
+                <X className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
               </div>
-              <span className="font-bold text-red-700 dark:text-red-400">{needPracticeCount}</span>
+              <span className="font-bold text-xs sm:text-sm text-red-700 dark:text-red-400">{needPracticeCount}</span>
             </div>
 
-            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600">
-              <MoreHorizontal className="h-6 w-6" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 text-slate-400 hover:text-slate-600">
+              <MoreHorizontal className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
           </div>
         </div>

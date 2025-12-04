@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'dark' | 'light' | 'warm' | 'system';
+type Theme = 'dark' | 'light' | 'warm' | 'christmas' | 'system';
 
 interface ThemeContextType {
   theme: Theme;
@@ -25,7 +25,7 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove('light', 'dark', 'warm');
+    root.classList.remove('light', 'dark', 'warm', 'christmas');
 
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches

@@ -8,6 +8,7 @@ import { useFlashcards } from '@/hooks/useFlashcards';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DailyDeckQuickStartProps {
   streak?: number;
@@ -25,6 +26,7 @@ export function DailyDeckQuickStart({
   const [showGameSelection, setShowGameSelection] = useState(false);
   const { flashcards } = useFlashcards();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // Mock flashcards data for fallback
   const getMockFlashcards = (): Array<{ id: string; front: string; back: string; upload_id?: string }> => [
@@ -148,8 +150,8 @@ export function DailyDeckQuickStart({
 
     if (cards.length === 0) {
       toast({
-        title: "ไม่มีคำศัพท์",
-        description: "กรุณาเพิ่มคำศัพท์หรือตั้งเวลาทบทวนก่อน",
+        title: t('dashboard.noCards'),
+        description: t('dashboard.noCardsDesc'),
         variant: "destructive"
       });
       return;
@@ -173,8 +175,8 @@ export function DailyDeckQuickStart({
 
     if (cards.length === 0) {
       toast({
-        title: "ไม่มีคำศัพท์",
-        description: "กรุณาเพิ่มคำศัพท์หรือตั้งเวลาทบทวนก่อน",
+        title: t('dashboard.noCards'),
+        description: t('dashboard.noCardsDesc'),
         variant: "destructive"
       });
       return;
@@ -195,15 +197,15 @@ export function DailyDeckQuickStart({
     <Card className="bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 h-full p-2">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-            <Flame className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+            <Flame className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-purple-600 dark:text-purple-400">
-              ความก้าวหน้าต่อเนื่อง
+            <h3 className="text-xl font-bold text-primary">
+              {t('dashboard.continuousProgress')}
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              สถิติการเรียนของคุณวันนี้
+              {t('dashboard.learningStats')}
             </p>
           </div>
         </div>
@@ -215,31 +217,31 @@ export function DailyDeckQuickStart({
           <div className="bg-[#FFE5D9] dark:bg-orange-900/20 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 min-h-[120px]">
             <Flame className="w-6 h-6 text-[#FF5722]" />
             <div className="text-3xl font-bold text-slate-800 dark:text-slate-200">{streak}</div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">วันติดต่อกัน</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">{t('dashboard.streak')}</div>
           </div>
 
           {/* Total XP */}
           <div className="bg-[#FFF4DE] dark:bg-yellow-900/20 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 min-h-[120px]">
             <Star className="w-6 h-6 text-[#FFC107]" />
             <div className="text-3xl font-bold text-slate-800 dark:text-slate-200">{totalXP.toLocaleString()}</div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">XP ทั้งหมด</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">{t('dashboard.totalXP')}</div>
           </div>
 
           {/* Words Today */}
           <div className="bg-[#E8DEF8] dark:bg-purple-900/20 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 min-h-[120px]">
             <BookOpen className="w-6 h-6 text-[#9C27B0]" />
             <div className="text-3xl font-bold text-slate-800 dark:text-slate-200">{wordsLearnedToday}</div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">คำวันนี้</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">{t('dashboard.wordsToday')}</div>
           </div>
         </div>
 
         {/* Review Button */}
         <Button
           onClick={() => setShowModeDialog(true)}
-          className="w-full bg-[#A020F0] hover:bg-[#8e1cd6] text-white rounded-2xl h-14 text-lg font-bold shadow-md hover:shadow-lg transition-all"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl h-14 text-lg font-bold shadow-md hover:shadow-lg transition-all"
         >
           <Play className="w-5 h-5 mr-2 fill-current" />
-          ทบทวนทันที
+          {t('dashboard.reviewNow')}
         </Button>
 
         {/* Mode Selection Dialog */}
@@ -247,7 +249,7 @@ export function DailyDeckQuickStart({
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold text-center mb-2">
-                🎯 เลือกโหมดการเรียนรู้
+                🎯 {t('dashboard.selectMode')}
               </DialogTitle>
             </DialogHeader>
 
@@ -262,9 +264,9 @@ export function DailyDeckQuickStart({
                     <Brain className="h-10 w-10 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">ทบทวน</h3>
+                    <h3 className="text-xl font-bold mb-2">{t('dashboard.reviewMode')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      ทบทวนคำศัพท์แบบพลิกการ์ด
+                      {t('dashboard.reviewModeDesc')}
                     </p>
                   </div>
                 </CardContent>
@@ -280,9 +282,9 @@ export function DailyDeckQuickStart({
                     <GamepadIcon className="h-10 w-10 text-pink-600 dark:text-pink-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">เล่นเกม</h3>
+                    <h3 className="text-xl font-bold mb-2">{t('dashboard.gameMode')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      เรียนรู้ผ่านเกมสนุกๆ
+                      {t('dashboard.gameModeDesc')}
                     </p>
                   </div>
                 </CardContent>

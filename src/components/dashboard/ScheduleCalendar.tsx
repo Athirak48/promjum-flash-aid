@@ -415,7 +415,7 @@ export function ScheduleCalendar() {
     return (
         <div className="h-full flex flex-col gap-6 p-6 bg-background/50">
             {/* Header Row 1: Title and Main Action */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full">
+            <div className="flex flex-row items-center justify-between gap-4 w-full flex-wrap sm:flex-nowrap">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-purple-100/50 rounded-2xl text-purple-600 shadow-sm border border-purple-100">
                         <CalendarIcon className="w-6 h-6" />
@@ -425,10 +425,10 @@ export function ScheduleCalendar() {
                         <p className="text-muted-foreground text-sm font-medium">จัดการเวลาเรียนรู้ของคุณ</p>
                     </div>
                 </div>
-                <div className="w-full md:w-auto flex justify-end">
+                <div className="w-full sm:w-auto flex justify-end">
                     <Button
                         onClick={() => setIsReviewDialogOpen(true)}
-                        className="bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-300 rounded-xl"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 rounded-xl"
                     >
                         <Clock className="w-4 h-4 mr-2" />
                         ตั้งเวลาทบทวน
@@ -437,58 +437,59 @@ export function ScheduleCalendar() {
             </div>
 
             {/* Header Row 2: Controls */}
-            <div className="flex flex-wrap items-center justify-end gap-3 w-full">
-                <div className="flex flex-wrap items-center justify-end gap-3 w-full sm:w-auto">
-                    {/* View Switcher */}
-                    <div className="bg-card p-1 rounded-2xl border shadow-sm flex items-center gap-1 overflow-x-auto max-w-full">
-                        {(['day', 'week', 'month', 'year'] as const).map((mode) => (
-                            <button
-                                key={mode}
-                                onClick={() => setViewMode(mode)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200",
-                                    viewMode === mode
-                                        ? "bg-purple-100 text-purple-700 shadow-sm"
-                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                {mode === 'day' && 'วัน'}
-                                {mode === 'week' && 'สัปดาห์'}
-                                {mode === 'month' && 'เดือน'}
-                                {mode === 'year' && 'ปี'}
-                            </button>
-                        ))}
-                    </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-4 w-full">
+                {/* Left Column: Empty for spacing (hidden on mobile) */}
+                <div className="hidden sm:block"></div>
 
-                    {/* Date Picker / Navigation */}
-                    <div className="flex items-center gap-2 bg-pink-50/50 p-1 pr-3 rounded-2xl border border-pink-100/50 shadow-sm">
-                        <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-xl" onClick={() => handleNavigate('prev')}>
-                                <ChevronLeft className="w-4 h-4" />
-                            </Button>
+                {/* Center Column: View Switcher - Centered */}
+                <div className="sm:justify-self-center bg-card p-1 rounded-2xl border shadow-sm grid grid-cols-4 gap-1 w-full max-w-[320px]">
+                    {(['day', 'week', 'month', 'year'] as const).map((mode) => (
+                        <button
+                            key={mode}
+                            onClick={() => setViewMode(mode)}
+                            className={cn(
+                                "px-2 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 w-full text-center",
+                                viewMode === mode
+                                    ? "bg-purple-100 text-purple-700 shadow-sm"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            )}
+                        >
+                            {mode === 'day' && 'วัน'}
+                            {mode === 'week' && 'สัปดาห์'}
+                            {mode === 'month' && 'เดือน'}
+                            {mode === 'year' && 'ปี'}
+                        </button>
+                    ))}
+                </div>
 
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="ghost" className="h-8 px-3 text-pink-700 hover:bg-pink-100 hover:text-pink-800 font-semibold text-sm rounded-xl">
-                                        <CalendarIcon className="w-3.5 h-3.5 mr-2 opacity-70" />
-                                        {format(selectedDate, 'd MMMM yyyy', { locale: th })}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={selectedDate}
-                                        onSelect={(date) => date && setSelectedDate(date)}
-                                        initialFocus
-                                        className="p-3 pointer-events-auto"
-                                    />
-                                </PopoverContent>
-                            </Popover>
+                {/* Right Column: Date Picker / Navigation - Right */}
+                <div className="sm:justify-self-end flex items-center gap-2 bg-pink-50/50 p-1 pr-3 rounded-2xl border border-pink-100/50 shadow-sm w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="flex items-center gap-1 w-full sm:w-auto justify-between sm:justify-start">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-xl" onClick={() => handleNavigate('prev')}>
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
 
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-xl" onClick={() => handleNavigate('next')}>
-                                <ChevronRight className="w-4 h-4" />
-                            </Button>
-                        </div>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" className="h-8 px-3 text-pink-700 hover:bg-pink-100 hover:text-pink-800 font-semibold text-sm rounded-xl flex-1 sm:flex-none justify-center">
+                                    <CalendarIcon className="w-3.5 h-3.5 mr-2 opacity-70" />
+                                    {format(selectedDate, 'd MMMM yyyy', { locale: th })}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                                <Calendar
+                                    mode="single"
+                                    selected={selectedDate}
+                                    onSelect={(date) => date && setSelectedDate(date)}
+                                    initialFocus
+                                    className="p-3 pointer-events-auto"
+                                />
+                            </PopoverContent>
+                        </Popover>
+
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-xl" onClick={() => handleNavigate('next')}>
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
                     </div>
                 </div>
             </div>
