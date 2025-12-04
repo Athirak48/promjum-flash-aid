@@ -1,0 +1,89 @@
+{
+    "nav": {
+        "home": "Home",
+        "features": "Features",
+        "pricing": "Pricing",
+        "about": "About Us",
+        "dashboard": "Dashboard",
+        "flashcards": "Flashcards",
+        "marketcard": "Marketplace",
+        "feedback": "Feedback",
+        "profile": "Profile",
+        "login": "Login",
+        "signup": "Get Started Free",
+        "logout": "Logout"
+    },
+    "flashcards": {
+        "title": "Personal Flashcard Library",
+        "description": "Manage and review your flashcards",
+        "search": "Search flashcard sets...",
+        "createFolder": "Create Folder",
+        "createFlashcard": "Create Flashcard",
+        "folderName": "Folder Name",
+        "enterFolderName": "Enter folder name...",
+        "cancel": "Cancel",
+        "create": "Create",
+        "review": "Review",
+        "playGame": "Play Game",
+        "cards": "cards",
+        "progress": "Progress",
+        "lastReviewed": "Last Reviewed",
+        "nextReview": "Next Review",
+        "noSets": "No flashcard sets found",
+        "noSetsDesc": "Start creating your first flashcard set",
+        "noSearchResults": "Try changing your search or filters"
+    },
+    "filter": {
+        "all": "All",
+        "created": "Created",
+        "uploaded": "From File",
+        "marketcard": "From Marketcard"
+    },
+    "source": {
+        "created": "Created",
+        "uploaded": "From File",
+        "marketcard": "From Marketcard"
+    },
+    "feedback": {
+        "title": "Send Feedback",
+        "description": "We want to hear your thoughts to make Promjum even better",
+        "message": "Message",
+        "placeholder": "Share your thoughts, suggestions, or issues...",
+        "send": "Send Feedback",
+        "success": "Feedback sent successfully",
+        "successDesc": "Thank you for your feedback. We'll use it to improve our system.",
+        "error": "An error occurred",
+        "errorDesc": "Could not send feedback. Please try again."
+    },
+    "common": {
+        "loading": "Loading...",
+        "search": "Search",
+        "filter": "Filter",
+        "sort": "Sort",
+        "name": "Name",
+        "date": "Date",
+        "type": "Type",
+        "edit": "Edit",
+        "move": "Move",
+        "delete": "Delete",
+        "rename": "Rename",
+        "folders": "Folders",
+        "sets": "Sets",
+        "unorganized": "Unorganized"
+    },
+    "dashboard": {
+        "continuousProgress": "Continuous Progress",
+        "learningStats": "Your learning statistics today",
+        "streak": "Day Streak",
+        "totalXP": "Total XP",
+        "wordsToday": "Words Today",
+        "reviewNow": "Review Now",
+        "selectMode": "Select Learning Mode",
+        "reviewMode": "Review",
+        "reviewModeDesc": "Review flashcards by flipping",
+        "gameMode": "Play Games",
+        "gameModeDesc": "Learn through fun games",
+        "noCards": "No Flashcards",
+        "noCardsDesc": "Please add flashcards or schedule a review first"
+    }
+}

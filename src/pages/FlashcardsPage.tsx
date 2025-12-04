@@ -687,8 +687,8 @@ export default function FlashcardsPage() {
                       </div>
                     </div>
 
-                    {/* Headers */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Headers - Hidden on mobile, shown on desktop */}
+                    <div className="hidden md:grid grid-cols-2 gap-4 px-4 mb-2">
                       <div>
                         <Label className="text-sm font-medium text-muted-foreground">ด้านหน้า</Label>
                       </div>
@@ -699,67 +699,96 @@ export default function FlashcardsPage() {
 
                     {/* Flashcard Rows */}
                     <div className="space-y-4">
-                      {flashcardRows.map((row) => (
-                        <div key={row.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                          {/* Front Side */}
-                          <div className="relative">
-                            <Textarea
-                              placeholder="ใส่ข้อความด้านหน้า…"
-                              value={row.front}
-                              onChange={e => handleFlashcardTextChange(row.id, 'front', e.target.value)}
-                              className="min-h-[100px] pr-10 resize-none focus:ring-2 focus:ring-primary/20 border-muted-foreground/20 rounded-lg"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-primary"
-                              onClick={() => handleImageUpload(row.id, 'front')}
-                            >
-                              <ImagePlus className="h-4 w-4" />
-                            </Button>
-                            {row.frontImage && (
-                              <div className="absolute top-2 left-2 text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
-                                รูปภาพแนบแล้ว
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Back Side */}
-                          <div className="relative">
-                            <Textarea
-                              placeholder="ใส่ข้อความด้านหลัง…"
-                              value={row.back}
-                              onChange={e => handleFlashcardTextChange(row.id, 'back', e.target.value)}
-                              className="min-h-[100px] pr-10 resize-none focus:ring-2 focus:ring-primary/20 border-muted-foreground/20 rounded-lg"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-primary"
-                              onClick={() => handleImageUpload(row.id, 'back')}
-                            >
-                              <ImagePlus className="h-4 w-4" />
-                            </Button>
-                            {row.backImage && (
-                              <div className="absolute top-2 left-2 text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
-                                รูปภาพแนบแล้ว
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Delete Button */}
-                          {flashcardRows.length > 1 && (
-                            <div className="md:col-span-2 flex justify-end">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveFlashcardRow(row.id)}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash className="h-4 w-4" />
-                              </Button>
+                      {flashcardRows.map((row, index) => (
+                        <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-xl bg-card hover:shadow-md transition-all duration-200 relative">
+                          <div className="flex items-center justify-between w-full sm:w-auto sm:justify-center">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 sm:bg-transparent">
+                              <span className="text-sm sm:text-lg font-semibold text-muted-foreground/70">
+                                {index + 1}
+                              </span>
                             </div>
-                          )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="sm:hidden text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-8 w-8 rounded-full"
+                              onClick={() => handleRemoveFlashcardRow(row.id)}
+                              disabled={flashcardRows.length === 1}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full">
+                            {/* Front Side */}
+                            <div className="relative group/input">
+                              <Input
+                                value={row.front}
+                                onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
+                                placeholder="คำศัพท์ (ด้านหน้า)"
+                                className="pr-10 h-10 sm:h-11 rounded-full bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 transition-all font-medium text-sm sm:text-base"
+                              />
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                {row.frontImage && (
+                                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden border border-border">
+                                    <img
+                                      src={URL.createObjectURL(row.frontImage)}
+                                      alt="Front"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${row.frontImage ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
+                                  onClick={() => handleImageUpload(row.id, 'front')}
+                                  title={row.frontImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
+                                >
+                                  <ImagePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Back Side */}
+                            <div className="relative group/input">
+                              <Input
+                                value={row.back}
+                                onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
+                                placeholder="ความหมาย (ด้านหลัง)"
+                                className="pr-10 h-10 sm:h-11 rounded-full bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 transition-all font-medium text-sm sm:text-base"
+                              />
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                {row.backImage && (
+                                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden border border-border">
+                                    <img
+                                      src={URL.createObjectURL(row.backImage)}
+                                      alt="Back"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${row.backImage ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
+                                  onClick={() => handleImageUpload(row.id, 'back')}
+                                  title={row.backImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
+                                >
+                                  <ImagePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hidden sm:flex text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-9 w-9 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                            onClick={() => handleRemoveFlashcardRow(row.id)}
+                            disabled={flashcardRows.length === 1}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
                         </div>
                       ))}
                     </div>
