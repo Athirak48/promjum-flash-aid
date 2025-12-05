@@ -106,7 +106,7 @@ export default function AdminMembers() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-sm"
           />
-          
+
           <div className="border rounded-lg">
             <Table>
               <TableHeader>
@@ -115,6 +115,8 @@ export default function AdminMembers() {
                   <TableHead>อีเมล</TableHead>
                   <TableHead>เบอร์โทร</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Pretest</TableHead>
+                  <TableHead>Posttest</TableHead>
                   <TableHead>วันที่สมัคร</TableHead>
                   <TableHead>การกระทำ</TableHead>
                 </TableRow>
@@ -122,7 +124,7 @@ export default function AdminMembers() {
               <TableBody>
                 {filteredMembers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       ไม่พบข้อมูลสมาชิก
                     </TableCell>
                   </TableRow>
@@ -139,6 +141,8 @@ export default function AdminMembers() {
                           {getRoleLabel(member.role)}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-center">-</TableCell>
+                      <TableCell className="text-center">-</TableCell>
                       <TableCell>
                         {new Date(member.created_at).toLocaleDateString('th-TH', {
                           year: 'numeric',
@@ -148,13 +152,13 @@ export default function AdminMembers() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
                             onClick={() => {
-                              setSelectedUser({ 
-                                userId: member.user_id, 
-                                email: member.email || 'ไม่มีอีเมล' 
+                              setSelectedUser({
+                                userId: member.user_id,
+                                email: member.email || 'ไม่มีอีเมล'
                               });
                               setShowFlashcardsDialog(true);
                             }}

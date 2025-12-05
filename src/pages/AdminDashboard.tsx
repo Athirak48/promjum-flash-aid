@@ -3,12 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Users, 
-  CreditCard, 
-  FileText, 
-  BarChart3, 
-  Settings, 
+import {
+  Users,
+  CreditCard,
+  FileText,
+  BarChart3,
+  Settings,
   AlertTriangle,
   TrendingUp,
   Shield
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
                     จัดการ
                   </Button>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <h4 className="font-medium">ความปลอดภัย</h4>

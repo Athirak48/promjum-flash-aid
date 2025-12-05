@@ -42,6 +42,7 @@ import AdminSubDeckDetail from "./pages/admin/AdminSubDeckDetail";
 import AdminMembers from "./pages/admin/AdminMembers";
 import AdminPromotions from "./pages/admin/AdminPromotions";
 import AdminFeedback from "./pages/admin/AdminFeedback";
+import AdminNotification from "./pages/admin/AdminNotification";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +120,7 @@ const App = () => {
                     <Route path="decks" element={<AdminDecks />} />
                     <Route path="members" element={<AdminMembers />} />
                     <Route path="promotions" element={<AdminPromotions />} />
+                    <Route path="notification" element={<AdminNotification />} />
                     <Route path="feedback" element={<AdminFeedback />} />
                   </Route>
                   <Route
