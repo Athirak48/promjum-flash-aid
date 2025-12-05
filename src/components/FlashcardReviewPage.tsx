@@ -69,11 +69,17 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
 
     // Track attempt counts for each card (for SRS scoring)
     const attemptCounts = useRef<Map<string, number>>(new Map());
+    
+    // Timer for tracking time spent on each card
+    const cardStartTime = useRef<number>(Date.now());
+    const cardTimings = useRef<Map<string, number>>(new Map());
     const missedCardIds = useRef<Set<string>>(new Set());
 
-    // Reset x motion value when current index changes
+    // Reset x motion value and start timer when current index changes
     useEffect(() => {
         x.set(0);
+        // Reset timer for new card
+        cardStartTime.current = Date.now();
     }, [currentIndex, x]);
 
     // Save progress when review is completed
@@ -169,9 +175,18 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
     const handleKnow = async (knows: boolean) => {
         const currentCard = reviewQueue[currentIndex];
 
+        // Calculate time spent on this card
+        const timeSpentMs = Date.now() - cardStartTime.current;
+        const timeSpentSeconds = Math.round(timeSpentMs / 1000);
+        
         // Track attempt count for this card
         const currentAttempts = attemptCounts.current.get(currentCard.id) || 0;
         attemptCounts.current.set(currentCard.id, currentAttempts + 1);
+        
+        // Store timing for first attempt only
+        if (currentAttempts === 0) {
+            cardTimings.current.set(currentCard.id, timeSpentSeconds);
+        }
 
         // Show feedback first
         setShowSwipeFeedback(knows ? 'right' : 'left');
@@ -190,12 +205,11 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
 
         setSwipeDirection(knows ? 'right' : 'left');
 
-        // Update SRS when user remembers the card
-        if (knows) {
-            const attemptCount = attemptCounts.current.get(currentCard.id) || 1;
-            // Q=5 if first attempt, Q=0 if cycled back (attempt > 1)
-            await updateFromFlashcardReview(currentCard.id, true, attemptCount);
-        }
+        // Update SRS based on new scoring:
+        // Q=4: Correct first attempt ≤10s | Q=2: Correct first attempt >10s | Q=1: Correct subsequent | Q=0: Wrong
+        const attemptCount = attemptCounts.current.get(currentCard.id) || 1;
+        const firstAttemptTime = cardTimings.current.get(currentCard.id) ?? timeSpentSeconds;
+        await updateFromFlashcardReview(currentCard.id, knows, attemptCount, firstAttemptTime);
 
         // Hide feedback and move to next card after delay
         setTimeout(() => {
@@ -265,6 +279,8 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
         setIsCompleted(false);
         missedCardIds.current.clear();
         attemptCounts.current.clear();
+        cardTimings.current.clear();
+        cardStartTime.current = Date.now();
         x.set(0);
     };
 
@@ -278,6 +294,9 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
             setProgress({ correct: 0, incorrect: 0 });
             setIsCompleted(false);
             missedCardIds.current.clear();
+            attemptCounts.current.clear();
+            cardTimings.current.clear();
+            cardStartTime.current = Date.now();
             x.set(0);
         }
     };

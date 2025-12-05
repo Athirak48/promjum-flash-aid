@@ -111,15 +111,17 @@ export function useSRSProgress() {
   }, [updateFlashcardSRS]);
 
   /**
-   * Update SRS from Flashcard Review (default: user flashcards)
+   * Update SRS from Flashcard Review with timing (default: user flashcards)
+   * Q=4: Correct first attempt ≤10s | Q=2: Correct first attempt >10s | Q=1: Correct subsequent | Q=0: Wrong
    */
   const updateFromFlashcardReview = useCallback(async (
     flashcardId: string,
     isCorrect: boolean,
     attemptCount: number,
+    timeSpentSeconds?: number,
     isUserFlashcard: boolean = true
   ) => {
-    const quality = getFlashcardReviewQuality(isCorrect, attemptCount);
+    const quality = getFlashcardReviewQuality(isCorrect, attemptCount, timeSpentSeconds);
     return updateFlashcardSRS(flashcardId, quality, isUserFlashcard);
   }, [updateFlashcardSRS]);
 
