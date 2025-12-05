@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, ChevronDown, Bell, CheckCircle, PenTool, Mic, Video, Music, Star, Heart, Zap, Coffee, Sun, Moon, X, Trash2, LucideIcon, Trophy, Flame, TrendingUp, CalendarDays, Plus, ChevronLeft, ChevronRight, ChevronsUpDown, Check, Brain, GraduationCap, Lightbulb, Puzzle, Timer, Layers, FileText, Award, Repeat, Bookmark } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, ChevronDown, Bell, CheckCircle, PenTool, Mic, Video, Music, Star, Heart, Zap, Coffee, Sun, Moon, X, Trash2, LucideIcon, Trophy, Flame, TrendingUp, CalendarDays, Plus, ChevronLeft, ChevronRight, ChevronsUpDown, Check, Brain, GraduationCap, Lightbulb, Puzzle, Timer, Layers, FileText, Award, Repeat, Bookmark, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { TimePicker } from './TimePicker';
 import { DurationPicker } from './DurationPicker';
 import { DatePicker } from './DatePicker';
+import { AutoReviewDialog } from './AutoReviewDialog';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
 import { th } from 'date-fns/locale';
@@ -134,6 +135,11 @@ export function ScheduleCalendar() {
     const [selectedSetId, setSelectedSetId] = useState<string>("");
     const [libraryVocabulary, setLibraryVocabulary] = useState<Flashcard[]>([]);
     const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
+
+    // Auto Review State
+    const [autoReviewConfig, setAutoReviewConfig] = useState<{ mode: 'today' | 'tomorrow' | null, isOpen: boolean }>({ mode: null, isOpen: false });
+    const [autoReviewTargetCount, setAutoReviewTargetCount] = useState<number>(0);
+    const [isAutoGenerating, setIsAutoGenerating] = useState<boolean>(false);
 
     // Recommended State
     const [recommendedCards, setRecommendedCards] = useState<Flashcard[]>([]);
@@ -272,33 +278,254 @@ export function ScheduleCalendar() {
                 setLibraryVocabulary(mappedData);
             }
             setIsLoadingLibrary(false);
-            const mappedSchedule: DaySchedule[] = [];
+        }
+        fetchVocab();
+    }, [selectedSetId]);
 
-            reviews.forEach(review => {
-                const date = new Date(review.scheduled_date);
-                const dayIndex = date.getDay();
+    // Update Schedule Data when reviews change
+    useEffect(() => {
+        const mappedSchedule: DaySchedule[] = [];
 
-                const activity: Activity = {
-                    id: review.id,
-                    type: 'vocabulary' as Activity['type'],
-                    time: review.scheduled_time.substring(0, 5),
-                    duration: 30,
-                    title: 'Review Session',
-                    icon: BookOpen,
-                    color: 'blue'
-                };
+        reviews.forEach(review => {
+            const date = new Date(review.scheduled_date);
+            const dayIndex = date.getDay();
 
-                const existingDay = mappedSchedule.find(d => d.dayIndex === dayIndex);
-                if (existingDay) {
-                    existingDay.activities.push(activity);
-                } else {
-                    mappedSchedule.push({ dayIndex, activities: [activity] });
+            const activity: Activity = {
+                id: review.id,
+                type: 'vocabulary' as Activity['type'],
+                time: review.scheduled_time.substring(0, 5),
+                duration: 30,
+                title: 'Review Session',
+                icon: BookOpen,
+                color: 'blue'
+            };
+
+            const existingDay = mappedSchedule.find(d => d.dayIndex === dayIndex);
+            if (existingDay) {
+                existingDay.activities.push(activity);
+            } else {
+                mappedSchedule.push({ dayIndex, activities: [activity] });
+            }
+        });
+
+        setScheduleData(mappedSchedule);
+    }, [reviews]);
+
+    // Auto Review Logic
+    const generateAutoToday = async (count: number) => {
+        try {
+            const count60 = Math.ceil(count * 0.6);
+            const count40 = count - count60;
+
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+
+            // 1. Fetch latest reviewed today
+            const { data: recentReviews } = await supabase
+                .from('user_flashcard_progress')
+                .select('flashcard_id, user_flashcard_id, updated_at')
+                .gte('updated_at', todayStart.toISOString())
+                .order('updated_at', { ascending: false })
+                .limit(count60);
+
+            // 2. Fetch hard words (low retention)
+            const { data: hardWords } = await supabase
+                .from('user_flashcard_progress')
+                .select('flashcard_id, user_flashcard_id, srs_level')
+                .lt('srs_level', 2)
+                .limit(count40);
+
+            const recentSystemIds = recentReviews?.map(r => r.flashcard_id).filter(Boolean) as string[] || [];
+            const recentUserIds = recentReviews?.map(r => r.user_flashcard_id).filter(Boolean) as string[] || [];
+
+            const hardSystemIds = hardWords?.map(r => r.flashcard_id).filter(Boolean) as string[] || [];
+            const hardUserIds = hardWords?.map(r => r.user_flashcard_id).filter(Boolean) as string[] || [];
+
+            const allSystemIds = [...recentSystemIds, ...hardSystemIds];
+            const allUserIds = [...recentUserIds, ...hardUserIds];
+
+            let fetchedCards: Flashcard[] = [];
+
+            if (allSystemIds.length > 0) {
+                const { data: systemCards } = await supabase
+                    .from('flashcards')
+                    .select('*')
+                    .in('id', allSystemIds);
+
+                if (systemCards) {
+                    fetchedCards = [...fetchedCards, ...systemCards.map(c => ({
+                        id: c.id,
+                        front_text: c.front_text,
+                        back_text: c.back_text,
+                        created_at: c.created_at || new Date().toISOString(),
+                        user_id: 'system', // Placeholder
+                        set_id: c.subdeck_id || '',
+                        image_url: undefined // System cards might not have image_url column in this context or different name
+                    }))];
                 }
+            }
+
+            if (allUserIds.length > 0) {
+                const { data: userCards } = await supabase
+                    .from('user_flashcards')
+                    .select('*')
+                    .in('id', allUserIds);
+
+                if (userCards) {
+                    fetchedCards = [...fetchedCards, ...userCards.map(c => ({
+                        id: c.id,
+                        front_text: c.front_text,
+                        back_text: c.back_text,
+                        created_at: c.created_at,
+                        user_id: c.user_id,
+                        set_id: c.flashcard_set_id,
+                        image_url: c.front_image_url || undefined
+                    }))];
+                }
+            }
+
+            // Remove duplicates
+            const uniqueCards = Array.from(new Map(fetchedCards.map(item => [item.id, item])).values());
+
+            setSelectedItems(uniqueCards);
+
+            // Auto-fill details
+            setReviewTitle(`ทบทวน ${format(new Date(), 'd MMM', { locale: th })}`);
+            setReviewIcon(Zap); // Use component reference
+            setReviewColor("bg-purple-100 text-purple-600");
+            setReviewTime("10:00");
+            setReviewDuration(15);
+
+            toast({
+                title: "จัดเตรียมเนื้อหาทบทวนเสร็จสิ้น",
+                description: `คัดเลือก ${uniqueCards.length} คำศัพท์สำหรับวันนี้`,
             });
 
-            setScheduleData(mappedSchedule);
+        } catch (error) {
+            console.error("Auto Today Error:", error);
+            toast({
+                variant: "destructive",
+                title: "เกิดข้อผิดพลาด",
+                description: "ไม่สามารถจัดเตรียมเนื้อหาอัตโนมัติได้",
+            });
+        } finally {
+            setIsAutoGenerating(false);
         }
-    }, [reviews]);
+    };
+
+    const generateAutoTomorrow = async (count: number, setId: string) => {
+        try {
+            const count60 = Math.ceil(count * 0.6);
+            const count40 = count - count60;
+
+            // 1. Fetch new words from selected set
+            const { data: setCards } = await supabase
+                .from('user_flashcards')
+                .select('*, user_flashcard_progress(times_reviewed)')
+                .eq('flashcard_set_id', setId);
+
+            const newCardsRaw = setCards
+                ?.filter(c => !c.user_flashcard_progress?.[0] || c.user_flashcard_progress[0].times_reviewed === 0)
+                .slice(0, count60) || [];
+
+            const newCards: Flashcard[] = newCardsRaw.map(c => ({
+                id: c.id,
+                front_text: c.front_text,
+                back_text: c.back_text,
+                created_at: c.created_at,
+                user_id: c.user_id,
+                set_id: c.flashcard_set_id,
+                image_url: c.front_image_url || undefined
+            }));
+
+            // 2. Fetch hard words (global)
+            const { data: hardWords } = await supabase
+                .from('user_flashcard_progress')
+                .select('flashcard_id, user_flashcard_id, srs_level')
+                .lt('srs_level', 2)
+                .limit(count40);
+
+            const hardSystemIds = hardWords?.map(r => r.flashcard_id).filter(Boolean) as string[] || [];
+            const hardUserIds = hardWords?.map(r => r.user_flashcard_id).filter(Boolean) as string[] || [];
+
+            let hardCards: Flashcard[] = [];
+
+            if (hardSystemIds.length > 0) {
+                const { data: systemCards } = await supabase
+                    .from('flashcards')
+                    .select('*')
+                    .in('id', hardSystemIds);
+
+                if (systemCards) {
+                    hardCards = [...hardCards, ...systemCards.map(c => ({
+                        id: c.id,
+                        front_text: c.front_text,
+                        back_text: c.back_text,
+                        created_at: c.created_at || new Date().toISOString(),
+                        user_id: 'system',
+                        set_id: c.subdeck_id || '',
+                        image_url: undefined
+                    }))];
+                }
+            }
+
+            if (hardUserIds.length > 0) {
+                const { data: userCards } = await supabase
+                    .from('user_flashcards')
+                    .select('*')
+                    .in('id', hardUserIds);
+
+                if (userCards) {
+                    hardCards = [...hardCards, ...userCards.map(c => ({
+                        id: c.id,
+                        front_text: c.front_text,
+                        back_text: c.back_text,
+                        created_at: c.created_at,
+                        user_id: c.user_id,
+                        set_id: c.flashcard_set_id,
+                        image_url: c.front_image_url || undefined
+                    }))];
+                }
+            }
+
+            const allCards = [...newCards, ...hardCards];
+            const uniqueCards = Array.from(new Map(allCards.map(item => [item.id, item])).values());
+
+            setSelectedItems(uniqueCards);
+
+            setReviewTitle(`ทบทวน ${format(addDays(new Date(), 1), 'd MMM', { locale: th })}`);
+            setReviewIcon(CalendarDays);
+            setReviewColor("bg-orange-100 text-orange-600");
+            setReviewTime("10:00");
+            setReviewDuration(15);
+
+            toast({
+                title: "จัดเตรียมเนื้อหาทบทวนเสร็จสิ้น",
+                description: `คัดเลือก ${uniqueCards.length} คำศัพท์สำหรับวันพรุ่งนี้`,
+            });
+
+        } catch (error) {
+            console.error("Auto Tomorrow Error:", error);
+            toast({
+                variant: "destructive",
+                title: "เกิดข้อผิดพลาด",
+                description: "ไม่สามารถจัดเตรียมเนื้อหาอัตโนมัติได้",
+            });
+        } finally {
+            setIsAutoGenerating(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isAutoGenerating && autoReviewConfig.mode === 'tomorrow' && selectedSetId) {
+            generateAutoTomorrow(autoReviewTargetCount, selectedSetId);
+        }
+    }, [selectedSetId, isAutoGenerating, autoReviewConfig.mode, autoReviewTargetCount]);
+
+    const handleAutoClick = (mode: 'today' | 'tomorrow') => {
+        setAutoReviewConfig({ mode, isOpen: true });
+        setReviewDate(mode === 'today' ? new Date() : addDays(new Date(), 1));
+    };
 
     const getDaysToRender = () => {
         if (viewMode === 'day') {
@@ -794,11 +1021,31 @@ export function ScheduleCalendar() {
 
             <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
                 <DialogContent className="max-w-4xl h-[75vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border-none shadow-2xl">
-                    <DialogHeader className="px-5 py-3 border-b bg-white flex-shrink-0">
+                    <DialogHeader className="px-5 py-3 border-b bg-white flex-shrink-0 relative">
                         <DialogTitle className="text-lg font-bold flex items-center gap-2 text-gray-800">
                             <Clock className="w-5 h-5 text-purple-600" />
                             ตั้งเวลาทบทวนคำศัพท์
                         </DialogTitle>
+                        <div className="absolute right-12 top-3 flex gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 px-4 text-sm rounded-full bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all font-medium shadow-sm gap-1.5"
+                                onClick={() => handleAutoClick('today')}
+                            >
+                                <Zap className="w-3.5 h-3.5" />
+                                Auto วันนี้
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 px-4 text-sm rounded-full bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all font-medium shadow-sm gap-1.5"
+                                onClick={() => handleAutoClick('tomorrow')}
+                            >
+                                <CalendarDays className="w-3.5 h-3.5" />
+                                Auto พรุ่งนี้
+                            </Button>
+                        </div>
                     </DialogHeader>
 
                     <div className="flex-1 overflow-hidden bg-gray-50/30">
@@ -983,43 +1230,112 @@ export function ScheduleCalendar() {
                                         </TabsContent>
 
                                         <TabsContent value="library" className="h-full m-0 absolute inset-0">
-                                            <ScrollArea className="h-full">
-                                                <div className="p-2">
-                                                    <div className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">คำศัพท์ทั้งหมด</div>
-                                                    <div className="space-y-1 p-1">
-                                                        {flashcards.map((card) => (
-                                                            <div
-                                                                key={card.id}
-                                                                className={cn(
-                                                                    "flex items-center gap-3 p-2 rounded-lg border transition-all cursor-pointer hover:bg-gray-50",
-                                                                    selectedItems.some(i => i.id === card.id)
-                                                                        ? "bg-purple-50 border-purple-200 shadow-sm"
-                                                                        : "bg-white border-transparent hover:border-gray-200"
-                                                                )}
-                                                                onClick={() => {
-                                                                    setSelectedItems(prev =>
-                                                                        prev.some(i => i.id === card.id)
-                                                                            ? prev.filter(i => i.id !== card.id)
-                                                                            : [...prev, card]
-                                                                    );
+                                            <div className="flex flex-col h-full">
+                                                {/* Filter Section */}
+                                                <div className="p-3 bg-white border-b space-y-3 z-10 relative">
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] text-muted-foreground font-medium">โฟลเดอร์ของฉัน</Label>
+                                                            <Select
+                                                                value={selectedFolderId}
+                                                                onValueChange={(value) => {
+                                                                    setSelectedFolderId(value);
+                                                                    setSelectedSetId(""); // Reset set when folder changes
                                                                 }}
                                                             >
-                                                                <Checkbox
-                                                                    checked={selectedItems.some(i => i.id === card.id)}
-                                                                    onCheckedChange={() => { }}
-                                                                    className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 w-4 h-4"
-                                                                />
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className={cn("text-xs font-medium truncate", selectedItems.some(i => i.id === card.id) ? "text-purple-900" : "text-gray-700")}>
-                                                                        {card.front_text}
-                                                                    </p>
-                                                                    <p className="text-[10px] text-gray-500 truncate">{card.back_text}</p>
-                                                                </div>
-                                                            </div>
-                                                        ))}
+                                                                <SelectTrigger className="h-8 text-xs bg-gray-50/50 border-gray-200">
+                                                                    <SelectValue placeholder="เลือกโฟลเดอร์" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {userFolders.map((folder) => (
+                                                                        <SelectItem key={folder.id} value={folder.id} className="text-xs">
+                                                                            {folder.title}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] text-muted-foreground font-medium">ชุดคำศัพท์</Label>
+                                                            <Select
+                                                                value={selectedSetId}
+                                                                onValueChange={setSelectedSetId}
+                                                                disabled={!selectedFolderId}
+                                                            >
+                                                                <SelectTrigger className="h-8 text-xs bg-gray-50/50 border-gray-200">
+                                                                    <SelectValue placeholder="เลือกชุดคำศัพท์" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {userSets.map((set) => (
+                                                                        <SelectItem key={set.id} value={set.id} className="text-xs">
+                                                                            {set.title}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </ScrollArea>
+
+                                                <ScrollArea className="flex-1">
+                                                    <div className="p-2">
+                                                        <div className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                                                            {selectedSetId ? 'รายการคำศัพท์ในชุด' : 'คำศัพท์ทั้งหมด'}
+                                                        </div>
+                                                        <div className="space-y-1 p-1">
+                                                            {isLoadingLibrary ? (
+                                                                <div className="p-8 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                    กำลังโหลด...
+                                                                </div>
+                                                            ) : !selectedSetId ? (
+                                                                <div className="p-8 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+                                                                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                                                                        <BookOpen className="w-5 h-5 text-gray-300" />
+                                                                    </div>
+                                                                    <p>กรุณาเลือกชุดคำศัพท์</p>
+                                                                    <p className="text-[10px] text-gray-300">เลือกโฟลเดอร์และชุดคำศัพท์เพื่อแสดงรายการ</p>
+                                                                </div>
+                                                            ) : libraryVocabulary.length > 0 ? (
+                                                                libraryVocabulary.map((card) => (
+                                                                    <div
+                                                                        key={card.id}
+                                                                        className={cn(
+                                                                            "flex items-center gap-3 p-2 rounded-lg border transition-all cursor-pointer hover:bg-gray-50",
+                                                                            selectedItems.some(i => i.id === card.id)
+                                                                                ? "bg-purple-50 border-purple-200 shadow-sm"
+                                                                                : "bg-white border-transparent hover:border-gray-200"
+                                                                        )}
+                                                                        onClick={() => {
+                                                                            setSelectedItems(prev =>
+                                                                                prev.some(i => i.id === card.id)
+                                                                                    ? prev.filter(i => i.id !== card.id)
+                                                                                    : [...prev, card]
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <Checkbox
+                                                                            checked={selectedItems.some(i => i.id === card.id)}
+                                                                            onCheckedChange={() => { }}
+                                                                            className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 w-4 h-4"
+                                                                        />
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className={cn("text-xs font-medium truncate", selectedItems.some(i => i.id === card.id) ? "text-purple-900" : "text-gray-700")}>
+                                                                                {card.front_text}
+                                                                            </p>
+                                                                            <p className="text-[10px] text-gray-500 truncate">{card.back_text}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <div className="p-8 text-center text-xs text-gray-400">
+                                                                    ไม่พบคำศัพท์ในชุดนี้
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </ScrollArea>
+                                            </div>
                                         </TabsContent>
                                     </div>
                                 </Tabs>
@@ -1050,20 +1366,20 @@ export function ScheduleCalendar() {
 
                                     <div className="space-y-1.5">
                                         <Label className="text-xs font-semibold text-gray-700">ไอคอน</Label>
-                                        <div className="grid grid-cols-7 gap-1.5">
+                                        <div className="grid grid-cols-6 gap-2">
                                             {Object.entries(AVAILABLE_ICONS).map(([key, Icon]) => (
                                                 <button
                                                     key={key}
                                                     type="button"
                                                     onClick={() => setReviewIcon(key)}
                                                     className={cn(
-                                                        "h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-200",
+                                                        "h-8 w-8 flex items-center justify-center rounded-lg transition-all duration-200",
                                                         reviewIcon === key
                                                             ? "bg-purple-100 text-purple-600 ring-2 ring-purple-500 ring-offset-2"
                                                             : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                                                     )}
                                                 >
-                                                    <Icon className="w-4 h-4" />
+                                                    <Icon className="w-3.5 h-3.5" />
                                                 </button>
                                             ))}
                                         </div>
@@ -1190,6 +1506,25 @@ export function ScheduleCalendar() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            {/* Auto Review Dialog */}
+            <AutoReviewDialog
+                isOpen={autoReviewConfig.isOpen}
+                onClose={() => setAutoReviewConfig(prev => ({ ...prev, isOpen: false }))}
+                mode={autoReviewConfig.mode}
+                onConfirm={(count) => {
+                    setAutoReviewTargetCount(count);
+                    setIsAutoGenerating(true);
+                    if (autoReviewConfig.mode === 'today') {
+                        generateAutoToday(count);
+                    } else {
+                        toast({
+                            title: "กรุณาเลือกชุดคำศัพท์",
+                            description: "ระบบจะทำการเลือกคำศัพท์ให้อัตโนมัติเมื่อคุณเลือกชุดคำศัพท์",
+                            duration: 3000,
+                        });
+                    }
+                }}
+            />
         </div >
     );
 }
