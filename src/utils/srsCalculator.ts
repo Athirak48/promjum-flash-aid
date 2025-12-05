@@ -101,18 +101,28 @@ export function calculateSRS(
 }
 
 /**
- * Get quality score for Flashcard Review
- * - Q=4: Remembered well on first try (100% correct first review)
- * - Q=2: Took time or guessed correctly
- * - Q=0: Didn't remember / cycled back (reviewed 2nd, 3rd, 4th... time)
+ * Get quality score for Flashcard Review with timing
+ * - Q=4: Correct on first attempt, confident (time ≤ 10 seconds)
+ * - Q=2: Correct on first attempt, but took longer (time > 10 seconds)
+ * - Q=1: Correct on subsequent attempts (2nd, 3rd, etc.)
+ * - Q=0: Wrong answer (swipe left)
  */
 export function getFlashcardReviewQuality(
   isCorrect: boolean,
-  attemptCount: number
+  attemptCount: number,
+  timeSpentSeconds?: number
 ): number {
-  if (!isCorrect) return 0;
-  if (attemptCount === 1) return 4;  // First try correct = Q=4
-  return 0;  // Cycled back means Q=0
+  if (!isCorrect) return 0;  // Wrong answer = Q=0
+  
+  if (attemptCount === 1) {
+    // First attempt correct
+    if (timeSpentSeconds !== undefined && timeSpentSeconds <= 10) {
+      return 4;  // Confident, quick response
+    }
+    return 2;  // Took longer than 10 seconds
+  }
+  
+  return 1;  // Correct on subsequent attempts (2nd, 3rd, etc.)
 }
 
 /**
