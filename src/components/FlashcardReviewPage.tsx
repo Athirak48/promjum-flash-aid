@@ -174,24 +174,17 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
     const handleKnow = async (knows: boolean) => {
         const currentCard = reviewQueue[currentIndex];
 
-<<<<<<< HEAD
         // Calculate time taken
         const endTime = Date.now();
         const timeTakenSeconds = (endTime - cardStartTime.current) / 1000;
 
-=======
-        // Calculate time spent on this card
-        const timeSpentMs = Date.now() - cardStartTime.current;
-        const timeSpentSeconds = Math.round(timeSpentMs / 1000);
-
->>>>>>> origin/main
         // Track attempt count for this card
         const currentAttempts = attemptCounts.current.get(currentCard.id) || 0;
         attemptCounts.current.set(currentCard.id, currentAttempts + 1);
 
         // Store timing for first attempt only
         if (currentAttempts === 0) {
-            cardTimings.current.set(currentCard.id, timeSpentSeconds);
+            cardTimings.current.set(currentCard.id, timeTakenSeconds);
         }
 
         // Show feedback first
@@ -211,27 +204,18 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
 
         setSwipeDirection(knows ? 'right' : 'left');
 
-<<<<<<< HEAD
-        // Update SRS when user remembers the card
-        if (knows) {
-            const attemptCount = attemptCounts.current.get(currentCard.id) || 1;
-            // Pass timeTakenSeconds to SRS updater
-            await updateFromFlashcardReview(currentCard.id, true, attemptCount, timeTakenSeconds);
-        }
-=======
         // Update SRS based on new scoring:
-        // Q=4: Correct first attempt ≤10s | Q=2: Correct first attempt >10s | Q=1: Correct subsequent | Q=0: Wrong
+        // Q=3: Correct first attempt ≤7s | Q=1: Correct first attempt >7s | Q=0: Wrong or subsequent
         const attemptCount = attemptCounts.current.get(currentCard.id) || 1;
-        const firstAttemptTime = cardTimings.current.get(currentCard.id) ?? timeSpentSeconds;
+        const firstAttemptTime = cardTimings.current.get(currentCard.id) ?? timeTakenSeconds;
         await updateFromFlashcardReview(currentCard.id, knows, attemptCount, firstAttemptTime);
->>>>>>> origin/main
 
         // Hide feedback and move to next card after delay
         setTimeout(() => {
             setShowSwipeFeedback(null);
 
             if (!knows) {
-                // If user doesn't know, move card to end of queue
+                // If user doesn't know, move card to end of queue (Q=0 must be reviewed again)
                 if (reviewQueue.length === 1) {
                     // Only one card left, mark as completed
                     setIsCompleted(true);
