@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -103,7 +103,14 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
     }
   };
 
+  // Track first try status for each pair
+  const pairAttempts = useRef<Map<string, number>>(new Map());
+
   const checkMatch = async (card1: MatchingCard, card2: MatchingCard) => {
+    // Track attempts for this pair
+    const attempts = pairAttempts.current.get(card1.pairId) || 0;
+    pairAttempts.current.set(card1.pairId, attempts + 1);
+    
     if (card1.pairId === card2.pairId) {
       // Match found
       const newMatched = [...matchedPairs, card1.pairId];
@@ -116,22 +123,25 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
 
       setSelectedCards([]);
 
-      // Update SRS
-      await updateFromMatching(card1.pairId, true, true); // Assume first try for now
+      // Update SRS: Q=2 if first try, Q=0 if not first try
+      const isFirstTry = attempts === 0;
+      await updateFromMatching(card1.pairId, true, isFirstTry);
 
       // Check win
       if (newMatched.length === Math.min(flashcards.length, maxPairs)) {
         setEndTime(Date.now());
       }
     } else {
-      // No match
+      // No match - Q=0 for wrong match
       setWrongMatch([card1.id, card2.id]);
+      
+      // Update SRS for both cards with Q=0 (wrong match)
+      await updateFromMatching(card1.pairId, false, false);
+      
       setTimeout(() => {
         setSelectedCards([]);
         setWrongMatch([]);
       }, 1000);
-
-      // Update SRS penalty? Maybe not for matching game unless repeated errors
     }
   };
 
