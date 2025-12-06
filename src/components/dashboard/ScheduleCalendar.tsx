@@ -295,10 +295,10 @@ export function ScheduleCalendar() {
                 id: review.id,
                 type: 'vocabulary' as Activity['type'],
                 time: review.scheduled_time.substring(0, 5),
-                duration: 30, // Default duration not in DB
-                title: 'Review Session', // Default title not in DB
-                icon: BookOpen, // Default icon not in DB
-                color: 'blue' // Default color not in DB
+                duration: review.duration_minutes || 30,
+                title: review.title || 'Review Session',
+                icon: AVAILABLE_ICONS[review.icon as keyof typeof AVAILABLE_ICONS] || BookOpen,
+                color: review.color || 'blue'
             };
 
             const existingDay = mappedSchedule.find(d => d.dayIndex === dayIndex);
@@ -586,6 +586,10 @@ export function ScheduleCalendar() {
             scheduled_date: format(targetDate, 'yyyy-MM-dd'),
             scheduled_time: '09:00',
             duration_minutes: 30,
+            title: 'New Activity',
+            activity_type: 'vocabulary' as const,
+            icon: 'book',
+            color: 'blue',
             vocabulary_ids: []
         };
 
@@ -602,6 +606,10 @@ export function ScheduleCalendar() {
             scheduled_date: format(reviewDate, 'yyyy-MM-dd'),
             scheduled_time: reviewTime,
             duration_minutes: reviewDuration,
+            title: reviewTitle,
+            activity_type: 'vocabulary' as const,
+            icon: reviewIcon,
+            color: reviewColor,
             vocabulary_ids: selectedItems.map(i => i.id)
         };
 

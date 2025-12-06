@@ -127,11 +127,88 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
   const handleSaveToFolder = async (folderId: string, folderName: string) => {
     setShowFolderSelection(false);
 
-    // Mock saving logic - in a real app, you would copy flashcards to the selected deck
-    toast({
-      title: "บันทึกสำเร็จ!",
-      description: `บันทึก "${subdeck.name}" ลงในโฟลเดอร์ "${folderName}" เรียบร้อยแล้ว`,
-    });
+    // 1. Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "กรุณาเข้าสู่ระบบ",
+        description: "คุณต้องเข้าสู่ระบบก่อนบันทึก",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // 2. Create a new user_flashcard_set
+      const { data: newSet, error: setError } = await supabase
+        .from('user_flashcard_sets')
+        .insert({
+          user_id: user.id,
+          folder_id: folderId,
+          title: subdeck.name,
+          source: 'library', // or 'store' depending on context
+          card_count: subdeck.flashcard_count || 0
+        })
+        .select()
+        .single();
+
+      if (setError) throw setError;
+      if (!newSet) throw new Error("Failed to create set");
+
+      // 3. Fetch source flashcards
+      const { data: sourceCards, error: sourceError } = await supabase
+        .from('flashcards')
+        .select('*')
+        .eq('subdeck_id', subdeck.id);
+
+      if (sourceError) throw sourceError;
+
+      if (sourceCards && sourceCards.length > 0) {
+        // 4. Map to user_flashcards format
+        const cardsToInsert = sourceCards.map(card => {
+          // Construct rich back text from multiple source fields
+          const backTextParts = [
+            card.back_text,
+            card.meaning_th,
+            card.meaning_en,
+            card.part_of_speech ? `(${card.part_of_speech})` : null,
+            card.example_sentence_en ? `Ex: ${card.example_sentence_en}` : null,
+            card.example_sentence_th ? `ตัวอย่าง: ${card.example_sentence_th}` : null,
+            card.synonyms && card.synonyms.length > 0 ? `Synonyms: ${card.synonyms.join(', ')}` : null
+          ].filter(Boolean); // Remove null/undefined/empty strings
+
+          return {
+            user_id: user.id,
+            flashcard_set_id: newSet.id,
+            front_text: card.front_text,
+            back_text: backTextParts.join('\n\n') || '', // Join with double newline for readability
+            front_image_url: null,
+            back_image_url: null,
+            subdeck_id: subdeck.id
+          };
+        });
+
+        // 5. Batch insert
+        const { error: insertError } = await supabase
+          .from('user_flashcards')
+          .insert(cardsToInsert);
+
+        if (insertError) throw insertError;
+      }
+
+      toast({
+        title: "บันทึกสำเร็จ!",
+        description: `บันทึก "${subdeck.name}" ลงในโฟลเดอร์ "${folderName}" เรียบร้อยแล้ว`,
+      });
+
+    } catch (error) {
+      console.error('Error saving to folder:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถบันทึกไปยังโฟลเดอร์ได้",
+        variant: "destructive"
+      });
+    }
   };
 
   const handlePurchase = async (e: React.MouseEvent) => {
