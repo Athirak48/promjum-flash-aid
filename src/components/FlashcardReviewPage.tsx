@@ -71,9 +71,13 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
     const attemptCounts = useRef<Map<string, number>>(new Map());
     const missedCardIds = useRef<Set<string>>(new Set());
 
-    // Reset x motion value when current index changes
+    // Timer for SRS scoring
+    const cardStartTime = useRef<number>(Date.now());
+
+    // Reset x motion value and timer when current index changes
     useEffect(() => {
         x.set(0);
+        cardStartTime.current = Date.now();
     }, [currentIndex, x]);
 
     // Save progress when review is completed
@@ -169,6 +173,10 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
     const handleKnow = async (knows: boolean) => {
         const currentCard = reviewQueue[currentIndex];
 
+        // Calculate time taken
+        const endTime = Date.now();
+        const timeTakenSeconds = (endTime - cardStartTime.current) / 1000;
+
         // Track attempt count for this card
         const currentAttempts = attemptCounts.current.get(currentCard.id) || 0;
         attemptCounts.current.set(currentCard.id, currentAttempts + 1);
@@ -193,8 +201,8 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
         // Update SRS when user remembers the card
         if (knows) {
             const attemptCount = attemptCounts.current.get(currentCard.id) || 1;
-            // Q=5 if first attempt, Q=0 if cycled back (attempt > 1)
-            await updateFromFlashcardReview(currentCard.id, true, attemptCount);
+            // Pass timeTakenSeconds to SRS updater
+            await updateFromFlashcardReview(currentCard.id, true, attemptCount, timeTakenSeconds);
         }
 
         // Hide feedback and move to next card after delay

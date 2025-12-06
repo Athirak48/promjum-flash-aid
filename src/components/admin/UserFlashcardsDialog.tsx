@@ -65,7 +65,7 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
   const fetchUserFolders = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch folders
       const { data: foldersData, error: foldersError } = await supabase
         .from('user_folders')
@@ -104,7 +104,7 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
   const fetchFlashcardSets = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch flashcard sets
       const { data: setsData, error: setsError } = await supabase
         .from('user_flashcard_sets')
@@ -149,7 +149,7 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
   const fetchFlashcards = async () => {
     try {
       setLoading(true);
-      
+
       // First, get the flashcards
       const { data: cardsData, error: cardsError } = await supabase
         .from('user_flashcards')
@@ -283,7 +283,7 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
                           <TableCell className="font-medium">{index + 1}</TableCell>
                           <TableCell>{card.front_text}</TableCell>
                           <TableCell>{card.back_text}</TableCell>
-                          <TableCell className="font-semibold">{card.srs_score === null ? '-' : card.srs_score}</TableCell>
+                          <TableCell className="font-semibold">{'-'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

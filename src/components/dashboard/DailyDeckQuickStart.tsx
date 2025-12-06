@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { format } from 'date-fns';
 
 interface DailyDeckQuickStartProps {
   streak?: number;
@@ -44,100 +45,129 @@ export function DailyDeckQuickStart({
     { id: 'mock-12', front: 'Food', back: 'อาหาร' },
   ];
 
-  // Get 12 cards: prioritize cards due for review, then random from same folder
+  // Get cards: prioritize scheduled review near now, then fallback to smart selection
   const getReviewCards = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return getMockFlashcards();
+
+      // 1. Check for Scheduled Reviews TODAY
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTimeVal = currentHour * 60 + currentMinute;
+
+      const { data: scheduledReviews } = await supabase
+        .from('scheduled_reviews')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('scheduled_date', today);
+
+      let targetReview = null;
+
+      if (scheduledReviews && scheduledReviews.length > 0) {
+        // Find the review closest to current time
+        // Prioritize UPCOMING reviews (e.g. Now 12:00, Session 13:00 -> Pick 13:00)
+        // If no upcoming, pick the latest past review.
+
+        const sortedReviews = scheduledReviews.sort((a, b) => {
+          return a.scheduled_time.localeCompare(b.scheduled_time);
+        });
+
+        const upcoming = sortedReviews.find(review => {
+          const [h, m] = review.scheduled_time.split(':').map(Number);
+          const reviewTimeVal = h * 60 + m;
+          return reviewTimeVal >= currentTimeVal;
+        });
+
+        if (upcoming) {
+          targetReview = upcoming;
+        } else {
+          // No upcoming, pick the last one (latest past)
+          targetReview = sortedReviews[sortedReviews.length - 1];
+        }
+
+        console.log("Found scheduled review:", targetReview);
+      }
+
+      // 2. If scheduled review found, use its vocabulary
+      if (targetReview && targetReview.vocabulary_ids && targetReview.vocabulary_ids.length > 0) {
+        let textIds = targetReview.vocabulary_ids;
+        let foundCards: any[] = [];
+
+        // 2a. Try fetching from 'flashcards' (System)
+        const { data: systemCards } = await supabase
+          .from('flashcards')
+          .select('id, front_text, back_text, upload_id')
+          .in('id', textIds);
+
+        if (systemCards) {
+          foundCards = [...foundCards, ...systemCards];
+          // Filter out IDs we already found
+          const foundIds = new Set(systemCards.map(c => c.id));
+          textIds = textIds.filter(id => !foundIds.has(id));
+        }
+
+        // 2b. If IDs remain, try fetching from 'user_flashcards' (User)
+        if (textIds.length > 0) {
+          const { data: userCards } = await supabase
+            .from('user_flashcards')
+            .select('id, front_text, back_text')
+            .in('id', textIds);
+
+          if (userCards) {
+            foundCards = [...foundCards, ...userCards.map(c => ({
+              ...c,
+              upload_id: undefined // User cards don't have upload_id usually
+            }))];
+          }
+        }
+
+        if (foundCards.length > 0) {
+          return foundCards.map(c => ({
+            id: c.id,
+            front: c.front_text,
+            back: c.back_text,
+            upload_id: c.upload_id
+          }));
+        }
+      }
+
+      // 3. Fallback: Existing "Smart Random" Logic
+      console.log("No scheduled review or cards found, using fallback logic");
+
       let reviewCards: Array<{ id: string; front: string; back: string; upload_id?: string }> = [];
 
       // Need more cards - find the most common upload_id from existing cards
-      const uploadIdCounts = reviewCards.reduce((acc, card) => {
-        if (card.upload_id) {
-          acc[card.upload_id] = (acc[card.upload_id] || 0) + 1;
-        }
-        return acc;
-      }, {} as Record<string, number>);
+      // (Simplified: Fetch a batch of recent reviews to find common theme, or just random)
+      // Since reviewCards is empty here, we start fresh.
 
-      let targetUploadId = null;
-      if (Object.keys(uploadIdCounts).length > 0) {
-        // Get the upload_id with most cards
-        targetUploadId = Object.entries(uploadIdCounts)
-          .sort(([, a], [, b]) => b - a)[0][0];
-      } else if (reviewCards.length > 0 && reviewCards[0].upload_id) {
-        // If no upload_id counts, use the first card's upload_id
-        targetUploadId = reviewCards[0].upload_id;
+      // Fetch some recent cards to establish a theme? Or specific query?
+      // Let's stick to the original logic of filling up to 12.
+
+      // Attempt 1: Get cards from a random upload_id (simulating 'current topic')
+      // For now, let's just get purely random cards if we don't have a starting point
+
+      const { data: randomStart } = await supabase
+        .from('flashcards')
+        .select('id, front_text, back_text, upload_id')
+        .limit(12);
+
+      if (randomStart && randomStart.length > 0) {
+        return randomStart.map(c => ({
+          id: c.id,
+          front: c.front_text,
+          back: c.back_text,
+          upload_id: c.upload_id
+        }));
       }
 
-      // Fill remaining cards from the same folder
-      const neededCards = 12 - reviewCards.length;
-      const existingIds = reviewCards.map(c => c.id);
+      // If still no cards, mock
+      return getMockFlashcards();
 
-      if (targetUploadId && existingIds.length > 0) {
-        const { data: folderCards } = await supabase
-          .from('flashcards')
-          .select('id, front_text, back_text, upload_id')
-          .eq('upload_id', targetUploadId)
-          .not('id', 'in', `(${existingIds.join(',')})`)
-          .limit(neededCards);
-
-        if (folderCards && folderCards.length > 0) {
-          reviewCards = [
-            ...reviewCards,
-            ...folderCards.map(c => ({
-              id: c.id,
-              front: c.front_text,
-              back: c.back_text,
-              upload_id: c.upload_id || undefined,
-            }))
-          ];
-        }
-      }
-
-      // If still not enough, fill with any random flashcards from DB
-      if (reviewCards.length < 12) {
-        const stillNeeded = 12 - reviewCards.length;
-        const allExistingIds = reviewCards.map(c => c.id);
-
-        let query = supabase
-          .from('flashcards')
-          .select('id, front_text, back_text')
-          .limit(stillNeeded);
-
-        if (allExistingIds.length > 0) {
-          query = query.not('id', 'in', `(${allExistingIds.join(',')})`);
-        }
-
-        const { data: randomCards } = await query;
-
-        if (randomCards && randomCards.length > 0) {
-          reviewCards = [
-            ...reviewCards,
-            ...randomCards.map(c => ({
-              id: c.id,
-              front: c.front_text,
-              back: c.back_text,
-              upload_id: undefined,
-            }))
-          ];
-        }
-      }
-
-      // If still no cards after all attempts, use mock data
-      if (reviewCards.length === 0) {
-        console.log('No flashcards found in database, using mock data');
-        return getMockFlashcards();
-      }
-
-      // If less than 12 cards, fill with mock data
-      if (reviewCards.length < 12) {
-        const mockCards = getMockFlashcards();
-        const needed = 12 - reviewCards.length;
-        reviewCards = [...reviewCards, ...mockCards.slice(0, needed)];
-      }
-
-      return reviewCards;
     } catch (error) {
       console.error('Error getting review cards:', error);
-      // Use mock data on error
       return getMockFlashcards();
     }
   };
@@ -158,7 +188,7 @@ export function DailyDeckQuickStart({
     }
 
     // Navigate to fullpage review with cards data
-    navigate('/flashcards-review', {
+    navigate('/flashcards/review', {
       state: {
         mode,
         cards,
@@ -183,7 +213,7 @@ export function DailyDeckQuickStart({
     }
 
     // Navigate to fullpage review with game mode
-    navigate('/flashcards-review', {
+    navigate('/flashcards/review', {
       state: {
         mode: 'game',
         gameType,
