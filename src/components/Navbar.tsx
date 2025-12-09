@@ -62,6 +62,7 @@ const Navbar = () => {
     { href: "/decks", label: "Deck" },
     { href: "/practice", label: "AI Practice" },
     { href: "/flashcards", label: t('nav.flashcards') },
+    { href: "/battle-arena", label: "Battle Arena" },
     { href: "/feedback", label: t('nav.feedback') },
   ];
 

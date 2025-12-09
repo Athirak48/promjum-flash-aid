@@ -16,7 +16,7 @@ export const useRealtimeChat = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentTranscript, setCurrentTranscript] = useState('');
-  
+
   const wsRef = useRef<WebSocket | null>(null);
   const recorderRef = useRef<AudioRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -30,7 +30,7 @@ export const useRealtimeChat = () => {
 
       const projectRef = 'reazfisntbexfybjkiyq';
       const wsUrl = `wss://${projectRef}.supabase.co/functions/v1/realtime-chat`;
-      
+
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
@@ -42,7 +42,7 @@ export const useRealtimeChat = () => {
         });
       };
 
-      wsRef.current.onmessage = async (event) => {
+      wsRef.current.onmessage = async (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
           console.log('Received event:', data.type);
@@ -89,7 +89,7 @@ export const useRealtimeChat = () => {
         }
       };
 
-      wsRef.current.onerror = (error) => {
+      wsRef.current.onerror = (error: Event) => {
         console.error('WebSocket error:', error);
         toast({
           title: "เกิดข้อผิดพลาด",
@@ -159,7 +159,7 @@ export const useRealtimeChat = () => {
         }
       }));
       wsRef.current.send(JSON.stringify({ type: 'response.create' }));
-      
+
       setMessages(prev => [...prev, {
         role: 'user',
         content: text,

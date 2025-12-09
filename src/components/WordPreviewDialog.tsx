@@ -59,16 +59,16 @@ export function WordPreviewDialog({ open, onOpenChange, flashcards, subdeckName 
             {subdeckName} - คำศัพท์ทั้งหมด ({displayCards.length} คำ)
           </DialogTitle>
         </DialogHeader>
-        
+
         <ScrollArea className="h-[65vh] pr-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-4">
             {displayCards.map((card) => {
               const isFlipped = flippedCards.has(card.id);
-              
+
               return (
                 <div
                   key={card.id}
-                  className="flip-card h-48 cursor-pointer"
+                  className="flip-card h-32 sm:h-40 cursor-pointer"
                   onClick={() => toggleFlip(card.id)}
                 >
                   <div className={cn(
@@ -77,20 +77,20 @@ export function WordPreviewDialog({ open, onOpenChange, flashcards, subdeckName 
                   )}>
                     {/* Front */}
                     <Card className="flip-card-front absolute inset-0 backface-hidden bg-card border-primary/20">
-                      <div className="h-full p-4 flex flex-col items-center justify-center text-center">
-                        <p className="text-lg font-semibold text-foreground">
+                      <div className="h-full p-2 sm:p-4 flex flex-col items-center justify-center text-center">
+                        <p className="text-xs sm:text-lg font-semibold text-foreground line-clamp-3">
                           {card.front_text}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-auto">
-                          คลิกเพื่อดูคำแปล
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-auto">
+                          แตะดูคำแปล
                         </p>
                       </div>
                     </Card>
-                    
+
                     {/* Back */}
                     <Card className="flip-card-back absolute inset-0 backface-hidden bg-primary/10 border-primary/30">
-                      <div className="h-full p-4 flex items-center justify-center text-center">
-                        <p className="text-base font-medium text-foreground">
+                      <div className="h-full p-2 sm:p-4 flex items-center justify-center text-center">
+                        <p className="text-xs sm:text-base font-medium text-foreground line-clamp-4">
                           {card.back_text}
                         </p>
                       </div>

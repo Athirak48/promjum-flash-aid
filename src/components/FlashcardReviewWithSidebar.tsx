@@ -30,7 +30,8 @@ export function FlashcardReviewWithSidebar({
         const formattedCards: FlashcardData[] = flashcards.map(fc => ({
             id: fc.id,
             front: fc.front_text,
-            back: fc.back_text
+            back: fc.back_text,
+            isUserFlashcard: true
         }));
 
         setCurrentCards(formattedCards);

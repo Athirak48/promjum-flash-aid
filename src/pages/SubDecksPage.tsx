@@ -18,6 +18,21 @@ interface DeckInfo {
   total_flashcards: number;
 }
 
+const SENTENCE_SUBDECKS = [
+  {
+    id: 'mock-sub-1', deck_id: 'mock-sentence-1', name: 'ทักทาย', name_en: 'Greetings',
+    description: 'คำทักทายพื้นฐาน', description_en: 'Basic greetings', flashcard_count: 101, is_free: true, display_order: 1, difficulty_level: 'beginner', created_at: new Date().toISOString()
+  },
+  {
+    id: 'mock-sub-2', deck_id: 'mock-sentence-1', name: 'ร้านอาหาร', name_en: 'Restaurant',
+    description: 'คำศัพท์ในร้านอาหาร', description_en: 'Vocabulary in restaurant', flashcard_count: 100, is_free: true, display_order: 2, difficulty_level: 'beginner', created_at: new Date().toISOString()
+  },
+  {
+    id: 'mock-sub-3', deck_id: 'mock-sentence-1', name: 'ซื้อของ', name_en: 'Shopping',
+    description: 'คำศัพท์ในการซื้อของ', description_en: 'Vocabulary for shopping', flashcard_count: 100, is_free: false, display_order: 3, difficulty_level: 'beginner', created_at: new Date().toISOString()
+  }
+];
+
 export default function SubDecksPage() {
   const { deckId } = useParams<{ deckId: string }>();
   const navigate = useNavigate();
@@ -25,9 +40,34 @@ export default function SubDecksPage() {
   const [deckInfo, setDeckInfo] = useState<DeckInfo | null>(null);
   const [deckProgress, setDeckProgress] = useState<number>(0);
 
+  // Determine which subdecks to display
+  const isMock = deckId === 'mock-sentence-1';
+  const displaySubDecks = isMock ? SENTENCE_SUBDECKS : subDecks;
+  const isLoading = isMock ? false : loading;
+
   useEffect(() => {
     const fetchDeckInfo = async () => {
       if (!deckId) return;
+
+      if (deckId === 'mock-sentence-1') {
+        const mockDeck = {
+          name: 'ชีวิตประจำวัน',
+          name_en: 'Daily Life',
+          description: 'เรียนรู้คำศัพท์และประโยคที่ใช้บ่อยในชีวิตประจำวัน',
+          description_en: 'Common sentences for daily life',
+          total_flashcards: 500,
+        };
+        setDeckInfo(mockDeck);
+
+        // Mock subdecks for this specific deck
+        // Using setSubDecks from hook is not possible directly as it's returned from hook.
+        // We need to bypass the hook or modify the page to handle local state for subdecks overriding the hook.
+        // However, useSubDecks hook controls the subDecks state. 
+        // The page reads `subDecks` from `useSubDecks`. 
+        // We need to refactor the page to use a local state that defaults to the hook's data, OR allow the hook to yield mock data.
+        // Given the constraints, simpler to let the page ignore the hook's data if mock.
+        return;
+      }
 
       const { data: deck } = await supabase
         .from('decks')
@@ -118,7 +158,7 @@ export default function SubDecksPage() {
           )}
 
           {/* Vertical List of Subdecks */}
-          {loading ? (
+          {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-[180px]" />
@@ -126,13 +166,13 @@ export default function SubDecksPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {subDecks.map((subdeck) => (
-                <SubDeckCard key={subdeck.id} subdeck={subdeck} />
+              {displaySubDecks.map((subdeck) => (
+                <SubDeckCard key={subdeck.id} subdeck={subdeck as any} />
               ))}
             </div>
           )}
 
-          {!loading && subDecks.length === 0 && (
+          {!isLoading && displaySubDecks.length === 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground text-lg">ยังไม่มี Sub-deck</p>
             </div>

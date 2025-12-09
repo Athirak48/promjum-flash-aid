@@ -103,54 +103,69 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
         </DialogHeader>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-1">
-          {games.map((game) => {
+          {games.map((game, index) => {
             const IconComponent = game.icon;
             return (
               <Card
                 key={game.id}
                 className={`
-                  cursor-pointer transition-all duration-300
-                  hover:scale-105 hover:shadow-lg border-2 border-transparent
+                  cursor-pointer transition-all duration-300 ease-out
+                  hover:scale-110 hover:shadow-xl hover:-translate-y-2 border-2 border-transparent
+                  hover:border-white/50 active:scale-95
                   bg-gradient-to-br ${game.bgGradient}
                   group relative overflow-hidden
+                  animate-in slide-in-from-bottom-4 fade-in duration-500
                 `}
+                style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'backwards' }}
                 onClick={() => handleGameSelect(game.id as any)}
               >
-                <div className="absolute top-0 right-0 p-1.5 opacity-10 group-hover:opacity-20 transition-opacity">
+                {/* Animated background glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                {/* Floating icon background */}
+                <div className="absolute top-0 right-0 p-1.5 opacity-10 group-hover:opacity-30 transition-all duration-500 group-hover:scale-125 group-hover:rotate-12">
                   <IconComponent className="h-8 w-8" />
                 </div>
 
                 <CardHeader className="text-center pb-1 pt-3 relative z-10 p-2">
                   <div className={`
-                    w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-1.5
-                    bg-gradient-to-br ${game.gradient} shadow-sm
-                    group-hover:shadow-glow transition-all duration-300
+                    w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2
+                    bg-gradient-to-br ${game.gradient} shadow-md
+                    group-hover:shadow-lg group-hover:scale-110 group-hover:rotate-3
+                    transition-all duration-300 ease-out
+                    group-hover:animate-pulse
                   `}>
-                    <IconComponent className="h-4 w-4 text-white" />
+                    <IconComponent className="h-5 w-5 text-white drop-shadow" />
                   </div>
-                  <CardTitle className="text-xs font-bold text-gray-800 leading-tight">{game.title}</CardTitle>
-                  <CardDescription className="font-medium text-[8px] text-primary/80 flex items-center justify-center gap-1 mt-0.5">
-                    <Sparkles className="w-2 h-2" />
+                  <CardTitle className="text-xs font-bold text-gray-800 leading-tight group-hover:text-gray-900 transition-colors">{game.title}</CardTitle>
+                  <CardDescription className="font-medium text-[9px] text-primary/80 flex items-center justify-center gap-1 mt-0.5">
+                    <Sparkles className="w-2.5 h-2.5 group-hover:animate-spin" style={{ animationDuration: '3s' }} />
                     {game.subtitle}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="text-center pt-0 pb-2 relative z-10 px-2">
-                  <p className="text-[8px] text-gray-600 mb-2 min-h-[20px] line-clamp-2 leading-tight">
+                <CardContent className="text-center pt-0 pb-3 relative z-10 px-2">
+                  <p className="text-[9px] text-gray-600 mb-2 min-h-[22px] line-clamp-2 leading-tight group-hover:text-gray-700 transition-colors">
                     {game.description}
                   </p>
                   <Button
                     className={`
                       w-full bg-gradient-to-r ${game.gradient} text-white border-0
-                      shadow-sm group-hover:shadow-md transition-all duration-300
-                      rounded-md h-6 text-[9px] font-semibold
+                      shadow-md group-hover:shadow-lg transition-all duration-300 ease-out
+                      rounded-lg h-7 text-[10px] font-bold
+                      group-hover:scale-105 active:scale-95
+                      relative overflow-hidden
                     `}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleGameSelect(game.id as any);
                     }}
                   >
-                    เริ่มเล่น
+                    <span className="relative z-10 flex items-center justify-center gap-1">
+                      <GamepadIcon className="w-3 h-3" />
+                      เริ่มเล่น
+                    </span>
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                   </Button>
                 </CardContent>
               </Card>

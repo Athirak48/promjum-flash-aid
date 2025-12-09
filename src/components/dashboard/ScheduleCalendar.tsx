@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, ChevronDown, Bell, CheckCircle, PenTool, Mic, Video, Music, Star, Heart, Zap, Coffee, Sun, Moon, X, Trash2, LucideIcon, Trophy, Flame, TrendingUp, CalendarDays, Plus, ChevronLeft, ChevronRight, ChevronsUpDown, Check, Brain, GraduationCap, Lightbulb, Puzzle, Timer, Layers, FileText, Award, Repeat, Bookmark, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Edit2, Sparkles, BookOpen, MessageCircle, Headphones, Target, ChevronDown, Bell, CheckCircle, PenTool, Mic, Video, Music, Star, Heart, Zap, Coffee, Sun, Moon, X, Trash2, LucideIcon, Trophy, Flame, TrendingUp, CalendarDays, Plus, ChevronLeft, ChevronRight, ChevronsUpDown, Check, Brain, GraduationCap, Lightbulb, Puzzle, Timer, Layers, FileText, Award, Repeat, Bookmark, Loader2, Settings } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
@@ -157,62 +157,87 @@ export function ScheduleCalendar() {
     // Tab State
     const [activeTab, setActiveTab] = useState<string>("latest");
 
-    // Fetch Recommended Cards
+    // Reschedule State
+    const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = useState(false);
+    const [rescheduleActivityId, setRescheduleActivityId] = useState<string | null>(null);
+    const [rescheduleActivityTitle, setRescheduleActivityTitle] = useState<string>("");
+    const [rescheduleNewDate, setRescheduleNewDate] = useState<Date>(new Date());
+    const [rescheduleNewTime, setRescheduleNewTime] = useState<string>("09:00");
+
+    // Fetch Weak Cards (lowest srs_score from user's flashcards - bottom 15)
     useEffect(() => {
         const fetchRecommended = async () => {
             setIsLoadingRecommended(true);
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const today = new Date().toISOString();
-            const { data: progressData } = await supabase
-                .from('user_flashcard_progress')
-                .select('*')
-                .eq('user_id', user.id)
-                .lte('next_review_date', today);
-
-            if (progressData) {
-                const systemCardIds = progressData.filter(p => p.flashcard_id).map(p => p.flashcard_id);
-                const userCardIds = progressData.filter(p => p.user_flashcard_id).map(p => p.user_flashcard_id);
-
-                let combinedCards: Flashcard[] = [];
-
-                if (systemCardIds.length > 0) {
-                    const { data: systemCards } = await supabase
-                        .from('flashcards')
-                        .select('*')
-                        .in('id', systemCardIds);
-
-                    if (systemCards) {
-                        combinedCards = [...combinedCards, ...systemCards.map(c => ({
-                            id: c.id,
-                            front_text: c.front_text,
-                            back_text: c.back_text,
-                            created_at: c.created_at,
-                        }))];
-                    }
-                }
-
-                if (userCardIds.length > 0) {
-                    const { data: userCards } = await supabase
-                        .from('user_flashcards')
-                        .select('*')
-                        .in('id', userCardIds);
-
-                    if (userCards) {
-                        combinedCards = [...combinedCards, ...userCards.map(c => ({
-                            id: c.id,
-                            front_text: c.front_text,
-                            back_text: c.back_text,
-                            created_at: c.created_at,
-                            user_id: c.user_id,
-                            set_id: c.flashcard_set_id,
-                            image_url: c.front_image_url || undefined
-                        }))];
-                    }
-                }
-                setRecommendedCards(combinedCards);
+            if (!user) {
+                setIsLoadingRecommended(false);
+                return;
             }
+
+            const allWeakCards: Flashcard[] = [];
+
+            // 1. Get user's flashcard progress with lowest srs_score (user_flashcards)
+            const { data: userProgressData } = await supabase
+                .from('user_flashcard_progress')
+                .select('srs_score, srs_level, user_flashcards!user_flashcard_id(*)')
+                .eq('user_id', user.id)
+                .not('user_flashcard_id', 'is', null)
+                .not('srs_score', 'is', null)
+                .order('srs_score', { ascending: true, nullsFirst: false })
+                .limit(50); // Increased limit for better merge accuracy
+
+            if (userProgressData && userProgressData.length > 0) {
+                userProgressData
+                    .filter(p => p.user_flashcards)
+                    .forEach(p => {
+                        allWeakCards.push({
+                            id: p.user_flashcards.id,
+                            front_text: p.user_flashcards.front_text,
+                            back_text: p.user_flashcards.back_text,
+                            created_at: p.user_flashcards.created_at,
+                            user_id: p.user_flashcards.user_id,
+                            set_id: p.user_flashcards.flashcard_set_id,
+                            image_url: p.user_flashcards.front_image_url || undefined,
+                            srs_score: p.srs_score,
+                            srs_level: p.srs_level
+                        });
+                    });
+            }
+
+            // 2. Get system flashcard progress with lowest srs_score
+            const { data: systemProgressData } = await supabase
+                .from('user_flashcard_progress')
+                .select('srs_score, srs_level, flashcard_id, flashcards!flashcard_id(*)')
+                .eq('user_id', user.id)
+                .not('flashcard_id', 'is', null)
+                .not('srs_score', 'is', null)
+                .order('srs_score', { ascending: true, nullsFirst: false })
+                .limit(50); // Increased limit for better merge accuracy
+
+            if (systemProgressData && systemProgressData.length > 0) {
+                systemProgressData
+                    .filter(p => p.flashcards)
+                    .forEach(p => {
+                        allWeakCards.push({
+                            id: p.flashcards.id,
+                            front_text: p.flashcards.front_text,
+                            back_text: p.flashcards.back_text,
+                            created_at: p.flashcards.created_at || new Date().toISOString(),
+                            user_id: 'system',
+                            set_id: p.flashcards.subdeck_id || '',
+                            image_url: undefined,
+                            srs_score: p.srs_score,
+                            srs_level: p.srs_level
+                        });
+                    });
+            }
+
+            // Sort all cards by srs_score ascending and take top 15
+            const sortedWeakCards = allWeakCards
+                .sort((a, b) => (a.srs_score ?? Infinity) - (b.srs_score ?? Infinity))
+                .slice(0, 15);
+
+            setRecommendedCards(sortedWeakCards);
             setIsLoadingRecommended(false);
         };
         fetchRecommended();
@@ -313,10 +338,10 @@ export function ScheduleCalendar() {
     }, [reviews]);
 
     // Auto Review Logic
-    const generateAutoToday = async (count: number) => {
+    const generateAutoToday = async (count: number, time: string) => {
         try {
-            const count60 = Math.ceil(count * 0.6);
-            const count40 = count - count60;
+            const count60 = Math.ceil(count * 0.6); // Target for Latest
+            const count40 = count - count60;        // Target for Weak
 
             const todayStart = new Date();
             todayStart.setHours(0, 0, 0, 0);
@@ -361,7 +386,8 @@ export function ScheduleCalendar() {
                         created_at: c.created_at || new Date().toISOString(),
                         user_id: 'system', // Placeholder
                         set_id: c.subdeck_id || '',
-                        image_url: undefined // System cards might not have image_url column in this context or different name
+                        image_url: undefined,
+                        srs_score: null // System cards might not have progress joined here directly, handled separately if needed
                     }))];
                 }
             }
@@ -380,13 +406,57 @@ export function ScheduleCalendar() {
                         created_at: c.created_at,
                         user_id: c.user_id,
                         set_id: c.flashcard_set_id,
-                        image_url: c.front_image_url || undefined
+                        image_url: c.front_image_url || undefined,
+                        srs_score: null // Placeholder
                     }))];
                 }
             }
 
             // Remove duplicates
-            const uniqueCards = Array.from(new Map(fetchedCards.map(item => [item.id, item])).values());
+            let uniqueCards = Array.from(new Map(fetchedCards.map(item => [item.id, item])).values());
+            const currentCount = uniqueCards.length;
+
+            // 3. Fallback: Fill with random cards from other sets if needed
+            if (currentCount < count) {
+                const needed = count - currentCount;
+                const existingIds = uniqueCards.map(c => c.id);
+
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    // Try to fetch random user cards not in existing set
+                    // Note: Supabase doesn't have native random(). using range or rpc is better but for simple approach:
+                    // We'll fetch a chunk and shuffle JS side, or just order by random if we had function.
+                    // Simple approach: fetch recent created or random offset? 
+                    // Let's just fetch recent created not in list.
+                    const { data: fillData } = await supabase
+                        .from('user_flashcards')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .not('id', 'in', `(${existingIds.join(',')})`) // Exclude existing
+                        .limit(50); // Fetch more than needed to shuffle
+
+                    if (fillData && fillData.length > 0) {
+                        // Shuffle locally
+                        const shuffled = fillData.sort(() => 0.5 - Math.random()).slice(0, needed);
+
+                        const fillCards: Flashcard[] = shuffled.map(c => ({
+                            id: c.id,
+                            front_text: c.front_text,
+                            back_text: c.back_text,
+                            created_at: c.created_at,
+                            user_id: c.user_id,
+                            set_id: c.flashcard_set_id,
+                            image_url: c.front_image_url || undefined
+                        }));
+
+                        uniqueCards = [...uniqueCards, ...fillCards];
+                    }
+                }
+            }
+
+            // Final slice to ensure exact count (in case we over-filled or something, though logic ensures we don't)
+            // But if hardWords overlapped with recentReviews, we removed dupes, so count decreased.
+            // The fill step handles the gap.
 
             setSelectedItems(uniqueCards);
 
@@ -394,12 +464,12 @@ export function ScheduleCalendar() {
             setReviewTitle(`ทบทวน ${format(new Date(), 'd MMM', { locale: th })}`);
             setReviewIcon("zap"); // Use component reference key
             setReviewColor("bg-purple-100 text-purple-600");
-            setReviewTime("10:00");
+            setReviewTime(time);
             setReviewDuration(15);
 
             toast({
                 title: "จัดเตรียมเนื้อหาทบทวนเสร็จสิ้น",
-                description: `คัดเลือก ${uniqueCards.length} คำศัพท์สำหรับวันนี้`,
+                description: `คัดเลือก ${uniqueCards.length} คำศัพท์สำหรับวันนี้ (ล่าสุด/จำไม่ได้/สุ่มเสริม)`,
             });
 
         } catch (error) {
@@ -414,7 +484,7 @@ export function ScheduleCalendar() {
         }
     };
 
-    const generateAutoTomorrow = async (count: number, setId: string) => {
+    const generateAutoTomorrow = async (count: number, setId: string, time: string = '10:00') => {
         try {
             const count60 = Math.ceil(count * 0.6);
             const count40 = count - count60;
@@ -497,7 +567,7 @@ export function ScheduleCalendar() {
             setReviewTitle(`ทบทวน ${format(addDays(new Date(), 1), 'd MMM', { locale: th })}`);
             setReviewIcon("calendar");
             setReviewColor("bg-orange-100 text-orange-600");
-            setReviewTime("10:00");
+            setReviewTime(time);
             setReviewDuration(15);
 
             toast({
@@ -526,6 +596,17 @@ export function ScheduleCalendar() {
     const handleAutoClick = (mode: 'today' | 'tomorrow') => {
         setAutoReviewConfig({ mode, isOpen: true });
         setReviewDate(mode === 'today' ? new Date() : addDays(new Date(), 1));
+    };
+
+    const handleAutoConfirm = async (count: number, time: string, folderId?: string, setId?: string) => {
+        setAutoReviewTargetCount(count);
+        if (autoReviewConfig.mode === 'today') {
+            setIsAutoGenerating(true);
+            await generateAutoToday(count, time);
+        } else if (autoReviewConfig.mode === 'tomorrow' && setId) {
+            setIsAutoGenerating(true);
+            await generateAutoTomorrow(count, setId, time);
+        }
     };
 
     const getDaysToRender = () => {
@@ -640,43 +721,73 @@ export function ScheduleCalendar() {
         }
     };
 
+    // Reschedule Handlers
+    const handleOpenReschedule = (activity: Activity, date: Date) => {
+        setRescheduleActivityId(activity.id);
+        setRescheduleActivityTitle(activity.title);
+        setRescheduleNewDate(date);
+        setRescheduleNewTime(activity.time);
+        setIsRescheduleDialogOpen(true);
+    };
+
+    const handleReschedule = async () => {
+        if (!rescheduleActivityId) return;
+
+        await updateReview(rescheduleActivityId, {
+            scheduled_date: format(rescheduleNewDate, 'yyyy-MM-dd'),
+            scheduled_time: rescheduleNewTime
+        });
+
+        setIsRescheduleDialogOpen(false);
+        setRescheduleActivityId(null);
+        toast({
+            title: "เลื่อนเวลาสำเร็จ",
+            description: "เปลี่ยนเวลากิจกรรมเรียบร้อยแล้ว"
+        });
+    };
+
+    const handleOpenReviewDialog = () => {
+        const isMobile = window.matchMedia('(max-width: 767px)').matches;
+        if (isMobile) {
+            setActiveTab("vocabulary");
+        } else {
+            setActiveTab("latest");
+        }
+        setIsReviewDialogOpen(true);
+    };
+
     return (
         <div className="h-full flex flex-col gap-6 p-6 bg-background/50">
             {/* Header Row 1: Title and Main Action */}
-            <div className="flex flex-row items-center justify-between gap-4 w-full flex-wrap sm:flex-nowrap">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-purple-100/50 rounded-2xl text-purple-600 shadow-sm border border-purple-100">
-                        <CalendarIcon className="w-6 h-6" />
+            <div className="flex flex-row items-center justify-between gap-3 w-full">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 sm:p-3 bg-purple-100/50 rounded-xl sm:rounded-2xl text-purple-600 shadow-sm border border-purple-100">
+                        <CalendarIcon className="w-6 h-6 sm:w-7 sm:h-7" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-foreground tracking-tight">ตารางเรียนรู้</h1>
-                        <p className="text-muted-foreground text-sm font-medium">จัดการเวลาเรียนรู้ของคุณ</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">ตารางเรียนรู้</h1>
+                        <p className="text-muted-foreground text-xs sm:text-sm font-medium">จัดการเวลาเรียนรู้ของคุณ</p>
                     </div>
                 </div>
-                <div className="w-full sm:w-auto flex justify-end">
-                    <Button
-                        onClick={() => setIsReviewDialogOpen(true)}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 rounded-xl"
-                    >
-                        <Clock className="w-4 h-4 mr-2" />
-                        ตั้งเวลาทบทวน
-                    </Button>
-                </div>
+                <Button
+                    onClick={handleOpenReviewDialog}
+                    className="h-9 sm:h-10 px-4 sm:px-5 text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-semibold"
+                >
+                    <Clock className="w-4 h-4 mr-2" />
+                    ตั้งเวลาทบทวน
+                </Button>
             </div>
 
-            {/* Header Row 2: Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-4 w-full">
-                {/* Left Column: Empty for spacing (hidden on mobile) */}
-                <div className="hidden sm:block"></div>
-
-                {/* Center Column: View Switcher - Centered */}
-                <div className="sm:justify-self-center bg-card p-1 rounded-2xl border shadow-sm grid grid-cols-4 gap-1 w-full max-w-[320px]">
+            {/* Header Row 2: Controls - Same row on all screens */}
+            <div className="flex flex-row items-center justify-between gap-1.5 sm:gap-2 w-full">
+                {/* View Switcher */}
+                <div className="bg-card p-0.5 rounded-lg sm:rounded-2xl border shadow-sm grid grid-cols-4 gap-0.5 flex-1 sm:flex-none sm:w-auto max-w-[180px] sm:max-w-none">
                     {(['day', 'week', 'month', 'year'] as const).map((mode) => (
                         <button
                             key={mode}
                             onClick={() => setViewMode(mode)}
                             className={cn(
-                                "px-2 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 w-full text-center",
+                                "px-1 sm:px-2 py-0.5 sm:py-1.5 rounded-md sm:rounded-xl text-[9px] sm:text-xs font-semibold transition-all duration-200 w-full text-center whitespace-nowrap",
                                 viewMode === mode
                                     ? "bg-purple-100 text-purple-700 shadow-sm"
                                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -690,17 +801,17 @@ export function ScheduleCalendar() {
                     ))}
                 </div>
 
-                {/* Right Column: Date Picker / Navigation - Right */}
-                <div className="sm:justify-self-end flex items-center gap-2 bg-pink-50/50 p-1 pr-3 rounded-2xl border border-pink-100/50 shadow-sm w-full sm:w-auto justify-between sm:justify-end">
-                    <div className="flex items-center gap-1 w-full sm:w-auto justify-between sm:justify-start">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-xl" onClick={() => handleNavigate('prev')}>
-                            <ChevronLeft className="w-4 h-4" />
+                {/* Date Picker / Navigation */}
+                <div className="flex items-center bg-pink-50/50 p-0.5 rounded-lg sm:rounded-2xl border border-pink-100/50 shadow-sm flex-shrink-0">
+                    <div className="flex items-center">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-8 sm:w-8 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-md sm:rounded-xl" onClick={() => handleNavigate('prev')}>
+                            <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
 
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="ghost" className="h-8 px-3 text-pink-700 hover:bg-pink-100 hover:text-pink-800 font-semibold text-sm rounded-xl flex-1 sm:flex-none justify-center">
-                                    <CalendarIcon className="w-3.5 h-3.5 mr-2 opacity-70" />
+                                <Button variant="ghost" className="h-6 sm:h-8 px-1.5 sm:px-3 text-pink-700 hover:bg-pink-100 hover:text-pink-800 font-semibold text-[10px] sm:text-sm rounded-md sm:rounded-xl justify-center">
+                                    <CalendarIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-2 opacity-70" />
                                     {format(selectedDate, 'd MMMM yyyy', { locale: th })}
                                 </Button>
                             </PopoverTrigger>
@@ -715,8 +826,8 @@ export function ScheduleCalendar() {
                             </PopoverContent>
                         </Popover>
 
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-xl" onClick={() => handleNavigate('next')}>
-                            <ChevronRight className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-8 sm:w-8 text-pink-400 hover:text-pink-600 hover:bg-pink-100 rounded-md sm:rounded-xl" onClick={() => handleNavigate('next')}>
+                            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
                     </div>
                 </div>
@@ -790,7 +901,7 @@ export function ScheduleCalendar() {
                                             {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map(d => <div key={d} className="text-muted-foreground/60 font-medium">{d}</div>)}
                                         </div>
                                         <div className="grid grid-cols-7 gap-1 text-center text-[10px]">
-                                            {Array.from({ length: startDayOfWeek }).map((_, i) => <div key={`empty-${i}`} />)}
+                                            {Array.from({ length: startDayOfWeek }).map((_, i) => <div key={"empty-" + i} />)}
                                             {daysInMonth.map(date => {
                                                 const hasActivity = reviews.some(r => isSameDay(new Date(r.scheduled_date), date));
                                                 const isTodayDate = isToday(date);
@@ -815,7 +926,7 @@ export function ScheduleCalendar() {
                                 );
                             })}
                         </div>
-                    </ScrollArea >
+                    </ScrollArea>
                 ) : viewMode === 'month' ? (
                     <ScrollArea className="flex-1 min-h-0 w-full border rounded-xl bg-card shadow-sm">
                         <div className="p-2 md:p-4 w-full min-w-0">
@@ -883,7 +994,7 @@ export function ScheduleCalendar() {
                 ) : (viewMode === 'week' || viewMode === 'day') ? (
                     <ScrollArea className="flex-1 min-h-0 w-full border rounded-xl bg-card shadow-sm">
                         <div className="flex flex-col min-w-full">
-                            <div className={cn("grid gap-0 sticky top-0 z-40 bg-card border-b pb-2 pt-4", (viewMode === 'week' || viewMode === 'day') ? "grid-cols-[60px_1fr]" : "grid-cols-7", viewMode === 'week' ? "min-w-full" : "min-w-full")}>
+                            <div className={cn("grid gap-0 sticky top-0 z-40 bg-card border-b pb-2 pt-4", (viewMode === 'week' || viewMode === 'day') ? "grid-cols-[35px_1fr] md:grid-cols-[60px_1fr]" : "grid-cols-7", viewMode === 'week' ? "min-w-full" : "min-w-full")}>
                                 <div className="text-center text-xs font-bold py-2 text-muted-foreground/50 sticky left-0 z-50 bg-card"></div>
                                 <div className={cn("grid gap-0", viewMode === 'day' ? "grid-cols-1" : "grid-cols-7")}>
                                     {getDaysToRender().map((date, index) => {
@@ -893,7 +1004,7 @@ export function ScheduleCalendar() {
 
                                         if (viewMode === 'day') {
                                             return (
-                                                <div key={index} className={`text-center text-sm font-bold py-2 rounded-md ${isCurrentDay ? 'text-primary' : isWeekend ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                                <div key={index} className={"text-center text-sm font-bold py-2 rounded-md " + (isCurrentDay ? 'text-primary' : isWeekend ? 'text-muted-foreground' : 'text-foreground')}>
                                                     {format(date, 'EEEE d MMMM yyyy', { locale: th })}
                                                 </div>
                                             );
@@ -901,7 +1012,7 @@ export function ScheduleCalendar() {
 
                                         return (
                                             <div key={index} className="flex flex-col items-center justify-center py-2 gap-1 border-l border-transparent">
-                                                <span className={`text-sm uppercase font-bold ${isCurrentDay ? 'text-primary' : 'text-foreground'}`}>
+                                                <span className={"text-sm uppercase font-bold " + (isCurrentDay ? 'text-primary' : 'text-foreground')}>
                                                     {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()]}
                                                 </span>
                                                 <div className={cn(
@@ -919,9 +1030,9 @@ export function ScheduleCalendar() {
                             </div>
 
                             <div className={cn("flex relative flex-1", viewMode === 'week' ? "min-w-full" : "min-w-full")}>
-                                <div className="w-[60px] flex-shrink-0 border-r border-border/40 bg-muted sticky left-0 z-30">
+                                <div className="w-[35px] md:w-[60px] flex-shrink-0 border-r border-border/40 bg-muted sticky left-0 z-30">
                                     {HOURS.map(hour => (
-                                        <div key={hour} className="h-[60px] text-sm text-foreground p-1 text-right pr-3 relative font-semibold">
+                                        <div key={hour} className="h-[60px] text-[10px] md:text-sm text-foreground p-1 text-right pr-1 md:pr-3 relative font-semibold">
                                             <span className="-top-2 relative">{hour}:00</span>
                                         </div>
                                     ))}
@@ -934,7 +1045,7 @@ export function ScheduleCalendar() {
                                         const isCurrentDay = isToday(date);
 
                                         return (
-                                            <div key={dayIndex} className={`border-r border-border/30 relative min-h-[1440px] ${isCurrentDay ? 'bg-primary/[0.02]' : ''}`}>
+                                            <div key={dayIndex} className={"border-r border-border/30 relative min-h-[1440px] " + (isCurrentDay ? 'bg-primary/[0.02]' : '')}>
                                                 {HOURS.map(hour => (
                                                     <div key={hour} className="h-[60px] border-b border-dashed border-border/30" />
                                                 ))}
@@ -943,7 +1054,7 @@ export function ScheduleCalendar() {
                                                 {isCurrentDay && (
                                                     <div
                                                         className="absolute w-full border-t-2 border-red-500 z-20 pointer-events-none flex items-center"
-                                                        style={{ top: `${getPixelPosition(format(new Date(), 'HH:mm'))}px` }}
+                                                        style={{ top: getPixelPosition(format(new Date(), 'HH:mm')) + "px" }}
                                                     >
                                                         <div className="w-2 h-2 rounded-full bg-red-500 -ml-1"></div>
                                                     </div>
@@ -952,19 +1063,23 @@ export function ScheduleCalendar() {
                                                 {daySchedule?.activities.map(activity => (
                                                     <div
                                                         key={activity.id}
-                                                        className={`absolute left-1 right-1 rounded-lg p-2 text-xs border-l-4 overflow-hidden cursor-pointer hover:brightness-95 transition-all shadow-sm z-10 ${activity.color}`}
+                                                        className={"absolute left-0.5 right-0.5 md:left-1 md:right-1 rounded-sm md:rounded-lg p-0.5 md:p-2 text-[9px] md:text-xs border-l-2 md:border-l-4 overflow-hidden cursor-pointer hover:brightness-95 transition-all shadow-sm z-10 " + activity.color}
                                                         style={{
-                                                            top: `${getPixelPosition(activity.time)}px`,
-                                                            height: `${Math.max(getPixelHeight(activity.duration), viewMode === 'day' ? 50 : 30)}px`
+                                                            top: getPixelPosition(activity.time) + "px",
+                                                            height: Math.max(getPixelHeight(activity.duration), viewMode === 'day' ? 50 : 30) + "px"
                                                         }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleEditSchedule(date.getDay());
                                                         }}
                                                     >
-                                                        <div className={cn("font-semibold flex items-center gap-1.5", viewMode === 'day' ? "text-sm mb-1" : "")}>
+                                                        <div className={cn("font-semibold flex items-center gap-1", viewMode === 'day' ? "text-sm mb-1" : "justify-center md:justify-start")}>
                                                             <activity.icon className={cn("flex-shrink-0 opacity-70", viewMode === 'day' ? "w-4 h-4" : "w-3 h-3")} />
-                                                            <span className="truncate">{activity.time} - {activity.title}</span>
+                                                            <span className="truncate leading-tight">{viewMode === 'week' ? (
+                                                                <span className="md:hidden font-normal hidden">{activity.title}</span>
+                                                            ) : null}
+                                                                <span className="hidden md:inline">{activity.time} - {activity.title}</span>
+                                                            </span>
                                                         </div>
                                                         {viewMode === 'day' && (
                                                             <div className="text-xs opacity-70 pl-6">
@@ -981,185 +1096,633 @@ export function ScheduleCalendar() {
                         </div>
                         <ScrollBar orientation="horizontal" />
                     </ScrollArea>
-                ) : null
-            }
+                ) : null}
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[425px] rounded-2xl">
+                <DialogContent className="sm:max-w-[500px] rounded-2xl">
                     <DialogHeader>
                         <DialogTitle>แก้ไขกิจกรรม</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        {selectedDay !== null && getDaySchedule(selectedDay).activities.map((activity) => (
-                            <div key={activity.id} className="grid grid-cols-4 items-center gap-4 border-b pb-4 last:border-0">
-                                <Input
-                                    id={`time-${activity.id}`}
-                                    defaultValue={activity.time}
-                                    className="col-span-1"
-                                    onChange={(e) => handleUpdateActivityTime(selectedDay, activity.id, e.target.value)}
-                                />
-                                <Input
-                                    id={`title-${activity.id}`}
-                                    defaultValue={activity.title}
-                                    className="col-span-2"
-                                    onChange={(e) => handleUpdateActivityTitle(selectedDay, activity.id, e.target.value)}
-                                />
-                                <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    onClick={() => handleRemoveActivity(selectedDay, activity.id)}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
-                        <Button onClick={handleAddActivity} className="w-full">
+                        {selectedDay !== null && getDaysToRender().find(d => d?.getDay() === selectedDay) && getDaySchedule(selectedDay).activities.map((activity) => {
+                            const activityDate = getDaysToRender().find(d => d?.getDay() === selectedDay) || new Date();
+                            return (
+                                <div key={activity.id} className="flex items-center gap-3 border-b pb-4 last:border-0">
+                                    <Input
+                                        id={"time-" + activity.id}
+                                        defaultValue={activity.time}
+                                        className="w-20 flex-shrink-0"
+                                        onChange={(e) => handleUpdateActivityTime(selectedDay, activity.id, e.target.value)}
+                                    />
+                                    <Input
+                                        id={"title-" + activity.id}
+                                        defaultValue={activity.title}
+                                        className="flex-1"
+                                        onChange={(e) => handleUpdateActivityTitle(selectedDay, activity.id, e.target.value)}
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="flex-shrink-0 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                                        onClick={() => {
+                                            setIsDialogOpen(false);
+                                            handleOpenReschedule(activity, activityDate);
+                                        }}
+                                        title="เลื่อนเวลา"
+                                    >
+                                        <CalendarIcon className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        className="flex-shrink-0"
+                                        onClick={() => handleRemoveActivity(selectedDay, activity.id)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            );
+                        })}
+                        <Button
+                            onClick={() => {
+                                setIsDialogOpen(false);
+                                handleOpenReviewDialog();
+                            }}
+                            className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+                        >
                             + เพิ่มกิจกรรม
                         </Button>
                     </div>
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-                <DialogContent className="max-w-4xl h-[75vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border-none shadow-2xl">
-                    <DialogHeader className="px-5 py-3 border-b bg-white flex-shrink-0 relative">
-                        <DialogTitle className="text-lg font-bold flex items-center gap-2 text-gray-800">
-                            <Clock className="w-5 h-5 text-purple-600" />
-                            ตั้งเวลาทบทวนคำศัพท์
+            {/* Reschedule Dialog */}
+            <Dialog open={isRescheduleDialogOpen} onOpenChange={setIsRescheduleDialogOpen}>
+                <DialogContent className="sm:max-w-[400px] rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-purple-700">
+                            <CalendarIcon className="w-5 h-5" />
+                            เลื่อนเวลากิจกรรม
                         </DialogTitle>
-                        <div className="absolute right-12 top-3 flex gap-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-9 px-4 text-sm rounded-full bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all font-medium shadow-sm gap-1.5"
-                                onClick={() => handleAutoClick('today')}
-                            >
-                                <Zap className="w-3.5 h-3.5" />
-                                Auto วันนี้
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-9 px-4 text-sm rounded-full bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all font-medium shadow-sm gap-1.5"
-                                onClick={() => handleAutoClick('tomorrow')}
-                            >
-                                <CalendarDays className="w-3.5 h-3.5" />
-                                Auto พรุ่งนี้
-                            </Button>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        {/* Current Activity Info */}
+                        <div className="p-3 bg-purple-50 rounded-xl border border-purple-100">
+                            <div className="text-xs text-purple-500 mb-1">กิจกรรม</div>
+                            <div className="font-semibold text-purple-700">{rescheduleActivityTitle}</div>
+                        </div>
+
+                        {/* Date Picker */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">เลือกวันใหม่</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start text-left font-normal border-gray-200"
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4 text-purple-500" />
+                                        {format(rescheduleNewDate, 'd MMMM yyyy', { locale: th })}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={rescheduleNewDate}
+                                        onSelect={(date) => date && setRescheduleNewDate(date)}
+                                        initialFocus
+                                        className="p-3 pointer-events-auto"
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        {/* Time Picker */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">เลือกเวลาใหม่</Label>
+                            <TimePicker value={rescheduleNewTime} onChange={setRescheduleNewTime} />
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsRescheduleDialogOpen(false)}
+                            className="flex-1"
+                        >
+                            ยกเลิก
+                        </Button>
+                        <Button
+                            onClick={handleReschedule}
+                            className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                        >
+                            บันทึก
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+                <DialogContent className="w-[95vw] max-w-6xl h-[85vh] max-h-[700px] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border-none shadow-2xl bg-white">
+                    {/* Header - Clean and Simple */}
+                    <DialogHeader className="px-4 py-3 border-b bg-white flex-shrink-0">
+                        <div className="flex items-center justify-between">
+                            <DialogTitle className="text-base font-bold flex items-center gap-2 text-gray-800">
+                                <Clock className="w-5 h-5 text-purple-600" />
+                                ตั้งเวลาทบทวน
+                            </DialogTitle>
+                            {/* Auto buttons - show on all screen sizes */}
+                            <div className="flex gap-2 mr-8">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-3 text-xs rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium gap-1.5"
+                                    onClick={() => handleAutoClick('today')}
+                                >
+                                    <Zap className="w-4 h-4" />
+                                    วันนี้
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-3 text-xs rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 font-medium gap-1.5"
+                                    onClick={() => handleAutoClick('tomorrow')}
+                                >
+                                    <CalendarDays className="w-4 h-4" />
+                                    พรุ่งนี้
+                                </Button>
+                            </div>
                         </div>
                     </DialogHeader>
 
-                    <div className="flex-1 overflow-hidden bg-gray-50/30">
-                        <div className="flex flex-col lg:grid lg:grid-cols-12 h-full">
-                            {/* Left Column: Selected Items Summary */}
-                            <div className="hidden lg:flex lg:col-span-3 flex-col border-r bg-white h-full">
-                                <div className="p-3 border-b flex items-center justify-between bg-purple-50/30">
-                                    <div className="flex items-center gap-2 text-purple-700 font-semibold text-sm">
+                    {/* Main Content - 3-column layout on desktop */}
+                    <div className="flex-1 overflow-hidden">
+                        <div className="flex flex-col lg:flex-row h-full">
+                            {/* Left Column: Selected Items (hidden on mobile, show in tabs) */}
+                            <div className="hidden lg:flex lg:w-[200px] xl:w-[240px] flex-col border-r bg-gray-50/50 flex-shrink-0">
+                                <div className="p-3 border-b bg-white flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-purple-700 font-semibold text-xs">
                                         <CheckCircle className="w-4 h-4" />
                                         <span>รายการที่เลือก</span>
                                     </div>
-                                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-xs">
+                                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-[10px] px-1.5 py-0">
                                         {selectedItems.length}
                                     </Badge>
                                 </div>
-                                <ScrollArea className="flex-1 p-3">
-                                    {selectedItems.length > 0 ? (
-                                        <div className="space-y-2">
-                                            {selectedItems.map((item) => (
-                                                <div key={item.id} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50 border border-gray-100 group hover:border-purple-200 hover:bg-purple-50/30 transition-all">
-                                                    <div className="mt-1 min-w-[3px] h-3 rounded-full bg-purple-400" />
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-xs font-medium text-gray-900 truncate">{item.front_text}</p>
-                                                        <p className="text-[10px] text-gray-500 truncate">{item.back_text}</p>
+                                <ScrollArea className="flex-1">
+                                    <div className="p-2 space-y-1.5">
+                                        {selectedItems.length > 0 ? (
+                                            selectedItems.map((item) => {
+                                                // Get SRS level color
+                                                const level = item.srs_level ?? 0;
+                                                let levelColor = '#B71C1C';
+                                                if (level === 0) levelColor = '#B71C1C';
+                                                else if (level === 1) levelColor = '#E53935';
+                                                else if (level === 2) levelColor = '#FF5722';
+                                                else if (level === 3) levelColor = '#FF8A65';
+                                                else levelColor = '#FFCCBC';
+
+                                                return (
+                                                    <div key={item.id} className="flex items-start gap-2 p-2 rounded-lg bg-white border border-gray-100 group hover:border-purple-200 hover:shadow-sm transition-all">
+                                                        <div
+                                                            className="mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ring-2 ring-white shadow-sm"
+                                                            style={{ backgroundColor: levelColor }}
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-[11px] font-medium text-gray-800">{item.front_text}</p>
+                                                            <p className="text-[10px] text-gray-400">{item.back_text}</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setSelectedItems(prev => prev.filter(i => i.id !== item.id))}
+                                                            className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-100 text-red-400 hover:text-red-500 rounded transition-all"
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        onClick={() => setSelectedItems(prev => prev.filter(i => i.id !== item.id))}
-                                                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-100 text-red-500 rounded transition-all"
-                                                    >
-                                                        <X className="w-3 h-3" />
-                                                    </button>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="py-8 flex flex-col items-center justify-center text-center text-gray-400 space-y-2">
+                                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                                    <CheckCircle className="w-5 h-5 text-gray-300" />
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="h-full flex flex-col items-center justify-center text-center p-4 text-gray-400 space-y-2">
-                                            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                                                <CheckCircle className="w-6 h-6 text-gray-300" />
+                                                <p className="text-[10px] text-gray-400">เลือกคำศัพท์จากรายการ</p>
                                             </div>
-                                            <div>
-                                                <p className="font-medium text-gray-500 text-sm">ยังไม่ได้เลือกรายการ</p>
-                                                <p className="text-[10px]">เลือกคำศัพท์จากรายการด้านขวา</p>
-                                            </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </ScrollArea>
                             </div>
 
-                            {/* Middle Column: Source Selection */}
-                            <div className="lg:col-span-5 flex flex-col border-r bg-white h-auto lg:h-full flex-shrink-0">
-                                <Tabs defaultValue="latest" className="flex-1 flex flex-col h-full" onValueChange={setActiveTab}>
-                                    <div className="px-3 py-2 border-b bg-white">
-                                        <TabsList className="w-full grid grid-cols-4 lg:grid-cols-3 bg-gray-100/50 p-1 h-9">
-                                            <TabsTrigger value="selected" className="lg:hidden data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md text-xs">
-                                                เลือก ({selectedItems.length})
-                                            </TabsTrigger>
-                                            <TabsTrigger value="weak" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md text-xs">ยังจำไม่ได้</TabsTrigger>
-                                            <TabsTrigger value="latest" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md text-xs">ล่าสุด</TabsTrigger>
-                                            <TabsTrigger value="library" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md text-xs">คลังคำศัพท์</TabsTrigger>
+                            {/* Center Column: Vocabulary Selection Tabs */}
+                            <div className="flex-1 flex flex-col min-w-0 bg-white">
+                                <Tabs value={activeTab} className="flex-1 flex flex-col h-full" onValueChange={setActiveTab}>
+                                    <div className="px-3 py-2 border-b bg-gray-50/50 flex-shrink-0">
+                                        {/* Mobile: 2 simple tabs */}
+                                        <TabsList className="w-full grid grid-cols-2 md:hidden bg-white border p-0.5 h-10 rounded-lg shadow-sm">
+                                            <TabsTrigger value="vocabulary" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 rounded-md text-xs font-medium">คำศัพท์</TabsTrigger>
+                                            <TabsTrigger value="settings" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 rounded-md text-xs font-medium">ตั้งค่า</TabsTrigger>
+                                        </TabsList>
+                                        {/* Tablet/Desktop: Full tabs */}
+                                        <TabsList className="hidden md:grid w-full grid-cols-4 lg:grid-cols-3 bg-white border p-0.5 h-8 rounded-lg shadow-sm">
+                                            <TabsTrigger value="selected" className="lg:hidden data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 rounded-md text-[10px] font-medium">เลือก ({selectedItems.length})</TabsTrigger>
+                                            <TabsTrigger value="weak" className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 rounded-md text-[10px] font-medium">ยังจำไม่ได้</TabsTrigger>
+                                            <TabsTrigger value="latest" className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 rounded-md text-[10px] font-medium">ล่าสุด</TabsTrigger>
+                                            <TabsTrigger value="library" className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 rounded-md text-[10px] font-medium">คลังคำศัพท์</TabsTrigger>
                                         </TabsList>
                                     </div>
 
-                                    <div className="flex-1 overflow-hidden relative min-h-[300px] lg:min-h-0">
-                                        <TabsContent value="selected" className="h-full m-0 absolute inset-0 lg:hidden">
-                                            <ScrollArea className="h-full">
-                                                <div className="p-2">
-                                                    <div className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">รายการที่เลือก</div>
-                                                    {selectedItems.length > 0 ? (
-                                                        <div className="space-y-1 p-1">
-                                                            {selectedItems.map((item) => (
-                                                                <div key={item.id} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50 border border-gray-100 group hover:border-purple-200 hover:bg-purple-50/30 transition-all">
-                                                                    <div className="mt-1 min-w-[3px] h-3 rounded-full bg-purple-400" />
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <p className="text-xs font-medium text-gray-900 truncate">{item.front_text}</p>
-                                                                        <p className="text-[10px] text-gray-500 truncate">{item.back_text}</p>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => setSelectedItems(prev => prev.filter(i => i.id !== item.id))}
-                                                                        className="p-1 hover:bg-red-100 text-red-500 rounded transition-all"
-                                                                    >
-                                                                        <X className="w-3 h-3" />
-                                                                    </button>
+                                    <div className="flex-1 overflow-hidden relative flex flex-col">
+                                        {/* Mobile: Vocabulary Tab with 2-Column Layout */}
+                                        <TabsContent value="vocabulary" className="h-full m-0 absolute inset-0 md:hidden">
+                                            <div className="flex h-full">
+                                                {/* Left: Selected Items */}
+                                                <div className="w-[120px] flex-shrink-0 border-r bg-gray-50/50 flex flex-col">
+                                                    <div className="p-2 border-b bg-white flex items-center justify-between">
+                                                        <div className="flex items-center gap-1 text-purple-700 font-semibold text-[10px]">
+                                                            <CheckCircle className="w-3 h-3" />
+                                                            <span>รายการที่เลือก</span>
+                                                        </div>
+                                                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-[9px] px-1 py-0">{selectedItems.length}</Badge>
+                                                    </div>
+                                                    <ScrollArea className="flex-1">
+                                                        <div className="p-1.5 space-y-1">
+                                                            {selectedItems.length > 0 ? (
+                                                                selectedItems.map((item) => {
+                                                                    // Get SRS level color
+                                                                    const level = item.srs_level ?? 0;
+                                                                    let levelColor = '#B71C1C';
+                                                                    if (level === 0) levelColor = '#B71C1C';
+                                                                    else if (level === 1) levelColor = '#E53935';
+                                                                    else if (level === 2) levelColor = '#FF5722';
+                                                                    else if (level === 3) levelColor = '#FF8A65';
+                                                                    else levelColor = '#FFCCBC';
+
+                                                                    return (
+                                                                        <div key={item.id} className="flex items-start gap-1 p-1.5 rounded-lg bg-white border border-gray-100 group">
+                                                                            <div
+                                                                                className="mt-1 w-2 h-2 rounded-full flex-shrink-0 ring-1 ring-white shadow-sm"
+                                                                                style={{ backgroundColor: levelColor }}
+                                                                            />
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="text-[9px] font-medium text-gray-800">{item.front_text}</p>
+                                                                                <p className="text-[8px] text-gray-400">{item.back_text}</p>
+                                                                            </div>
+                                                                            <button onClick={() => setSelectedItems(prev => prev.filter(i => i.id !== item.id))} className="p-0.5 text-gray-300 hover:text-red-500 rounded">
+                                                                                <X className="w-2.5 h-2.5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            ) : (
+                                                                <div className="py-6 flex flex-col items-center text-center text-gray-400 space-y-1">
+                                                                    <CheckCircle className="w-5 h-5 text-gray-200" />
+                                                                    <p className="text-[8px]">เลือกคำศัพท์<br />จากรายการ</p>
                                                                 </div>
+                                                            )}
+                                                        </div>
+                                                    </ScrollArea>
+                                                </div>
+                                                {/* Right: Vocabulary Sub-tabs */}
+                                                <div className="flex-1 flex flex-col min-w-0">
+                                                    <Tabs defaultValue="latest" className="flex flex-col h-full">
+                                                        <div className="px-2 py-1.5 border-b bg-gray-50/30 flex-shrink-0">
+                                                            <TabsList className="w-full grid grid-cols-3 bg-white border p-0.5 h-7 rounded-lg shadow-sm">
+                                                                <TabsTrigger value="weak" className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 rounded-md text-[9px] font-medium">ยังจำไม่ได้</TabsTrigger>
+                                                                <TabsTrigger value="latest" className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 rounded-md text-[9px] font-medium">ล่าสุด</TabsTrigger>
+                                                                <TabsTrigger value="library" className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 rounded-md text-[9px] font-medium">คลังคำศัพท์</TabsTrigger>
+                                                            </TabsList>
+                                                        </div>
+                                                        <div className="flex-1 overflow-hidden relative">
+                                                            <TabsContent value="weak" className="h-full m-0 absolute inset-0 data-[state=active]:flex flex-col bg-white">
+                                                                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                                                    <div className="p-4 space-y-3">
+                                                                        <h3 className="text-sm font-semibold text-gray-700 mb-2">คำศัพท์ที่ต้องทบทวน</h3>
+                                                                        {recommendedCards.length > 0 ? recommendedCards.map((card, index) => {
+                                                                            // SRS Level Color Logic
+                                                                            const level = card.srs_level ?? 0;
+                                                                            let levelColor = '#B71C1C';
+                                                                            let ringColor = 'ring-red-100';
+                                                                            let badgeText = 'วิกฤต';
+
+                                                                            if (level === 0) {
+                                                                                levelColor = '#B71C1C';
+                                                                                badgeText = 'วิกฤต';
+                                                                                ringColor = 'ring-red-100';
+                                                                            } else if (level === 1) {
+                                                                                levelColor = '#E53935';
+                                                                                badgeText = 'เร่งด่วน';
+                                                                                ringColor = 'ring-red-50';
+                                                                            } else if (level === 2) {
+                                                                                levelColor = '#FF5722';
+                                                                                badgeText = 'ปานกลาง';
+                                                                                ringColor = 'ring-orange-100';
+                                                                            } else if (level === 3) {
+                                                                                levelColor = '#FF8A65';
+                                                                                badgeText = 'พอใช้';
+                                                                                ringColor = 'ring-orange-50';
+                                                                            } else {
+                                                                                levelColor = '#FFCCBC';
+                                                                                badgeText = 'ดี';
+                                                                                ringColor = 'ring-slate-100';
+                                                                            }
+
+                                                                            const isSelected = selectedItems.some(i => i.id === card.id);
+                                                                            const isDarkBackground = level <= 2;
+                                                                            const mainTextColor = isSelected ? 'text-slate-900' : (isDarkBackground ? 'text-white' : 'text-slate-900');
+                                                                            const subTextColor = isSelected ? 'text-slate-500' : (isDarkBackground ? 'text-white/80' : 'text-slate-600');
+
+                                                                            return (
+                                                                                <div
+                                                                                    key={card.id || index}
+                                                                                    className={"flex items-center gap-4 p-3 border rounded-2xl transition-all cursor-pointer group " + (isSelected ? 'border-purple-500' : 'border-transparent shadow-sm hover:shadow-md')}
+                                                                                    style={{
+                                                                                        backgroundColor: levelColor,
+                                                                                    }}
+                                                                                    onClick={() => {
+                                                                                        setSelectedItems(prev =>
+                                                                                            prev.some(i => i.id === card.id)
+                                                                                                ? prev.filter(i => i.id !== card.id)
+                                                                                                : [...prev, card]
+                                                                                        );
+                                                                                    }}
+                                                                                >
+                                                                                    <div
+                                                                                        className={"w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors " + (isSelected ? 'bg-white border-white' : (isDarkBackground ? 'border-white/50 bg-black/10' : 'border-slate-400 bg-white/50'))}
+                                                                                    >
+                                                                                        {isSelected && (
+                                                                                            <Check className="w-3.5 h-3.5 text-purple-600" />
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <div className={"text-sm font-semibold " + mainTextColor}>{card.front_text}</div>
+                                                                                            <div
+                                                                                                className="px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm"
+                                                                                                style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#fff' }}
+                                                                                            >
+                                                                                                {badgeText}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className={"text-xs " + subTextColor}>{card.back_text}</div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        }) : (
+                                                                            <div className="py-12 text-center text-xs text-gray-400">
+                                                                                ไม่มีคำศัพท์ที่ต้องทบทวนในขณะนี้
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </TabsContent>
+
+                                                            <TabsContent value="latest" className="h-full m-0 absolute inset-0 data-[state=active]:flex flex-col bg-white">
+                                                                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                                                    <div className="p-4 space-y-3">
+                                                                        <h3 className="text-sm font-semibold text-gray-700 mb-2">คำศัพท์ที่เรียนล่าสุด</h3>
+                                                                        {flashcards.map((card) => (
+                                                                            <div
+                                                                                key={card.id}
+                                                                                className={cn(
+                                                                                    "flex items-center gap-4 p-3 rounded-2xl border transition-all cursor-pointer",
+                                                                                    selectedItems.some(i => i.id === card.id)
+                                                                                        ? "bg-purple-50 border-purple-200"
+                                                                                        : "bg-white border-gray-100 hover:border-purple-100 hover:bg-purple-50/30"
+                                                                                )}
+                                                                                onClick={() => {
+                                                                                    setSelectedItems(prev =>
+                                                                                        prev.some(i => i.id === card.id)
+                                                                                            ? prev.filter(i => i.id !== card.id)
+                                                                                            : [...prev, card]
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                <div className={cn(
+                                                                                    "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                                                                                    selectedItems.some(i => i.id === card.id)
+                                                                                        ? "border-purple-500 bg-purple-500"
+                                                                                        : "border-purple-200"
+                                                                                )}>
+                                                                                    {selectedItems.some(i => i.id === card.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                                                                                </div>
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <p className="text-sm font-semibold text-gray-800">{card.front_text}</p>
+                                                                                    <p className="text-xs text-gray-500">{card.back_text}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </TabsContent>
+
+                                                            <TabsContent value="library" className="h-full m-0 absolute inset-0">
+                                                                <div className="flex flex-col h-full">
+                                                                    <div className="p-3 bg-white border-b space-y-2 flex-shrink-0">
+                                                                        <div className="grid grid-cols-2 gap-2">
+                                                                            <Select value={selectedFolderId} onValueChange={(v) => { setSelectedFolderId(v); setSelectedSetId(""); }}>
+                                                                                <SelectTrigger className="h-8 text-xs bg-gray-50 border-gray-200"><SelectValue placeholder="เลือกโฟลเดอร์" /></SelectTrigger>
+                                                                                <SelectContent>
+                                                                                    {userFolders.map((f) => (<SelectItem key={f.id} value={f.id} className="text-xs">{f.title}</SelectItem>))}
+                                                                                </SelectContent>
+                                                                            </Select>
+                                                                            <Select value={selectedSetId} onValueChange={setSelectedSetId} disabled={!selectedFolderId}>
+                                                                                <SelectTrigger className="h-8 text-xs bg-gray-50 border-gray-200"><SelectValue placeholder="เลือกชุดคำศัพท์" /></SelectTrigger>
+                                                                                <SelectContent>
+                                                                                    {userSets.map((s) => (<SelectItem key={s.id} value={s.id} className="text-xs">{s.title}</SelectItem>))}
+                                                                                </SelectContent>
+                                                                            </Select>
+                                                                        </div>
+                                                                    </div>
+                                                                    <ScrollArea className="flex-1">
+                                                                        <div className="p-3 space-y-1.5">
+                                                                            {isLoadingLibrary ? (
+                                                                                <div className="py-12 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+                                                                                    <Loader2 className="w-5 h-5 animate-spin" />กำลังโหลด...
+                                                                                </div>
+                                                                            ) : !selectedSetId ? (
+                                                                                <div className="py-12 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+                                                                                    <BookOpen className="w-8 h-8 text-gray-200" />เลือกชุดคำศัพท์
+                                                                                </div>
+                                                                            ) : libraryVocabulary.length > 0 ? (
+                                                                                libraryVocabulary.map((card) => (
+                                                                                    <div
+                                                                                        key={card.id}
+                                                                                        className={cn(
+                                                                                            "flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer",
+                                                                                            selectedItems.some(i => i.id === card.id)
+                                                                                                ? "bg-purple-50 border-purple-200"
+                                                                                                : "bg-white border-gray-100 hover:border-purple-100 hover:bg-purple-50/30"
+                                                                                        )}
+                                                                                        onClick={() => {
+                                                                                            setSelectedItems(prev =>
+                                                                                                prev.some(i => i.id === card.id)
+                                                                                                    ? prev.filter(i => i.id !== card.id)
+                                                                                                    : [...prev, card]
+                                                                                            );
+                                                                                        }}
+                                                                                    >
+                                                                                        <Checkbox
+                                                                                            checked={selectedItems.some(i => i.id === card.id)}
+                                                                                            onCheckedChange={() => { }}
+                                                                                            className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 w-4 h-4"
+                                                                                        />
+                                                                                        <div className="flex-1 min-w-0">
+                                                                                            <p className="text-xs font-medium text-gray-800 truncate">{card.front_text}</p>
+                                                                                            <p className="text-[10px] text-gray-400 truncate">{card.back_text}</p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))
+                                                                            ) : (
+                                                                                <div className="py-12 text-center text-xs text-gray-400">
+                                                                                    ไม่พบคำศัพท์ในชุดนี้
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </ScrollArea>
+                                                                </div>
+                                                            </TabsContent>
+                                                        </div>
+                                                    </Tabs>
+                                                </div>
+                                            </div>
+                                        </TabsContent>
+
+                                        {/* Mobile Settings Tab */}
+                                        <TabsContent value="settings" className="h-full m-0 absolute inset-0 md:hidden">
+                                            <ScrollArea className="h-full">
+                                                <div className="p-4 space-y-4">
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs font-semibold text-gray-700">ชื่อกิจกรรม</Label>
+                                                        <Input
+                                                            value={reviewTitle}
+                                                            onChange={(e) => {
+                                                                setReviewTitle(e.target.value);
+                                                                if (e.target.value.trim()) setShowError(false);
+                                                            }}
+                                                            className={cn(
+                                                                "h-10 text-sm bg-white border-gray-200 rounded-lg",
+                                                                showError && !reviewTitle.trim() ? "border-red-400 bg-red-50" : ""
+                                                            )}
+                                                            placeholder="ทบทวนคำศัพท์บทที่ 1"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs font-semibold text-gray-700">ไอคอน</Label>
+                                                        <div className="grid grid-cols-8 gap-2">
+                                                            {Object.entries(AVAILABLE_ICONS).map(([key, Icon]) => (
+                                                                <button
+                                                                    key={key}
+                                                                    type="button"
+                                                                    onClick={() => setReviewIcon(key)}
+                                                                    className={cn(
+                                                                        "w-9 h-9 flex items-center justify-center rounded-lg transition-all",
+                                                                        reviewIcon === key
+                                                                            ? "bg-purple-100 text-purple-600 ring-2 ring-purple-400"
+                                                                            : "bg-white border border-gray-200 text-gray-500"
+                                                                    )}
+                                                                >
+                                                                    <Icon className="w-4 h-4" />
+                                                                </button>
                                                             ))}
                                                         </div>
-                                                    ) : (
-                                                        <div className="h-full flex flex-col items-center justify-center text-center p-8 text-gray-400 space-y-2">
-                                                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                                                <CheckCircle className="w-5 h-5 text-gray-300" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-medium text-gray-500 text-xs">ยังไม่ได้เลือกรายการ</p>
-                                                            </div>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs font-semibold text-gray-700">สี</Label>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {AVAILABLE_COLORS.map((color) => (
+                                                                <button
+                                                                    key={color.value}
+                                                                    type="button"
+                                                                    onClick={() => setReviewColor(color.value)}
+                                                                    className={cn(
+                                                                        "w-8 h-8 rounded-full transition-all",
+                                                                        color.class.split(' ')[0],
+                                                                        reviewColor === color.value ? `ring - 2 ${color.ring} scale - 110` : ""
+                                                                    )}
+                                                                />
+                                                            ))}
                                                         </div>
-                                                    )}
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-3">
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs font-semibold text-gray-700">วันที่</Label>
+                                                            <Popover>
+                                                                <PopoverTrigger asChild>
+                                                                    <Button variant="outline" className="w-full h-10 justify-start text-left text-xs bg-white">
+                                                                        <CalendarIcon className="mr-1 h-4 w-4 text-purple-500" />
+                                                                        {reviewDate ? format(reviewDate, "d MMM", { locale: th }) : "เลือก"}
+                                                                    </Button>
+                                                                </PopoverTrigger>
+                                                                <PopoverContent className="w-auto p-0" align="start">
+                                                                    <Calendar mode="single" selected={reviewDate} onSelect={(d) => d && setReviewDate(d)} initialFocus />
+                                                                </PopoverContent>
+                                                            </Popover>
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs font-semibold text-gray-700">เวลา</Label>
+                                                            <Input type="time" value={reviewTime} onChange={(e) => setReviewTime(e.target.value)} className="h-10 text-xs bg-white" />
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-xs font-semibold text-gray-700">นาที</Label>
+                                                            <Select value={reviewDuration.toString()} onValueChange={(v) => setReviewDuration(parseInt(v))}>
+                                                                <SelectTrigger className="h-10 text-xs bg-white"><SelectValue /></SelectTrigger>
+                                                                <SelectContent>
+                                                                    {[10, 15, 20, 30, 45, 60, 90, 120].map((t) => (
+                                                                        <SelectItem key={t} value={t.toString()}>{t} นาที</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </ScrollArea>
                                         </TabsContent>
 
-                                        <TabsContent value="weak" className="h-full m-0 absolute inset-0">
-                                            <ScrollArea className="h-full">
-                                                <div className="p-2">
-                                                    <div className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">คำศัพท์ที่ต้องทบทวน</div>
-                                                    <div className="space-y-1 p-1">
-                                                        {recommendedCards.length > 0 ? recommendedCards.map((card) => (
+                                        {/* Desktop Tabs: Weak, Latest, Library (Hidden on Mobile) */}
+                                        <TabsContent value="weak" className="h-full m-0 absolute inset-0 data-[state=active]:flex flex-col bg-white">
+                                            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                                <div className="p-4 space-y-3">
+                                                    <h3 className="text-sm font-semibold text-gray-700 mb-2">คำศัพท์ที่ต้องทบทวน</h3>
+                                                    {recommendedCards.length > 0 ? recommendedCards.map((card, index) => {
+                                                        // SRS Level Color Logic
+                                                        const level = card.srs_level ?? 0;
+                                                        let levelColor = '#B71C1C';
+                                                        let ringColor = 'ring-red-100';
+                                                        let badgeText = 'วิกฤต';
+
+                                                        if (level === 0) {
+                                                            levelColor = '#B71C1C';
+                                                            badgeText = 'วิกฤต';
+                                                            ringColor = 'ring-red-100';
+                                                        } else if (level === 1) {
+                                                            levelColor = '#E53935';
+                                                            badgeText = 'เร่งด่วน';
+                                                            ringColor = 'ring-red-50';
+                                                        } else if (level === 2) {
+                                                            levelColor = '#FF5722';
+                                                            badgeText = 'ปานกลาง';
+                                                            ringColor = 'ring-orange-100';
+                                                        } else if (level === 3) {
+                                                            levelColor = '#FF8A65';
+                                                            badgeText = 'พอใช้';
+                                                            ringColor = 'ring-orange-50';
+                                                        } else {
+                                                            levelColor = '#FFCCBC';
+                                                            badgeText = 'ดี';
+                                                            ringColor = 'ring-slate-100';
+                                                        }
+
+                                                        const isSelected = selectedItems.some(i => i.id === card.id);
+                                                        const isDarkBackground = level <= 2;
+                                                        const mainTextColor = isSelected ? 'text-slate-900' : (isDarkBackground ? 'text-white' : 'text-slate-900');
+                                                        const subTextColor = isSelected ? 'text-slate-500' : (isDarkBackground ? 'text-white/80' : 'text-slate-600');
+
+                                                        return (
                                                             <div
-                                                                key={card.id}
-                                                                className={cn(
-                                                                    "flex items-center gap-3 p-2 rounded-lg border transition-all cursor-pointer hover:bg-gray-50",
-                                                                    selectedItems.some(i => i.id === card.id)
-                                                                        ? "bg-purple-50 border-purple-200 shadow-sm"
-                                                                        : "bg-white border-transparent hover:border-gray-200"
-                                                                )}
+                                                                key={card.id || index}
+                                                                className={"flex items-center gap-4 p-3 border rounded-2xl transition-all cursor-pointer group " + (isSelected ? 'border-purple-500' : 'border-transparent shadow-sm hover:shadow-md')}
+                                                                style={{
+                                                                    backgroundColor: levelColor,
+                                                                }}
                                                                 onClick={() => {
                                                                     setSelectedItems(prev =>
                                                                         prev.some(i => i.id === card.id)
@@ -1168,216 +1731,188 @@ export function ScheduleCalendar() {
                                                                     );
                                                                 }}
                                                             >
-                                                                <Checkbox
-                                                                    checked={selectedItems.some(i => i.id === card.id)}
-                                                                    onCheckedChange={() => { }}
-                                                                    className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 w-4 h-4"
-                                                                />
+                                                                <div
+                                                                    className={"w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors " + (isSelected ? 'bg-white border-white' : (isDarkBackground ? 'border-white/50 bg-black/10' : 'border-slate-400 bg-white/50'))}
+                                                                >
+                                                                    {isSelected && (
+                                                                        <Check className="w-3.5 h-3.5 text-purple-600" />
+                                                                    )}
+                                                                </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <p className={cn("text-xs font-medium truncate", selectedItems.some(i => i.id === card.id) ? "text-purple-900" : "text-gray-700")}>
-                                                                        {card.front_text}
-                                                                    </p>
-                                                                    <p className="text-[10px] text-gray-500 truncate">{card.back_text}</p>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className={"text-sm font-semibold " + mainTextColor}>{card.front_text}</div>
+                                                                        <div
+                                                                            className="px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm"
+                                                                            style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#fff' }}
+                                                                        >
+                                                                            {badgeText}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className={"text-xs " + subTextColor}>{card.back_text}</div>
                                                                 </div>
                                                             </div>
-                                                        )) : (
-                                                            <div className="p-4 text-center text-xs text-gray-400">
-                                                                ไม่มีคำศัพท์ที่ต้องทบทวนในขณะนี้
+                                                        );
+                                                    }) : (
+                                                        <div className="py-12 text-center text-xs text-gray-400">
+                                                            ไม่มีคำศัพท์ที่ต้องทบทวนในขณะนี้
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </TabsContent>
+
+                                        <TabsContent value="latest" className="h-full m-0 absolute inset-0 data-[state=active]:flex flex-col bg-white">
+                                            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                                <div className="p-4 space-y-3">
+                                                    <h3 className="text-sm font-semibold text-gray-700 mb-2">คำศัพท์ที่เรียนล่าสุด</h3>
+                                                    {flashcards.map((card) => (
+                                                        <div
+                                                            key={card.id}
+                                                            className={cn(
+                                                                "flex items-center gap-4 p-3 rounded-2xl border transition-all cursor-pointer",
+                                                                selectedItems.some(i => i.id === card.id)
+                                                                    ? "bg-purple-50 border-purple-200"
+                                                                    : "bg-white border-gray-100 hover:border-purple-100 hover:bg-purple-50/30"
+                                                            )}
+                                                            onClick={() => {
+                                                                setSelectedItems(prev =>
+                                                                    prev.some(i => i.id === card.id)
+                                                                        ? prev.filter(i => i.id !== card.id)
+                                                                        : [...prev, card]
+                                                                );
+                                                            }}
+                                                        >
+                                                            <div className={cn(
+                                                                "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                                                                selectedItems.some(i => i.id === card.id)
+                                                                    ? "border-purple-500 bg-purple-500"
+                                                                    : "border-purple-200"
+                                                            )}>
+                                                                {selectedItems.some(i => i.id === card.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-semibold text-gray-800">{card.front_text}</p>
+                                                                <p className="text-xs text-gray-500">{card.back_text}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </TabsContent>
+
+                                        <TabsContent value="library" className="flex-1 flex flex-col min-h-0">
+                                            <div className="flex flex-col h-full">
+                                                <div className="p-3 bg-white border-b space-y-2 flex-shrink-0">
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <Select value={selectedFolderId} onValueChange={(v) => { setSelectedFolderId(v); setSelectedSetId(""); }}>
+                                                            <SelectTrigger className="h-8 text-xs bg-gray-50 border-gray-200"><SelectValue placeholder="เลือกโฟลเดอร์" /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {userFolders.map((f) => (<SelectItem key={f.id} value={f.id} className="text-xs">{f.title}</SelectItem>))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <Select value={selectedSetId} onValueChange={setSelectedSetId} disabled={!selectedFolderId}>
+                                                            <SelectTrigger className="h-8 text-xs bg-gray-50 border-gray-200"><SelectValue placeholder="เลือกชุดคำศัพท์" /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {userSets.map((s) => (<SelectItem key={s.id} value={s.id} className="text-xs">{s.title}</SelectItem>))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                                    <div className="p-3 space-y-1.5">
+                                                        {isLoadingLibrary ? (
+                                                            <div className="py-12 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+                                                                <Loader2 className="w-5 h-5 animate-spin" />กำลังโหลด...
+                                                            </div>
+                                                        ) : !selectedSetId ? (
+                                                            <div className="py-12 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+                                                                <BookOpen className="w-8 h-8 text-gray-200" />เลือกชุดคำศัพท์
+                                                            </div>
+                                                        ) : libraryVocabulary.length > 0 ? (
+                                                            libraryVocabulary.map((card) => (
+                                                                <div
+                                                                    key={card.id}
+                                                                    className={cn(
+                                                                        "flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer",
+                                                                        selectedItems.some(i => i.id === card.id)
+                                                                            ? "bg-purple-50 border-purple-200"
+                                                                            : "bg-white border-gray-100 hover:border-purple-100 hover:bg-purple-50/30"
+                                                                    )}
+                                                                    onClick={() => {
+                                                                        setSelectedItems(prev =>
+                                                                            prev.some(i => i.id === card.id)
+                                                                                ? prev.filter(i => i.id !== card.id)
+                                                                                : [...prev, card]
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Checkbox
+                                                                        checked={selectedItems.some(i => i.id === card.id)}
+                                                                        onCheckedChange={() => { }}
+                                                                        className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 w-4 h-4"
+                                                                    />
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-xs font-medium text-gray-800">{card.front_text}</p>
+                                                                        <p className="text-[10px] text-gray-400">{card.back_text}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="py-12 text-center text-xs text-gray-400">
+                                                                ไม่พบคำศัพท์ในชุดนี้
                                                             </div>
                                                         )}
                                                     </div>
                                                 </div>
-                                            </ScrollArea>
-                                        </TabsContent>
-
-                                        <TabsContent value="latest" className="h-full m-0 absolute inset-0">
-                                            <ScrollArea className="h-full">
-                                                <div className="p-2">
-                                                    <div className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">คำศัพท์ที่เรียนล่าสุด</div>
-                                                    <div className="space-y-1 p-1">
-                                                        {flashcards.slice(0, 20).map((card) => (
-                                                            <div
-                                                                key={card.id}
-                                                                className={cn(
-                                                                    "flex items-center gap-3 p-2 rounded-lg border transition-all cursor-pointer hover:bg-gray-50",
-                                                                    selectedItems.some(i => i.id === card.id)
-                                                                        ? "bg-purple-50 border-purple-200 shadow-sm"
-                                                                        : "bg-white border-transparent hover:border-gray-200"
-                                                                )}
-                                                                onClick={() => {
-                                                                    setSelectedItems(prev =>
-                                                                        prev.some(i => i.id === card.id)
-                                                                            ? prev.filter(i => i.id !== card.id)
-                                                                            : [...prev, card]
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <Checkbox
-                                                                    checked={selectedItems.some(i => i.id === card.id)}
-                                                                    onCheckedChange={() => { }} // Handled by parent div click
-                                                                    className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 w-4 h-4"
-                                                                />
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className={cn("text-xs font-medium truncate", selectedItems.some(i => i.id === card.id) ? "text-purple-900" : "text-gray-700")}>
-                                                                        {card.front_text}
-                                                                    </p>
-                                                                    <p className="text-[10px] text-gray-500 truncate">{card.back_text}</p>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </ScrollArea>
-                                        </TabsContent>
-
-                                        <TabsContent value="library" className="h-full m-0 absolute inset-0">
-                                            <div className="flex flex-col h-full">
-                                                {/* Filter Section */}
-                                                <div className="p-3 bg-white border-b space-y-3 z-10 relative">
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <div className="space-y-1">
-                                                            <Label className="text-[10px] text-muted-foreground font-medium">โฟลเดอร์ของฉัน</Label>
-                                                            <Select
-                                                                value={selectedFolderId}
-                                                                onValueChange={(value) => {
-                                                                    setSelectedFolderId(value);
-                                                                    setSelectedSetId(""); // Reset set when folder changes
-                                                                }}
-                                                            >
-                                                                <SelectTrigger className="h-8 text-xs bg-gray-50/50 border-gray-200">
-                                                                    <SelectValue placeholder="เลือกโฟลเดอร์" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {userFolders.map((folder) => (
-                                                                        <SelectItem key={folder.id} value={folder.id} className="text-xs">
-                                                                            {folder.title}
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <Label className="text-[10px] text-muted-foreground font-medium">ชุดคำศัพท์</Label>
-                                                            <Select
-                                                                value={selectedSetId}
-                                                                onValueChange={setSelectedSetId}
-                                                                disabled={!selectedFolderId}
-                                                            >
-                                                                <SelectTrigger className="h-8 text-xs bg-gray-50/50 border-gray-200">
-                                                                    <SelectValue placeholder="เลือกชุดคำศัพท์" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {userSets.map((set) => (
-                                                                        <SelectItem key={set.id} value={set.id} className="text-xs">
-                                                                            {set.title}
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <ScrollArea className="flex-1">
-                                                    <div className="p-2">
-                                                        <div className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                                                            {selectedSetId ? 'รายการคำศัพท์ในชุด' : 'คำศัพท์ทั้งหมด'}
-                                                        </div>
-                                                        <div className="space-y-1 p-1">
-                                                            {isLoadingLibrary ? (
-                                                                <div className="p-8 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
-                                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                                    กำลังโหลด...
-                                                                </div>
-                                                            ) : !selectedSetId ? (
-                                                                <div className="p-8 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
-                                                                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
-                                                                        <BookOpen className="w-5 h-5 text-gray-300" />
-                                                                    </div>
-                                                                    <p>กรุณาเลือกชุดคำศัพท์</p>
-                                                                    <p className="text-[10px] text-gray-300">เลือกโฟลเดอร์และชุดคำศัพท์เพื่อแสดงรายการ</p>
-                                                                </div>
-                                                            ) : libraryVocabulary.length > 0 ? (
-                                                                libraryVocabulary.map((card) => (
-                                                                    <div
-                                                                        key={card.id}
-                                                                        className={cn(
-                                                                            "flex items-center gap-3 p-2 rounded-lg border transition-all cursor-pointer hover:bg-gray-50",
-                                                                            selectedItems.some(i => i.id === card.id)
-                                                                                ? "bg-purple-50 border-purple-200 shadow-sm"
-                                                                                : "bg-white border-transparent hover:border-gray-200"
-                                                                        )}
-                                                                        onClick={() => {
-                                                                            setSelectedItems(prev =>
-                                                                                prev.some(i => i.id === card.id)
-                                                                                    ? prev.filter(i => i.id !== card.id)
-                                                                                    : [...prev, card]
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        <Checkbox
-                                                                            checked={selectedItems.some(i => i.id === card.id)}
-                                                                            onCheckedChange={() => { }}
-                                                                            className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 w-4 h-4"
-                                                                        />
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <p className={cn("text-xs font-medium truncate", selectedItems.some(i => i.id === card.id) ? "text-purple-900" : "text-gray-700")}>
-                                                                                {card.front_text}
-                                                                            </p>
-                                                                            <p className="text-[10px] text-gray-500 truncate">{card.back_text}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                ))
-                                                            ) : (
-                                                                <div className="p-8 text-center text-xs text-gray-400">
-                                                                    ไม่พบคำศัพท์ในชุดนี้
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </ScrollArea>
                                             </div>
                                         </TabsContent>
                                     </div>
                                 </Tabs>
                             </div>
 
-                            {/* Right Column: Settings */}
-                            <div className="lg:col-span-4 flex flex-col bg-white h-auto lg:h-full overflow-y-auto border-t lg:border-t-0">
-                                <div className="p-4 space-y-4">
+                            {/* Right Column: Settings (hidden on mobile - use tab instead) */}
+                            <div className="hidden md:flex md:w-[200px] lg:w-[220px] xl:w-[260px] flex-col border-l bg-gradient-to-b from-purple-50/50 to-white flex-shrink-0 overflow-y-auto">
+                                <div className="p-3 border-b bg-white">
+                                    <div className="flex items-center gap-2 text-purple-700 font-semibold text-xs">
+                                        <Settings className="w-4 h-4" />
+                                        <span>ตั้งค่าการทบทวน</span>
+                                    </div>
+                                </div>
+                                <div className="p-3 space-y-3">
+                                    {/* Activity Title */}
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="review-title" className="text-xs font-semibold text-gray-700">ชื่อกิจกรรม</Label>
+                                        <Label className="text-[11px] font-semibold text-gray-600">ชื่อกิจกรรม</Label>
                                         <Input
-                                            id="review-title"
                                             value={reviewTitle}
                                             onChange={(e) => {
                                                 setReviewTitle(e.target.value);
                                                 if (e.target.value.trim()) setShowError(false);
                                             }}
                                             className={cn(
-                                                "h-9 text-sm bg-gray-50 border-gray-200 focus:bg-white transition-all rounded-lg",
-                                                showError && !reviewTitle.trim() ? "border-red-500 focus-visible:ring-red-500 bg-red-50" : ""
+                                                "h-9 text-xs bg-white border-gray-200 rounded-lg",
+                                                showError && !reviewTitle.trim() ? "border-red-400 bg-red-50" : ""
                                             )}
-                                            placeholder="เช่น ทบทวนคำศัพท์บทที่ 1"
+                                            placeholder="ทบทวนคำศัพท์บทที่ 1"
                                         />
                                         {showError && !reviewTitle.trim() && (
-                                            <p className="text-[10px] text-red-500 font-medium">กรุณาระบุชื่อกิจกรรม</p>
+                                            <p className="text-[10px] text-red-500">กรุณาระบุชื่อ</p>
                                         )}
                                     </div>
 
+                                    {/* Icons Grid */}
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-semibold text-gray-700">ไอคอน</Label>
-                                        <div className="grid grid-cols-6 gap-2">
+                                        <Label className="text-[11px] font-semibold text-gray-600">ไอคอน</Label>
+                                        <div className="grid grid-cols-6 gap-1">
                                             {Object.entries(AVAILABLE_ICONS).map(([key, Icon]) => (
                                                 <button
                                                     key={key}
                                                     type="button"
                                                     onClick={() => setReviewIcon(key)}
                                                     className={cn(
-                                                        "h-8 w-8 flex items-center justify-center rounded-lg transition-all duration-200",
+                                                        "w-7 h-7 flex items-center justify-center rounded-lg transition-all",
                                                         reviewIcon === key
-                                                            ? "bg-purple-100 text-purple-600 ring-2 ring-purple-500 ring-offset-2"
-                                                            : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                                                            ? "bg-purple-100 text-purple-600 ring-2 ring-purple-400 ring-offset-1"
+                                                            : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-50"
                                                     )}
                                                 >
                                                     <Icon className="w-3.5 h-3.5" />
@@ -1386,20 +1921,21 @@ export function ScheduleCalendar() {
                                         </div>
                                     </div>
 
+                                    {/* Colors */}
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs font-semibold text-gray-700">สี</Label>
-                                        <div className="flex flex-wrap gap-2">
+                                        <Label className="text-[11px] font-semibold text-gray-600">สี</Label>
+                                        <div className="flex flex-wrap gap-1.5">
                                             {AVAILABLE_COLORS.map((color) => (
                                                 <button
                                                     key={color.value}
                                                     type="button"
                                                     onClick={() => setReviewColor(color.value)}
                                                     className={cn(
-                                                        "w-6 h-6 rounded-full transition-all duration-200 ring-offset-2",
-                                                        color.class.split(' ')[0], // Use background color class
+                                                        "w-6 h-6 rounded-full transition-all ring-offset-2",
+                                                        color.class.split(' ')[0],
                                                         reviewColor === color.value
-                                                            ? `ring-2 ${color.ring} scale-110`
-                                                            : "hover:scale-105 opacity-70 hover:opacity-100"
+                                                            ? "ring-2 " + color.ring + " scale-110"
+                                                            : "hover:scale-105 opacity-80 hover:opacity-100"
                                                     )}
                                                     title={color.label}
                                                 />
@@ -1407,21 +1943,22 @@ export function ScheduleCalendar() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                                        <div className="space-y-1.5 min-w-0">
-                                            <Label className="text-xs font-semibold text-gray-700">วันที่ทบทวน</Label>
+                                    {/* Date, Time, Duration Row */}
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                        <div className="space-y-1">
+                                            <Label className="text-[10px] font-semibold text-gray-600">วันที่</Label>
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                     <Button
-                                                        variant={"outline"}
+                                                        variant="outline"
                                                         className={cn(
-                                                            "w-full h-9 justify-start text-left font-normal text-xs bg-gray-50 border-gray-200 hover:bg-white px-2",
-                                                            !reviewDate && "text-muted-foreground"
+                                                            "w-full h-8 justify-start text-left font-normal text-[10px] bg-white border-gray-200 px-1.5 rounded-lg",
+                                                            !reviewDate && "text-gray-400"
                                                         )}
                                                     >
-                                                        <CalendarIcon className="mr-2 h-3.5 w-3.5 text-gray-500 shrink-0" />
-                                                        <span>
-                                                            {reviewDate ? format(reviewDate, "d MMM yyyy", { locale: th }) : "เลือกวันที่"}
+                                                        <CalendarIcon className="mr-0.5 h-3 w-3 text-purple-500" />
+                                                        <span className="truncate">
+                                                            {reviewDate ? format(reviewDate, "d MMM", { locale: th }) : "เลือก"}
                                                         </span>
                                                     </Button>
                                                 </PopoverTrigger>
@@ -1437,95 +1974,62 @@ export function ScheduleCalendar() {
                                             </Popover>
                                         </div>
 
-                                        <div className="space-y-1.5 min-w-0">
-                                            <Label className="text-xs font-semibold text-gray-700">ระยะเวลา (นาที)</Label>
-                                            <Popover open={openDuration} onOpenChange={setOpenDuration}>
-                                                <PopoverTrigger asChild>
-                                                    <Button
-                                                        variant="outline"
-                                                        role="combobox"
-                                                        aria-expanded={openDuration}
-                                                        className="w-full h-9 justify-between text-xs bg-gray-50 border-gray-200 hover:bg-white px-2"
-                                                    >
-                                                        <span className="truncate">
-                                                            {reviewDuration ? `${reviewDuration} นาที` : "เลือกเวลา"}
-                                                        </span>
-                                                        <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-[200px] p-0">
-                                                    <Command>
-                                                        <CommandInput
-                                                            placeholder="ระบุเวลา..."
-                                                            className="h-9 text-xs"
-                                                            onValueChange={(v) => {
-                                                                const val = parseInt(v);
-                                                                if (!isNaN(val)) setReviewDuration(val);
-                                                            }}
-                                                        />
-                                                        <CommandList>
-                                                            <CommandEmpty>ไม่พบตัวเลือก</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {[10, 15, 20, 30, 45, 60, 90, 120].map((time) => (
-                                                                    <CommandItem
-                                                                        key={time}
-                                                                        value={time.toString()}
-                                                                        onSelect={(currentValue) => {
-                                                                            setReviewDuration(parseInt(currentValue));
-                                                                            setOpenDuration(false);
-                                                                        }}
-                                                                        className="text-xs"
-                                                                    >
-                                                                        <Check
-                                                                            className={cn(
-                                                                                "mr-2 h-3 w-3",
-                                                                                reviewDuration === time ? "opacity-100" : "opacity-0"
-                                                                            )}
-                                                                        />
-                                                                        {time} นาที
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
-                                                        </CommandList>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
+                                        <div className="space-y-1">
+                                            <Label className="text-[10px] font-semibold text-gray-600">เวลา</Label>
+                                            <Input
+                                                type="time"
+                                                value={reviewTime}
+                                                onChange={(e) => setReviewTime(e.target.value)}
+                                                className="h-8 text-[10px] bg-white border-gray-200 rounded-lg px-1.5"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <Label className="text-[10px] font-semibold text-gray-600">นาที</Label>
+                                            <Select value={reviewDuration.toString()} onValueChange={(v) => setReviewDuration(parseInt(v))}>
+                                                <SelectTrigger className="h-8 text-[10px] bg-white border-gray-200 rounded-lg px-1.5">
+                                                    <SelectValue placeholder="นาที" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {[10, 15, 20, 30, 45, 60, 90, 120].map((time) => (
+                                                        <SelectItem key={time} value={time.toString()} className="text-xs">
+                                                            {time} นาที
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <DialogFooter className="px-5 py-3 border-t bg-white flex-shrink-0 gap-2">
-                        <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)} className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 text-sm">
+                    <DialogFooter className="px-4 py-3 border-t bg-white flex-shrink-0 flex flex-row justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsReviewDialogOpen(false)}
+                            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-medium"
+                        >
                             ยกเลิก
                         </Button>
-                        <Button onClick={handleSaveReview} className="h-9 px-6 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-200 hover:shadow-purple-300 transition-all text-sm">
+                        <Button
+                            onClick={handleSaveReview}
+                            className="h-9 px-5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200 text-xs font-medium"
+                        >
                             บันทึก
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            {/* Auto Review Dialog */}
+
             <AutoReviewDialog
                 isOpen={autoReviewConfig.isOpen}
                 onClose={() => setAutoReviewConfig(prev => ({ ...prev, isOpen: false }))}
                 mode={autoReviewConfig.mode}
-                onConfirm={(count) => {
-                    setAutoReviewTargetCount(count);
-                    setIsAutoGenerating(true);
-                    if (autoReviewConfig.mode === 'today') {
-                        generateAutoToday(count);
-                    } else {
-                        toast({
-                            title: "กรุณาเลือกชุดคำศัพท์",
-                            description: "ระบบจะทำการเลือกคำศัพท์ให้อัตโนมัติเมื่อคุณเลือกชุดคำศัพท์",
-                            duration: 3000,
-                        });
-                    }
+                onConfirm={(count, time, folderId, setId) => {
+                    handleAutoConfirm(count, time, folderId, setId);
                 }}
             />
-        </div >
+        </div>
     );
 }

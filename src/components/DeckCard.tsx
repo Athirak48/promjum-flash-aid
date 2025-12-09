@@ -8,17 +8,21 @@ import { useNavigate } from 'react-router-dom';
 import { Deck } from '@/hooks/useDecks';
 import { useState } from 'react';
 import { DownloadSelectionDialog } from './DownloadSelectionDialog';
-import { useSubDecks } from '@/hooks/useSubDecks';
+import { useSubDecks, SubDeck } from '@/hooks/useSubDecks';
 
 interface DeckCardProps {
   deck: Deck;
 }
 
-export function DeckCard({ deck }: DeckCardProps) {
+export function DeckCard({ deck, customSubDecks, customLabel }: DeckCardProps & { customSubDecks?: SubDeck[], customLabel?: string }) {
   const navigate = useNavigate();
   const IconComponent = (Icons as any)[deck.icon] || Icons.BookOpen;
   const [showDownloadDialog, setShowDownloadDialog] = useState(false);
-  const { subDecks, loading: subDecksLoading } = useSubDecks(deck.id);
+
+  // Use custom subdecks if provided, otherwise fetch them
+  const hookResult = useSubDecks(deck.id);
+  const subDecks = customSubDecks || hookResult.subDecks;
+  const subDecksLoading = customSubDecks ? false : hookResult.loading;
 
   return (
     <>
@@ -42,11 +46,11 @@ export function DeckCard({ deck }: DeckCardProps) {
         </CardHeader>
         <CardContent className="space-y-4 flex-1 flex flex-col">
           <p className="text-sm text-foreground/80 line-clamp-2">{deck.description}</p>
-          
+
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground bg-muted/30 rounded-lg p-2">
               <BookOpen className="w-4 h-4" />
-              <span>{deck.total_flashcards} คำศัพท์</span>
+              <span>{deck.total_flashcards} {customLabel || 'คำศัพท์'}</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground bg-muted/30 rounded-lg p-2">
               <Star className="w-4 h-4" />
@@ -65,7 +69,7 @@ export function DeckCard({ deck }: DeckCardProps) {
           )}
 
           <div className="grid grid-cols-2 gap-2 mt-auto pt-4">
-            <Button 
+            <Button
               variant="outline"
               onClick={(e) => {
                 e.stopPropagation();
@@ -77,7 +81,7 @@ export function DeckCard({ deck }: DeckCardProps) {
               <Download className="w-4 h-4" />
               ดาวน์โหลด
             </Button>
-            <Button 
+            <Button
               onClick={() => navigate(`/decks/${deck.id}/subdecks`)}
               variant="default"
             >

@@ -39,6 +39,7 @@ interface FlashcardData {
     frontImage?: string | null;
     backImage?: string | null;
     isFavorite?: boolean;
+    isUserFlashcard?: boolean;
 }
 
 interface FlashcardReviewPageProps {
@@ -208,7 +209,7 @@ export function FlashcardReviewPage({ cards, onClose, onComplete, setId }: Flash
         // Q=3: Correct first attempt ≤7s | Q=1: Correct first attempt >7s | Q=0: Wrong or subsequent
         const attemptCount = attemptCounts.current.get(currentCard.id) || 1;
         const firstAttemptTime = cardTimings.current.get(currentCard.id) ?? timeTakenSeconds;
-        await updateFromFlashcardReview(currentCard.id, knows, attemptCount, firstAttemptTime);
+        await updateFromFlashcardReview(currentCard.id, knows, attemptCount, firstAttemptTime, currentCard.isUserFlashcard);
 
         // Hide feedback and move to next card after delay
         setTimeout(() => {

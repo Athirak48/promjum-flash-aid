@@ -29,9 +29,9 @@ export default function AIPracticeLandingPage() {
             color: 'text-purple-500',
             borderColor: 'border-purple-200',
             bgColor: 'bg-purple-50/30',
-            bgHover: '',
-            path: '#',
-            available: false
+            bgHover: 'hover:bg-purple-50',
+            path: '/ai-reading-guide',
+            available: true
         },
         {
             id: 'speaking',
@@ -95,13 +95,13 @@ export default function AIPracticeLandingPage() {
 
             {/* Main Content */}
             <main className="container mx-auto px-4 py-12 max-w-7xl relative z-0 flex-1 flex flex-col justify-center">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
                     {practiceOptions.map((option) => (
                         <div
                             key={option.id}
                             className={`
-                                relative aspect-[4/5] flex flex-col items-center justify-center p-8
-                                ${option.bgColor} border-2 rounded-3xl transition-all duration-300 cursor-pointer
+                                relative aspect-[4/5] flex flex-col items-center justify-center p-4 sm:p-8
+                                ${option.bgColor} border-2 rounded-2xl sm:rounded-3xl transition-all duration-300 cursor-pointer
                                 ${option.available
                                     ? `${option.borderColor} ${option.bgHover} shadow-sm hover:shadow-xl hover:-translate-y-2`
                                     : `${option.borderColor} opacity-60 cursor-not-allowed grayscale-[0.5]`
@@ -113,22 +113,22 @@ export default function AIPracticeLandingPage() {
                                 }
                             }}
                         >
-                            <div className={`${option.color} p-4 bg-white rounded-2xl shadow-sm mb-4 transition-transform duration-300 ${option.available ? 'group-hover:scale-110' : ''}`}>
-                                {option.icon}
+                            <div className={`${option.color} p-3 sm:p-4 bg-white rounded-xl sm:rounded-2xl shadow-sm mb-3 sm:mb-4 transition-transform duration-300 ${option.available ? 'group-hover:scale-110' : ''}`}>
+                                {React.cloneElement(option.icon as React.ReactElement, { className: "w-8 h-8 sm:w-12 sm:h-12" })}
                             </div>
-                            <h3 className={`text-xl md:text-2xl text-slate-800 text-center font-bold mb-2`}>
+                            <h3 className={`text-base sm:text-xl md:text-2xl text-slate-800 text-center font-bold mb-1 sm:mb-2 leading-tight`}>
                                 {option.title}
                             </h3>
-                            <p className="text-sm text-slate-500 text-center mb-6 px-2">
+                            <p className="text-xs sm:text-sm text-slate-500 text-center mb-3 sm:mb-6 px-1 leading-snug">
                                 {option.description}
                             </p>
 
                             {option.available ? (
-                                <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-4 py-1.5 rounded-full">
+                                <span className="text-[10px] sm:text-xs font-semibold text-blue-600 bg-blue-100 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full scale-90 sm:scale-100 origin-center">
                                     {language === 'th' ? 'พร้อมใช้งาน' : 'Ready to Start'}
                                 </span>
                             ) : (
-                                <span className="text-xs font-semibold text-slate-500 bg-slate-200 px-4 py-1.5 rounded-full">
+                                <span className="text-[10px] sm:text-xs font-semibold text-slate-500 bg-slate-200 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full scale-90 sm:scale-100 origin-center">
                                     Coming Soon
                                 </span>
                             )}

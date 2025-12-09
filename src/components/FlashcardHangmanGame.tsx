@@ -14,6 +14,7 @@ interface Flashcard {
   back_text: string;
   created_at: string;
   front_image?: string | null;
+  isUserFlashcard?: boolean;
 }
 
 interface FlashcardHangmanGameProps {
@@ -120,7 +121,7 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
   // Move to next word
   const handleNext = async () => {
     // Update SRS: Q=5 perfect (0 wrong), Q=2 (<=3 wrong), Q=0 (lost or >5 wrong)
-    await updateFromHangman(currentCard.id, gameStatus === 'won', wrongGuesses);
+    await updateFromHangman(currentCard.id, gameStatus === 'won', wrongGuesses, currentCard.isUserFlashcard);
 
     // Update stats
     if (gameStatus === 'won') {
@@ -292,16 +293,18 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
 
               {/* Word Puzzle */}
               <div className="mb-8 mt-4 text-center">
-                <div className="flex flex-wrap justify-center gap-2 mb-2">
-                  {displayWord().split(' ').map((char, i) => (
-                    <span key={i} className={`
-                                    text-4xl font-bold w-10 text-center border-b-4 rounded-sm
-                                    ${char === '_' ? 'border-gray-200 text-transparent' : 'border-orange-400 text-orange-600'}
-                                    transition-all duration-300
-                                `}>
-                      {char === '_' ? 'A' : char}
-                    </span>
-                  ))}
+                <div className="w-full overflow-x-auto pb-4 no-scrollbar flex justify-center">
+                  <div className="flex flex-nowrap gap-1 sm:gap-2 mb-2 min-w-min px-4">
+                    {displayWord().split(' ').map((char, i) => (
+                      <span key={i} className={`
+                                      text-2xl sm:text-4xl font-bold w-8 sm:w-10 text-center border-b-4 rounded-sm shrink-0
+                                      ${char === '_' ? 'border-gray-200 text-transparent' : 'border-orange-400 text-orange-600'}
+                                      transition-all duration-300
+                                  `}>
+                        {char === '_' ? 'A' : char}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 

@@ -330,188 +330,6 @@ All colors MUST be HSL for consistency and theming support.
     --sidebar-ring: 270 70% 65%;
   }
 
-  .warm {
-    /* Warm mode - Cozy, readable, high contrast */
-    --background: 35 60% 90%;
-    /* Richer Warm Cream */
-    --foreground: 20 25% 20%;
-    /* Warm Brown */
-
-    --card: 35 50% 95%;
-    /* Distinct card color */
-    --card-foreground: 20 25% 20%;
-
-    --popover: 35 50% 95%;
-    --popover-foreground: 20 25% 20%;
-
-    --primary: 25 95% 50%;
-    /* Vibrant Burnt Orange */
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 25 95% 60%;
-
-    --secondary: 35 40% 85%;
-    /* Darker beige for contrast */
-    --secondary-foreground: 20 25% 20%;
-
-    --muted: 35 40% 85%;
-    --muted-foreground: 20 30% 45%;
-    /* Readable warm gray-brown */
-
-    --accent: 35 95% 50%;
-    /* Golden amber */
-    --accent-foreground: 20 25% 20%;
-
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 20 30% 75%;
-    /* Distinct warm border */
-    --input: 20 30% 80%;
-    --ring: 25 95% 50%;
-
-    --gradient-primary: linear-gradient(135deg, hsl(25 95% 50%), hsl(35 95% 50%));
-    --gradient-secondary: linear-gradient(135deg, hsl(35 50% 85%), hsl(45 50% 85%));
-    --gradient-hero: linear-gradient(180deg, hsl(35 60% 90%) 0%, hsl(35 40% 85%) 100%);
-    --gradient-card: linear-gradient(145deg, #fffdf9, #f0e6d2);
-
-    --shadow-soft: 0 4px 12px -2px hsl(20 30% 60% / 0.3);
-    --shadow-medium: 0 8px 24px -4px hsl(20 30% 60% / 0.4);
-    --shadow-large: 0 12px 48px -6px hsl(20 30% 60% / 0.5);
-    --shadow-glow: 0 0 20px hsl(25 95% 50% / 0.3);
-
-    --sidebar-background: 35 60% 88%;
-    --sidebar-foreground: 20 25% 20%;
-    --sidebar-primary: 25 95% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 35 40% 82%;
-    --sidebar-accent-foreground: 25 95% 50%;
-    --sidebar-border: 20 30% 75%;
-    --sidebar-ring: 25 95% 50%;
-  }
-
-  .christmas {
-    /* Christmas mode - Cute Berry & Mint */
-    --background: 0 0% 98%;
-    /* Snow White */
-    --foreground: 340 60% 20%;
-    /* Dark Berry Text */
-
-    --card: 0 0% 100%;
-    /* Pure White */
-    --card-foreground: 340 60% 20%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 340 60% 20%;
-
-    --primary: 340 85% 60%;
-    /* Berry Red (Pinkish) */
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 340 85% 70%;
-
-    --secondary: 160 70% 45%;
-    /* Mint Green */
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 160 30% 95%;
-    /* Very light mint tint */
-    --muted-foreground: 160 40% 40%;
-
-    --accent: 45 90% 60%;
-    /* Soft Gold */
-    --accent-foreground: 340 60% 20%;
-
-    --destructive: 0 85% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 340 30% 90%;
-    --input: 340 30% 95%;
-    --ring: 340 85% 60%;
-
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(340 85% 60%), hsl(350 85% 60%));
-    --gradient-secondary: linear-gradient(135deg, hsl(160 70% 45%), hsl(170 70% 45%));
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 98%) 0%, hsl(340 20% 98%) 100%);
-    --gradient-card: linear-gradient(145deg, #ffffff, #fff0f5);
-
-    /* Shadows - Soft Pinkish */
-    --shadow-soft: 0 4px 12px -2px hsl(340 30% 80% / 0.3);
-    --shadow-medium: 0 8px 24px -4px hsl(340 30% 80% / 0.4);
-    --shadow-large: 0 12px 48px -6px hsl(340 30% 80% / 0.5);
-    --shadow-glow: 0 0 20px hsl(340 85% 60% / 0.3);
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 340 60% 20%;
-    --sidebar-primary: 340 85% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 340 20% 95%;
-    --sidebar-accent-foreground: 340 85% 60%;
-    --sidebar-border: 340 30% 90%;
-    --sidebar-ring: 340 85% 60%;
-
-    /* Candy Cane Pattern (Berry/White) */
-    --pattern-candy-cane: repeating-linear-gradient(45deg,
-        hsl(340 85% 60%),
-        hsl(340 85% 60%) 10px,
-        hsl(0 0% 100%) 10px,
-        hsl(0 0% 100%) 20px);
-  }
-
-  .dark {
-    /* Dark mode - Deep purple/midnight - High Contrast */
-    --background: 260 50% 4%;
-    /* Deep void purple - Recedes */
-    --foreground: 270 10% 98%;
-    /* Bright white-purple - Pops */
-
-    --card: 260 30% 10%;
-    /* Slightly lighter than bg */
-    --card-foreground: 270 10% 98%;
-
-    --popover: 260 30% 10%;
-    --popover-foreground: 270 10% 98%;
-
-    --primary: 270 70% 65%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 270 70% 75%;
-
-    --secondary: 270 20% 20%;
-    --secondary-foreground: 270 10% 95%;
-
-    --muted: 270 20% 20%;
-    /* Visible separation */
-    --muted-foreground: 270 10% 70%;
-
-    --accent: 150 50% 50%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 270 20% 30%;
-    /* Clear definition */
-    --input: 270 20% 20%;
-    --ring: 270 70% 65%;
-
-    --gradient-primary: linear-gradient(135deg, hsl(270 70% 65%), hsl(290 60% 65%));
-    --gradient-secondary: linear-gradient(135deg, hsl(270 20% 20%), hsl(290 20% 20%));
-    --gradient-hero: linear-gradient(180deg, hsl(260 40% 6%) 0%, hsl(270 30% 8%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(270 30% 12%), hsl(270 30% 9%));
-
-    --shadow-soft: 0 4px 12px -2px hsl(0 0% 0% / 0.5);
-    --shadow-medium: 0 8px 24px -4px hsl(0 0% 0% / 0.6);
-    --shadow-large: 0 12px 48px -6px hsl(0 0% 0% / 0.7);
-    --shadow-glow: 0 0 25px hsl(270 70% 65% / 0.25);
-
-    --sidebar-background: 260 50% 6%;
-    --sidebar-foreground: 270 10% 98%;
-    --sidebar-primary: 270 70% 65%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 20% 20%;
-    --sidebar-accent-foreground: 270 10% 98%;
-    --sidebar-border: 270 20% 30%;
-    --sidebar-ring: 270 70% 65%;
-  }
-
   body {
     @apply bg-background text-foreground;
   }
@@ -525,6 +343,25 @@ All colors MUST be HSL for consistency and theming support.
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Custom Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(270 20% 90%);
+    border-radius: 9px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(270 20% 80%);
   }
 
   /* Christmas Utilities */

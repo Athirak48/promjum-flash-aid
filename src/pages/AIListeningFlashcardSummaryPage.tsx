@@ -68,24 +68,24 @@ export default function AIListeningFlashcardSummaryPage() {
 
             {/* Main Content */}
             <main className="flex-1 container mx-auto px-4 py-8 max-w-3xl">
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="space-y-6 sm:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {/* Stats */}
-                    <div className="grid grid-cols-2 gap-6">
-                        <Card className="p-8 text-center bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/50 shadow-sm">
-                            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <CheckCircle className="w-8 h-8 text-emerald-600" />
+                    <div className="grid grid-cols-2 gap-3 sm:gap-6">
+                        <Card className="p-4 sm:p-8 text-center bg-gradient-to-br from-emerald-50 via-emerald-50/50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/10 border-emerald-100/50 dark:border-emerald-900/50 shadow-lg shadow-emerald-100/50 dark:shadow-none hover:shadow-xl hover:shadow-emerald-100/60 transition-all duration-300 transform hover:-translate-y-1">
+                            <div className="w-12 h-12 sm:w-20 sm:h-20 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-inner">
+                                <CheckCircle className="w-6 h-6 sm:w-10 sm:h-10 text-emerald-600" />
                             </div>
-                            <p className="text-4xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">{rememberedWords.length}</p>
-                            <p className="text-sm font-medium text-emerald-600/80 dark:text-emerald-400/80 uppercase tracking-wide">
+                            <p className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 mb-0 sm:mb-1">{rememberedWords.length}</p>
+                            <p className="text-[10px] sm:text-sm font-bold text-emerald-600/70 dark:text-emerald-400/80 uppercase tracking-wider">
                                 {language === 'th' ? 'จำได้ทันที' : 'Remembered'}
                             </p>
                         </Card>
-                        <Card className="p-8 text-center bg-rose-50/50 dark:bg-rose-950/20 border-rose-100 dark:border-rose-900/50 shadow-sm">
-                            <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <XCircle className="w-8 h-8 text-rose-600" />
+                        <Card className="p-4 sm:p-8 text-center bg-gradient-to-br from-rose-50 via-rose-50/50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/10 border-rose-100/50 dark:border-rose-900/50 shadow-lg shadow-rose-100/50 dark:shadow-none hover:shadow-xl hover:shadow-rose-100/60 transition-all duration-300 transform hover:-translate-y-1">
+                            <div className="w-12 h-12 sm:w-20 sm:h-20 bg-rose-100 dark:bg-rose-900/50 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-inner">
+                                <XCircle className="w-6 h-6 sm:w-10 sm:h-10 text-rose-600" />
                             </div>
-                            <p className="text-4xl font-bold text-rose-700 dark:text-rose-400 mb-1">{forgottenWords.length}</p>
-                            <p className="text-sm font-medium text-rose-600/80 dark:text-rose-400/80 uppercase tracking-wide">
+                            <p className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-pink-600 dark:from-rose-400 dark:to-pink-400 mb-0 sm:mb-1">{forgottenWords.length}</p>
+                            <p className="text-[10px] sm:text-sm font-bold text-rose-600/70 dark:text-rose-400/80 uppercase tracking-wider">
                                 {language === 'th' ? 'ต้องทบทวน' : 'Needs Review'}
                             </p>
                         </Card>
@@ -93,22 +93,22 @@ export default function AIListeningFlashcardSummaryPage() {
 
                     {/* Words that needed review */}
                     {forgottenWords.length > 0 && (
-                        <div className="space-y-4">
-                            <h3 className="font-semibold flex items-center gap-2 text-rose-600">
-                                <XCircle className="w-5 h-5" />
+                        <div className="space-y-3 sm:space-y-4">
+                            <h3 className="font-bold flex items-center gap-2 text-rose-600 text-sm sm:text-lg">
+                                <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                                 {language === 'th' ? 'คำที่ต้องทบทวนเพิ่ม' : 'Words to Review'}
                             </h3>
-                            <div className="grid gap-3">
+                            <div className="grid gap-2 sm:gap-3">
                                 {forgottenWords.map((result, index) => (
-                                    <Card key={index} className="flex justify-between items-center p-4 hover:shadow-md transition-shadow border-l-4 border-l-rose-500">
-                                        <div className="flex items-baseline gap-3">
-                                            <span className="text-lg font-bold">{result.word}</span>
-                                            <span className="text-muted-foreground">{result.meaning}</span>
+                                    <div key={index} className="flex justify-between items-center p-3 sm:p-5 bg-white rounded-xl shadow-sm border border-rose-100 hover:shadow-md hover:border-rose-200 transition-all">
+                                        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+                                            <span className="text-sm sm:text-lg font-bold text-slate-800">{result.word}</span>
+                                            <span className="text-xs sm:text-base text-slate-500">{result.meaning}</span>
                                         </div>
-                                        <span className="text-xs font-medium text-rose-600 bg-rose-50 dark:bg-rose-900/30 px-3 py-1 rounded-full">
+                                        <span className="text-[10px] sm:text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-900/30 px-2 py-1 sm:px-3 sm:py-1 rounded-full border border-rose-100">
                                             {result.missCount} {language === 'th' ? 'ครั้ง' : 'times'}
                                         </span>
-                                    </Card>
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -116,14 +116,14 @@ export default function AIListeningFlashcardSummaryPage() {
 
                     {/* Words remembered */}
                     {rememberedWords.length > 0 && (
-                        <div className="space-y-4">
-                            <h3 className="font-semibold flex items-center gap-2 text-emerald-600">
-                                <CheckCircle className="w-5 h-5" />
+                        <div className="space-y-3 sm:space-y-4">
+                            <h3 className="font-bold flex items-center gap-2 text-emerald-600 text-sm sm:text-lg">
+                                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                                 {language === 'th' ? 'คำที่จำได้ทันที' : 'Words Remembered'}
                             </h3>
                             <div className="flex flex-wrap gap-2">
                                 {rememberedWords.map((result, index) => (
-                                    <span key={index} className="px-4 py-2 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50 rounded-full text-sm font-medium">
+                                    <span key={index} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-emerald-50 hover:bg-emerald-100 transition-colors text-emerald-700 border border-emerald-200/50 rounded-full text-xs sm:text-sm font-medium shadow-sm">
                                         {result.word}
                                     </span>
                                 ))}
@@ -132,23 +132,23 @@ export default function AIListeningFlashcardSummaryPage() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex flex-col sm:flex-row gap-4 pt-8 pb-12">
+                    <div className="flex flex-row gap-3 pt-4 pb-8 sm:gap-4 sm:pt-8 sm:pb-12">
                         <Button
                             variant="outline"
                             size="lg"
-                            className="flex-1 h-14 text-base"
+                            className="flex-1 h-12 sm:h-14 text-sm sm:text-base rounded-2xl border-2 hover:bg-slate-50 hover:text-slate-900"
                             onClick={handleRetry}
                         >
-                            <RotateCcw className="w-5 h-5 mr-2" />
+                            <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                             {language === 'th' ? 'ทบทวนอีกครั้ง' : 'Review Again'}
                         </Button>
                         <Button
                             size="lg"
-                            className="flex-1 h-14 text-base shadow-lg hover:shadow-xl transition-all"
+                            className="flex-1 h-12 sm:h-14 text-sm sm:text-base rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 shadow-lg hover:shadow-rose-200 hover:-translate-y-0.5 transition-all duration-300"
                             onClick={handleContinue}
                         >
                             {language === 'th' ? 'ไปกันต่อ' : 'Continue'}
-                            <ArrowRight className="w-5 h-5 ml-2" />
+                            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
                         </Button>
                     </div>
                 </div>

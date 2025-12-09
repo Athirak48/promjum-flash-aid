@@ -45,17 +45,17 @@ export function getFlashcardReviewQuality(
   if (!isCorrect) {
     return 0;
   }
-  
+
   // Only first attempt can get Q > 0
   if (attemptCount > 1) {
     return 0;
   }
-  
+
   // First attempt - check timing
   if (timeTakenSeconds <= 7) {
     return 3; // Confident, quick response
   }
-  
+
   return 1; // Correct but hesitated
 }
 
@@ -69,12 +69,12 @@ export function getListenChooseQuality(isCorrect: boolean, playCount: number): n
   if (!isCorrect) {
     return 0;
   }
-  
+
   // First listen (playCount = 1) gets Q=2
   if (playCount <= 1) {
     return 2;
   }
-  
+
   // Replayed before answering correctly
   return 1;
 }
@@ -89,15 +89,15 @@ export function getHangmanQuality(isComplete: boolean, wrongGuesses: number): nu
   if (!isComplete || wrongGuesses > 5) {
     return 0;
   }
-  
+
   if (wrongGuesses === 0) {
     return 2; // Perfect
   }
-  
+
   if (wrongGuesses <= 3) {
     return 1; // Some mistakes but still good
   }
-  
+
   return 0; // Too many mistakes (4-5 considered poor performance)
 }
 
@@ -150,49 +150,26 @@ export function calculateSRS(
   currentData: Partial<SRSData>,
   qualityScore: number
 ): SRSUpdateResult {
-  const currentEF = currentData.easinessFactor ?? 2.5;
-  const currentInterval = currentData.intervalDays ?? 1;
   const currentLevel = currentData.srsLevel ?? 0;
   const currentScore = currentData.srsScore;
-  
+
   // Calculate new SRS score (cumulative)
   const newSrsScore = combineSRSScore(currentScore, qualityScore);
-  
-  // Calculate new easiness factor
-  // EF' = EF + (0.1 - (3 - Q) * (0.08 + (3 - Q) * 0.02))
-  // Adjusted for Q range 0-3
-  let newEF = currentEF + (0.1 - (3 - qualityScore) * (0.08 + (3 - qualityScore) * 0.02));
-  newEF = Math.max(1.3, newEF); // Minimum EF of 1.3
-  
-  // Calculate new interval
-  let newInterval: number;
-  let newLevel: number;
-  
-  if (qualityScore === 0) {
-    // Failed - reset to beginning
-    newInterval = 1;
-    newLevel = 0;
-  } else if (currentLevel === 0) {
-    newInterval = 1;
-    newLevel = 1;
-  } else if (currentLevel === 1) {
-    newInterval = 3;
-    newLevel = 2;
-  } else {
-    // Level 2+: interval * EF
-    newInterval = Math.round(currentInterval * newEF);
-    newLevel = Math.min(currentLevel + 1, 10); // Cap at level 10
-  }
-  
-  // Calculate next review date
-  const nextReviewDate = new Date();
-  nextReviewDate.setDate(nextReviewDate.getDate() + newInterval);
-  
+
+  // Simplified Logic: No complex scheduling
+  // If wrong (Q=0), reset level. If correct, increment level (capped at 10).
+  const newLevel = qualityScore === 0 ? 0 : Math.min(currentLevel + 1, 10);
+
+  // No interval calculation (Disabled Scheduling)
+  // We just set next review to NOW so it's always available if queried by date,
+  // or use the score to determine what to study.
+  const newInterval = 0;
+
   return {
-    easinessFactor: Number(newEF.toFixed(2)),
+    easinessFactor: 2.5, // Constant default
     intervalDays: newInterval,
     srsLevel: newLevel,
     srsScore: newSrsScore,
-    nextReviewDate
+    nextReviewDate: new Date() // Always due immediately
   };
 }

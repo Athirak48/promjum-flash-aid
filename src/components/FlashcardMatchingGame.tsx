@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trophy, Home, RotateCcw, ArrowRight, Gamepad2 } from 'lucide-react';
+import { ArrowLeft, Trophy, Flag, RotateCcw, Gamepad2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
@@ -13,6 +13,7 @@ interface Flashcard {
   front_text: string;
   back_text: string;
   created_at: string;
+  isUserFlashcard?: boolean;
 }
 
 interface FlashcardMatchingGameProps {
@@ -27,7 +28,10 @@ interface MatchingCard {
   type: 'front' | 'back';
   pairId: string;
   isMatched: boolean;
+  isUserFlashcard?: boolean;
 }
+
+const MAX_ROUNDS = 5;
 
 export function FlashcardMatchingGame({ flashcards, onClose, onNext }: FlashcardMatchingGameProps) {
   const { t } = useLanguage();
@@ -39,7 +43,8 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
   const [score, setScore] = useState(0);
   const [startTime, setStartTime] = useState(Date.now());
   const [endTime, setEndTime] = useState<number | null>(null);
-  const [wrongMatch, setWrongMatch] = useState<string[]>([]); // IDs of cards currently showing wrong state
+  const [wrongMatch, setWrongMatch] = useState<string[]>([]);
+  const [currentRound, setCurrentRound] = useState(1);
 
   const handleRestart = () => {
     setMatchedPairs([]);
@@ -47,12 +52,13 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
     setEndTime(null);
     setWrongMatch([]);
     setSelectedCards([]);
+    setCurrentRound(1);
     setStartTime(Date.now());
     initializeGame();
   };
 
   // Game config
-  const maxPairs = 6; // 12 cards total for better mobile fit
+  const maxPairs = 6; // 12 cards total
 
   useEffect(() => {
     initializeGame();
@@ -72,14 +78,16 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
         content: card.front_text,
         type: 'front',
         pairId: card.id,
-        isMatched: false
+        isMatched: false,
+        isUserFlashcard: card.isUserFlashcard
       });
       gameCards.push({
         id: `${card.id}-back`,
         content: card.back_text,
         type: 'back',
         pairId: card.id,
-        isMatched: false
+        isMatched: false,
+        isUserFlashcard: card.isUserFlashcard
       });
     });
 
@@ -107,10 +115,10 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
   const pairAttempts = useRef<Map<string, number>>(new Map());
 
   const checkMatch = async (card1: MatchingCard, card2: MatchingCard) => {
-    // Track attempts for this pair
+    // Track attempts
     const attempts = pairAttempts.current.get(card1.pairId) || 0;
     pairAttempts.current.set(card1.pairId, attempts + 1);
-    
+
     if (card1.pairId === card2.pairId) {
       // Match found
       const newMatched = [...matchedPairs, card1.pairId];
@@ -123,25 +131,34 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
 
       setSelectedCards([]);
 
-      // Update SRS: Q=2 if first try, Q=0 if not first try
+      // Update SRS
       const isFirstTry = attempts === 0;
-      await updateFromMatching(card1.pairId, true, isFirstTry);
+      await updateFromMatching(card1.pairId, true, isFirstTry, card1.isUserFlashcard);
 
-      // Check win
+      // Check Round Completion
       if (newMatched.length === Math.min(flashcards.length, maxPairs)) {
-        setEndTime(Date.now());
+        if (currentRound < MAX_ROUNDS) {
+          // Wait a bit then start next round
+          setTimeout(() => {
+            setCurrentRound(prev => prev + 1);
+            setMatchedPairs([]);
+            setSelectedCards([]);
+            initializeGame();
+          }, 300);
+        } else {
+          // Game Over (All rounds done)
+          setEndTime(Date.now());
+        }
       }
     } else {
-      // No match - Q=0 for wrong match
+      // No match
       setWrongMatch([card1.id, card2.id]);
-      
-      // Update SRS for both cards with Q=0 (wrong match)
-      await updateFromMatching(card1.pairId, false, false);
-      
+      await updateFromMatching(card1.pairId, false, false, card1.isUserFlashcard);
+
       setTimeout(() => {
         setSelectedCards([]);
         setWrongMatch([]);
-      }, 1000);
+      }, 400);
     }
   };
 
@@ -170,78 +187,62 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
     const seconds = timeSpent % 60;
 
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-cyan-50 via-sky-50 to-cyan-100 dark:from-cyan-950 dark:via-sky-900 dark:to-cyan-950 overflow-auto flex items-center justify-center p-4">
-        <BackgroundDecorations />
-        <Card className="max-w-xl w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-[2rem]">
-          <CardHeader className="text-center pb-2">
-            <div className="text-6xl mb-4 animate-bounce">🧩</div>
-            <CardTitle className="text-3xl font-bold text-foreground bg-gradient-to-r from-cyan-600 to-sky-600 bg-clip-text text-transparent">
-              ยอดเยี่ยม! จับคู่ครบแล้ว
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-gradient-to-r from-cyan-500 to-sky-500 rounded-2xl p-6 text-white text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
-              <div className="text-6xl font-bold mb-2">{score}</div>
-              <div className="text-xl opacity-90 font-medium">คะแนนรวม</div>
-            </div>
+      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-auto flex items-center justify-center p-4 z-50">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 500, damping: 25, duration: 0.1 }}
+          className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-cyan-50 to-transparent -z-10"></div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-2xl border border-blue-100">
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  {minutes}:{seconds.toString().padStart(2, '0')}
-                </div>
-                <div className="text-sm text-blue-700 dark:text-blue-300 mt-1 font-medium">
-                  เวลาที่ใช้
-                </div>
-              </div>
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-2xl border border-green-100">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {matchedPairs.length}
-                </div>
-                <div className="text-sm text-green-700 dark:text-green-300 mt-1 font-medium">
-                  คู่ที่จับได้
-                </div>
-              </div>
-            </div>
+          <div className="w-20 h-20 bg-white rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-6 border border-slate-50">
+            <Trophy className="h-10 w-10 text-yellow-500 drop-shadow-sm" />
+          </div>
 
-            <div className="flex flex-row gap-3 justify-center">
-              <Button
-                onClick={handleRestart}
-                className="flex-1 bg-gradient-to-r from-cyan-600 to-sky-600 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-sm md:text-base"
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                เล่นอีกครั้ง
-              </Button>
+          <h2 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">สุดยอด!</h2>
+          <p className="text-slate-500 mb-6 font-medium text-base">
+            คุณผ่านครบ {MAX_ROUNDS} รอบแล้ว
+          </p>
 
-              <Button
-                onClick={() => {
-                  const selectedVocab = flashcards.map(f => ({
-                    id: f.id,
-                    word: f.front_text,
-                    meaning: f.back_text
-                  }));
-                  navigate('/ai-listening-section3-intro', {
-                    state: { selectedVocab }
-                  });
-                }}
-                variant="outline"
-                className="flex-1 rounded-xl h-12 text-sm md:text-base border-cyan-200 text-cyan-700 hover:bg-cyan-50"
-              >
-                <Gamepad2 className="h-4 w-4 mr-2" />
-                เลือกเกมใหม่
-              </Button>
+          <div className="bg-slate-50 rounded-2xl p-4 mb-8 border border-slate-100">
+            <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">เวลาทั้งหมด</p>
+            <p className="text-2xl font-black text-cyan-600 tracking-tight">{minutes}:{seconds.toString().padStart(2, '0')}</p>
+          </div>
 
-              <Button
-                onClick={onNext || onClose}
-                variant="outline"
-                className="flex-1 rounded-xl h-12 text-sm md:text-base border-gray-200"
-              >
-                ถัดไป
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="flex flex-row gap-2 justify-center w-full">
+            <Button
+              onClick={handleRestart}
+              className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white shadow-lg shadow-cyan-200 hover:shadow-cyan-300 transition-all rounded-xl h-12 text-sm font-bold active:scale-95"
+            >
+              เล่นอีกครั้ง
+            </Button>
+
+            <Button
+              onClick={() => {
+                const selectedVocab = flashcards.map(f => ({
+                  id: f.id,
+                  word: f.front_text,
+                  meaning: f.back_text
+                }));
+                navigate('/ai-listening-section3-intro', {
+                  state: { selectedVocab }
+                });
+              }}
+              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
+            >
+              <Gamepad2 className="h-4 w-4 mr-1.5" />
+              เกมอื่น
+            </Button>
+
+            <Button
+              onClick={onNext || onClose}
+              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
+            >
+              ออก
+            </Button>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -259,14 +260,15 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
           </Button>
 
           <div className="flex items-center gap-2 md:gap-3">
+            {/* Round Indicator */}
+            <div className="flex items-center gap-1.5 md:gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-md border border-white/20">
+              <Flag className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="font-bold text-base md:text-lg">Round {currentRound}/{MAX_ROUNDS}</span>
+            </div>
+
             <div className="flex items-center gap-1.5 md:gap-2 bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
               <Trophy className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
               <span className="font-bold text-base md:text-lg">{score}</span>
-            </div>
-            <div className="bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
-              <span className="font-bold text-base md:text-lg text-primary">
-                {matchedPairs.length} / {Math.min(flashcards.length, maxPairs)}
-              </span>
             </div>
           </div>
         </div>
@@ -277,6 +279,7 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
             <CardHeader className="pb-0 md:pb-2 pt-4 md:pt-6">
               <CardTitle className="text-center text-xl md:text-2xl font-bold bg-gradient-to-r from-cyan-600 to-sky-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
                 <span className="text-2xl md:text-3xl">🧩</span> Matching Pair
+                <span className="text-sm font-normal text-muted-foreground ml-2">(Round {currentRound})</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 md:p-8">
@@ -292,7 +295,7 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
                       exit={{ opacity: 0, scale: 0 }}
                       onClick={() => handleCardClick(card)}
                       className={`
-                        aspect-[4/3] md:aspect-video rounded-lg md:rounded-xl p-1 md:p-4 flex items-center justify-center text-center transition-all duration-300
+                        aspect-[4/3] md:aspect-video rounded-lg md:rounded-xl p-1 md:p-4 flex items-center justify-center text-center transition-all duration-150
                         ${getCardStyle(card)}
                       `}
                     >

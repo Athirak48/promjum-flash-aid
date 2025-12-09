@@ -13,6 +13,7 @@ interface Flashcard {
   front_text: string;
   back_text: string;
   created_at: string;
+  isUserFlashcard?: boolean;
 }
 
 interface FlashcardVocabBlinderGameProps {
@@ -133,7 +134,7 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext }: Flash
 
   const handleNext = async () => {
     // Update SRS
-    await updateFromVocabBlinder(currentCard.id, isCorrect || false);
+    await updateFromVocabBlinder(currentCard.id, isCorrect || false, currentCard.isUserFlashcard);
 
     if (currentIndex < flashcards.length - 1) {
       setCurrentIndex(currentIndex + 1);

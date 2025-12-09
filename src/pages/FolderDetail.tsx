@@ -34,6 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useSRSProgress } from '@/hooks/useSRSProgress';
 
 interface FlashcardData {
   id: string;
@@ -101,6 +102,22 @@ export function FolderDetail() {
   const [selectedSetForEdit, setSelectedSetForEdit] = useState<FlashcardSet | null>(null);
 
   const [setToDelete, setSetToDelete] = useState<FlashcardSet | null>(null);
+
+  // SRS Hook
+  const { updateFromFlashcardReview } = useSRSProgress();
+  const attemptCountsRef = React.useRef<Map<string, number>>(new Map());
+
+  const handleSRSUpdate = async (cardId: string, known: boolean, timeTaken: number) => {
+    // Determine if user card (in FolderDetail they are usually user cards)
+    // We can assume they are user cards if source is 'สร้างเอง' or similar, but for now defaulting true is safer for user_flashcards table access
+    // Actually, in updateFromFlashcardReview, if isUserFlashcard is true, it updates user_flashcards.
+    // In FolderDetail, we are dealing with user_flashcards table, so YES, always true.
+
+    const currentAttempts = attemptCountsRef.current.get(cardId) || 0;
+    attemptCountsRef.current.set(cardId, currentAttempts + 1);
+
+    await updateFromFlashcardReview(cardId, known, currentAttempts + 1, timeTaken, true);
+  };
 
   // Move dialog states
   const [showMoveDialog, setShowMoveDialog] = useState(false);
@@ -336,7 +353,7 @@ export function FolderDetail() {
   };
 
   const handleAddFlashcardRow = () => {
-    const newRow = { id: Date.now(), front: '', back: '', frontImage: null as File | null, backImage: null as File | null };
+    const newRow = { id: Date.now() + Math.random(), front: '', back: '', frontImage: null as File | null, backImage: null as File | null };
     setFlashcardRows([...flashcardRows, newRow]);
   };
 
@@ -408,7 +425,7 @@ export function FolderDetail() {
           user_id: user.id,
           folder_id: folderId,
           title: newSetTitle.trim(),
-          source: 'สร้างเอง'
+          source: 'created'
         })
         .select()
         .single();
@@ -485,7 +502,7 @@ export function FolderDetail() {
       setNewSetTitle('');
 
       setFlashcardRows(
-        Array(5).fill(null).map((_, i) => ({ id: Date.now() + i, front: '', back: '', frontImage: null, backImage: null }))
+        Array(5).fill(null).map((_, i) => ({ id: Date.now() + Math.random(), front: '', back: '', frontImage: null, backImage: null }))
       );
       setShowNewCardDialog(false);
 
@@ -642,9 +659,22 @@ export function FolderDetail() {
   if (gameMode && selectedSet) {
     if (gameMode === 'review') {
       return (
-        <FlashcardReviewPage
-          cards={selectedFlashcards}
+        <FlashcardSwiper
+          cards={selectedFlashcards.map(c => ({
+            id: c.id,
+            front: c.front,
+            back: c.back,
+            frontImage: c.frontImage,
+            backImage: c.backImage
+          }))}
           onClose={handleReviewComplete}
+          onComplete={handleReviewComplete}
+          onAnswer={async (cardId, known, timeTaken) => {
+            // We need to implement SRS update here
+            // But we need the updateFromFlashcardReview function from useSRSProgress hook
+            // I'll ensure hook is called at top level and used here
+            await handleSRSUpdate(cardId, known, timeTaken);
+          }}
         />
       );
     }
@@ -772,14 +802,14 @@ export function FolderDetail() {
                 สร้างชุดใหม่
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
               <DialogHeader>
                 <DialogTitle>สร้างชุดแฟลชการ์ดใหม่</DialogTitle>
                 <DialogDescription>
                   สร้างชุดคำศัพท์ใหม่ในโฟลเดอร์นี้
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-6 py-4">
+              <div className="space-y-6 py-4 flex-1 flex flex-col min-h-0">
                 <div className="space-y-2">
                   <Label htmlFor="title">ชื่อชุดแฟลชการ์ด</Label>
                   <Input
@@ -790,7 +820,7 @@ export function FolderDetail() {
                   />
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 flex-1 overflow-y-auto pr-2">
                   <div className="flex items-center justify-between">
                     <Label>รายการคำศัพท์</Label>
                     <span className="text-sm text-muted-foreground">
