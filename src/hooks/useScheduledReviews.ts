@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
@@ -12,7 +12,7 @@ export function useScheduledReviews() {
     const [reviews, setReviews] = useState<ScheduledReview[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    const fetchReviews = async () => {
+    const fetchReviews = useCallback(async () => {
         setIsLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -37,7 +37,7 @@ export function useScheduledReviews() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [toast]);
 
     const addReview = async (review: Omit<InsertScheduledReview, 'user_id'>) => {
         try {
@@ -132,7 +132,7 @@ export function useScheduledReviews() {
 
     useEffect(() => {
         fetchReviews();
-    }, []);
+    }, [fetchReviews]);
 
     return {
         reviews,

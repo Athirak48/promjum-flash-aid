@@ -17,6 +17,8 @@ export interface Flashcard {
     interval?: number;
     ease_factor?: number;
     repetitions?: number;
+    srs_score?: number | null;
+    srs_level?: number | null;
 }
 
 export function useFlashcards() {

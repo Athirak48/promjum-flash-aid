@@ -14,6 +14,8 @@ interface FlashcardData {
   id: string;
   front: string;
   back: string;
+  frontImage?: string | null;
+  backImage?: string | null;
 }
 
 interface FlashcardSwiperProps {
@@ -25,9 +27,10 @@ interface FlashcardSwiperProps {
     needsReview: number;
     cardStats: Record<string, { missCount: number }>;
   }) => void;
+  onAnswer?: (cardId: string, known: boolean, timeTaken: number) => void;
 }
 
-export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperProps) {
+export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: FlashcardSwiperProps) {
   const { t } = useLanguage();
 
   // Core state
@@ -66,6 +69,11 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
   const cardRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef(0);
   const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const cardStartTimeRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    cardStartTimeRef.current = Date.now();
+  }, [currentIndex]);
 
   const currentCard = reviewQueue[currentIndex];
   const totalCards = cards.length;
@@ -190,6 +198,11 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
       });
     } else {
       console.log('Correct answer for card:', currentCard.id);
+    }
+
+    if (onAnswer) {
+      const timeTaken = (Date.now() - cardStartTimeRef.current) / 1000;
+      onAnswer(currentCard.id, remembered, timeTaken);
     }
 
     // Save state for undo
@@ -370,8 +383,8 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
 
 
         {/* Card Stack */}
-        <div className="flex-1 flex items-center justify-center px-4 pb-32">
-          <div className="relative w-full max-w-md aspect-[3/4] max-h-[500px]">
+        <div className="flex-1 flex items-center justify-center px-4 pb-40">
+          <div className="relative w-full max-w-[85vw] sm:max-w-sm md:max-w-sm lg:max-w-sm aspect-[3/4] max-h-[60vh] sm:max-h-[450px] md:max-h-[500px] lg:max-h-[500px]">
             {/* Stacked cards behind */}
             {[2, 1].map((offset) => {
               const nextIndex = currentIndex + offset;
@@ -380,10 +393,10 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
               return (
                 <div
                   key={nextIndex}
-                  className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700"
+                  className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 dark:from-slate-800 dark:via-purple-900/30 dark:to-slate-700 shadow-lg border-2 border-purple-300/70 dark:border-purple-500/40"
                   style={{
-                    transform: `translateY(${offset * 8}px) scale(${1 - offset * 0.05})`,
-                    opacity: 1 - offset * 0.2,
+                    transform: `translateY(${offset * 12}px) scale(${1 - offset * 0.05})`,
+                    opacity: 1 - offset * 0.15,
                     zIndex: -offset,
                   }}
                 />
@@ -423,7 +436,16 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
                   }}
                 >
                   {/* Front */}
-                  <Card className="absolute inset-0 backface-hidden bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-2xl rounded-3xl flex items-center justify-center p-8">
+                  <Card className="absolute inset-0 backface-hidden bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 dark:from-slate-800 dark:via-purple-900/40 dark:to-slate-700 border-2 border-purple-300 dark:border-purple-500/50 shadow-2xl rounded-3xl flex items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden">
+                    {/* Decorative corners like playing cards */}
+                    <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-purple-400/60 rounded-tl-lg" />
+                    <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-purple-400/60 rounded-tr-lg" />
+                    <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-purple-400/60 rounded-bl-lg" />
+                    <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-purple-400/60 rounded-br-lg" />
+
+                    {/* Subtle pattern overlay */}
+                    <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(circle_at_center,_#8b5cf6_1px,_transparent_1px)] bg-[length:20px_20px]" />
+
                     {/* Auto Badge on Card */}
                     {isAutoPlaying && (
                       <div className="absolute top-6 right-6 flex items-center gap-1.5">
@@ -432,20 +454,53 @@ export function FlashcardSwiper({ cards, onClose, onComplete }: FlashcardSwiperP
                       </div>
                     )}
 
-                    <div className="text-center">
-                      <div className="text-5xl font-bold text-slate-800 dark:text-white mb-4 tracking-tight">{currentCard.front}</div>
-                      <div className="text-sm text-slate-400 font-medium">แตะเพื่อดูความหมาย</div>
+                    <div className="text-center w-full flex flex-col items-center justify-center h-full">
+                      {currentCard.frontImage && (
+                        <div className="relative w-full h-32 sm:h-40 md:h-56 lg:h-64 mb-4 flex items-center justify-center">
+                          <img
+                            src={currentCard.frontImage}
+                            alt="Front"
+                            className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
+                          />
+                        </div>
+                      )}
+
+                      <div className="text-3xl sm:text-4xl md:text-4xl lg:text-4xl font-bold text-slate-800 dark:text-white mb-4 leading-normal py-2 break-words line-clamp-4">
+                        {currentCard.front}
+                      </div>
+                      <div className="text-sm md:text-base text-slate-400 font-medium absolute bottom-8">แตะเพื่อดูความหมาย</div>
                     </div>
                   </Card>
 
                   {/* Back */}
                   <Card
-                    className="absolute inset-0 backface-hidden bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-2xl rounded-3xl flex items-center justify-center p-8"
+                    className="absolute inset-0 backface-hidden bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-slate-800 dark:via-indigo-900/40 dark:to-slate-700 border-2 border-indigo-300 dark:border-indigo-500/50 shadow-2xl rounded-3xl flex items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden"
                     style={{ transform: 'rotateY(180deg)' }}
                   >
-                    <div className="text-center">
-                      <div className="text-4xl font-bold text-slate-800 dark:text-white mb-6">{currentCard.back}</div>
-                      <div className="text-lg text-slate-500 dark:text-slate-400 font-medium">{currentCard.front}</div>
+                    {/* Decorative corners */}
+                    <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-indigo-400/60 rounded-tl-lg" />
+                    <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-indigo-400/60 rounded-tr-lg" />
+                    <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-indigo-400/60 rounded-bl-lg" />
+                    <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-indigo-400/60 rounded-br-lg" />
+
+                    {/* Subtle pattern overlay */}
+                    <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(circle_at_center,_#6366f1_1px,_transparent_1px)] bg-[length:20px_20px]" />
+                    <div className="text-center w-full flex flex-col items-center justify-center h-full">
+                      {currentCard.backImage && (
+                        <div className="relative w-full h-32 sm:h-40 md:h-56 lg:h-64 mb-4 flex items-center justify-center">
+                          <img
+                            src={currentCard.backImage}
+                            alt="Front"
+                            className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
+                          />
+                        </div>
+                      )}
+                      <div className="text-2xl sm:text-3xl md:text-3xl lg:text-3xl font-bold text-slate-800 dark:text-white mb-6 leading-normal py-2 break-words line-clamp-4">
+                        {currentCard.back}
+                      </div>
+                      <div className="text-lg md:text-xl text-slate-500 dark:text-slate-400 font-medium break-words line-clamp-2 absolute bottom-8">
+                        {currentCard.front}
+                      </div>
                     </div>
                   </Card>
                 </div>

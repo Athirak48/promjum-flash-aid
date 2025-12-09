@@ -540,7 +540,7 @@ export default function FlashcardsPage() {
         .from('user_flashcard_sets')
         .insert([{
           user_id: user.id,
-          folder_id: selectedFolderForFlashcard || null,
+          folder_id: (selectedFolderForFlashcard && selectedFolderForFlashcard !== 'none') ? selectedFolderForFlashcard : null,
           title: newFlashcardSetTitle.trim(),
           card_count: validFlashcards.length,
           source: 'created'
@@ -632,7 +632,7 @@ export default function FlashcardsPage() {
                     {t('flashcards.createFlashcard')}
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold">สร้างแฟลชการ์ดใหม่</DialogTitle>
                     <DialogDescription>
@@ -640,7 +640,7 @@ export default function FlashcardsPage() {
                     </DialogDescription>
                   </DialogHeader>
 
-                  <div className="space-y-6">
+                  <div className="space-y-6 flex-1 flex flex-col min-h-0">
                     {/* Flashcard Set Title */}
                     <div className="space-y-2">
                       <Label htmlFor="flashcard-set-title" className="text-sm font-medium">
@@ -698,7 +698,7 @@ export default function FlashcardsPage() {
                     </div>
 
                     {/* Flashcard Rows */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 flex-1 overflow-y-auto pr-2">
                       {flashcardRows.map((row, index) => (
                         <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-xl bg-card hover:shadow-md transition-all duration-200 relative">
                           <div className="flex items-center justify-between w-full sm:w-auto sm:justify-center">

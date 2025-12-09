@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Play, Pause, SkipForward, Volume2, RotateCcw, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Volume2, RotateCcw, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -10,64 +11,99 @@ export default function AIRealtimePracticePage() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
   const [showTranslation, setShowTranslation] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [speechRate, setSpeechRate] = useState(0.9); // Default speech rate
 
-  // Mock story data - in a real app, this would come from the AI generation based on selected vocab
+  // Refs for speech synthesis
+  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const synth = window.speechSynthesis;
+
+  // Mock story data
   const story = {
     title: "A Day at the Market",
     titleTh: "วันหนึ่งที่ตลาด",
     sentences: [
-      { text: "Yesterday, I went to the local market to buy some fresh fruit.", translation: "เมื่อวานนี้ ฉันไปตลาดท้องถิ่นเพื่อซื้อผลไม้สด", start: 0, end: 5 },
-      { text: "I saw many colorful apples and bananas on the stalls.", translation: "ฉันเห็นแอปเปิ้ลและกล้วยหลากสีสันมากมายบนแผงขายของ", start: 5, end: 10 },
-      { text: "The merchant was very friendly and gave me a discount.", translation: "พ่อค้าเป็นมิตรมากและลดราคาให้ฉัน", start: 10, end: 15 },
-      { text: "I decided to create a delicious fruit salad for dinner.", translation: "ฉันตัดสินใจทำสลัดผลไม้แสนอร่อยสำหรับมื้อเย็น", start: 15, end: 20 },
-      { text: "It was a simple method to make my family happy.", translation: "มันเป็นวิธีง่ายๆ ที่จะทำให้ครอบครัวของฉันมีความสุข", start: 20, end: 25 }
+      { text: "Yesterday, I went to the local market to buy some fresh fruit.", translation: "เมื่อวานนี้ ฉันไปตลาดท้องถิ่นเพื่อซื้อผลไม้สด" },
+      { text: "I saw many colorful apples and bananas on the stalls.", translation: "ฉันเห็นแอปเปิ้ลและกล้วยหลากสีสันมากมายบนแผงขายของ" },
+      { text: "The merchant was very friendly and gave me a discount.", translation: "พ่อค้าเป็นมิตรมากและลดราคาให้ฉัน" },
+      { text: "I decided to create a delicious fruit salad for dinner.", translation: "ฉันตัดสินใจทำสลัดผลไม้แสนอร่อยสำหรับมื้อเย็น" },
+      { text: "It was a simple method to make my family happy.", translation: "มันเป็นวิธีง่ายๆ ที่จะทำให้ครอบครัวของฉันมีความสุข" }
     ]
   };
 
-  // Mock audio progress simulation
+  // Initialize Voices
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    const loadVoices = () => {
+      const availableVoices = synth.getVoices();
+      setVoices(availableVoices);
+      // Prefer English US/UK voices
+      const defaultVoice = availableVoices.find(v => v.lang.includes('en-US')) || availableVoices.find(v => v.lang.includes('en'));
+      setSelectedVoice(defaultVoice || availableVoices[0]);
+    };
+
+    loadVoices();
+    if (synth.onvoiceschanged !== undefined) {
+      synth.onvoiceschanged = loadVoices;
+    }
+
+    return () => {
+      synth.cancel();
+    };
+  }, []);
+
+  // Handle Speech Playback
+  useEffect(() => {
     if (isPlaying && !isComplete) {
-      interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            setIsPlaying(false);
-            setIsComplete(true);
-            return 100;
-          }
-          return prev + 0.5;
-        });
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, isComplete]);
+      const sentence = story.sentences[currentSentenceIndex];
+      const utterance = new SpeechSynthesisUtterance(sentence.text);
+      if (selectedVoice) utterance.voice = selectedVoice;
+      utterance.rate = speechRate;
+      utterance.pitch = 1;
 
-  // Update current sentence based on progress
-  useEffect(() => {
-    const totalDuration = 25; // assumed total seconds
-    const currentTime = (progress / 100) * totalDuration;
-    const index = story.sentences.findIndex(s => currentTime >= s.start && currentTime < s.end);
-    if (index !== -1) {
-      setCurrentSentenceIndex(index);
-    } else if (progress >= 100) {
-      setCurrentSentenceIndex(story.sentences.length - 1);
-    }
-  }, [progress]);
+      utterance.onend = () => {
+        if (currentSentenceIndex < story.sentences.length - 1) {
+          setCurrentSentenceIndex(prev => prev + 1);
+        } else {
+          setIsPlaying(false);
+          setIsComplete(true);
+        }
+      };
 
-  const togglePlay = () => setIsPlaying(!isPlaying);
+      // Handle interruptions
+      utterance.onerror = (e) => {
+        console.error("Speech error:", e);
+        setIsPlaying(false);
+      };
+
+      speechRef.current = utterance;
+      synth.speak(utterance);
+    } else {
+      synth.cancel();
+    }
+  }, [isPlaying, currentSentenceIndex, selectedVoice, speechRate]);
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      synth.cancel();
+      setIsPlaying(false);
+    } else {
+      setIsPlaying(true);
+    }
+  };
 
   const handleRestart = () => {
-    setProgress(0);
+    synth.cancel();
     setCurrentSentenceIndex(0);
-    setIsPlaying(true);
     setIsComplete(false);
+    setIsPlaying(true);
   };
 
   const handleFinish = () => {
+    synth.cancel();
     navigate('/ai-listening-mcq');
   };
 
@@ -80,7 +116,10 @@ export default function AIRealtimePracticePage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/ai-listening-section4-intro')}
+              onClick={() => {
+                synth.cancel();
+                navigate('/ai-listening-section4-intro');
+              }}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -123,21 +162,6 @@ export default function AIRealtimePracticePage() {
 
           {/* Controls */}
           <div className="space-y-6 pt-8">
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <Slider
-                value={[progress]}
-                max={100}
-                step={1}
-                className="cursor-pointer"
-                onValueChange={(val) => setProgress(val[0])}
-              />
-              <div className="flex justify-between text-xs text-muted-foreground font-medium">
-                <span>0:00</span>
-                <span>0:25</span>
-              </div>
-            </div>
-
             {/* Playback Controls */}
             <div className="flex items-center justify-center gap-6">
               <Button
@@ -169,6 +193,71 @@ export default function AIRealtimePracticePage() {
               >
                 <span className="text-xs font-bold">EN/TH</span>
               </Button>
+            </div>
+          </div>
+
+          {/* Voice & Speed Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 bg-muted/30 p-4 rounded-xl border border-border/50">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground ml-1 flex justify-between">
+                <span>{language === 'th' ? 'เสียงอ่าน (Voice)' : 'Voice'}</span>
+                <span className="text-[10px] opacity-50">{voices.length > 0 ? `${voices.length} available` : 'Scanning...'}</span>
+              </label>
+
+              {voices.length === 0 ? (
+                <div className="h-10 px-3 py-2 rounded-lg border border-dashed text-sm text-muted-foreground bg-muted/50 flex items-center justify-center animate-pulse">
+                  Loading voices...
+                </div>
+              ) : (
+                <Select
+                  value={selectedVoice?.name || ''}
+                  onValueChange={(val) => {
+                    const voice = voices.find(v => v.name === val);
+                    if (voice) setSelectedVoice(voice);
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-background/50">
+                    <SelectValue placeholder="Select Voice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* Priority 1: English Voices */}
+                    {voices.filter(v => v.lang.includes('en')).length > 0 ? (
+                      voices.filter(v => v.lang.includes('en')).map(v => (
+                        <SelectItem key={v.name} value={v.name}>
+                          {v.name.replace('Microsoft ', '').replace('Google ', '')} ({v.lang})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      // Priority 2: Fallback to all if no English
+                      voices.map(v => (
+                        <SelectItem key={v.name} value={v.name}>
+                          {v.name} ({v.lang})
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground ml-1">
+                {language === 'th' ? 'ความเร็ว (Speed)' : 'Speed'}
+              </label>
+              <div className="flex items-center gap-4 h-10 px-2 bg-background/50 rounded-lg border border-border/20">
+                <span className="text-xs font-mono w-8 text-right">0.5x</span>
+                <Slider
+                  defaultValue={[0.9]}
+                  max={1.5}
+                  min={0.5}
+                  step={0.1}
+                  className="flex-1"
+                  onValueChange={(val) => {
+                    setSpeechRate(val[0]);
+                  }}
+                />
+                <span className="text-xs font-mono w-8">1.5x</span>
+              </div>
             </div>
           </div>
 

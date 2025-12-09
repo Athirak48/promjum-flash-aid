@@ -157,52 +157,44 @@ export const FlashcardSwipeGame = ({ flashcards, onClose, onComplete }: Flashcar
         const successRate = Math.round((remembered / total) * 100);
 
         return (
-            <div className="fixed inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-purple-950 dark:to-slate-900 overflow-auto flex items-center justify-center p-4">
-                <BackgroundDecorations />
-                <Card className="max-w-lg w-full shadow-2xl relative z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-0 rounded-3xl overflow-hidden">
-                    <div className="p-8 text-center space-y-6">
-                        <div className="text-6xl mb-4">🎉</div>
-                        <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            เสร็จสิ้น!
-                        </h2>
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-auto flex items-center justify-center p-4 z-50">
+                <motion.div
+                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
+                >
+                    <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-indigo-50 to-transparent -z-10"></div>
 
-                        <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-6 text-white">
-                            <div className="text-5xl font-bold mb-2">{successRate}%</div>
-                            <div className="text-lg opacity-90">อัตราความสำเร็จ</div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-green-50 dark:bg-green-900/30 rounded-2xl p-4 border border-green-200 dark:border-green-800">
-                                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
-                                <div className="text-3xl font-bold text-green-600 dark:text-green-400">{remembered}</div>
-                                <div className="text-sm text-green-700 dark:text-green-300 mt-1">จำได้</div>
-                            </div>
-                            <div className="bg-red-50 dark:bg-red-900/30 rounded-2xl p-4 border border-red-200 dark:border-red-800">
-                                <XCircle className="h-8 w-8 text-red-600 dark:text-red-400 mx-auto mb-2" />
-                                <div className="text-3xl font-bold text-red-600 dark:text-red-400">{needPractice}</div>
-                                <div className="text-sm text-red-700 dark:text-red-300 mt-1">ต้องฝึก</div>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3 pt-4">
-                            <Button
-                                onClick={handleRestart}
-                                className="flex-1 h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg"
-                            >
-                                <RotateCcw className="h-4 w-4 mr-2" />
-                                เล่นอีกครั้ง
-                            </Button>
-                            <Button
-                                onClick={onClose}
-                                variant="outline"
-                                className="flex-1 h-12 rounded-xl border-2"
-                            >
-                                <X className="h-4 w-4 mr-2" />
-                                ปิด
-                            </Button>
-                        </div>
+                    <div className="w-20 h-20 bg-white rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-6 border border-slate-50">
+                        <Trophy className="h-10 w-10 text-yellow-500 drop-shadow-sm" />
                     </div>
-                </Card>
+
+                    <h2 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">เสร็จสิ้น!</h2>
+                    <p className="text-slate-500 mb-6 font-medium text-base">
+                        คุณทบทวนคำศัพท์ครบแล้ว
+                    </p>
+
+                    <div className="bg-slate-50 rounded-2xl p-4 mb-8 border border-slate-100">
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">อัตราความสำเร็จ</p>
+                        <p className="text-2xl font-black text-indigo-600 tracking-tight">{successRate}%</p>
+                    </div>
+
+                    <div className="flex flex-row gap-2 justify-center w-full">
+                        <Button
+                            onClick={handleRestart}
+                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-xl h-12 text-sm font-bold active:scale-95"
+                        >
+                            เล่นอีกครั้ง
+                        </Button>
+
+                        <Button
+                            onClick={onClose}
+                            className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
+                        >
+                            ปิด
+                        </Button>
+                    </div>
+                </motion.div>
             </div>
         );
     }
@@ -290,8 +282,8 @@ export const FlashcardSwipeGame = ({ flashcards, onClose, onComplete }: Flashcar
                                     {/* Front side */}
                                     <Card className="absolute inset-0 backface-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 border-0 shadow-2xl rounded-3xl flex items-center justify-center p-8">
                                         <div className="text-center text-white">
-                                            <div className="text-6xl font-bold mb-4">{currentCard.front_text}</div>
-                                            <div className="text-sm opacity-75 mt-4">คลิกเพื่อดูคำแปล</div>
+                                            <div className="text-6xl font-bold mb-4">{currentCard.back_text}</div>
+                                            <div className="text-sm opacity-75 mt-4">คลิกเพื่อดูคำศัพท์</div>
                                         </div>
                                     </Card>
 
@@ -302,10 +294,10 @@ export const FlashcardSwipeGame = ({ flashcards, onClose, onComplete }: Flashcar
                                     >
                                         <div className="text-center">
                                             <div className="text-5xl font-bold text-slate-800 dark:text-white mb-4">
-                                                {currentCard.back_text}
+                                                {currentCard.front_text}
                                             </div>
                                             <div className="text-lg text-slate-500 dark:text-slate-400 mt-4">
-                                                {currentCard.front_text}
+                                                {currentCard.back_text}
                                             </div>
                                             <div className="text-sm text-slate-400 dark:text-slate-500 mt-4">
                                                 คลิกอีกครั้งเพื่อกลับด้านหน้า

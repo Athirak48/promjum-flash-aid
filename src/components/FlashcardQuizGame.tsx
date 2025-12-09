@@ -13,6 +13,7 @@ interface Flashcard {
   front_text: string;
   back_text: string;
   created_at: string;
+  isUserFlashcard?: boolean;
 }
 
 interface FlashcardQuizGameProps {
@@ -61,12 +62,12 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
 
   const generateQuestions = () => {
     const newQuestions = flashcards.map(card => {
-      const correctAnswer = card.back_text;
+      const correctAnswer = card.front_text;
       const otherCards = flashcards.filter(c => c.id !== card.id);
       const wrongOptions = otherCards
         .sort(() => Math.random() - 0.5)
         .slice(0, 3)
-        .map(c => c.back_text);
+        .map(c => c.front_text);
 
       const options = [...wrongOptions, correctAnswer].sort(() => Math.random() - 0.5);
 
@@ -100,7 +101,7 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
 
   const handleNext = async () => {
     const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-    await updateFromQuiz(currentQuestion.card.id, isCorrect);
+    await updateFromQuiz(currentQuestion.card.id, isCorrect, currentQuestion.card.isUserFlashcard);
 
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
@@ -120,86 +121,61 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
     const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-fuchsia-50 to-violet-100 dark:from-violet-950 dark:via-fuchsia-900 dark:to-violet-950 overflow-auto flex items-center justify-center p-4">
-        <BackgroundDecorations />
-        <Card className="max-w-xl w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-[2rem]">
-          <CardHeader className="text-center pb-2">
-            <div className="text-6xl mb-4 animate-bounce">🏆</div>
-            <CardTitle className="text-3xl font-bold text-foreground bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-              สรุปผล Quiz Challenge
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-2xl p-6 text-white text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
-              <div className="text-6xl font-bold mb-2">{score}</div>
-              <div className="text-xl opacity-90 font-medium">คะแนนรวม</div>
-            </div>
+      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-auto flex items-center justify-center p-4 z-50">
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-violet-50 to-transparent -z-10"></div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-2xl border border-green-100">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {correctCount}
-                </div>
-                <div className="text-sm text-green-700 dark:text-green-300 mt-1 font-medium">
-                  ถูกต้อง
-                </div>
-              </div>
-              <div className="text-center p-4 bg-red-50 dark:bg-red-900/30 rounded-2xl border border-red-100">
-                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-                  {wrongCount}
-                </div>
-                <div className="text-sm text-red-700 dark:text-red-300 mt-1 font-medium">
-                  ผิด
-                </div>
-              </div>
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-2xl border border-blue-100">
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  {accuracy}%
-                </div>
-                <div className="text-sm text-blue-700 dark:text-blue-300 mt-1 font-medium">
-                  ความแม่นยำ
-                </div>
-              </div>
-            </div>
+          <div className="w-20 h-20 bg-white rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-6 border border-slate-50">
+            <Trophy className="h-10 w-10 text-yellow-500 drop-shadow-sm" />
+          </div>
 
-            <div className="flex flex-row gap-3 justify-center">
-              <Button
-                onClick={handleRestart}
-                className="flex-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-sm md:text-base"
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                เล่นอีกครั้ง
-              </Button>
+          <h2 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">ยอดเยี่ยม!</h2>
+          <p className="text-slate-500 mb-6 font-medium text-base">
+            คุณทำแบบทดสอบครบแล้ว
+          </p>
 
-              <Button
-                onClick={() => {
-                  const selectedVocab = flashcards.map(f => ({
-                    id: f.id,
-                    word: f.front_text,
-                    meaning: f.back_text
-                  }));
-                  navigate('/ai-listening-section3-intro', {
-                    state: { selectedVocab }
-                  });
-                }}
-                variant="outline"
-                className="flex-1 rounded-xl h-12 text-sm md:text-base border-violet-200 text-violet-700 hover:bg-violet-50"
-              >
-                <Gamepad2 className="h-4 w-4 mr-2" />
-                เลือกเกมใหม่
-              </Button>
+          <div className="bg-slate-50 rounded-2xl p-4 mb-8 border border-slate-100">
+            <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">คะแนนรวม</p>
+            <p className="text-2xl font-black text-violet-600 tracking-tight">{score} คะแนน</p>
+          </div>
 
-              <Button
-                onClick={onNext || onClose}
-                variant="outline"
-                className="flex-1 rounded-xl h-12 text-sm md:text-base border-gray-200"
-              >
-                ถัดไป
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="flex flex-row gap-2 justify-center w-full">
+            <Button
+              onClick={handleRestart}
+              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 hover:shadow-violet-300 transition-all rounded-xl h-12 text-sm font-bold active:scale-95"
+            >
+              เล่นอีกครั้ง
+            </Button>
+
+            <Button
+              onClick={() => {
+                const selectedVocab = flashcards.map(f => ({
+                  id: f.id,
+                  word: f.front_text,
+                  meaning: f.back_text
+                }));
+                navigate('/ai-listening-section3-intro', {
+                  state: { selectedVocab }
+                });
+              }}
+              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
+            >
+              <Gamepad2 className="h-4 w-4 mr-1.5" />
+              เลือกเกมใหม่
+            </Button>
+
+            <Button
+              onClick={onNext || onClose}
+              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
+            >
+              ถัดไป
+            </Button>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -243,7 +219,7 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
               <div className="text-center py-4 md:py-6">
                 <div className="mb-2 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-widest">คำศัพท์</div>
                 <h2 className="text-3xl md:text-5xl font-bold text-violet-900 dark:text-violet-100 mb-2 md:mb-4 break-words">
-                  {currentQuestion.card.front_text}
+                  {currentQuestion.card.back_text}
                 </h2>
                 <div className="h-1 w-16 md:w-24 bg-gradient-to-r from-violet-500 to-fuchsia-500 mx-auto rounded-full opacity-50"></div>
               </div>

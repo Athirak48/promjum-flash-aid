@@ -258,9 +258,9 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
         onClick={handleCardClick}
       >
         <CardContent className="p-6">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             {/* Left: Main Info */}
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 space-y-3 w-full">
               <div className="flex items-center gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -279,7 +279,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                 {subdeck.description}
               </p>
 
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                 <Badge className={`${getDifficultyColor(subdeck.difficulty_level)} border`}>
                   {getDifficultyText(subdeck.difficulty_level)}
                 </Badge>
@@ -289,7 +289,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                     Premium
                   </Badge>
                 )}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
                   <BookOpen className="w-4 h-4" />
                   <span>{subdeck.flashcard_count} คำศัพท์</span>
                 </div>
@@ -311,7 +311,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
             </div>
 
             {/* Right: Action Buttons */}
-            <div className="flex flex-col gap-2 min-w-[140px]">
+            <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto sm:min-w-[140px]">
               <Button
                 size="sm"
                 variant="default"
@@ -319,7 +319,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                   e.stopPropagation();
                   handleCardClick();
                 }}
-                className="gap-2 w-full bg-gradient-primary hover:shadow-glow"
+                className="gap-2 flex-1 sm:flex-none w-full bg-gradient-primary hover:shadow-glow"
                 disabled={loadingFlashcards}
               >
                 <Eye className="w-4 h-4" />
@@ -331,7 +331,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                   size="sm"
                   variant="default"
                   onClick={handlePurchase}
-                  className="gap-2 w-full"
+                  className="gap-2 flex-1 sm:flex-none w-full"
                   disabled={checkingPurchase}
                 >
                   <ShoppingCart className="w-4 h-4" />
@@ -342,7 +342,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                   size="sm"
                   variant="outline"
                   onClick={handleDownload}
-                  className="gap-2 w-full"
+                  className="gap-2 flex-1 sm:flex-none w-full"
                   disabled={checkingPurchase}
                 >
                   <Download className="w-4 h-4" />

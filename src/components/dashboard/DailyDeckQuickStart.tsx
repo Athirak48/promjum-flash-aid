@@ -197,7 +197,7 @@ export function DailyDeckQuickStart({
     });
   };
 
-  const handleGameSelect = async (gameType: 'quiz' | 'matching' | 'listen') => {
+  const handleGameSelect = async (gameType: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch') => {
     setShowGameSelection(false);
 
     // Get cards for game
@@ -305,7 +305,10 @@ export function DailyDeckQuickStart({
               {/* Game Mode */}
               <Card
                 className="cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-large border-2 hover:border-primary group"
-                onClick={() => handleModeSelect('game')}
+                onClick={() => {
+                  setShowModeDialog(false);
+                  setShowGameSelection(true);
+                }}
               >
                 <CardContent className="p-6 text-center space-y-4">
                   <div className="w-20 h-20 mx-auto bg-gradient-to-br from-pink-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center group-hover:from-pink-500/30 group-hover:to-orange-500/30 transition-all">

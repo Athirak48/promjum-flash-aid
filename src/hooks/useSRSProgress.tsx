@@ -47,22 +47,19 @@ export function useSRSProgress() {
     }
 
     // Create new progress record
-    const insertData: any = {
+    const insertData = {
       user_id: user.id,
-      srs_score: null, // Start as null (unplayed)
+      srs_score: 0, // Initialize to 0 instead of null
       srs_level: 0,
       easiness_factor: 2.5,
       interval_days: 1,
       times_reviewed: 0,
       times_correct: 0,
-      next_review_date: new Date().toISOString()
+      next_review_date: new Date().toISOString(),
+      ...(isUserFlashcard ? { user_flashcard_id: flashcardId } : { flashcard_id: flashcardId })
     };
 
-    if (isUserFlashcard) {
-      insertData.user_flashcard_id = flashcardId;
-    } else {
-      insertData.flashcard_id = flashcardId;
-    }
+    console.log('Attempting to insert SRS progress:', insertData);
 
     const { data: newRecord, error } = await supabase
       .from('user_flashcard_progress')
@@ -72,6 +69,7 @@ export function useSRSProgress() {
 
     if (error) {
       console.error('Error creating progress record:', error);
+      console.error('Failed insert data:', insertData);
       return null;
     }
 

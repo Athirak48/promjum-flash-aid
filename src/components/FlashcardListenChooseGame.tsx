@@ -14,6 +14,7 @@ interface Flashcard {
   front_text: string;
   back_text: string;
   created_at: string;
+  isUserFlashcard?: boolean;
 }
 
 interface FlashcardListenChooseGameProps {
@@ -27,6 +28,7 @@ interface Question {
   word: string;
   correctAnswer: string;
   choices: string[];
+  isUserFlashcard?: boolean;
 }
 
 export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: FlashcardListenChooseGameProps) => {
@@ -62,7 +64,8 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: Flash
         flashcardId: card.id,
         word: card.front_text,
         correctAnswer,
-        choices
+        choices,
+        isUserFlashcard: card.isUserFlashcard
       };
     });
 
@@ -100,7 +103,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: Flash
     }
 
     // Update SRS: Q=5 first listen correct, Q=2 replayed, Q=0 wrong
-    await updateFromListenChoose(currentQuestion.flashcardId, isCorrect, playCount);
+    await updateFromListenChoose(currentQuestion.flashcardId, isCorrect, playCount, currentQuestion.isUserFlashcard);
   };
 
   const handleNext = () => {

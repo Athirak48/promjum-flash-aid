@@ -34,6 +34,17 @@ import AIListeningSection3IntroPage from "./pages/AIListeningSection3IntroPage";
 import AIListeningSection4IntroPage from "./pages/AIListeningSection4IntroPage";
 import AIListeningMCQPage from "./pages/AIListeningMCQPage";
 import AIListeningFinalSummaryPage from "./pages/AIListeningFinalSummaryPage";
+import AIReadingGuidePage from "./pages/AIReadingGuidePage";
+import AIReadingSection1IntroPage from "./pages/AIReadingSection1IntroPage";
+import AIReadingVocabSelectionPage from "./pages/AIReadingVocabSelectionPage";
+import AIReadingSection2IntroPage from "./pages/AIReadingSection2IntroPage";
+import AIReadingFlashcardPlayPage from "./pages/AIReadingFlashcardPlayPage";
+import AIReadingFlashcardSummaryPage from "./pages/AIReadingFlashcardSummaryPage";
+import AIReadingSection3IntroPage from "./pages/AIReadingSection3IntroPage";
+import AIReadingSection4IntroPage from "./pages/AIReadingSection4IntroPage";
+import AIReadingMCQPage from "./pages/AIReadingMCQPage";
+import AIReadingFinalSummaryPage from "./pages/AIReadingFinalSummaryPage";
+import BattleArenaPage from "./pages/BattleArenaPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
@@ -133,6 +144,14 @@ const App = () => {
                   >
                     <Route index element={<AdminDeckDetail />} />
                   </Route>
+                  <Route
+                    path="/battle-arena"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><BattleArenaPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route
                     path="/admin/decks/:deckId/subdecks/:subdeckId"
                     element={
@@ -253,6 +272,88 @@ const App = () => {
                     element={
                       <ProtectedRoute>
                         <><Navbar /><AIListeningFinalSummaryPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* AI Reading Routes */}
+                  <Route
+                    path="/ai-reading-guide"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIReadingGuidePage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-reading-section1-intro"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIReadingSection1IntroPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-reading-vocab-selection"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIReadingVocabSelectionPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-reading-section2-intro"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIReadingSection2IntroPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-reading-flashcard-play"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIReadingFlashcardPlayPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-reading-flashcard-summary"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIReadingFlashcardSummaryPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-reading-section3-intro"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIReadingSection3IntroPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-reading-section4-intro"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIReadingSection4IntroPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-reading-mcq"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIReadingMCQPage /></>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-reading-final-summary"
+                    element={
+                      <ProtectedRoute>
+                        <><Navbar /><AIReadingFinalSummaryPage /></>
                       </ProtectedRoute>
                     }
                   />
