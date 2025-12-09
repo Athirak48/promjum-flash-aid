@@ -384,7 +384,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
 
         {/* Card Stack */}
         <div className="flex-1 flex items-center justify-center px-4 pb-40">
-          <div className="relative w-full max-w-[85vw] sm:max-w-sm md:max-w-[340px] lg:max-w-[340px] aspect-[3/4] max-h-[60vh] sm:max-h-[450px] md:max-h-[460px] lg:max-h-[460px]">
+          <div className="relative w-full max-w-[85vw] sm:max-w-sm md:max-w-sm lg:max-w-sm aspect-[3/4] max-h-[60vh] sm:max-h-[450px] md:max-h-[500px] lg:max-h-[500px]">
             {/* Stacked cards behind */}
             {[2, 1].map((offset) => {
               const nextIndex = currentIndex + offset;
