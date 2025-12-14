@@ -154,47 +154,71 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: Flash
     const avgAccuracy = percentage;
 
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 dark:from-pink-950 dark:via-rose-900 dark:to-pink-950 overflow-auto flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 dark:from-pink-950 dark:via-rose-900 dark:to-pink-950 overflow-auto flex items-center justify-center p-2 sm:p-4">
         <BackgroundDecorations />
-        <Card className="max-w-xl w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-[2rem]">
-          <CardHeader className="text-center pb-2">
-            <div className="text-6xl mb-4 animate-bounce">🎧</div>
-            <CardTitle className="text-3xl font-bold text-foreground bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
-              สรุปผล Listen & Choose
+        <Card className="max-w-md w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-2xl sm:rounded-[2rem]">
+          <CardHeader className="text-center pb-2 pt-4 sm:pt-6">
+            <div className="text-4xl sm:text-6xl mb-2 sm:mb-4 animate-bounce">🎧</div>
+            <CardTitle className="text-xl sm:text-3xl font-bold text-foreground bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+              {t('games.summary')} {t('games.listenChoose')}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl p-6 text-white text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
-              <div className="text-6xl font-bold mb-2">{score}/{questions.length}</div>
-              <div className="text-xl opacity-90 font-medium">{scoreLevel.text}</div>
+          <CardContent className="space-y-3 sm:space-y-6 p-4 sm:p-6">
+            <div className="bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+              <div className="text-4xl sm:text-6xl font-bold mb-2">{score}/{questions.length}</div>
+              <div className="text-base sm:text-xl opacity-90 font-medium">{scoreLevel.text}</div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-2xl border border-green-100">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
+              <div className="text-center p-3 sm:p-4 bg-green-50 dark:bg-green-900/30 rounded-lg sm:rounded-2xl border border-green-100">
+                <div className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
                   {score}
                 </div>
-                <div className="text-sm text-green-700 dark:text-green-300 mt-1 font-medium">
-                  ถูกต้อง
+                <div className="text-xs sm:text-sm text-green-700 dark:text-green-300 mt-1 font-medium">
+                  {t('common.correct')}
                 </div>
               </div>
-              <div className="text-center p-4 bg-red-50 dark:bg-red-900/30 rounded-2xl border border-red-100">
-                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+              <div className="text-center p-3 sm:p-4 bg-red-50 dark:bg-red-900/30 rounded-lg sm:rounded-2xl border border-red-100">
+                <div className="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400">
                   {totalWrong}
                 </div>
-                <div className="text-sm text-red-700 dark:text-red-300 mt-1 font-medium">
-                  ผิด
+                <div className="text-xs sm:text-sm text-red-700 dark:text-red-300 mt-1 font-medium">
+                  {t('common.incorrect')}
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-row gap-3 justify-center">
+            {/* Wrong Words Section */}
+            {wrongAnswers.length > 0 ? (
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-red-100">
+                <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                  <span className="text-red-500">❌</span>
+                  <span className="font-bold text-sm sm:text-base text-red-700 dark:text-red-300">{t('games.wrongWords')} ({wrongAnswers.length})</span>
+                </div>
+                <div className="space-y-1.5 sm:space-y-2 max-h-24 sm:max-h-32 overflow-y-auto">
+                  {wrongAnswers.map((q, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-white dark:bg-red-900/30 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
+                      <span className="font-medium text-red-800 dark:text-red-200 truncate mr-2">{q.word}</span>
+                      <span className="text-red-500 dark:text-red-400 truncate">{q.correctAnswer}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-green-100 text-center">
+                <span className="text-3xl sm:text-4xl mb-2 block">🎉</span>
+                <span className="font-bold text-sm sm:text-base text-green-700 dark:text-green-300">{t('games.noWrongWords')}</span>
+              </div>
+            )}
+
+            <div className="flex flex-row gap-2 justify-center">
               <Button
                 onClick={handleRestart}
-                className="flex-1 bg-gradient-to-r from-pink-600 to-rose-600 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-sm md:text-base"
+                className="flex-1 bg-gradient-to-r from-pink-600 to-rose-600 hover:shadow-lg transition-all rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm px-2 sm:px-4"
               >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                เล่นอีกครั้ง
+                <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
+                <span className="hidden sm:inline">{t('games.playAgain')}</span>
+                <span className="sm:hidden">{t('games.playAgainShort')}</span>
               </Button>
 
               <Button
@@ -209,24 +233,25 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: Flash
                   });
                 }}
                 variant="outline"
-                className="flex-1 rounded-xl h-12 text-sm md:text-base border-pink-200 text-pink-700 hover:bg-pink-50"
+                className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-pink-200 text-pink-700 hover:bg-pink-50 px-2 sm:px-4"
               >
-                <Gamepad2 className="h-4 w-4 mr-2" />
-                เลือกเกมใหม่
+                <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
+                <span className="hidden sm:inline">{t('games.selectGame')}</span>
+                <span className="sm:hidden">{t('games.selectGameShort')}</span>
               </Button>
 
               <Button
                 onClick={onNext || onClose}
                 variant="outline"
-                className="flex-1 rounded-xl h-12 text-sm md:text-base border-gray-200"
+                className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-gray-200 px-2 sm:px-4"
               >
-                ถัดไป
-                <ArrowRight className="h-4 w-4 ml-2" />
+                {t('common.next')}
+                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2 shrink-0" />
               </Button>
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div >
     );
   }
 

@@ -8,7 +8,13 @@ import {
   ChevronRight,
   ChevronDown,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  CreditCard,
+  BarChart3,
+  Settings,
+  Layers,
+  Trophy,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,11 +27,16 @@ import { useState } from 'react';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
+  { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics' },
   { icon: BookOpen, label: 'Deck/Subdeck', path: '/admin/decks' },
+  { icon: Layers, label: 'Flashcards', path: '/admin/flashcards' },
+  { icon: Trophy, label: 'Vocab Challenge', path: '/admin/vocab-challenge' },
   { icon: Users, label: 'Members', path: '/admin/members' },
-  { icon: Tag, label: 'Promotion', path: '/admin/promotions' },
+  { icon: CreditCard, label: 'Subscriptions', path: '/admin/subscriptions' },
+  { icon: Tag, label: 'Promotions', path: '/admin/promotions' },
   { icon: MessageSquare, label: 'Notification', path: '/admin/notification' },
   { icon: MessageSquare, label: 'Feedback', path: '/admin/feedback' },
+  { icon: Settings, label: 'Settings', path: '/admin/settings' },
 ];
 
 interface AdminSidebarProps {

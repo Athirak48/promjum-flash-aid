@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ArrowLeft, Gamepad2 } from 'lucide-react';
+import { ArrowLeft, Gamepad2, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { motion } from 'framer-motion';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
 
 export default function AIListeningSection3IntroPage() {
@@ -12,20 +12,17 @@ export default function AIListeningSection3IntroPage() {
     const { language } = useLanguage();
     const [showGameDialog, setShowGameDialog] = useState(false);
 
-    // Get the selected vocabulary from state (passed from previous pages)
     const state = location.state as {
         selectedVocab?: { id: string; word: string; meaning: string }[];
     } | null;
 
     const handleSelectGame = (gameType: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch') => {
-        // Convert selectedVocab to cards format expected by FlashcardsReview
         const cards = state?.selectedVocab?.map(vocab => ({
             id: vocab.id,
             front: vocab.word,
             back: vocab.meaning
         })) || [];
 
-        // Navigate to game with the selected vocabulary
         navigate('/flashcards/review', {
             state: {
                 mode: 'game',
@@ -37,54 +34,77 @@ export default function AIListeningSection3IntroPage() {
     };
 
     return (
-        <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col">
+
             {/* Header */}
-            <header className="border-b bg-card sticky top-0 z-10 flex-none">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center gap-4">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => navigate('/ai-listening-section2-intro')}
-                        >
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                        <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                            AI Listening
-                        </h1>
-                    </div>
-                </div>
+            <header className="px-4 py-4 flex items-center gap-3">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate('/ai-listening-section2-intro')}
+                    className="rounded-full bg-white shadow-sm border border-slate-100 h-10 w-10"
+                >
+                    <ArrowLeft className="h-5 w-5 text-slate-600" />
+                </Button>
+                <span className="text-xl">🎧</span>
+                <span className="font-bold text-slate-700">AI Listening</span>
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 container mx-auto px-4 flex flex-col items-center justify-center w-full">
-                <Card className="w-full max-w-md p-6 sm:p-12 flex flex-col items-center text-center space-y-6 sm:space-y-8 shadow-xl border-2 border-primary/10 animate-in zoom-in fade-in duration-500 slide-in-from-bottom-4">
-                    <div className="p-4 sm:p-6 bg-orange-50 dark:bg-orange-950/30 rounded-full animate-bounce duration-1000">
-                        <Gamepad2 className="w-12 h-12 sm:w-16 sm:h-16 text-orange-500" />
+            <main className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-md text-center"
+                >
+                    {/* Step Indicator */}
+                    <div className="flex items-center justify-center gap-2 mb-8">
+                        <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 font-bold flex items-center justify-center text-sm">✓</div>
+                        <div className="w-8 h-1 bg-green-200 rounded-full"></div>
+                        <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 font-bold flex items-center justify-center text-sm">✓</div>
+                        <div className="w-8 h-1 bg-orange-200 rounded-full"></div>
+                        <div className="w-10 h-10 rounded-full bg-orange-500 text-white font-bold flex items-center justify-center text-lg shadow-lg shadow-orange-200">
+                            3
+                        </div>
+                        <div className="w-8 h-1 bg-slate-200 rounded-full"></div>
+                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 font-bold flex items-center justify-center text-sm">4</div>
                     </div>
 
-                    <div className="space-y-2">
-                        <h2 className="text-xl sm:text-3xl font-bold">
-                            {language === 'th' ? 'Section 3 – ทวนด้วย Game' : 'Section 3 – Review with Games'}
-                        </h2>
-                        <p className="text-sm sm:text-base text-muted-foreground">
-                            {language === 'th'
-                                ? 'เล่นเกมสนุกๆ เพื่อทดสอบความจำของคุณ'
-                                : 'Play fun games to test your memory'}
-                        </p>
-                    </div>
+                    {/* Icon */}
+                    <motion.div
+                        animate={{ y: [0, -8, 0] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="inline-block mb-6"
+                    >
+                        <div className="w-28 h-28 bg-gradient-to-br from-orange-400 to-amber-500 rounded-3xl flex items-center justify-center shadow-xl shadow-orange-200/50 mx-auto">
+                            <Gamepad2 className="w-14 h-14 text-white" />
+                        </div>
+                    </motion.div>
 
+                    {/* Title */}
+                    <h1 className="text-3xl font-black text-slate-800 mb-3">
+                        {language === 'th' ? 'ทวนด้วย Game' : 'Review with Games'}
+                    </h1>
+
+                    {/* Description */}
+                    <p className="text-slate-500 text-lg leading-relaxed mb-10 px-4">
+                        {language === 'th'
+                            ? 'เล่นเกมสนุกๆ เพื่อทดสอบความจำ'
+                            : 'Play fun games to test your memory'}
+                    </p>
+
+                    {/* CTA Button */}
                     <Button
                         size="lg"
-                        className="w-full text-base sm:text-lg h-11 sm:h-12"
+                        className="w-full h-14 text-lg font-bold rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg shadow-orange-200/50"
                         onClick={() => setShowGameDialog(true)}
                     >
-                        {language === 'th' ? 'ไปกันต่อ' : 'Continue'}
+                        {language === 'th' ? 'เลือกเกม' : 'Pick a Game'}
+                        <ChevronRight className="ml-2 w-5 h-5" />
                     </Button>
-                </Card>
+                </motion.div>
             </main>
 
-            {/* Game Selection Dialog */}
             <GameSelectionDialog
                 open={showGameDialog}
                 onOpenChange={setShowGameDialog}

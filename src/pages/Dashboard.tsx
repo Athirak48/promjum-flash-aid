@@ -4,26 +4,16 @@ import { DailyDeckQuickStart } from "@/components/dashboard/DailyDeckQuickStart"
 import { SuggestedDeck } from "@/components/dashboard/SuggestedDeck";
 import { FriendsLeaderboard } from "@/components/dashboard/FriendsLeaderboard";
 import { ScheduleCalendar } from "@/components/dashboard/ScheduleCalendar";
+
 import { GoalsMotivation } from "@/components/dashboard/GoalsMotivation";
 import { AITips } from "@/components/dashboard/AITips";
 import { useAuth } from "@/hooks/useAuth";
 
+import { useUserStats } from "@/hooks/useUserStats";
+
 export default function Dashboard() {
   const { user } = useAuth();
-
-  // Mock data - in real app, fetch from backend
-  const userStats = {
-    streak: 7,
-    starlightScore: 245,
-    totalXP: 1250,
-    wordsLearnedToday: 23,
-    decksCompleted: 0,
-    wordsLearned: 20,
-    progressPercentage: 15,
-    totalWords: 5000,
-    subdecksCompleted: 0,
-    totalSubdecks: 25
-  };
+  const { stats: userStats } = useUserStats();
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden font-prompt">
@@ -41,7 +31,7 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* Friends Leaderboard (Column 3) */}
+          {/* Friends Leaderboard & Challenge (Column 3) */}
           <div className="h-full">
             <FriendsLeaderboard />
           </div>

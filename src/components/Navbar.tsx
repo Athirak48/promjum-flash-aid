@@ -16,6 +16,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import promjumLogo from "@/assets/promjum-logo.png";
+import { NotificationHub } from "./notifications/NotificationHub";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -60,10 +61,10 @@ const Navbar = () => {
   const userNavItems = [
     { href: "/dashboard", label: t('nav.dashboard') },
     { href: "/decks", label: "Deck" },
-    { href: "/practice", label: "AI Practice" },
-    { href: "/flashcards", label: t('nav.flashcards') },
-    { href: "/battle-arena", label: "Battle Arena" },
-    { href: "/feedback", label: t('nav.feedback') },
+    { href: "/practice", label: "Practice" },
+    { href: "/flashcards", label: "ชุดคำศัพท์" },
+    { href: "/vocab-challenge", label: "Vocab Challenge" },
+    { href: "/feedback", label: "ความคิดเห็น" },
   ];
 
   const adminNavItems = [
@@ -80,24 +81,24 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-1.5 flex-shrink-0">
             <img
               src={promjumLogo}
               alt="Promjum Logo"
-              className="h-10 w-10 object-contain dark:bg-white dark:rounded-full dark:p-1 transition-all"
+              className="h-8 w-8 lg:h-10 lg:w-10 object-contain dark:bg-white dark:rounded-full dark:p-1 transition-all"
             />
-            <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <span className="text-lg lg:text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Promjum
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center space-x-2 xl:space-x-4">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${isActive(item.href) ? "text-primary" : "text-muted-foreground"
+                className={`text-xs xl:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap px-2 py-1 rounded-md hover:bg-muted ${isActive(item.href) ? "text-primary bg-primary/10" : "text-muted-foreground"
                   }`}
               >
                 {item.label}
@@ -106,13 +107,10 @@ const Navbar = () => {
           </div>
 
           {/* Right side */}
-          <div className="hidden md:flex items-center space-x-2">
+          <div className="hidden lg:flex items-center space-x-1">
             {userProfile ? (
               <>
-                <Button variant="ghost" size="icon" className="relative rounded-full text-muted-foreground hover:text-primary mr-2">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-white dark:border-slate-950" />
-                </Button>
+                <NotificationHub />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -175,11 +173,31 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
+          {/* Mobile menu button + all icons in one row */}
+          <div className="lg:hidden flex items-center space-x-0.5">
+            {/* Notification - only when logged in */}
+            {userProfile && (
+              <div className="mr-0.5">
+                <NotificationHub />
+              </div>
+            )}
+            {/* Profile - only when logged in */}
+            {userProfile && (
+              <Link to="/profile" className="h-8 w-8 flex items-center justify-center">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src="" alt={userProfile.full_name || userProfile.email} />
+                  <AvatarFallback className="text-[10px]">
+                    {userProfile.full_name?.charAt(0) || userProfile.email.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+            )}
+            <ThemeToggle />
+            <LanguageToggle />
             <Button
               variant="ghost"
               size="sm"
+              className="h-8 w-8 p-0"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -189,7 +207,7 @@ const Navbar = () => {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
               {navItems.map((item) => (
                 <Link
@@ -204,6 +222,7 @@ const Navbar = () => {
                   {item.label}
                 </Link>
               ))}
+
               {!userProfile && (
                 <div className="space-y-2 pt-4">
                   <Button variant="ghost" asChild className="w-full">
@@ -218,17 +237,11 @@ const Navbar = () => {
                   </Button>
                 </div>
               )}
-
-              {/* Mobile Theme and Language toggles */}
-              <div className="flex items-center justify-center space-x-2 pt-4 border-t border-border/40">
-                <ThemeToggle />
-                <LanguageToggle />
-              </div>
             </div>
           </div>
         )}
       </div>
-    </nav>
+    </nav >
   );
 };
 

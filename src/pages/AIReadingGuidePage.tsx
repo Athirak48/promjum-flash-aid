@@ -33,7 +33,7 @@ export default function AIReadingGuidePage() {
         },
         {
             id: 4,
-            title: language === 'th' ? 'AI Reading' : 'AI Reading',
+            title: language === 'th' ? 'Story Mode' : 'Story Mode',
             description: language === 'th' ? 'ฝึกการอ่านกับ AI' : 'Practice reading with AI',
             icon: <BookOpen className="w-6 h-6 text-green-500" />,
             color: 'bg-green-50 border-green-100'

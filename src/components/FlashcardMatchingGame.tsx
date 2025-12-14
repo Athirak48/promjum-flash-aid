@@ -187,35 +187,36 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
     const seconds = timeSpent % 60;
 
     return (
-      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-auto flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-auto flex items-center justify-center p-2 sm:p-4 z-50">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 500, damping: 25, duration: 0.1 }}
-          className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
+          className="bg-white rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
         >
-          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-cyan-50 to-transparent -z-10"></div>
+          <div className="absolute top-0 left-0 w-full h-24 sm:h-32 bg-gradient-to-b from-cyan-50 to-transparent -z-10"></div>
 
-          <div className="w-20 h-20 bg-white rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-6 border border-slate-50">
-            <Trophy className="h-10 w-10 text-yellow-500 drop-shadow-sm" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl sm:rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-slate-50">
+            <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-yellow-500 drop-shadow-sm" />
           </div>
 
-          <h2 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">สุดยอด!</h2>
-          <p className="text-slate-500 mb-6 font-medium text-base">
-            คุณผ่านครบ {MAX_ROUNDS} รอบแล้ว
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-800 mb-2 tracking-tight">{t('games.great')}</h2>
+          <p className="text-slate-500 mb-4 sm:mb-6 font-medium text-sm sm:text-base">
+            {t('games.completedAllRounds', { rounds: MAX_ROUNDS })}
           </p>
 
-          <div className="bg-slate-50 rounded-2xl p-4 mb-8 border border-slate-100">
-            <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">เวลาทั้งหมด</p>
-            <p className="text-2xl font-black text-cyan-600 tracking-tight">{minutes}:{seconds.toString().padStart(2, '0')}</p>
+          <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 mb-4 sm:mb-8 border border-slate-100">
+            <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">{t('games.totalTime')}</p>
+            <p className="text-xl sm:text-2xl font-black text-cyan-600 tracking-tight">{minutes}:{seconds.toString().padStart(2, '0')}</p>
           </div>
 
           <div className="flex flex-row gap-2 justify-center w-full">
             <Button
               onClick={handleRestart}
-              className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white shadow-lg shadow-cyan-200 hover:shadow-cyan-300 transition-all rounded-xl h-12 text-sm font-bold active:scale-95"
+              className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white shadow-lg shadow-cyan-200 transition-all rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 px-2 sm:px-4"
             >
-              เล่นอีกครั้ง
+              <span className="hidden sm:inline">{t('games.playAgain')}</span>
+              <span className="sm:hidden">{t('games.playAgainShort')}</span>
             </Button>
 
             <Button
@@ -229,17 +230,18 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext }: Flashcard
                   state: { selectedVocab }
                 });
               }}
-              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
+              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
             >
-              <Gamepad2 className="h-4 w-4 mr-1.5" />
-              เกมอื่น
+              <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 shrink-0" />
+              <span className="hidden sm:inline">{t('games.otherGames')}</span>
+              <span className="sm:hidden">{t('games.selectGameShort')}</span>
             </Button>
 
             <Button
               onClick={onNext || onClose}
-              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
+              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
             >
-              ออก
+              {t('common.exit')}
             </Button>
           </div>
         </motion.div>

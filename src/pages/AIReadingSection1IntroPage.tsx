@@ -23,7 +23,7 @@ export default function AIReadingSection1IntroPage() {
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                         <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                            {language === 'th' ? 'AI Reading' : 'AI Reading'}
+                            {language === 'th' ? 'Story Mode' : 'Story Mode'}
                         </h1>
                     </div>
                 </div>

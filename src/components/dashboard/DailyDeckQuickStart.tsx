@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
-import { Flame, Star, BookOpen, Play, Brain, GamepadIcon } from 'lucide-react';
+import { Flame, Star, BookOpen, Play, Brain, GamepadIcon, Sparkles, Trophy } from 'lucide-react';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 
 interface DailyDeckQuickStartProps {
   streak?: number;
@@ -224,55 +225,192 @@ export function DailyDeckQuickStart({
   };
 
   return (
-    <Card className="bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 h-full p-2">
-      <CardHeader className="pb-2">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+    <Card className="bg-white dark:bg-slate-900 shadow-lg border border-slate-100 dark:border-slate-800 h-full p-2 overflow-hidden relative">
+      {/* Decorative Background */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-2xl" />
+      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-pink-500/10 to-transparent rounded-full blur-xl" />
+
+      <CardHeader className="pb-2 relative">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="flex items-center gap-4"
+        >
+          <motion.div
+            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-pink-500/20 dark:from-primary/30 dark:to-pink-500/30 flex items-center justify-center shadow-md"
+            animate={{
+              y: [0, -3, 0],
+              rotate: [0, 2, -2, 0]
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
             <Flame className="w-8 h-8 text-primary" />
-          </div>
+          </motion.div>
           <div>
-            <h3 className="text-xl font-bold text-primary">
-              {t('dashboard.continuousProgress')}
+            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+              Continuous Progress
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {t('dashboard.learningStats')}
+              Keep your learning streak alive!
             </p>
           </div>
-        </div>
+        </motion.div>
       </CardHeader>
-      <CardContent className="space-y-6 pt-4">
-        {/* Stats Grid */}
+      <CardContent className="space-y-5 pt-4">
+        {/* Stats Grid - Matching Deck Card Style */}
         <div className="grid grid-cols-3 gap-4">
-          {/* Streak */}
-          <div className="bg-[#FFE5D9] dark:bg-orange-900/20 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 min-h-[120px]">
-            <Flame className="w-6 h-6 text-[#FF5722]" />
-            <div className="text-3xl font-bold text-slate-800 dark:text-slate-200">{streak}</div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">{t('dashboard.streak')}</div>
-          </div>
+          {/* 🔥 Day Streak */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            className="bg-white dark:bg-slate-800 rounded-3xl p-5 flex flex-col items-center gap-3 shadow-lg hover:shadow-xl transition-all border border-slate-100 dark:border-slate-700"
+          >
+            {/* Icon Circle */}
+            <motion.div
+              animate={{ rotate: [0, -5, 5, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/40 dark:to-red-900/40 flex items-center justify-center"
+            >
+              <Flame className="w-7 h-7 text-orange-500" />
+            </motion.div>
+            {/* Content */}
+            <div className="text-center">
+              <div className="text-3xl font-black text-slate-800 dark:text-white">{streak}</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Day Streak</div>
+            </div>
+          </motion.div>
 
-          {/* Total XP */}
-          <div className="bg-[#FFF4DE] dark:bg-yellow-900/20 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 min-h-[120px]">
-            <Star className="w-6 h-6 text-[#FFC107]" />
-            <div className="text-3xl font-bold text-slate-800 dark:text-slate-200">{totalXP.toLocaleString()}</div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">{t('dashboard.totalXP')}</div>
-          </div>
+          {/* ⭐ XP Points */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            className="bg-white dark:bg-slate-800 rounded-3xl p-5 flex flex-col items-center gap-3 shadow-lg hover:shadow-xl transition-all border border-slate-100 dark:border-slate-700 relative"
+          >
+            {/* Today Badge */}
+            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-green-400 to-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+              +120 today
+            </div>
+            {/* Icon Circle */}
+            <motion.div
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-100 to-amber-100 dark:from-yellow-900/40 dark:to-amber-900/40 flex items-center justify-center"
+            >
+              <Star className="w-7 h-7 text-amber-500 fill-amber-500" />
+            </motion.div>
+            {/* Content */}
+            <div className="text-center">
+              <div className="text-3xl font-black text-slate-800 dark:text-white">{totalXP.toLocaleString()}</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">XP Points</div>
+            </div>
+          </motion.div>
 
-          {/* Words Today */}
-          <div className="bg-[#E8DEF8] dark:bg-purple-900/20 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 min-h-[120px]">
-            <BookOpen className="w-6 h-6 text-[#9C27B0]" />
-            <div className="text-3xl font-bold text-slate-800 dark:text-slate-200">{wordsLearnedToday}</div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">{t('dashboard.wordsToday')}</div>
-          </div>
+          {/* 📚 Vocab */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            className="bg-white dark:bg-slate-800 rounded-3xl p-5 flex flex-col items-center gap-3 shadow-lg hover:shadow-xl transition-all border border-slate-100 dark:border-slate-700 relative"
+          >
+            {/* Today Badge */}
+            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-green-400 to-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+              +{wordsLearnedToday} today
+            </div>
+            {/* Icon Circle */}
+            <motion.div
+              animate={{ y: [0, -3, 0], x: [0, 2, -2, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/40 dark:to-violet-900/40 flex items-center justify-center"
+            >
+              <BookOpen className="w-7 h-7 text-purple-500" />
+            </motion.div>
+            {/* Content */}
+            <div className="text-center">
+              <div className="text-3xl font-black text-slate-800 dark:text-white">342</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Vocab Learned</div>
+            </div>
+          </motion.div>
         </div>
 
-        {/* Review Button */}
-        <Button
-          onClick={() => setShowModeDialog(true)}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl h-14 text-lg font-bold shadow-md hover:shadow-lg transition-all"
+        {/* Daily Snapshot */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm"
         >
-          <Play className="w-5 h-5 mr-2 fill-current" />
-          {t('dashboard.reviewNow')}
-        </Button>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">📊</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100">Daily Snapshot</span>
+            </div>
+            <span className="text-xs font-semibold text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-full">TODAY</span>
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Words Learned</div>
+              <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{wordsLearnedToday}</div>
+            </div>
+            <div className="border-x border-slate-200 dark:border-slate-600">
+              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Time Spent</div>
+              <div className="text-xl font-bold text-slate-800 dark:text-slate-100">45.2104<span className="text-sm">m</span></div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Ranking</div>
+              <div className="text-xl font-bold text-green-600 dark:text-green-400">#15</div>
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-auto">
+          {/* Learning Now Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex-1"
+          >
+            <Button
+              onClick={() => setShowModeDialog(true)}
+              className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold shadow-lg hover:shadow-xl transition-all"
+            >
+              <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 fill-current" />
+              <span className="sm:hidden">เรียนเลย</span>
+              <span className="hidden sm:inline">Learning Now</span>
+            </Button>
+          </motion.div>
+
+          {/* Vocab Challenge Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex-1"
+          >
+            <Button
+              onClick={() => navigate('/vocab-challenge')}
+              variant="outline"
+              className="w-full rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold shadow-sm hover:shadow-md transition-all border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+            >
+              <Trophy className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-purple-500" />
+              <span className="sm:hidden">ท้าทาย</span>
+              <span className="hidden sm:inline">Vocab Challenge</span>
+            </Button>
+          </motion.div>
+        </div>
 
         {/* Mode Selection Dialog */}
         <Dialog open={showModeDialog} onOpenChange={setShowModeDialog}>

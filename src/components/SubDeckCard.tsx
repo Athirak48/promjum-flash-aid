@@ -125,9 +125,9 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
   };
 
   const handleSaveToFolder = async (folderId: string, folderName: string) => {
-    setShowFolderSelection(false);
+    // Dialog closing is handled by the caller/component state after success
+    // setShowFolderSelection(false); // REMOVED from here
 
-    // 1. Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({
@@ -146,7 +146,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
           user_id: user.id,
           folder_id: folderId,
           title: subdeck.name,
-          source: 'library', // or 'store' depending on context
+          source: 'marketcard',
           card_count: subdeck.flashcard_count || 0
         })
         .select()
@@ -183,8 +183,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
             front_text: card.front_text,
             back_text: backTextParts.join('\n\n') || '', // Join with double newline for readability
             front_image_url: null,
-            back_image_url: null,
-            subdeck_id: subdeck.id
+            back_image_url: null
           };
         });
 
@@ -200,12 +199,14 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
         title: "บันทึกสำเร็จ!",
         description: `บันทึก "${subdeck.name}" ลงในโฟลเดอร์ "${folderName}" เรียบร้อยแล้ว`,
       });
+      setShowFolderSelection(false); // Close dialog on success
+
 
     } catch (error) {
       console.error('Error saving to folder:', error);
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถบันทึกไปยังโฟลเดอร์ได้",
+        description: `ไม่สามารถบันทึกได้: ${(error as any).message || 'Unknown error'}`,
         variant: "destructive"
       });
     }

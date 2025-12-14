@@ -35,6 +35,7 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
   const [showResult, setShowResult] = useState(false);
   const [wonCount, setWonCount] = useState(0);
   const [lostCount, setLostCount] = useState(0);
+  const [lostWords, setLostWords] = useState<{ word: string; meaning: string }[]>([]);
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [hintPositions, setHintPositions] = useState<number[]>([]);
 
@@ -72,6 +73,7 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
     setShowResult(false);
     setWonCount(0);
     setLostCount(0);
+    setLostWords([]);
     setIsGameComplete(false);
   };
 
@@ -128,6 +130,7 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
       setWonCount(wonCount + 1);
     } else if (gameStatus === 'lost') {
       setLostCount(lostCount + 1);
+      setLostWords(prev => [...prev, { word: currentCard.front_text, meaning: currentCard.back_text }]);
     }
 
     if (currentIndex < flashcards.length - 1) {
@@ -148,65 +151,89 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
     const successRate = totalGames > 0 ? Math.round((wonCount / totalGames) * 100) : 0;
 
     return (
-      <div className="fixed inset-0 bg-orange-50/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-orange-50/95 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
         <BackgroundDecorations />
-        <Card className="max-w-lg w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-[2.5rem] overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-orange-100/50 to-transparent pointer-events-none" />
-          <CardHeader className="text-center pb-2 pt-8 relative">
+        <Card className="max-w-md w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-2xl sm:rounded-[2.5rem] overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-24 sm:h-32 bg-gradient-to-b from-orange-100/50 to-transparent pointer-events-none" />
+          <CardHeader className="text-center pb-2 pt-4 sm:pt-8 relative">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="text-7xl mb-4 mx-auto bg-white rounded-full w-24 h-24 flex items-center justify-center shadow-lg"
+              className="text-5xl sm:text-7xl mb-2 sm:mb-4 mx-auto bg-white rounded-full w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shadow-lg"
             >
               🎮
             </motion.div>
-            <CardTitle className="text-2xl font-bold text-orange-800">
-              สรุปผล Hangman
+            <CardTitle className="text-xl sm:text-2xl font-bold text-orange-800">
+              {t('games.summary')} {t('games.hangman')}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6 p-8">
+          <CardContent className="space-y-3 sm:space-y-6 p-4 sm:p-8">
             {/* Score Summary */}
-            <div className="bg-orange-500 rounded-3xl p-6 text-white text-center shadow-lg shadow-orange-200 transform hover:scale-105 transition-transform duration-300">
-              <div className="text-5xl font-black mb-1">{score}</div>
-              <div className="text-sm font-medium opacity-90">คะแนนรวม</div>
+            <div className="bg-orange-500 rounded-xl sm:rounded-3xl p-4 sm:p-6 text-white text-center shadow-lg shadow-orange-200 transform hover:scale-105 transition-transform duration-300">
+              <div className="text-3xl sm:text-5xl font-black mb-1">{score}</div>
+              <div className="text-xs sm:text-sm font-medium opacity-90">{t('games.totalScore')}</div>
             </div>
 
             {/* Statistics */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-green-50 rounded-2xl border border-green-100">
-                <div className="text-2xl font-bold text-green-600">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="text-center p-2 sm:p-3 bg-green-50 rounded-lg sm:rounded-2xl border border-green-100">
+                <div className="text-xl sm:text-2xl font-bold text-green-600">
                   {wonCount}
                 </div>
-                <div className="text-xs text-green-700 mt-1 font-medium">
-                  ชนะ
+                <div className="text-[10px] sm:text-xs text-green-700 mt-1 font-medium">
+                  {t('games.won')}
                 </div>
               </div>
-              <div className="text-center p-3 bg-red-50 rounded-2xl border border-red-100">
-                <div className="text-2xl font-bold text-red-600">
+              <div className="text-center p-2 sm:p-3 bg-red-50 rounded-lg sm:rounded-2xl border border-red-100">
+                <div className="text-xl sm:text-2xl font-bold text-red-600">
                   {lostCount}
                 </div>
-                <div className="text-xs text-red-700 mt-1 font-medium">
-                  แพ้
+                <div className="text-[10px] sm:text-xs text-red-700 mt-1 font-medium">
+                  {t('games.lost')}
                 </div>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-2xl border border-blue-100">
-                <div className="text-2xl font-bold text-blue-600">
+              <div className="text-center p-2 sm:p-3 bg-blue-50 rounded-lg sm:rounded-2xl border border-blue-100">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600">
                   {successRate}%
                 </div>
-                <div className="text-xs text-blue-700 mt-1 font-medium">
-                  สำเร็จ
+                <div className="text-[10px] sm:text-xs text-blue-700 mt-1 font-medium">
+                  {t('games.success')}
                 </div>
               </div>
             </div>
 
+            {/* Lost Words Section */}
+            {lostWords.length > 0 ? (
+              <div className="bg-red-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-red-100">
+                <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                  <span className="text-red-500">❌</span>
+                  <span className="font-bold text-sm sm:text-base text-red-700">{t('games.lostWords')} ({lostWords.length})</span>
+                </div>
+                <div className="space-y-1.5 sm:space-y-2 max-h-24 sm:max-h-32 overflow-y-auto">
+                  {lostWords.map((w, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-white rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
+                      <span className="font-medium text-red-800 truncate mr-2">{w.word}</span>
+                      <span className="text-red-500 truncate">{w.meaning}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-green-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-green-100 text-center">
+                <span className="text-3xl sm:text-4xl mb-2 block">🎉</span>
+                <span className="font-bold text-sm sm:text-base text-green-700">{t('games.noWrongWords')}</span>
+              </div>
+            )}
+
             {/* Action Buttons */}
-            <div className="flex flex-row gap-3 justify-center">
+            <div className="flex flex-row gap-2 justify-center">
               <Button
                 onClick={handleRestart}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:shadow-lg hover:-translate-y-1 transition-all rounded-xl h-12 text-sm md:text-base"
+                className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:shadow-lg transition-all rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm px-2 sm:px-4"
               >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                เล่นอีกครั้ง
+                <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
+                <span className="hidden sm:inline">{t('games.playAgain')}</span>
+                <span className="sm:hidden">{t('games.playAgainShort')}</span>
               </Button>
 
               <Button
@@ -221,19 +248,20 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
                   });
                 }}
                 variant="outline"
-                className="flex-1 rounded-xl h-12 text-sm md:text-base border-orange-200 text-orange-700 hover:bg-orange-50"
+                className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-orange-200 text-orange-700 hover:bg-orange-50 px-2 sm:px-4"
               >
-                <Gamepad2 className="h-4 w-4 mr-2" />
-                เลือกเกมใหม่
+                <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
+                <span className="hidden sm:inline">{t('games.selectGame')}</span>
+                <span className="sm:hidden">{t('games.selectGameShort')}</span>
               </Button>
 
               <Button
                 onClick={onNext || onClose}
                 variant="outline"
-                className="flex-1 rounded-xl h-12 text-sm md:text-base border-gray-200"
+                className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-gray-200 px-2 sm:px-4"
               >
-                ถัดไป
-                <ArrowRight className="h-4 w-4 ml-2" />
+                {t('common.next')}
+                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2 shrink-0" />
               </Button>
             </div>
           </CardContent>
