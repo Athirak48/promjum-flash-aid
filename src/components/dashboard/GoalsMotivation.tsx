@@ -110,7 +110,7 @@ export function GoalsMotivation() {
   };
 
   return (
-    <Card className="h-full bg-white/80 backdrop-blur-xl border border-white/50 shadow-soft rounded-[2rem] overflow-hidden hover:shadow-lg transition-all duration-300">
+    <Card className="h-full bg-card/80 dark:bg-card/90 backdrop-blur-xl border border-border/50 shadow-soft rounded-[2rem] overflow-hidden hover:shadow-lg transition-all duration-300">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-3 text-xl">
@@ -127,7 +127,7 @@ export function GoalsMotivation() {
                 <Plus className="h-5 w-5" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] bg-white/95 backdrop-blur-xl border-white/50 rounded-[2rem] p-6">
+            <DialogContent className="sm:max-w-[500px] bg-card/95 dark:bg-card backdrop-blur-xl border-border/50 rounded-[2rem] p-6">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">✨ เพิ่มเป้าหมายใหม่</DialogTitle>
               </DialogHeader>
@@ -278,7 +278,7 @@ export function GoalsMotivation() {
             const progress = (goal.current / goal.target) * 100;
 
             return (
-              <div key={goal.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-border/30 hover:border-primary/30 hover:shadow-md transition-all group">
+              <div key={goal.id} className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/30 hover:border-primary/30 hover:shadow-md transition-all group">
                 <div className={`p-3 rounded-xl ${goal.bgColor} flex-shrink-0 group-hover:scale-110 transition-transform`}>
                   <Icon className={`h-6 w-6 ${goal.color}`} />
                 </div>

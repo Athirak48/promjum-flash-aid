@@ -26,56 +26,70 @@ export function DeckCard({ deck, customSubDecks, customLabel }: DeckCardProps & 
 
   return (
     <>
-      <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group h-full flex flex-col">
-        <CardHeader>
-          <div className="flex items-start justify-between mb-4">
-            <div className="p-4 rounded-xl bg-gradient-primary shadow-soft">
-              <IconComponent className="w-8 h-8 text-primary-foreground" />
+      <Card className="hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group h-full flex flex-col bg-white dark:bg-slate-800 rounded-3xl border-0 shadow-lg overflow-hidden">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between mb-3">
+            {/* Cute Icon Circle */}
+            <div className={`p-4 rounded-2xl shadow-md ${deck.icon === 'Home' ? 'bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40' :
+                deck.icon === 'Plane' ? 'bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/40 dark:to-blue-900/40' :
+                  deck.icon === 'Briefcase' ? 'bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/40 dark:to-violet-900/40' :
+                    'bg-gradient-to-br from-pink-100 to-rose-100 dark:from-pink-900/40 dark:to-rose-900/40'
+              }`}>
+              <IconComponent className={`w-7 h-7 ${deck.icon === 'Home' ? 'text-green-600' :
+                  deck.icon === 'Plane' ? 'text-cyan-600' :
+                    deck.icon === 'Briefcase' ? 'text-purple-600' :
+                      'text-pink-600'
+                }`} />
             </div>
-            {deck.is_premium && (
-              <Badge variant="secondary" className="gap-1">
+            {/* Premium/Free Badge */}
+            {deck.is_premium ? (
+              <Badge className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white border-0 shadow-md font-bold gap-1 px-3 py-1 rounded-full">
                 <Star className="w-3 h-3 fill-current" />
                 Premium
               </Badge>
+            ) : (
+              <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white border-0 shadow-md font-bold px-3 py-1 rounded-full">
+                Free
+              </Badge>
             )}
           </div>
-          <CardTitle className="text-2xl mb-2">{deck.name}</CardTitle>
-          <CardDescription className="text-base">
+          <CardTitle className="text-xl font-black text-slate-800 dark:text-white mb-1">{deck.name}</CardTitle>
+          <CardDescription className="text-sm text-slate-500 dark:text-slate-400 font-medium">
             {deck.name_en}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 flex-1 flex flex-col">
-          <p className="text-sm text-foreground/80 line-clamp-2">{deck.description}</p>
+        <CardContent className="space-y-4 flex-1 flex flex-col pt-0">
+          <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{deck.description}</p>
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground bg-muted/30 rounded-lg p-2">
-              <BookOpen className="w-4 h-4" />
-              <span>{deck.total_flashcards} {customLabel || 'คำศัพท์'}</span>
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+              <BookOpen className="w-4 h-4 text-primary" />
+              <span className="font-medium">{deck.total_flashcards} {customLabel || 'คำศัพท์'}</span>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground bg-muted/30 rounded-lg p-2">
-              <Star className="w-4 h-4" />
-              <span>{subDecks.length} Sub-decks</span>
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+              <Star className="w-4 h-4 text-amber-500" />
+              <span className="font-medium">{subDecks.length} Sub-decks</span>
             </div>
           </div>
 
           {deck.progress && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">ความคืบหน้า</span>
-                <span className="font-medium text-primary">{deck.progress.progress_percentage}%</span>
+                <span className="text-slate-500 dark:text-slate-400">ความคืบหน้า</span>
+                <span className="font-bold text-primary">{deck.progress.progress_percentage}%</span>
               </div>
-              <Progress value={deck.progress.progress_percentage} />
+              <Progress value={deck.progress.progress_percentage} className="h-2" />
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-2 mt-auto pt-4">
+          <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
             <Button
               variant="outline"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowDownloadDialog(true);
               }}
-              className="gap-2"
+              className="gap-2 rounded-xl border-2 hover:bg-slate-50 dark:hover:bg-slate-700"
               disabled={subDecksLoading || subDecks.length === 0}
             >
               <Download className="w-4 h-4" />
@@ -83,9 +97,9 @@ export function DeckCard({ deck, customSubDecks, customLabel }: DeckCardProps & 
             </Button>
             <Button
               onClick={() => navigate(`/decks/${deck.id}/subdecks`)}
-              variant="default"
+              className="gap-2 rounded-xl bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-400 text-white font-bold shadow-md"
             >
-              เข้า Deck
+              เข้า Deck →
             </Button>
           </div>
         </CardContent>

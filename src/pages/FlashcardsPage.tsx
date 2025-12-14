@@ -265,30 +265,39 @@ function DroppableFolder({
   const handleFolderClick = () => {
     navigate(`/flashcards/${folder.id}`);
   };
-  return <Card ref={drop} className={`transition-all cursor-pointer ${isOver ? 'ring-2 ring-primary shadow-glow' : 'hover:shadow-medium'}`} onClick={handleFolderClick}>
-    <CardContent className="p-6">
-      <div className="flex items-center gap-3">
-        <div className="p-3 bg-gradient-primary rounded-lg">
-          <Folder className="h-6 w-6 text-primary-foreground" />
+  return <Card
+    ref={drop}
+    className={`
+      transition-all cursor-pointer bg-white dark:bg-slate-800 
+      rounded-3xl border-0 shadow-lg hover:shadow-xl hover:-translate-y-1
+      ${isOver ? 'ring-2 ring-primary shadow-glow scale-105' : ''}
+    `}
+    onClick={handleFolderClick}
+  >
+    <CardContent className="p-5">
+      <div className="flex items-center gap-4">
+        {/* Cute Folder Icon */}
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/40 dark:to-violet-900/40 flex items-center justify-center shadow-md">
+          <Folder className="h-7 w-7 text-purple-500" />
         </div>
-        <div className="flex-1">
-          <h3 className="font-semibold">{folder.title}</h3>
-          <p className="text-sm text-muted-foreground">
-            {folder.cardSetsCount} {t('common.sets')}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-lg text-slate-800 dark:text-white truncate">{folder.title}</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <span className="font-medium">{folder.cardSetsCount}</span> {t('common.sets')}
           </p>
         </div>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreVertical className="h-4 w-4" />
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700">
+              <MoreVertical className="h-5 w-5 text-slate-400" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+          <DropdownMenuContent align="end" className="rounded-xl">
+            <DropdownMenuItem className="rounded-lg">
               <Edit className="h-4 w-4 mr-2" />
               {t('common.rename')}
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem className="text-destructive rounded-lg">
               <Trash className="h-4 w-4 mr-2" />
               {t('common.delete')}
             </DropdownMenuItem>
@@ -627,7 +636,7 @@ export default function FlashcardsPage() {
               {/* Create Flashcard Button */}
               <Dialog open={showCreateFlashcardDialog} onOpenChange={setShowCreateFlashcardDialog}>
                 <DialogTrigger asChild>
-                  <Button className="bg-gradient-primary text-primary-foreground hover:shadow-glow">
+                  <Button className="w-full md:w-auto bg-gradient-primary text-primary-foreground hover:shadow-glow">
                     <Plus className="h-4 w-4 mr-2" />
                     {t('flashcards.createFlashcard')}
                   </Button>

@@ -43,6 +43,7 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
   // Stats
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
+  const [wrongWords, setWrongWords] = useState<{ word: string; meaning: string }[]>([]);
 
   const handleRestart = () => {
     setCurrentIndex(0);
@@ -53,6 +54,7 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
     setIsGameComplete(false);
     setCorrectCount(0);
     setWrongCount(0);
+    setWrongWords([]);
     generateQuestions();
   };
 
@@ -96,6 +98,7 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
     } else {
       setStreak(0);
       setWrongCount(wrongCount + 1);
+      setWrongWords(prev => [...prev, { word: currentQuestion.card.front_text, meaning: currentQuestion.card.back_text }]);
     }
   };
 
@@ -121,34 +124,58 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
     const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
     return (
-      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-auto flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-auto flex items-center justify-center p-2 sm:p-4 z-50">
         <motion.div
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
+          className="bg-white rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
         >
-          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-violet-50 to-transparent -z-10"></div>
+          <div className="absolute top-0 left-0 w-full h-24 sm:h-32 bg-gradient-to-b from-violet-50 to-transparent -z-10"></div>
 
-          <div className="w-20 h-20 bg-white rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-6 border border-slate-50">
-            <Trophy className="h-10 w-10 text-yellow-500 drop-shadow-sm" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl sm:rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-slate-50">
+            <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-yellow-500 drop-shadow-sm" />
           </div>
 
-          <h2 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">ยอดเยี่ยม!</h2>
-          <p className="text-slate-500 mb-6 font-medium text-base">
-            คุณทำแบบทดสอบครบแล้ว
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-800 mb-2 tracking-tight">{t('games.excellent')}</h2>
+          <p className="text-slate-500 mb-4 sm:mb-6 font-medium text-sm sm:text-base">
+            {t('games.completedQuiz')}
           </p>
 
-          <div className="bg-slate-50 rounded-2xl p-4 mb-8 border border-slate-100">
-            <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">คะแนนรวม</p>
-            <p className="text-2xl font-black text-violet-600 tracking-tight">{score} คะแนน</p>
+          <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 mb-3 sm:mb-4 border border-slate-100">
+            <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">{t('games.totalScore')}</p>
+            <p className="text-xl sm:text-2xl font-black text-violet-600 tracking-tight">{score} {t('common.points')}</p>
           </div>
+
+          {/* Wrong Words Section */}
+          {wrongWords.length > 0 ? (
+            <div className="bg-red-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-red-100 mb-4 sm:mb-6 text-left">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                <span className="text-red-500">❌</span>
+                <span className="font-bold text-sm sm:text-base text-red-700">{t('games.wrongWords')} ({wrongWords.length})</span>
+              </div>
+              <div className="space-y-1.5 sm:space-y-2 max-h-20 sm:max-h-28 overflow-y-auto">
+                {wrongWords.map((w, idx) => (
+                  <div key={idx} className="flex justify-between items-center bg-white rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
+                    <span className="font-medium text-red-800 truncate mr-2">{w.word}</span>
+                    <span className="text-red-500 truncate">{w.meaning}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-green-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-green-100 mb-4 sm:mb-6 text-center">
+              <span className="text-2xl sm:text-3xl mb-2 block">🎉</span>
+              <span className="font-bold text-sm sm:text-base text-green-700">{t('games.noWrongWords')}</span>
+            </div>
+          )}
 
           <div className="flex flex-row gap-2 justify-center w-full">
             <Button
               onClick={handleRestart}
-              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 hover:shadow-violet-300 transition-all rounded-xl h-12 text-sm font-bold active:scale-95"
+              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 transition-all rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 px-2 sm:px-4"
             >
-              เล่นอีกครั้ง
+              <span className="hidden sm:inline">{t('games.playAgain')}</span>
+              <span className="sm:hidden">{t('games.playAgainShort')}</span>
             </Button>
 
             <Button
@@ -162,17 +189,18 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
                   state: { selectedVocab }
                 });
               }}
-              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
+              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
             >
-              <Gamepad2 className="h-4 w-4 mr-1.5" />
-              เลือกเกมใหม่
+              <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 shrink-0" />
+              <span className="hidden sm:inline">{t('games.selectGame')}</span>
+              <span className="sm:hidden">{t('games.selectGameShort')}</span>
             </Button>
 
             <Button
               onClick={onNext || onClose}
-              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
+              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
             >
-              ถัดไป
+              {t('common.next')}
             </Button>
           </div>
         </motion.div>

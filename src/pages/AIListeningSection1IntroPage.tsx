@@ -1,66 +1,84 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ArrowLeft, BookOpen } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { motion } from 'framer-motion';
 
 export default function AIListeningSection1IntroPage() {
     const navigate = useNavigate();
     const { language } = useLanguage();
 
     return (
-        <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex flex-col">
+
             {/* Header */}
-            <header className="border-b bg-card sticky top-0 z-10 flex-none">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center gap-4">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => navigate('/ai-listening-guide')}
-                        >
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                        <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                            {language === 'th' ? 'AI Listening' : 'AI Listening'}
-                        </h1>
-                    </div>
-                </div>
+            <header className="px-4 py-4 flex items-center gap-3">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate('/ai-listening-guide')}
+                    className="rounded-full bg-white shadow-sm border border-slate-100 h-10 w-10"
+                >
+                    <ArrowLeft className="h-5 w-5 text-slate-600" />
+                </Button>
+                <span className="text-xl">🎧</span>
+                <span className="font-bold text-slate-700">AI Listening</span>
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 container mx-auto px-4 flex flex-col items-center justify-center w-full">
-                <Card className="w-full max-w-2xl p-6 sm:p-12 flex flex-col items-center text-center space-y-6 sm:space-y-10 shadow-2xl border-2 border-primary/10 animate-in fade-in zoom-in duration-500">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
-                        <div className="relative p-5 sm:p-8 bg-blue-50 rounded-full border-4 border-white shadow-lg">
-                            <BookOpen className="w-12 h-12 sm:w-20 sm:h-20 text-blue-600" />
+            <main className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-md text-center"
+                >
+                    {/* Step Indicator */}
+                    <div className="flex items-center justify-center gap-2 mb-8">
+                        <div className="w-10 h-10 rounded-full bg-sky-500 text-white font-bold flex items-center justify-center text-lg shadow-lg shadow-sky-200">
+                            1
                         </div>
+                        <div className="w-8 h-1 bg-slate-200 rounded-full"></div>
+                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 font-bold flex items-center justify-center text-sm">2</div>
+                        <div className="w-8 h-1 bg-slate-200 rounded-full"></div>
+                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 font-bold flex items-center justify-center text-sm">3</div>
+                        <div className="w-8 h-1 bg-slate-200 rounded-full"></div>
+                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 font-bold flex items-center justify-center text-sm">4</div>
                     </div>
 
-                    <div className="space-y-3 sm:space-y-4 max-w-lg">
-                        <div className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm font-bold tracking-wider uppercase mb-1 sm:mb-2">
-                            Section 1
+                    {/* Icon */}
+                    <motion.div
+                        animate={{ y: [0, -8, 0] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="inline-block mb-6"
+                    >
+                        <div className="w-28 h-28 bg-gradient-to-br from-sky-400 to-blue-500 rounded-3xl flex items-center justify-center shadow-xl shadow-sky-200/50 mx-auto">
+                            <BookOpen className="w-14 h-14 text-white" />
                         </div>
-                        <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-                            {language === 'th' ? 'เลือกคำศัพท์' : 'Select Vocabulary'}
-                        </h2>
-                        <p className="text-base sm:text-xl text-muted-foreground leading-relaxed">
-                            {language === 'th'
-                                ? 'เริ่มต้นด้วยการเลือกคำศัพท์ที่คุณต้องการฝึกฝน เพื่อให้ AI สร้างบทเรียนที่เหมาะสมกับคุณ'
-                                : 'Start by selecting the vocabulary you want to practice so AI can create a personalized lesson for you.'}
-                        </p>
-                    </div>
+                    </motion.div>
 
+                    {/* Title */}
+                    <h1 className="text-3xl font-black text-slate-800 mb-3">
+                        {language === 'th' ? 'เลือกคำศัพท์' : 'Select Vocabulary'}
+                    </h1>
+
+                    {/* Description */}
+                    <p className="text-slate-500 text-lg leading-relaxed mb-10 px-4">
+                        {language === 'th'
+                            ? 'เลือกคำศัพท์ที่อยากฝึก แล้ว AI จะสร้างบทเรียนให้คุณ'
+                            : 'Pick vocabulary to practice, AI will create lessons for you'}
+                    </p>
+
+                    {/* CTA Button */}
                     <Button
                         size="lg"
-                        className="w-full max-w-xs text-base sm:text-lg h-11 sm:h-14 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1 rounded-full"
+                        className="w-full h-14 text-lg font-bold rounded-2xl bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600 shadow-lg shadow-sky-200/50"
                         onClick={() => navigate('/ai-listening-vocab-selection')}
                     >
-                        {language === 'th' ? 'เริ่มเลือกคำศัพท์' : 'Start Selection'} <ArrowLeft className="ml-2 h-4 w-4 sm:h-5 sm:w-5 rotate-180" />
+                        {language === 'th' ? 'เริ่มเลือกคำศัพท์' : 'Start Selection'}
+                        <ChevronRight className="ml-2 w-5 h-5" />
                     </Button>
-                </Card>
+                </motion.div>
             </main>
         </div>
     );

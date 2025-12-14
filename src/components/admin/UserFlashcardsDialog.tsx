@@ -160,31 +160,10 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
       if (cardsError) throw cardsError;
 
       // Then get the progress data for these flashcards using user_flashcard_id
-      if (cardsData && cardsData.length > 0) {
-        const flashcardIds = cardsData.map(card => card.id);
-        const { data: progressData, error: progressError } = await supabase
-          .from('user_flashcard_progress')
-          .select('user_flashcard_id, srs_score')
-          .eq('user_id', userId)
-          .in('user_flashcard_id', flashcardIds);
+      // (SRS Logic Removed)
 
-        if (progressError) throw progressError;
+      setFlashcards(cardsData);
 
-        // Create a map for quick lookup using user_flashcard_id
-        const progressMap = new Map(
-          progressData?.map(p => [p.user_flashcard_id, p.srs_score]) || []
-        );
-
-        // Merge the data
-        const flashcardsWithProgress = cardsData.map(card => ({
-          ...card,
-          srs_score: progressMap.get(card.id) ?? null
-        }));
-
-        setFlashcards(flashcardsWithProgress);
-      } else {
-        setFlashcards([]);
-      }
     } catch (error) {
       console.error('Error fetching flashcards:', error);
       toast.error('ไม่สามารถโหลดคำศัพท์ได้');
@@ -274,7 +253,6 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
                         <TableHead className="w-16">No.</TableHead>
                         <TableHead>Front</TableHead>
                         <TableHead>Back</TableHead>
-                        <TableHead className="w-24">SRS Score</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -283,7 +261,6 @@ export function UserFlashcardsDialog({ open, onOpenChange, userId, userEmail }: 
                           <TableCell className="font-medium">{index + 1}</TableCell>
                           <TableCell>{card.front_text}</TableCell>
                           <TableCell>{card.back_text}</TableCell>
-                          <TableCell className="font-semibold">{'-'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

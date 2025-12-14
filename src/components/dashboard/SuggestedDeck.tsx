@@ -11,7 +11,7 @@ export function SuggestedDeck() {
   const suggestedDecks = decks.slice(0, 2);
 
   return (
-    <Card className="h-full bg-white/80 backdrop-blur-xl border border-white/50 shadow-soft rounded-[2rem] overflow-hidden hover:shadow-lg transition-all duration-300">
+    <Card className="h-full bg-card/80 dark:bg-card/90 backdrop-blur-xl border border-border/50 shadow-soft rounded-[2rem] overflow-hidden hover:shadow-lg transition-all duration-300">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-3 text-xl">
           <div className="p-2 rounded-xl bg-green-50 shadow-inner">
@@ -26,7 +26,7 @@ export function SuggestedDeck() {
         {suggestedDecks.map((deck) => (
           <div
             key={deck.id}
-            className="p-4 rounded-2xl bg-gradient-to-br from-white to-gray-50 border border-border/30 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
+            className="p-4 rounded-2xl bg-gradient-to-br from-card to-muted/50 dark:from-slate-800 dark:to-slate-700 border border-border/30 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
             onClick={() => navigate(`/decks/${deck.id}/subdecks`)}
           >
             <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300" />

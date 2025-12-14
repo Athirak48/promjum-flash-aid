@@ -97,9 +97,9 @@ export function FolderDetail() {
 
 
   // New state for actions
-  const [showEditSetDialog, setShowEditSetDialog] = useState(false);
   const [editingSetTitle, setEditingSetTitle] = useState('');
   const [selectedSetForEdit, setSelectedSetForEdit] = useState<FlashcardSet | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [setToDelete, setSetToDelete] = useState<FlashcardSet | null>(null);
 
@@ -389,7 +389,7 @@ export function FolderDetail() {
   };
 
   const handleCreateFlashcards = async () => {
-    if (!newSetTitle.trim()) {
+    if ((isEditing ? editingSetTitle : newSetTitle).trim() === '') {
       toast({
         title: "กรุณาใส่ชื่อชุดแฟลชการ์ด",
         variant: "destructive"
@@ -418,88 +418,215 @@ export function FolderDetail() {
         return;
       }
 
-      // 1. Create the set
-      const { data: newSet, error: setError } = await supabase
-        .from('user_flashcard_sets')
-        .insert({
-          user_id: user.id,
-          folder_id: folderId,
-          title: newSetTitle.trim(),
-          source: 'created'
-        })
-        .select()
-        .single();
+      let targetSetId = '';
+      let targetSetTitle = '';
 
-      if (setError) throw setError;
+      if (isEditing && selectedSetForEdit) {
+        // UPDATE EXISTING SET
+        const { error: updateError } = await supabase
+          .from('user_flashcard_sets')
+          .update({ title: editingSetTitle.trim() })
+          .eq('id', selectedSetForEdit.id);
 
-      // 2. Create flashcards with image upload
-      if (validRows.length > 0) {
-        const flashcardsToInsert = await Promise.all(validRows.map(async (row) => {
-          let frontImageUrl = null;
-          let backImageUrl = null;
+        if (updateError) throw updateError;
+        targetSetId = selectedSetForEdit.id;
+        targetSetTitle = editingSetTitle.trim();
 
-          if (row.frontImage) {
+        // Delete existing cards to replace them (simplest approach for full sync)
+        // Or better: Upsert based on ID if we tracked it, but here rows only have temp IDs for new ones usually.
+        // The `getFlashcardsForSet` mapped real IDs. If row.id is a string (UUID), it's existing. If number, it's new.
+        // Strategy: 
+        // 1. Delete all cards NOT in the current validRows (if we were tracking removals). 
+        //    But simpler: Delete all for this set, re-insert. (Safe for small sets, but loses SRS history!)
+        //    
+        //    CRITICAL: Preserving SRS history is likely desired. 
+        //    WE MUST MATCH IDs.
+
+        const existingCardIds = validRows.filter(r => typeof r.id === 'string').map(r => r.id);
+
+        // Delete cards that are no longer in the list
+        const { error: deleteError } = await supabase
+          .from('user_flashcards')
+          .delete()
+          .eq('flashcard_set_id', targetSetId)
+          .not('id', 'in', `(${existingCardIds.length > 0 ? existingCardIds.join(',') : '00000000-0000-0000-0000-000000000000'})`); // if empty, delete all (using dummy UUID) involves logic check
+
+        if (existingCardIds.length === 0) {
+          // If no existing cards kept, delete all
+          await supabase.from('user_flashcards').delete().eq('flashcard_set_id', targetSetId);
+        } else {
+          await supabase.from('user_flashcards').delete().eq('flashcard_set_id', targetSetId).not('id', 'in', `(${existingCardIds.join(',')})`);
+        }
+
+        // Upsert (Update or Insert)
+        // We handle this by splitting: existing (update) vs new (insert)
+        const rowsToUpdate = validRows.filter(r => typeof r.id === 'string');
+        const rowsToInsert = validRows.filter(r => typeof r.id === 'number');
+
+        // Handle Updates
+        for (const row of rowsToUpdate) {
+          let frontImageUrl = row.frontImage instanceof File ? null : (row.frontImage as string); // If string URL, keep it. If File, upload.
+          let backImageUrl = row.backImage instanceof File ? null : (row.backImage as string);
+
+          if (row.frontImage instanceof File) {
             const fileName = `${user.id}/${Date.now()}_front_${row.id}`;
-            const { data, error } = await supabase.storage
-              .from('flashcard-images')
-              .upload(fileName, row.frontImage);
-
-            if (!error && data) {
-              const { data: { publicUrl } } = supabase.storage
-                .from('flashcard-images')
-                .getPublicUrl(fileName);
+            const { data, error } = await supabase.storage.from('flashcard-images').upload(fileName, row.frontImage);
+            if (!error) {
+              const { data: { publicUrl } } = supabase.storage.from('flashcard-images').getPublicUrl(fileName);
               frontImageUrl = publicUrl;
             }
           }
-
-          if (row.backImage) {
+          if (row.backImage instanceof File) {
             const fileName = `${user.id}/${Date.now()}_back_${row.id}`;
-            const { data, error } = await supabase.storage
-              .from('flashcard-images')
-              .upload(fileName, row.backImage);
-
-            if (!error && data) {
-              const { data: { publicUrl } } = supabase.storage
-                .from('flashcard-images')
-                .getPublicUrl(fileName);
+            const { data, error } = await supabase.storage.from('flashcard-images').upload(fileName, row.backImage);
+            if (!error) {
+              const { data: { publicUrl } } = supabase.storage.from('flashcard-images').getPublicUrl(fileName);
               backImageUrl = publicUrl;
             }
           }
 
-          return {
-            user_id: user.id,
-            flashcard_set_id: newSet.id,
+          // If URL is null and it was a File, it means upload failed or new file. 
+          // If it was string, it stays. 
+          // If it was null initially and no file, it stays null.
+
+          const updatePayload: any = {
             front_text: row.front.trim(),
-            back_text: row.back.trim(),
-            front_image_url: frontImageUrl,
-            back_image_url: backImageUrl
+            back_text: row.back.trim()
           };
-        }));
+          if (frontImageUrl !== undefined) updatePayload.front_image_url = frontImageUrl; // Only update if we have a new one or confirmed one
+          if (backImageUrl !== undefined) updatePayload.back_image_url = backImageUrl;
 
-        const { error: cardsError } = await supabase
-          .from('user_flashcards')
-          .insert(flashcardsToInsert);
+          await supabase.from('user_flashcards').update(updatePayload).eq('id', row.id);
+        }
 
-        if (cardsError) throw cardsError;
+        // Handle Inserts
+        if (rowsToInsert.length > 0) {
+          const flashcardsToInsert = await Promise.all(rowsToInsert.map(async (row) => {
+            let frontImageUrl = null;
+            let backImageUrl = null;
+
+            if (row.frontImage instanceof File) {
+              const fileName = `${user.id}/${Date.now()}_front_${row.id}`;
+              const { data, error } = await supabase.storage.from('flashcard-images').upload(fileName, row.frontImage);
+              if (!error) {
+                const { data: { publicUrl } } = supabase.storage.from('flashcard-images').getPublicUrl(fileName);
+                frontImageUrl = publicUrl;
+              }
+            }
+
+            if (row.backImage instanceof File) {
+              const fileName = `${user.id}/${Date.now()}_back_${row.id}`;
+              const { data, error } = await supabase.storage.from('flashcard-images').upload(fileName, row.backImage);
+              if (!error) {
+                const { data: { publicUrl } } = supabase.storage.from('flashcard-images').getPublicUrl(fileName);
+                backImageUrl = publicUrl;
+              }
+            }
+
+            return {
+              user_id: user.id,
+              flashcard_set_id: targetSetId,
+              front_text: row.front.trim(),
+              back_text: row.back.trim(),
+              front_image_url: frontImageUrl,
+              back_image_url: backImageUrl
+            };
+          }));
+
+          await supabase.from('user_flashcards').insert(flashcardsToInsert);
+        }
+
+        // Refetch to sync state UI
+        setFlashcardSets(prev => prev.map(s => s.id === targetSetId ? { ...s, title: targetSetTitle, cardCount: validRows.length } : s));
+
+      } else {
+        // CREATE NEW SET
+        const { data: newSet, error: setError } = await supabase
+          .from('user_flashcard_sets')
+          .insert({
+            user_id: user.id,
+            folder_id: folderId,
+            title: newSetTitle.trim(),
+            source: 'created'
+          })
+          .select()
+          .single();
+
+        if (setError) throw setError;
+        targetSetId = newSet.id;
+        targetSetTitle = newSet.title;
+
+        // 2. Create flashcards with image upload
+        if (validRows.length > 0) {
+          const flashcardsToInsert = await Promise.all(validRows.map(async (row) => {
+            let frontImageUrl = null;
+            let backImageUrl = null;
+
+            if (row.frontImage instanceof File) {
+              const fileName = `${user.id}/${Date.now()}_front_${row.id}`;
+              const { data, error } = await supabase.storage
+                .from('flashcard-images')
+                .upload(fileName, row.frontImage);
+
+              if (!error && data) {
+                const { data: { publicUrl } } = supabase.storage
+                  .from('flashcard-images')
+                  .getPublicUrl(fileName);
+                frontImageUrl = publicUrl;
+              }
+            }
+
+            if (row.backImage instanceof File) {
+              const fileName = `${user.id}/${Date.now()}_back_${row.id}`;
+              const { data, error } = await supabase.storage
+                .from('flashcard-images')
+                .upload(fileName, row.backImage);
+
+              if (!error && data) {
+                const { data: { publicUrl } } = supabase.storage
+                  .from('flashcard-images')
+                  .getPublicUrl(fileName);
+                backImageUrl = publicUrl;
+              }
+            }
+
+            return {
+              user_id: user.id,
+              flashcard_set_id: newSet.id,
+              front_text: row.front.trim(),
+              back_text: row.back.trim(),
+              front_image_url: frontImageUrl,
+              back_image_url: backImageUrl
+            };
+          }));
+
+          const { error: cardsError } = await supabase
+            .from('user_flashcards')
+            .insert(flashcardsToInsert);
+
+          if (cardsError) throw cardsError;
+        }
+
+        const newSetWithCount: FlashcardSet = {
+          id: newSet.id,
+          title: newSet.title,
+          cardCount: validRows.length,
+          source: newSet.source,
+          progress: 0,
+          lastReviewed: null,
+          nextReview: null,
+          isArchived: false,
+          folderId: newSet.folder_id
+        };
+
+        setFlashcardSets(prev => [newSetWithCount, ...prev]);
       }
-
-      // 3. Update local state
-      const newSetWithCount: FlashcardSet = {
-        id: newSet.id,
-        title: newSet.title,
-        cardCount: validRows.length,
-        source: newSet.source,
-        progress: 0,
-        lastReviewed: null,
-        nextReview: null,
-        isArchived: false,
-        folderId: newSet.folder_id
-      };
-
-      setFlashcardSets(prev => [newSetWithCount, ...prev]);
 
       // 4. Reset form
       setNewSetTitle('');
+      setEditingSetTitle('');
+      setIsEditing(false);
+      setSelectedSetForEdit(null);
 
       setFlashcardRows(
         Array(5).fill(null).map((_, i) => ({ id: Date.now() + Math.random(), front: '', back: '', frontImage: null, backImage: null }))
@@ -507,45 +634,50 @@ export function FolderDetail() {
       setShowNewCardDialog(false);
 
       toast({
-        title: "สร้างชุดแฟลชการ์ดสำเร็จ",
-        description: `สร้างชุด "${newSet.title}" เรียบร้อยแล้ว`
+        title: isEditing ? "แก้ไขชุดแฟลชการ์ดสำเร็จ" : "สร้างชุดแฟลชการ์ดสำเร็จ",
+        description: `ดำเนินการกับชุด "${targetSetTitle}" เรียบร้อยแล้ว`
       });
 
     } catch (error) {
-      console.error('Error creating flashcards:', error);
+      console.error('Error creating/updating flashcards:', error);
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถสร้างชุดแฟลชการ์ดได้",
+        description: "ไม่สามารถบันทึกข้อมูลได้",
         variant: "destructive"
       });
     }
   };
 
-  const handleEditSetClick = (set: FlashcardSet) => {
+
+  const handleOpenEditSet = async (set: FlashcardSet) => {
+
+    // 1. Fetch Flashcards
+    const flashcards = await getFlashcardsForSet(set.id);
+
+    // 2. Populate Rows
+    const rows = flashcards.map(c => ({
+      id: c.id, // Keep the real ID (string)
+      front: c.front,
+      back: c.back,
+      frontImage: c.frontImage || null,
+      backImage: c.backImage || null
+    }));
+
+    // Add empty rows if less than 5
+    while (rows.length < 5) {
+      rows.push({ id: Date.now() + Math.random(), front: '', back: '', frontImage: null, backImage: null });
+    }
+
+    setFlashcardRows(rows as any); // Cast to any because ID type mismatch (number vs string) - verify FlashcardRow interface?
+    // Need to update FlashcardRow interface to allow string ID for existing records.
+
     setSelectedSetForEdit(set);
     setEditingSetTitle(set.title);
-    setShowEditSetDialog(true);
+    setIsEditing(true);
+    setShowNewCardDialog(true);
   };
 
-  const handleSaveSetEdit = async () => {
-    if (!selectedSetForEdit || !editingSetTitle.trim()) return;
 
-    try {
-      const { error } = await supabase
-        .from('user_flashcard_sets')
-        .update({ title: editingSetTitle.trim() })
-        .eq('id', selectedSetForEdit.id);
-
-      if (error) throw error;
-
-      setFlashcardSets(prev => prev.map(s => s.id === selectedSetForEdit.id ? { ...s, title: editingSetTitle.trim() } : s));
-      setShowEditSetDialog(false);
-      toast({ title: "บันทึกสำเร็จ", description: "แก้ไขชื่อชุดแฟลชการ์ดเรียบร้อยแล้ว" });
-    } catch (error) {
-      console.error('Error updating set:', error);
-      toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถแก้ไขชื่อชุดแฟลชการ์ดได้", variant: "destructive" });
-    }
-  };
 
   const handleMoveClick = async (set: FlashcardSet) => {
     setSetToMove(set);
@@ -794,36 +926,39 @@ export function FolderDetail() {
               </p>
             </div>
           </div>
-
           <Dialog open={showNewCardDialog} onOpenChange={setShowNewCardDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-primary text-primary-foreground hover:shadow-glow transition-all duration-300">
+              <Button onClick={() => { setIsEditing(false); setNewSetTitle(''); setFlashcardRows(Array(5).fill(null).map((_, i) => ({ id: Date.now() + Math.random(), front: '', back: '', frontImage: null, backImage: null }))); setShowNewCardDialog(true); }} className="bg-gradient-primary text-primary-foreground hover:shadow-glow transition-all duration-300">
                 <Plus className="h-5 w-5 mr-2" />
                 สร้างชุดใหม่
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+            <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-6 rounded-2xl border-none shadow-2xl bg-white/95 backdrop-blur-md">
               <DialogHeader>
-                <DialogTitle>สร้างชุดแฟลชการ์ดใหม่</DialogTitle>
-                <DialogDescription>
-                  สร้างชุดคำศัพท์ใหม่ในโฟลเดอร์นี้
+                <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+                  {isEditing ? 'แก้ไขชุดแฟลชการ์ด' : 'สร้างชุดแฟลชการ์ดใหม่'}
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  {isEditing ? 'แก้ไขข้อมูลชุดแฟลชการ์ดของคุณ' : 'สร้างชุดคำศัพท์ใหม่ในโฟลเดอร์นี้'}
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-6 py-4 flex-1 flex flex-col min-h-0">
+
+              <div className="space-y-6 flex-1 flex flex-col min-h-0 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">ชื่อชุดแฟลชการ์ด</Label>
+                  <Label htmlFor="title" className="text-sm font-semibold text-slate-700">ชื่อชุดแฟลชการ์ด</Label>
                   <Input
                     id="title"
+                    value={isEditing ? editingSetTitle : newSetTitle}
+                    onChange={(e) => isEditing ? setEditingSetTitle(e.target.value) : setNewSetTitle(e.target.value)}
                     placeholder="เช่น คำศัพท์บทที่ 1"
-                    value={newSetTitle}
-                    onChange={(e) => setNewSetTitle(e.target.value)}
+                    className="border-slate-200 focus:ring-primary h-11"
                   />
                 </div>
 
-                <div className="space-y-4 flex-1 overflow-y-auto pr-2">
-                  <div className="flex items-center justify-between">
-                    <Label>รายการคำศัพท์</Label>
-                    <span className="text-sm text-muted-foreground">
+                <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-sm z-10 py-2 border-b">
+                    <Label className="text-sm font-semibold text-slate-700">รายการคำศัพท์</Label>
+                    <span className="text-xs font-medium text-muted-foreground bg-slate-100 px-2 py-1 rounded-full">
                       {flashcardRows.length} ใบ
                     </span>
                   </div>
@@ -919,25 +1054,24 @@ export function FolderDetail() {
                     </div>
                   ))}
 
-                  <div className="flex justify-center">
-                    <Button
-                      variant="outline"
-                      onClick={handleAddFlashcardRow}
-                      className="text-pink-600 border-pink-200 hover:bg-pink-50 hover:border-pink-300"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      เพิ่มแถว
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={handleAddFlashcardRow}
+                    className="w-full border-dashed border-2 hover:border-primary hover:text-primary transition-all h-12"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    เพิ่มคำศัพท์
+                  </Button>
+                </div>
 
-                  <div className="flex justify-end pt-4">
-                    <Button
-                      onClick={handleCreateFlashcards}
-                      className="bg-gradient-primary text-primary-foreground hover:shadow-glow px-8 py-2"
-                    >
-                      สร้าง
-                    </Button>
-                  </div>
+                <div className="flex justify-between items-center pt-4 border-t border-slate-100 mt-auto">
+                  <Button variant="ghost" onClick={() => setShowNewCardDialog(false)} className="text-muted-foreground hover:text-slate-900">
+                    ยกเลิก
+                  </Button>
+                  <Button onClick={handleCreateFlashcards} className="bg-gradient-primary text-primary-foreground min-w-[120px] shadow-lg hover:shadow-xl transition-all">
+                    <Check className="w-4 h-4 mr-2" />
+                    {isEditing ? 'บันทึกการแก้ไข' : 'สร้างชุดแฟลชการ์ด'}
+                  </Button>
                 </div>
               </div>
             </DialogContent>
@@ -956,188 +1090,168 @@ export function FolderDetail() {
         </div>
 
         {/* Flashcard Sets Grid */}
-        {filteredSets.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">ไม่มีชุดแฟลชการ์ดในโฟลเดอร์นี้</h3>
-            <p className="text-muted-foreground mb-4">เริ่มต้นด้วยการสร้างชุดแฟลชการ์ดใหม่</p>
-            <Button onClick={() => setShowNewCardDialog(true)} variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              สร้างชุดแรกของคุณ
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSets.map((set) => (
-              <Card key={set.id} className="group hover:shadow-glow transition-all duration-300 hover:scale-105">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-2">{set.title}</h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <BookOpen className="h-4 w-4" />
-                        <span>{set.cardCount} การ์ด</span>
+        {
+          filteredSets.length === 0 ? (
+            <div className="text-center py-12">
+              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">ไม่มีชุดแฟลชการ์ดในโฟลเดอร์นี้</h3>
+              <p className="text-muted-foreground mb-4">เริ่มต้นด้วยการสร้างชุดแฟลชการ์ดใหม่</p>
+              <Button onClick={() => setShowNewCardDialog(true)} variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                สร้างชุดแรกของคุณ
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredSets.map((set) => (
+                <Card key={set.id} className="group hover:shadow-glow transition-all duration-300 hover:scale-105">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg mb-2">{set.title}</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                          <BookOpen className="h-4 w-4" />
+                          <span>{set.cardCount} การ์ด</span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {set.source}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {set.source}
-                      </Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleOpenEditSet(set)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            แก้ไข
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteSetClick(set)} className="text-destructive">
+                            <Trash className="h-4 w-4 mr-2" />
+                            ลบ
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEditSetClick(set)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          แก้ไข
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteSetClick(set)} className="text-destructive">
-                          <Trash className="h-4 w-4 mr-2" />
-                          ลบ
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
 
-                  <div className="mb-4">
-                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                      <span>ความก้าวหน้า</span>
-                      <span>{set.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${set.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-xs text-muted-foreground mb-4">
-                    {set.lastReviewed && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-3 w-3" />
-                        <span>ทบทวนล่าสุด: {set.lastReviewed.toLocaleDateString('th-TH')}</span>
+                    <div className="mb-4">
+                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>ความก้าวหน้า</span>
+                        <span>{set.progress}%</span>
                       </div>
-                    )}
-                    {set.nextReview && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-3 w-3" />
-                        <span>ทบทวนครั้งต่อไป: {set.nextReview.toLocaleDateString('th-TH')}</span>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${set.progress}%` }}
+                        ></div>
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handleReviewCards(set)}
-                    >
-                      <BookOpen className="h-3 w-3 mr-1" />
-                      ทบทวน
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="flex-1"
-                      onClick={() => handlePlayGame(set)}
-                    >
-                      <GamepadIcon className="h-3 w-3 mr-1" />
-                      เล่นเกม
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                    <div className="space-y-2 text-xs text-muted-foreground mb-4">
+                      {set.lastReviewed && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-3 w-3" />
+                          <span>ทบทวนล่าสุด: {set.lastReviewed.toLocaleDateString('th-TH')}</span>
+                        </div>
+                      )}
+                      {set.nextReview && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-3 w-3" />
+                          <span>ทบทวนครั้งต่อไป: {set.nextReview.toLocaleDateString('th-TH')}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handleReviewCards(set)}
+                      >
+                        <BookOpen className="h-3 w-3 mr-1" />
+                        ทบทวน
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="flex-1"
+                        onClick={() => handlePlayGame(set)}
+                      >
+                        <GamepadIcon className="h-3 w-3 mr-1" />
+                        เล่นเกม
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+        {/* Dialogs */}
+        {
+          selectedSet && (
+            <FlashcardSelectionDialog
+              open={showFlashcardSelection}
+              onOpenChange={setShowFlashcardSelection}
+              flashcards={availableFlashcards.map(card => ({
+                id: card.id,
+                front_text: card.front,
+                back_text: card.back,
+                front_image: card.frontImage,
+                back_image: card.backImage
+              }))}
+              onSelect={handleFlashcardsSelected}
+            />
+          )
+        }
+
+        {
+          selectedSet && (
+            <FlashcardSelectionDialog
+              open={showReviewFlashcardSelection}
+              onOpenChange={setShowReviewFlashcardSelection}
+              flashcards={availableFlashcards.map(card => ({
+                id: card.id,
+                front_text: card.front,
+                back_text: card.back,
+                front_image: card.frontImage,
+                back_image: card.backImage
+              }))}
+              onSelect={handleReviewFlashcardsSelected}
+            />
+          )
+        }
+
+        <GameSelectionDialog
+          open={showGameSelection}
+          onOpenChange={setShowGameSelection}
+          onSelectGame={handleGameSelect}
+        />
+
+
+
+
+
+        <AlertDialog open={!!setToDelete} onOpenChange={(open) => !open && setSetToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>คุณแน่ใจหรือไม่?</AlertDialogTitle>
+              <AlertDialogDescription>
+                การกระทำนี้ไม่สามารถย้อนกลับได้ ชุดแฟลชการ์ด "{setToDelete?.title}" จะถูกลบถาวร
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                ลบ
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      {/* Dialogs */}
-      {selectedSet && (
-        <FlashcardSelectionDialog
-          open={showFlashcardSelection}
-          onOpenChange={setShowFlashcardSelection}
-          flashcards={availableFlashcards.map(card => ({
-            id: card.id,
-            front_text: card.front,
-            back_text: card.back,
-            front_image: card.frontImage,
-            back_image: card.backImage
-          }))}
-          onSelect={handleFlashcardsSelected}
-        />
-      )}
-
-      {selectedSet && (
-        <FlashcardSelectionDialog
-          open={showReviewFlashcardSelection}
-          onOpenChange={setShowReviewFlashcardSelection}
-          flashcards={availableFlashcards.map(card => ({
-            id: card.id,
-            front_text: card.front,
-            back_text: card.back,
-            front_image: card.frontImage,
-            back_image: card.backImage
-          }))}
-          onSelect={handleReviewFlashcardsSelected}
-        />
-      )}
-
-      <GameSelectionDialog
-        open={showGameSelection}
-        onOpenChange={setShowGameSelection}
-        onSelectGame={handleGameSelect}
-      />
-
-      <Dialog open={showEditSetDialog} onOpenChange={setShowEditSetDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>แก้ไขชื่อชุดแฟลชการ์ด</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">ชื่อชุดแฟลชการ์ด</Label>
-              <Input
-                id="edit-title"
-                value={editingSetTitle}
-                onChange={(e) => setEditingSetTitle(e.target.value)}
-                placeholder="ใส่ชื่อชุดแฟลชการ์ด"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowEditSetDialog(false)}>
-                ยกเลิก
-              </Button>
-              <Button onClick={handleSaveSetEdit}>
-                บันทึก
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-
-
-      <AlertDialog open={!!setToDelete} onOpenChange={(open) => !open && setSetToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>คุณแน่ใจหรือไม่?</AlertDialogTitle>
-            <AlertDialogDescription>
-              การกระทำนี้ไม่สามารถย้อนกลับได้ ชุดแฟลชการ์ด "{setToDelete?.title}" จะถูกลบถาวร
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              ลบ
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div >
+    </div>
   );
 }

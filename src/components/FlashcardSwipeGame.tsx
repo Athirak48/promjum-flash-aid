@@ -28,6 +28,7 @@ export const FlashcardSwipeGame = ({ flashcards, onClose, onComplete }: Flashcar
     const [isDragging, setIsDragging] = useState(false);
     const [remembered, setRemembered] = useState(0);
     const [needPractice, setNeedPractice] = useState(0);
+    const [needPracticeWords, setNeedPracticeWords] = useState<{ word: string; meaning: string }[]>([]);
     const [isComplete, setIsComplete] = useState(false);
     const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
 
@@ -120,6 +121,7 @@ export const FlashcardSwipeGame = ({ flashcards, onClose, onComplete }: Flashcar
             setRemembered(prev => prev + 1);
         } else {
             setNeedPractice(prev => prev + 1);
+            setNeedPracticeWords(prev => [...prev, { word: currentCard.front_text, meaning: currentCard.back_text }]);
         }
 
         // Move to next card after animation
@@ -147,6 +149,7 @@ export const FlashcardSwipeGame = ({ flashcards, onClose, onComplete }: Flashcar
         setSwipeRotation(0);
         setRemembered(0);
         setNeedPractice(0);
+        setNeedPracticeWords([]);
         setIsComplete(false);
         setSwipeDirection(null);
     };
@@ -174,10 +177,33 @@ export const FlashcardSwipeGame = ({ flashcards, onClose, onComplete }: Flashcar
                         คุณทบทวนคำศัพท์ครบแล้ว
                     </p>
 
-                    <div className="bg-slate-50 rounded-2xl p-4 mb-8 border border-slate-100">
+                    <div className="bg-slate-50 rounded-2xl p-4 mb-4 border border-slate-100">
                         <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">อัตราความสำเร็จ</p>
                         <p className="text-2xl font-black text-indigo-600 tracking-tight">{successRate}%</p>
                     </div>
+
+                    {/* Need Practice Words Section */}
+                    {needPracticeWords.length > 0 ? (
+                        <div className="bg-red-50 rounded-xl p-4 border border-red-100 mb-6 text-left">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-red-500">❌</span>
+                                <span className="font-bold text-red-700">คำที่ต้องฝึก ({needPracticeWords.length} คำ)</span>
+                            </div>
+                            <div className="space-y-2 max-h-28 overflow-y-auto">
+                                {needPracticeWords.map((w, idx) => (
+                                    <div key={idx} className="flex justify-between items-center bg-white rounded-lg px-3 py-2 text-sm">
+                                        <span className="font-medium text-red-800">{w.word}</span>
+                                        <span className="text-red-500">{w.meaning}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-green-50 rounded-xl p-4 border border-green-100 mb-6 text-center">
+                            <span className="text-3xl mb-2 block">🎉</span>
+                            <span className="font-bold text-green-700">เก่งมั๊กๆๆ! จำได้ทุกคำเลย</span>
+                        </div>
+                    )}
 
                     <div className="flex flex-row gap-2 justify-center w-full">
                         <Button

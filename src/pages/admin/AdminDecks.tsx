@@ -4,13 +4,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Upload, Download, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { Plus, Upload, Download, Eye, EyeOff, GripVertical, Trash2, BookOpen, Layers, FileText, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { CreateDeckDialog } from '@/components/admin/CreateDeckDialog';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const DraggableRow = ({ deck, index, moveRow, children }: any) => {
   const ref = useRef<HTMLTableRowElement>(null);
@@ -52,23 +62,26 @@ const DraggableRow = ({ deck, index, moveRow, children }: any) => {
     </TableRow>
   );
 };
+
 export default function AdminDecks() {
   const navigate = useNavigate();
   const [decks, setDecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateDeck, setShowCreateDeck] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deckToDelete, setDeckToDelete] = useState<any>(null);
+
   useEffect(() => {
     fetchDecks();
   }, []);
+
   const fetchDecks = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('decks').select('*, sub_decks(count)').order('display_order', {
-        ascending: true
-      });
+      const { data, error } = await supabase
+        .from('decks')
+        .select('*, sub_decks(count)')
+        .order('display_order', { ascending: true });
       if (error) throw error;
       setDecks(data || []);
     } catch (error) {
@@ -76,6 +89,22 @@ export default function AdminDecks() {
       toast.error('ไม่สามารถโหลดข้อมูล Deck ได้');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteDeck = async () => {
+    if (!deckToDelete) return;
+    try {
+      const { error } = await supabase.from('decks').delete().eq('id', deckToDelete.id);
+      if (error) throw error;
+      toast.success('ลบ Deck สำเร็จ');
+      fetchDecks();
+    } catch (error) {
+      console.error('Error deleting deck:', error);
+      toast.error('ไม่สามารถลบ Deck ได้');
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeckToDelete(null);
     }
   };
 
@@ -91,7 +120,6 @@ export default function AdminDecks() {
         .eq('id', deckId);
 
       if (error) throw error;
-
       toast.success(!currentStatus ? 'เผยแพร่ Deck สำเร็จ' : 'ซ่อน Deck จาก User แล้ว');
       fetchDecks();
     } catch (error) {
@@ -105,20 +133,15 @@ export default function AdminDecks() {
       const newDecks = [...prevDecks];
       const [removed] = newDecks.splice(dragIndex, 1);
       newDecks.splice(hoverIndex, 0, removed);
-      
-      // Update display_order for all decks after reordering
+
       const updatedDecks = newDecks.map((deck, index) => ({
         ...deck,
         display_order: index
       }));
-      
-      // Save to database
+
       Promise.all(
         updatedDecks.map(deck =>
-          supabase
-            .from('decks')
-            .update({ display_order: deck.display_order })
-            .eq('id', deck.id)
+          supabase.from('decks').update({ display_order: deck.display_order }).eq('id', deck.id)
         )
       ).then(() => {
         toast.success('บันทึกลำดับสำเร็จ');
@@ -126,42 +149,121 @@ export default function AdminDecks() {
         console.error('Error saving order:', error);
         toast.error('เกิดข้อผิดพลาดในการบันทึกลำดับ');
       });
-      
+
       return updatedDecks;
     });
   }, []);
-  const filteredDecks = decks.filter(deck => deck.name?.toLowerCase().includes(searchTerm.toLowerCase()) || deck.name_en?.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  const filteredDecks = decks.filter(deck =>
+    deck.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    deck.name_en?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Stats
+  const totalDecks = decks.length;
+  const publishedDecks = decks.filter(d => d.is_published).length;
+  const draftDecks = decks.filter(d => !d.is_published).length;
+  const totalFlashcards = decks.reduce((sum, d) => sum + (d.total_flashcards || 0), 0);
+
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">
+    return (
+      <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>;
+      </div>
+    );
   }
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="p-8 space-y-8">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Deck / Subdeck</h1>
-            <p className="text-muted-foreground">จัดการ Deck, Subdeck และ Flashcard</p>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+              <BookOpen className="h-8 w-8 text-primary" />
+              Deck / Subdeck
+            </h1>
+            <p className="text-muted-foreground mt-1">จัดการ Deck, Subdeck และ Flashcard</p>
           </div>
-          <div className="flex gap-2">
-            
-            
-            <Button onClick={() => setShowCreateDeck(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              เพิ่ม Deck
-            </Button>
-          </div>
+          <Button onClick={() => setShowCreateDeck(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            เพิ่ม Deck
+          </Button>
         </div>
 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-blue-200/50">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-blue-600">{totalDecks}</p>
+                  <p className="text-xs text-muted-foreground">Decks ทั้งหมด</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200/50">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-green-600">{publishedDecks}</p>
+                  <p className="text-xs text-muted-foreground">Published</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-200/50">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
+                  <FileText className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-amber-600">{draftDecks}</p>
+                  <p className="text-xs text-muted-foreground">Draft</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-purple-200/50">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50">
+                  <Layers className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-purple-600">{totalFlashcards}</p>
+                  <p className="text-xs text-muted-foreground">Flashcards</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Table Card */}
         <Card>
           <CardHeader>
             <CardTitle>จัดการ Decks</CardTitle>
             <CardDescription>แก้ไข เพิ่ม หรือลบ Deck และ Subdeck</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Input placeholder="ค้นหา Deck..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-sm" />
-            
+            <Input
+              placeholder="ค้นหา Deck..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+
             <div className="border rounded-lg">
               <Table>
                 <TableHeader>
@@ -170,6 +272,7 @@ export default function AdminDecks() {
                     <TableHead>ชื่อ</TableHead>
                     <TableHead>หมวดหมู่</TableHead>
                     <TableHead>ระดับ</TableHead>
+                    <TableHead>Sub-decks</TableHead>
                     <TableHead>Flashcards</TableHead>
                     <TableHead>สถานะ</TableHead>
                     <TableHead>การกระทำ</TableHead>
@@ -177,12 +280,7 @@ export default function AdminDecks() {
                 </TableHeader>
                 <TableBody>
                   {filteredDecks.map((deck, index) => (
-                    <DraggableRow 
-                      key={deck.id} 
-                      deck={deck} 
-                      index={index} 
-                      moveRow={moveRow}
-                    >
+                    <DraggableRow key={deck.id} deck={deck} index={index} moveRow={moveRow}>
                       <TableCell className="font-medium" onClick={() => navigate(`/admin/decks/${deck.id}`)}>
                         {deck.name}
                       </TableCell>
@@ -191,6 +289,9 @@ export default function AdminDecks() {
                       </TableCell>
                       <TableCell onClick={() => navigate(`/admin/decks/${deck.id}`)}>
                         <Badge variant="outline">{deck.level}</Badge>
+                      </TableCell>
+                      <TableCell onClick={() => navigate(`/admin/decks/${deck.id}`)}>
+                        <Badge variant="secondary">{deck.sub_decks?.[0]?.count || 0}</Badge>
                       </TableCell>
                       <TableCell onClick={() => navigate(`/admin/decks/${deck.id}`)}>
                         {deck.total_flashcards || 0}
@@ -202,28 +303,38 @@ export default function AdminDecks() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button 
+                          <Button
                             variant={deck.is_published ? "default" : "outline"}
-                            size="sm" 
+                            size="sm"
                             onClick={(e) => handleTogglePublish(deck.id, deck.is_published, e)}
                           >
                             {deck.is_published ? (
-                              <>
-                                <Eye className="w-4 h-4 mr-2" />
-                                แสดงให้ User
-                              </>
+                              <><Eye className="w-4 h-4 mr-1" />แสดง</>
                             ) : (
-                              <>
-                                <EyeOff className="w-4 h-4 mr-2" />
-                                ซ่อนจาก User
-                              </>
+                              <><EyeOff className="w-4 h-4 mr-1" />ซ่อน</>
                             )}
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={e => {
-                            e.stopPropagation();
-                            navigate(`/admin/decks/${deck.id}`);
-                          }}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={e => {
+                              e.stopPropagation();
+                              navigate(`/admin/decks/${deck.id}`);
+                            }}
+                          >
                             จัดการ
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setDeckToDelete(deck);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -236,6 +347,24 @@ export default function AdminDecks() {
         </Card>
 
         <CreateDeckDialog open={showCreateDeck} onOpenChange={setShowCreateDeck} onSuccess={fetchDecks} />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>ยืนยันการลบ Deck</AlertDialogTitle>
+              <AlertDialogDescription>
+                คุณต้องการลบ "{deckToDelete?.name}" หรือไม่? การลบนี้จะลบ Sub-decks และ Flashcards ทั้งหมดในนี้ด้วย
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteDeck} className="bg-destructive text-destructive-foreground">
+                ลบ
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DndProvider>
   );

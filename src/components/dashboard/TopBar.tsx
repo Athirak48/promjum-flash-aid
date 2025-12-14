@@ -23,7 +23,7 @@ export function TopBar({ userProfile, streak = 0, starlightScore = 0, progressPe
   } : null);
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-[2rem] p-4 sm:p-6 shadow-soft hover:shadow-lg transition-all duration-300">
+    <div className="bg-card/80 dark:bg-card/90 backdrop-blur-xl border border-border/50 rounded-[2rem] p-4 sm:p-6 shadow-soft hover:shadow-lg transition-all duration-300">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         {/* Logo */}
         {/* Logo */}

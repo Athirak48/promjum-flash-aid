@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw, Trophy, Search, RotateCcw, Gamepad2, ArrowRight } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trophy, Search, RotateCcw, Gamepad2, ArrowRight, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Flashcard {
     id: string;
@@ -47,6 +48,7 @@ const COLORS = [
 
 export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: FlashcardWordSearchGameProps) {
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [grid, setGrid] = useState<GridCell[][]>([]);
     const [wordsToFind, setWordsToFind] = useState<Flashcard[]>([]);
     const [foundWords, setFoundWords] = useState<string[]>([]); // IDs of found flashcards
@@ -58,6 +60,11 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
     const [elapsedTime, setElapsedTime] = useState<string>('');
     const [gridSize, setGridSize] = useState(10);
     const [wordLocations, setWordLocations] = useState<WordLocation[]>([]);
+
+    // Hint System State
+    const [hintsUsed, setHintsUsed] = useState(0);
+    const [revealedHintIds, setRevealedHintIds] = useState<string[]>([]);
+    const [gameResult, setGameResult] = useState<'won' | 'lost'>('won'); // Default won, change to lost if hints exceeded
 
     // Initialize game
     useEffect(() => {
@@ -76,6 +83,9 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
         setWordsToFind(words);
         setFoundWords([]);
         setGameComplete(false);
+        setGameResult('won');
+        setHintsUsed(0);
+        setRevealedHintIds([]);
         setStartTime(Date.now());
         setElapsedTime('');
 
@@ -88,6 +98,24 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
 
         // 3. Generate Grid
         generateGrid(size, words);
+    };
+
+    const handleHintClick = (wordId: string) => {
+        if (gameComplete || foundWords.includes(wordId) || revealedHintIds.includes(wordId)) return;
+
+        // Logic: 
+        // 0 hints used -> 1st hint -> hintsUsed = 1 (OK)
+        // 1 hints used -> 2nd hint -> hintsUsed = 2 (OK)
+        // 2 hints used -> 3rd hint -> hintsUsed = 3 (OK)
+        // 3 hints used -> 4th hint -> LOSS
+
+        if (hintsUsed >= 3) {
+            // Update: Unlimited hints allowed, but we track them
+        }
+
+        setHintsUsed(prev => prev + 1);
+        setRevealedHintIds(prev => [...prev, wordId]);
+
     };
 
     const generateGrid = (size: number, words: (Flashcard & { cleanWord: string })[]) => {
@@ -107,7 +135,6 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
             [0, 1],   // Horizontal
             [1, 0],   // Vertical
             [1, 1],   // Diagonal down-right
-            [1, -1]   // Diagonal down-left
         ];
 
         // Place words
@@ -327,6 +354,10 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
                         <Search className="h-4 w-4 text-blue-600" />
                         <span className="font-bold text-sm text-slate-800">Word Search ({foundWords.length}/{wordsToFind.length})</span>
                     </div>
+                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full shadow-sm border border-white/50 backdrop-blur-md transition-colors ${hintsUsed >= 3 ? 'bg-red-100/80 text-red-600 border-red-200' : 'bg-white/80 text-amber-600'}`}>
+                        <Eye className="h-4 w-4" />
+                        <span className="font-bold text-sm">ตัวช่วยที่ใช้: {hintsUsed}</span>
+                    </div>
                 </div>
                 <Button variant="ghost" size="icon" onClick={initializeGame} className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors h-8 w-8">
                     <RefreshCw className="h-4 w-4" />
@@ -356,26 +387,50 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
                                         initial={{ opacity: 0, x: -10 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: idx * 0.05 }}
+                                        onClick={() => handleHintClick(word.id)}
                                         className={`
-                                            px-2 py-1.5 rounded-lg transition-all duration-300 flex items-center justify-between text-xs sm:text-sm
+                                            px-2 py-1.5 rounded-lg transition-all duration-300 flex flex-col justify-center text-xs sm:text-sm cursor-pointer relative overflow-hidden
                                             ${isFound
                                                 ? 'bg-green-50/80 text-green-600 border border-green-100'
-                                                : 'bg-white shadow-sm border border-slate-100 text-slate-700 hover:shadow-md hover:-translate-y-0.5 hover:border-blue-200'
+                                                : revealedHintIds.includes(word.id)
+                                                    ? 'bg-amber-50/80 text-amber-700 border border-amber-200'
+                                                    : 'bg-white shadow-sm border border-slate-100 text-slate-700 hover:shadow-md hover:-translate-y-0.5 hover:border-blue-200'
                                             }
                                         `}
                                     >
-                                        <span className={`font-medium truncate ${isFound ? 'line-through decoration-green-400' : ''}`}>
-                                            {word.back_text}
-                                        </span>
-                                        {isFound && (
+                                        <div className="flex items-center justify-between w-full">
+                                            <span className={`font-medium truncate ${isFound ? 'line-through decoration-green-400' : ''}`}>
+                                                {word.back_text}
+                                            </span>
+                                            {isFound ? (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    className="h-4 w-4 rounded-full bg-green-500 flex items-center justify-center shrink-0 ml-1.5"
+                                                >
+                                                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+                                                    </svg>
+                                                </motion.div>
+                                            ) : (
+                                                <div className="ml-1.5 shrink-0">
+                                                    {revealedHintIds.includes(word.id) ? (
+                                                        <Eye className="w-3.5 h-3.5 text-amber-500" />
+                                                    ) : (
+                                                        <span className="text-[10px] text-slate-300 group-hover:text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded-full border border-slate-100">Hint</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Hint / English Meaning */}
+                                        {!isFound && revealedHintIds.includes(word.id) && (
                                             <motion.div
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                className="h-3 w-3 rounded-full bg-green-500 flex items-center justify-center shrink-0 ml-1.5"
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                className="text-[10px] sm:text-xs text-amber-600 mt-1 font-semibold break-words"
                                             >
-                                                <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
-                                                </svg>
+                                                {word.front_text}
                                             </motion.div>
                                         )}
                                     </motion.div>
@@ -476,60 +531,94 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-2 sm:p-4"
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
-                            className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
+                            className="bg-white rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
                         >
-                            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-50 to-transparent -z-10"></div>
+                            <div className="absolute top-0 left-0 w-full h-24 sm:h-32 bg-gradient-to-b from-blue-50 to-transparent -z-10"></div>
 
-                            <div className="w-20 h-20 bg-white rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-6 border border-slate-50">
-                                <Trophy className="h-10 w-10 text-yellow-500 drop-shadow-sm" />
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl sm:rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-slate-50">
+                                <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-yellow-500 drop-shadow-sm" />
                             </div>
 
-                            <h2 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">ยอดเยี่ยม!</h2>
-                            <p className="text-slate-500 mb-6 font-medium text-base">
-                                คุณหาคำศัพท์ครบทั้งหมดแล้ว
+                            <h2 className="text-2xl sm:text-3xl font-black text-slate-800 mb-2 tracking-tight">{t('games.excellent')}</h2>
+                            <p className="text-slate-500 mb-4 sm:mb-6 font-medium text-sm sm:text-base">
+                                {t('games.foundAllWords')}
                             </p>
 
-                            <div className="bg-slate-50 rounded-2xl p-4 mb-8 border border-slate-100">
-                                <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">เวลาที่ใช้</p>
-                                <p className="text-2xl font-black text-blue-600 tracking-tight">{elapsedTime}</p>
+                            {revealedHintIds.length > 0 && (
+                                <div className="mb-4 sm:mb-6 w-full">
+                                    <div className="flex items-center justify-between mb-2 sm:mb-3 px-1">
+                                        <h4 className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                            {t('games.wordsToReview')}
+                                        </h4>
+                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-1.5 sm:px-2 py-0.5 rounded-full">{revealedHintIds.length}</span>
+                                    </div>
+
+                                    <div className="bg-slate-50/50 rounded-xl sm:rounded-2xl p-2 border border-slate-100/60 max-h-[120px] sm:max-h-[160px] overflow-y-auto custom-scrollbar">
+                                        <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                                            {wordsToFind.filter(w => revealedHintIds.includes(w.id)).map((word, idx) => (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: idx * 0.05 }}
+                                                    key={word.id}
+                                                    className="bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl border border-slate-100 shadow-sm flex flex-col items-start gap-0.5 relative overflow-hidden group hover:shadow-md transition-all text-left"
+                                                >
+                                                    <div className="absolute top-0 right-0 w-6 sm:w-8 h-6 sm:h-8 bg-amber-50 rounded-bl-full -mr-3 sm:-mr-4 -mt-3 sm:-mt-4 z-0 transition-transform group-hover:scale-125"></div>
+                                                    <Eye className="absolute top-0.5 sm:top-1 right-0.5 sm:right-1 w-2.5 sm:w-3 h-2.5 sm:h-3 text-amber-300 z-10" />
+
+                                                    <span className="font-bold text-slate-700 text-xs sm:text-sm z-10 relative truncate w-full pr-2">{word.back_text}</span>
+                                                    <span className="text-[10px] sm:text-xs text-slate-400 font-medium z-10 relative truncate w-full">{word.front_text}</span>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 mb-4 sm:mb-8 border border-slate-100">
+                                <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">{t('games.timeUsed')}</p>
+                                <p className="text-xl sm:text-2xl font-black text-blue-600 tracking-tight">{elapsedTime}</p>
                             </div>
 
-                            <div className="flex flex-row gap-2 justify-center w-full">
+                            <div className="flex flex-col sm:flex-row gap-2 justify-center w-full">
                                 <Button
                                     onClick={initializeGame}
-                                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all rounded-xl h-12 text-sm font-bold active:scale-95"
+                                    className="w-full sm:flex-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition-all rounded-xl h-10 sm:h-12 text-xs sm:text-sm font-bold active:scale-95 px-4"
                                 >
-                                    เล่นอีกครั้ง
+                                    {t('games.playAgain')}
                                 </Button>
 
-                                <Button
-                                    onClick={() => {
-                                        const selectedVocab = flashcards.map(f => ({
-                                            id: f.id,
-                                            word: f.front_text,
-                                            meaning: f.back_text
-                                        }));
-                                        navigate('/ai-listening-section3-intro', {
-                                            state: { selectedVocab }
-                                        });
-                                    }}
-                                    className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
-                                >
-                                    <Gamepad2 className="h-4 w-4 mr-1.5" />
-                                    เลือกเกมใหม่
-                                </Button>
+                                <div className="flex flex-row gap-2 w-full sm:contents">
+                                    <Button
+                                        onClick={() => {
+                                            const selectedVocab = flashcards.map(f => ({
+                                                id: f.id,
+                                                word: f.front_text,
+                                                meaning: f.back_text
+                                            }));
+                                            navigate('/ai-listening-section3-intro', {
+                                                state: { selectedVocab }
+                                            });
+                                        }}
+                                        className="flex-1 sm:flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
+                                    >
+                                        <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 shrink-0" />
+                                        <span className="hidden sm:inline">{t('games.selectGame')}</span>
+                                        <span className="sm:hidden">{t('games.selectGameShort')}</span>
+                                    </Button>
 
-                                <Button
-                                    onClick={onNext || onClose}
-                                    className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-12 text-sm font-bold active:scale-95 transition-all"
-                                >
-                                    ถัดไป
-                                </Button>
+                                    <Button
+                                        onClick={onNext || onClose}
+                                        className="flex-1 sm:flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
+                                    >
+                                        {t('common.next')}
+                                    </Button>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
