@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -771,9 +772,9 @@ export function ScheduleCalendar() {
                 </div>
                 <Button
                     onClick={handleOpenReviewDialog}
-                    className="h-9 sm:h-10 px-4 sm:px-5 text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-semibold"
+                    className="h-10 sm:h-12 px-5 sm:px-6 text-sm sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-semibold font-cute active:scale-95"
                 >
-                    <Clock className="w-4 h-4 mr-2" />
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     ตั้งเวลาทบทวน
                 </Button>
             </div>

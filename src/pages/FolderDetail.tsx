@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, ImagePlus, X, GamepadIcon, Check } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
@@ -40,6 +41,7 @@ interface FlashcardData {
   id: string;
   front: string;
   back: string;
+  partOfSpeech?: string;
   frontImage?: string | null;
   backImage?: string | null;
   source?: string;
@@ -67,6 +69,7 @@ interface FlashcardRow {
   id: number;
   front: string;
   back: string;
+  partOfSpeech: string;
   frontImage: File | null;
   backImage: File | null;
 }
@@ -91,7 +94,7 @@ export function FolderDetail() {
   const [selectedFlashcards, setSelectedFlashcards] = useState<FlashcardData[]>([]);
   const [availableFlashcards, setAvailableFlashcards] = useState<FlashcardData[]>([]);
   const [flashcardRows, setFlashcardRows] = useState<FlashcardRow[]>(
-    Array(5).fill(null).map((_, i) => ({ id: i + 1, front: '', back: '', frontImage: null, backImage: null }))
+    Array(5).fill(null).map((_, i) => ({ id: i + 1, front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null }))
   );
   const [newSetTitle, setNewSetTitle] = useState('');
 
@@ -243,6 +246,7 @@ export function FolderDetail() {
       id: card.id,
       front: card.front_text,
       back: card.back_text,
+      partOfSpeech: card.part_of_speech || 'Noun',
       frontImage: card.front_image_url,
       backImage: card.back_image_url,
       source: ''
@@ -256,11 +260,12 @@ export function FolderDetail() {
     setShowFlashcardSelection(true);
   };
 
-  const handleFlashcardsSelected = (flashcards: { id: string; front_text: string; back_text: string; front_image?: string | null; back_image?: string | null }[]) => {
+  const handleFlashcardsSelected = (flashcards: { id: string; front_text: string; back_text: string; front_image?: string | null; back_image?: string | null; part_of_speech?: string }[]) => {
     const converted: FlashcardData[] = flashcards.map(card => ({
       id: card.id,
       front: card.front_text,
       back: card.back_text,
+      partOfSpeech: card.part_of_speech || 'Noun',
       frontImage: card.front_image,
       backImage: card.back_image
     }));
@@ -282,11 +287,12 @@ export function FolderDetail() {
     setShowReviewFlashcardSelection(true);
   };
 
-  const handleReviewFlashcardsSelected = (flashcards: { id: string; front_text: string; back_text: string; front_image?: string | null; back_image?: string | null }[]) => {
+  const handleReviewFlashcardsSelected = (flashcards: { id: string; front_text: string; back_text: string; front_image?: string | null; back_image?: string | null; part_of_speech?: string }[]) => {
     const converted: FlashcardData[] = flashcards.map(card => ({
       id: card.id,
       front: card.front_text,
       back: card.back_text,
+      partOfSpeech: card.part_of_speech || 'Noun',
       frontImage: card.front_image,
       backImage: card.back_image
     }));
@@ -353,7 +359,7 @@ export function FolderDetail() {
   };
 
   const handleAddFlashcardRow = () => {
-    const newRow = { id: Date.now() + Math.random(), front: '', back: '', frontImage: null as File | null, backImage: null as File | null };
+    const newRow = { id: Date.now() + Math.random(), front: '', back: '', partOfSpeech: 'Noun', frontImage: null as File | null, backImage: null as File | null };
     setFlashcardRows([...flashcardRows, newRow]);
   };
 
@@ -363,7 +369,7 @@ export function FolderDetail() {
     }
   };
 
-  const handleFlashcardTextChange = (id: number, field: 'front' | 'back', value: string) => {
+  const handleFlashcardTextChange = (id: number, field: 'front' | 'back' | 'partOfSpeech', value: string) => {
     setFlashcardRows(rows =>
       rows.map(row =>
         row.id === id ? { ...row, [field]: value } : row
@@ -491,7 +497,8 @@ export function FolderDetail() {
 
           const updatePayload: any = {
             front_text: row.front.trim(),
-            back_text: row.back.trim()
+            back_text: row.back.trim(),
+            part_of_speech: row.partOfSpeech || 'Noun'
           };
           if (frontImageUrl !== undefined) updatePayload.front_image_url = frontImageUrl; // Only update if we have a new one or confirmed one
           if (backImageUrl !== undefined) updatePayload.back_image_url = backImageUrl;
@@ -528,6 +535,7 @@ export function FolderDetail() {
               flashcard_set_id: targetSetId,
               front_text: row.front.trim(),
               back_text: row.back.trim(),
+              part_of_speech: row.partOfSpeech || 'Noun',
               front_image_url: frontImageUrl,
               back_image_url: backImageUrl
             };
@@ -595,6 +603,7 @@ export function FolderDetail() {
               flashcard_set_id: newSet.id,
               front_text: row.front.trim(),
               back_text: row.back.trim(),
+              part_of_speech: row.partOfSpeech || 'Noun',
               front_image_url: frontImageUrl,
               back_image_url: backImageUrl
             };
@@ -629,7 +638,7 @@ export function FolderDetail() {
       setSelectedSetForEdit(null);
 
       setFlashcardRows(
-        Array(5).fill(null).map((_, i) => ({ id: Date.now() + Math.random(), front: '', back: '', frontImage: null, backImage: null }))
+        Array(5).fill(null).map((_, i) => ({ id: Date.now() + Math.random(), front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null }))
       );
       setShowNewCardDialog(false);
 
@@ -659,13 +668,14 @@ export function FolderDetail() {
       id: c.id, // Keep the real ID (string)
       front: c.front,
       back: c.back,
+      partOfSpeech: (c as any).partOfSpeech || 'Noun',
       frontImage: c.frontImage || null,
       backImage: c.backImage || null
     }));
 
     // Add empty rows if less than 5
     while (rows.length < 5) {
-      rows.push({ id: Date.now() + Math.random(), front: '', back: '', frontImage: null, backImage: null });
+      rows.push({ id: Date.now() + Math.random(), front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null });
     }
 
     setFlashcardRows(rows as any); // Cast to any because ID type mismatch (number vs string) - verify FlashcardRow interface?
@@ -796,6 +806,7 @@ export function FolderDetail() {
             id: c.id,
             front: c.front,
             back: c.back,
+            partOfSpeech: (c as any).partOfSpeech,
             frontImage: c.frontImage,
             backImage: c.backImage
           }))}
@@ -928,7 +939,7 @@ export function FolderDetail() {
           </div>
           <Dialog open={showNewCardDialog} onOpenChange={setShowNewCardDialog}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setIsEditing(false); setNewSetTitle(''); setFlashcardRows(Array(5).fill(null).map((_, i) => ({ id: Date.now() + Math.random(), front: '', back: '', frontImage: null, backImage: null }))); setShowNewCardDialog(true); }} className="bg-gradient-primary text-primary-foreground hover:shadow-glow transition-all duration-300">
+              <Button onClick={() => { setIsEditing(false); setNewSetTitle(''); setFlashcardRows(Array(5).fill(null).map((_, i) => ({ id: Date.now() + Math.random(), front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null }))); setShowNewCardDialog(true); }} className="bg-gradient-primary text-primary-foreground hover:shadow-glow transition-all duration-300">
                 <Plus className="h-5 w-5 mr-2" />
                 สร้างชุดใหม่
               </Button>
@@ -982,7 +993,7 @@ export function FolderDetail() {
                         </Button>
                       </div>
 
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full">
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-4 w-full items-center">
                         <div className="relative group/input">
                           <Input
                             value={row.front}
@@ -1011,6 +1022,28 @@ export function FolderDetail() {
                             </Button>
                           </div>
                         </div>
+
+                        {/* Part of Speech Dropdown */}
+                        <Select
+                          value={row.partOfSpeech}
+                          onValueChange={(value) => handleFlashcardTextChange(row.id, 'partOfSpeech', value)}
+                        >
+                          <SelectTrigger className="w-full md:w-[130px] h-10 sm:h-11 rounded-full bg-purple-50 dark:bg-purple-950/30 border-purple-200 focus:ring-purple-500">
+                            <SelectValue placeholder="Part of Speech" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Noun">Noun</SelectItem>
+                            <SelectItem value="Verb">Verb</SelectItem>
+                            <SelectItem value="Adjective">Adjective</SelectItem>
+                            <SelectItem value="Adverb">Adverb</SelectItem>
+                            <SelectItem value="Preposition">Preposition</SelectItem>
+                            <SelectItem value="Conjunction">Conjunction</SelectItem>
+                            <SelectItem value="Pronoun">Pronoun</SelectItem>
+                            <SelectItem value="Interjection">Interjection</SelectItem>
+                            <SelectItem value="Article">Article</SelectItem>
+                            <SelectItem value="Phrase">Phrase</SelectItem>
+                          </SelectContent>
+                        </Select>
 
                         <div className="relative group/input">
                           <Input
@@ -1200,6 +1233,7 @@ export function FolderDetail() {
                 id: card.id,
                 front_text: card.front,
                 back_text: card.back,
+                part_of_speech: card.partOfSpeech,
                 front_image: card.frontImage,
                 back_image: card.backImage
               }))}
@@ -1217,6 +1251,7 @@ export function FolderDetail() {
                 id: card.id,
                 front_text: card.front,
                 back_text: card.back,
+                part_of_speech: card.partOfSpeech,
                 front_image: card.frontImage,
                 back_image: card.backImage
               }))}

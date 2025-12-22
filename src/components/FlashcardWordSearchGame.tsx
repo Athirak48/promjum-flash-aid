@@ -20,6 +20,7 @@ interface FlashcardWordSearchGameProps {
     flashcards: Flashcard[];
     onClose: () => void;
     onNext?: () => void;
+    onSelectNewGame?: () => void;
 }
 
 interface GridCell {
@@ -46,7 +47,7 @@ const COLORS = [
     'bg-purple-400/50', 'bg-pink-400/50', 'bg-indigo-400/50', 'bg-orange-400/50'
 ];
 
-export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: FlashcardWordSearchGameProps) {
+export function FlashcardWordSearchGame({ flashcards, onClose, onNext, onSelectNewGame }: FlashcardWordSearchGameProps) {
     const navigate = useNavigate();
     const { t } = useLanguage();
     const [grid, setGrid] = useState<GridCell[][]>([]);
@@ -586,6 +587,7 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-2 justify-center w-full">
+                                {/* ปุ่ม 1: เล่นใหม่ */}
                                 <Button
                                     onClick={initializeGame}
                                     className="w-full sm:flex-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition-all rounded-xl h-10 sm:h-12 text-xs sm:text-sm font-bold active:scale-95 px-4"
@@ -594,16 +596,12 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
                                 </Button>
 
                                 <div className="flex flex-row gap-2 w-full sm:contents">
+                                    {/* ปุ่ม 2: เกมใหม่ */}
                                     <Button
                                         onClick={() => {
-                                            const selectedVocab = flashcards.map(f => ({
-                                                id: f.id,
-                                                word: f.front_text,
-                                                meaning: f.back_text
-                                            }));
-                                            navigate('/ai-listening-section3-intro', {
-                                                state: { selectedVocab }
-                                            });
+                                            if (onSelectNewGame) {
+                                                onSelectNewGame();
+                                            }
                                         }}
                                         className="flex-1 sm:flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
                                     >
@@ -612,8 +610,9 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
                                         <span className="sm:hidden">{t('games.selectGameShort')}</span>
                                     </Button>
 
+                                    {/* ปุ่ม 3: ถัดไป - กลับชุดคำศัพท์ */}
                                     <Button
-                                        onClick={onNext || onClose}
+                                        onClick={onClose}
                                         className="flex-1 sm:flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
                                     >
                                         {t('common.next')}

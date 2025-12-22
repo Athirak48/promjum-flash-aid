@@ -14,6 +14,7 @@ interface FlashcardData {
   id: string;
   front: string;
   back: string;
+  partOfSpeech?: string;
   frontImage?: string | null;
   backImage?: string | null;
 }
@@ -28,9 +29,13 @@ interface FlashcardSwiperProps {
     cardStats: Record<string, { missCount: number }>;
   }) => void;
   onAnswer?: (cardId: string, known: boolean, timeTaken: number) => void;
+  /** Called when user wants to continue to next phase (for Learning Now flow) */
+  onContinue?: () => void;
+  /** Called when user wants to review again (for Learning Now flow) */
+  onReviewAgain?: () => void;
 }
 
-export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: FlashcardSwiperProps) {
+export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContinue, onReviewAgain }: FlashcardSwiperProps) {
   const { t } = useLanguage();
 
   // Core state
@@ -313,15 +318,53 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
               </div>
             </div>
 
+            {/* Missed vocabulary list */}
+            {Object.keys(cardStats).length > 0 && (
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-4 border border-red-200 dark:border-red-800 text-left">
+                <div className="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center gap-2">
+                  <X className="h-4 w-4" />
+                  คำที่ต้องทบทวน ({Object.keys(cardStats).length} คำ)
+                </div>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {cards.filter(card => cardStats[card.id]?.missCount > 0).map(card => (
+                    <div key={card.id} className="flex justify-between items-center text-sm bg-white/50 dark:bg-slate-800/50 rounded-lg px-3 py-2">
+                      <div>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">{card.front}</span>
+                        <span className="mx-2 text-slate-400">→</span>
+                        <span className="text-slate-500 dark:text-slate-400">{card.back}</span>
+                      </div>
+                      <span className="text-red-500 font-bold text-xs bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-full">
+                        ×{cardStats[card.id]?.missCount || 0}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-3 pt-4">
-              <Button onClick={() => window.location.reload()} className="flex-1 h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600">
-                <RotateCcw className="h-4 w-4 mr-2" />
-                เล่นอีกครั้ง
-              </Button>
-              <Button onClick={onClose} variant="outline" className="flex-1 h-12 rounded-xl border-2">
-                <X className="h-4 w-4 mr-2" />
-                ปิด
-              </Button>
+              {onReviewAgain ? (
+                <Button onClick={onReviewAgain} variant="outline" className="flex-1 h-12 rounded-xl border-2">
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  ทวนอีกครั้ง
+                </Button>
+              ) : (
+                <Button onClick={() => window.location.reload()} className="flex-1 h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600">
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  เล่นอีกครั้ง
+                </Button>
+              )}
+              {onContinue ? (
+                <Button onClick={onContinue} className="flex-1 h-12 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600">
+                  ไปต่อ
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button onClick={onClose} variant="outline" className="flex-1 h-12 rounded-xl border-2">
+                  <X className="h-4 w-4 mr-2" />
+                  ปิด
+                </Button>
+              )}
             </div>
           </div>
         </Card>
@@ -465,9 +508,16 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
                         </div>
                       )}
 
-                      <div className="text-3xl sm:text-4xl md:text-4xl lg:text-4xl font-bold text-slate-800 dark:text-white mb-4 leading-normal py-2 break-words line-clamp-4">
+                      <div className="text-3xl sm:text-4xl md:text-4xl lg:text-4xl font-bold text-slate-800 dark:text-white mb-2 leading-normal py-2 break-words line-clamp-4">
                         {currentCard.front}
                       </div>
+                      {currentCard.partOfSpeech && (
+                        <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/40 border border-purple-200 dark:border-purple-700 mb-4">
+                          <span className="text-sm font-semibold text-purple-700 dark:text-purple-300 italic">
+                            {currentCard.partOfSpeech}
+                          </span>
+                        </div>
+                      )}
                       <div className="text-sm md:text-base text-slate-400 font-medium absolute bottom-8">แตะเพื่อดูความหมาย</div>
                     </div>
                   </Card>

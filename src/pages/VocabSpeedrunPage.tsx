@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { UniversityChallengeView, IndividualChallengeView } from '@/components/university';
 
 // Mock data for leaderboard
 const MOCK_LEADERBOARD = [
@@ -122,6 +123,7 @@ export default function VocabSpeedrunPage() {
     const [finalTime, setFinalTime] = useState(0);
     const [isWarmup, setIsWarmup] = useState(false); // true = warmup mode, false = run mode
     const [showVocabList, setShowVocabList] = useState(false);
+    const [challengeMode, setChallengeMode] = useState<'university' | 'individual'>('individual');
 
     // Mock Vocabulary for Game (30 questions)
     const gameVocab = [
@@ -554,28 +556,53 @@ export default function VocabSpeedrunPage() {
                 )}
             </AnimatePresence>
 
-            {/* Header */}
-            <header className="border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10">
-                <div className="container mx-auto px-4 py-3">
-                    <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                        <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg">
-                                <Zap className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-lg font-bold">Vocab Speedrun</h1>
-                                <p className="text-xs text-muted-foreground">Race against time!</p>
-                            </div>
-                        </div>
+            {/* Challenge Mode Toggle */}
+            <div className="container mx-auto px-4 py-4">
+                <div className="flex justify-center">
+                    <div className="relative flex bg-slate-800 rounded-full p-1 shadow-lg">
+                        <motion.div
+                            layoutId="challengeModeToggle"
+                            className="absolute inset-y-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-md"
+                            style={{
+                                width: 'calc(50% - 4px)',
+                                left: challengeMode === 'individual' ? '4px' : 'calc(50%)',
+                            }}
+                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        />
+                        <button
+                            onClick={() => setChallengeMode('individual')}
+                            className={`relative z-10 w-32 py-1.5 text-[10px] font-bold tracking-wider transition-colors text-center ${challengeMode === 'individual' ? 'text-white' : 'text-slate-400'}`}
+                        >
+                            INDIVIDUAL
+                        </button>
+                        <button
+                            onClick={() => setChallengeMode('university')}
+                            className={`relative z-10 w-32 py-1.5 text-[10px] font-bold tracking-wider transition-colors text-center ${challengeMode === 'university' ? 'text-white' : 'text-slate-400'}`}
+                        >
+                            UNIVERSITY
+                        </button>
                     </div>
                 </div>
-            </header>
+            </div>
+
+            {/* Main Content - Conditional Rendering */}
+            {challengeMode === 'university' ? (
+                <UniversityChallengeView
+                    timeLeft={timeLeft}
+                    myStats={myStats}
+                    onStartGame={handleStartGame}
+                    onViewVocab={() => setShowVocabList(true)}
+                />
+            ) : (
+                <IndividualChallengeView
+                    timeLeft={timeLeft}
+                    myStats={myStats}
+                    onStartGame={handleStartGame}
+                />
+            )}
 
             {/* Main Content */}
-            <main className="container mx-auto px-4 py-6">
+            <main className="container mx-auto px-4 py-6 hidden">
                 <div className="grid lg:grid-cols-3 gap-6">
                     {/* Left Column - Main Content */}
                     <div className="lg:col-span-2 space-y-6">

@@ -60,9 +60,9 @@ const Navbar = () => {
 
   const userNavItems = [
     { href: "/dashboard", label: t('nav.dashboard') },
-    { href: "/decks", label: "Deck" },
-    { href: "/practice", label: "Practice" },
-    { href: "/flashcards", label: "ชุดคำศัพท์" },
+    { href: "/decks", label: "Shop" },
+    // { href: "/practice", label: "Practice" },
+    { href: "/flashcards", label: "Deck" },
     { href: "/vocab-challenge", label: "Vocab Challenge" },
     { href: "/feedback", label: "ความคิดเห็น" },
   ];

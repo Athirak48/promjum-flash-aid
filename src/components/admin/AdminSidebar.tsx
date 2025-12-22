@@ -12,7 +12,6 @@ import {
   CreditCard,
   BarChart3,
   Settings,
-  Layers,
   Trophy,
   TrendingUp
 } from 'lucide-react';
@@ -29,7 +28,6 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics' },
   { icon: BookOpen, label: 'Deck/Subdeck', path: '/admin/decks' },
-  { icon: Layers, label: 'Flashcards', path: '/admin/flashcards' },
   { icon: Trophy, label: 'Vocab Challenge', path: '/admin/vocab-challenge' },
   { icon: Users, label: 'Members', path: '/admin/members' },
   { icon: CreditCard, label: 'Subscriptions', path: '/admin/subscriptions' },

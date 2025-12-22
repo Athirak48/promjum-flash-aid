@@ -41,6 +41,7 @@ interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  challenge_nickname: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -111,6 +112,14 @@ export default function Profile() {
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string>('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Nickname state
+  const [nicknameDialogOpen, setNicknameDialogOpen] = useState(false);
+  const [nickname, setNickname] = useState('');
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [nicknameError, setNicknameError] = useState('');
+  const [checkingNickname, setCheckingNickname] = useState(false);
+  const [savingNickname, setSavingNickname] = useState(false);
 
   // Chart view mode state
   const [chartViewMode, setChartViewMode] = useState<'month' | 'year'>('month');
@@ -190,6 +199,8 @@ export default function Profile() {
         setProfile(data);
         setFullName(data.full_name || '');
         setBio(data.bio || '');
+        setNickname(data.challenge_nickname || '');
+        setNicknameInput(data.challenge_nickname || '');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -232,6 +243,95 @@ export default function Profile() {
     }
   };
 
+  // Check if nickname is available (not taken by another user)
+  const checkNicknameAvailability = async (inputNickname: string) => {
+    if (!inputNickname.trim() || inputNickname.length < 3) {
+      setNicknameError('ชื่อต้องมีอย่างน้อย 3 ตัวอักษร');
+      return false;
+    }
+    if (inputNickname.length > 20) {
+      setNicknameError('ชื่อต้องไม่เกิน 20 ตัวอักษร');
+      return false;
+    }
+    if (!/^[a-zA-Z0-9_ก-๙]+$/.test(inputNickname)) {
+      setNicknameError('ใช้ได้เฉพาะตัวอักษร ตัวเลข และ _ เท่านั้น');
+      return false;
+    }
+
+    setCheckingNickname(true);
+    setNicknameError('');
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('challenge_nickname')
+        .eq('challenge_nickname', inputNickname)
+        .neq('user_id', user?.id || '')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setNicknameError('ชื่อนี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น');
+        return false;
+      }
+
+      setNicknameError('');
+      return true;
+    } catch (error) {
+      console.error('Error checking nickname:', error);
+      setNicknameError('เกิดข้อผิดพลาดในการตรวจสอบ');
+      return false;
+    } finally {
+      setCheckingNickname(false);
+    }
+  };
+
+  // Save nickname to database
+  const saveNickname = async () => {
+    if (!user) return;
+
+    const isAvailable = await checkNicknameAvailability(nicknameInput);
+    if (!isAvailable) return;
+
+    setSavingNickname(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          challenge_nickname: nicknameInput.trim(),
+        });
+
+      if (error) {
+        // Check if it's a unique constraint violation
+        if (error.code === '23505') {
+          setNicknameError('ชื่อนี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น');
+          return;
+        }
+        throw error;
+      }
+
+      setNickname(nicknameInput.trim());
+      toast({
+        title: "บันทึกสำเร็จ! 🎉",
+        description: "ตั้งชื่อ Challenge เรียบร้อยแล้ว",
+        className: "bg-green-50 border-green-200 text-green-800"
+      });
+
+      fetchProfile();
+      setNicknameDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving nickname:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถบันทึกชื่อได้",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingNickname(false);
+    }
+  };
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -257,23 +357,48 @@ export default function Profile() {
           </Link>
         </div>
 
-        {/* Profile Header Card */}
+        {/* Profile Header Card - Cute Edition */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6"
         >
-          <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card via-card to-muted/30">
-            <CardContent className="p-6 sm:p-8">
+          <Card className="overflow-hidden border-0 shadow-xl relative">
+            {/* Gradient Background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-100 via-pink-50 to-purple-100 dark:from-purple-950/50 dark:via-pink-950/30 dark:to-purple-950/50" />
+            {/* Floating Decorations */}
+            <motion.div
+              className="absolute top-4 right-8 text-2xl z-10"
+              animate={{ y: [0, -8, 0], rotate: [0, 15, -15, 0] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >⭐</motion.div>
+            <motion.div
+              className="absolute top-8 right-20 text-xl z-10"
+              animate={{ y: [0, -5, 0], scale: [1, 1.2, 1] }}
+              transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+            >✨</motion.div>
+            <motion.div
+              className="absolute bottom-6 right-12 text-lg z-10"
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+            >💫</motion.div>
+            <CardContent className="p-6 sm:p-8 relative z-10">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                 {/* Avatar with Level Badge - Clickable */}
                 <Dialog open={avatarDialogOpen} onOpenChange={setAvatarDialogOpen}>
                   <DialogTrigger asChild>
                     <div className="relative cursor-pointer group">
-                      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 p-1 group-hover:from-primary/40 group-hover:to-secondary/40 transition-all">
-                        <Avatar className="w-full h-full border-4 border-card">
+                      {/* Sparkle Ring Animation */}
+                      <motion.div
+                        className="absolute rounded-full border-2 border-dashed border-purple-300 dark:border-purple-600"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                        style={{ width: 136, height: 136, top: -4, left: -4 }}
+                      />
+                      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-500 p-1 group-hover:scale-105 transition-all shadow-xl">
+                        <Avatar className="w-full h-full border-4 border-white dark:border-slate-800">
                           <AvatarImage src={selectedAvatar || profile?.avatar_url || ''} />
-                          <AvatarFallback className="text-4xl bg-gradient-to-br from-primary to-secondary text-white">
+                          <AvatarFallback className="text-4xl bg-gradient-to-br from-purple-500 to-pink-500 text-white">
                             {displayName.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -282,11 +407,15 @@ export default function Profile() {
                           <Edit3 className="w-8 h-8 text-white" />
                         </div>
                       </div>
-                      {/* Level Badge */}
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg flex items-center gap-1">
-                        <Flame className="w-4 h-4" />
+                      {/* Level Badge - Cute Style */}
+                      <motion.div
+                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg flex items-center gap-1.5 border-2 border-white dark:border-slate-800"
+                        animate={{ y: [0, -3, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <span>🔥</span>
                         Lv.{Math.floor(stats.totalXP / 1000) + 1}
-                      </div>
+                      </motion.div>
                     </div>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-lg">
@@ -371,9 +500,102 @@ export default function Profile() {
                 <div className="flex-1 text-center sm:text-left">
                   <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
                     <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                      {displayName}
+                      {nickname || displayName}
                     </h1>
                     <CheckCircle2 className="w-6 h-6 text-blue-500" />
+
+                    {/* Nickname Edit Button */}
+                    <Dialog open={nicknameDialogOpen} onOpenChange={(open) => {
+                      setNicknameDialogOpen(open);
+                      if (open) {
+                        setNicknameInput(nickname || displayName);
+                        setNicknameError('');
+                      }
+                    }}>
+                      <DialogTrigger asChild>
+                        <button className="p-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 transition-colors group">
+                          <Edit3 className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-3 text-xl">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                              <span className="text-xl">✏️</span>
+                            </div>
+                            ตั้งชื่อ Challenge
+                          </DialogTitle>
+                        </DialogHeader>
+
+                        <div className="space-y-4 pt-4">
+                          <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-100 dark:border-purple-900/30">
+                            <p className="text-sm text-muted-foreground mb-1">💡 เคล็ดลับ</p>
+                            <p className="text-xs text-muted-foreground">ชื่อนี้จะแสดงในอันดับ Challenge และเมื่อเพิ่มเพื่อน</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="nickname" className="flex items-center gap-2">
+                              <span className="text-lg">🎮</span>
+                              ชื่อ Challenge
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id="nickname"
+                                value={nicknameInput}
+                                onChange={(e) => {
+                                  setNicknameInput(e.target.value);
+                                  setNicknameError('');
+                                }}
+                                placeholder="ใส่ชื่อของคุณ..."
+                                className={`h-12 text-lg font-medium rounded-xl pr-10 ${nicknameError ? 'border-red-500 focus-visible:ring-red-500' :
+                                  ''
+                                  }`}
+                                maxLength={20}
+                              />
+                              {checkingNickname && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                  <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                                </div>
+                              )}
+                            </div>
+                            {nicknameError && (
+                              <p className="text-sm text-red-500 flex items-center gap-1">
+                                <span>❌</span> {nicknameError}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {nicknameInput.length}/20 ตัวอักษร • ใช้ได้: ก-ฮ, A-Z, 0-9, _
+                            </p>
+                          </div>
+
+                          <div className="flex gap-3 pt-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => setNicknameDialogOpen(false)}
+                              className="flex-1 rounded-xl"
+                            >
+                              ยกเลิก
+                            </Button>
+                            <Button
+                              onClick={saveNickname}
+                              disabled={savingNickname || checkingNickname || !nicknameInput.trim()}
+                              className="flex-1 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                            >
+                              {savingNickname ? (
+                                <span className="flex items-center gap-2">
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  กำลังบันทึก...
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-2">
+                                  <span>✨</span> บันทึก
+                                </span>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                   <p className="text-primary font-medium mb-2">{Math.floor(stats.totalXP / 1000) > 10 ? 'Elite Learner 🎓' : DEFAULT_STATS.title}</p>
                   {bio && (
@@ -382,20 +604,43 @@ export default function Profile() {
                     </p>
                   )}
 
-                  {/* XP Progress */}
-                  <div className="mt-4 max-w-sm mx-auto sm:mx-0">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">EXP Progress</span>
-                      <span className="font-medium text-foreground">{stats.totalXP % 1000} / 1000</span>
+                  {/* XP Progress - Cute Enhanced */}
+                  <div className="mt-5 bg-white/60 dark:bg-slate-800/60 rounded-2xl p-4 backdrop-blur-sm max-w-md mx-auto sm:mx-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">⚡</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-200 font-semibold">EXP Progress</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{stats.totalXP % 1000}</span>
+                        <span className="text-xs text-slate-400">/ 1000 XP</span>
+                      </div>
                     </div>
-                    <Progress value={(stats.totalXP % 1000) / 10} className="h-2" />
+                    <div className="h-3 bg-gradient-to-r from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-600 rounded-full overflow-hidden shadow-inner">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-400 rounded-full relative"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.max((stats.totalXP % 1000) / 10, 5)}%` }}
+                        transition={{ duration: 1.2, ease: "easeOut" }}
+                      >
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                          animate={{ x: ["-100%", "200%"] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        />
+                      </motion.div>
+                    </div>
+                    <div className="flex justify-between mt-1.5 text-[10px] text-slate-400">
+                      <span>อีก {1000 - (stats.totalXP % 1000)} XP จะถึงเลเวลถัดไป! 🎯</span>
+                      <span>{Math.round((stats.totalXP % 1000) / 10)}%</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Action Buttons - Only Share now */}
+                {/* Action Buttons - Cute Style */}
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Share2 className="w-4 h-4" />
+                  <Button variant="outline" size="sm" className="gap-2 rounded-full border-purple-200 hover:bg-purple-50 text-purple-600 hover:text-purple-700 px-4">
+                    <span>🎉</span>
                     Share
                   </Button>
                 </div>

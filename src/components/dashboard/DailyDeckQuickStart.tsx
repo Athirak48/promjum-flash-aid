@@ -11,6 +11,7 @@ import { GameSelectionDialog } from '@/components/GameSelectionDialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { LearningFlowDialog } from '@/components/learning/LearningFlowDialog';
 
 interface DailyDeckQuickStartProps {
   streak?: number;
@@ -26,6 +27,7 @@ export function DailyDeckQuickStart({
   const navigate = useNavigate();
   const [showModeDialog, setShowModeDialog] = useState(false);
   const [showGameSelection, setShowGameSelection] = useState(false);
+  const [showLearningFlow, setShowLearningFlow] = useState(false);
   const { flashcards } = useFlashcards();
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -382,7 +384,7 @@ export function DailyDeckQuickStart({
             className="flex-1"
           >
             <Button
-              onClick={() => setShowModeDialog(true)}
+              onClick={() => setShowLearningFlow(true)}
               className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold shadow-lg hover:shadow-xl transition-all"
             >
               <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 fill-current" />
@@ -469,6 +471,12 @@ export function DailyDeckQuickStart({
           open={showGameSelection}
           onOpenChange={setShowGameSelection}
           onSelectGame={handleGameSelect}
+        />
+
+        {/* Learning Flow Dialog */}
+        <LearningFlowDialog
+          open={showLearningFlow}
+          onOpenChange={setShowLearningFlow}
         />
       </CardContent>
     </Card>

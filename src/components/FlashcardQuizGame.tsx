@@ -20,6 +20,7 @@ interface FlashcardQuizGameProps {
   flashcards: Flashcard[];
   onClose: () => void;
   onNext?: () => void;
+  onSelectNewGame?: () => void;
 }
 
 interface QuizQuestion {
@@ -28,7 +29,7 @@ interface QuizQuestion {
   correctAnswer: string;
 }
 
-export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuizGameProps) {
+export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame }: FlashcardQuizGameProps) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { updateFromQuiz } = useSRSProgress();
@@ -180,14 +181,18 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
 
             <Button
               onClick={() => {
-                const selectedVocab = flashcards.map(f => ({
-                  id: f.id,
-                  word: f.front_text,
-                  meaning: f.back_text
-                }));
-                navigate('/ai-listening-section3-intro', {
-                  state: { selectedVocab }
-                });
+                if (onSelectNewGame) {
+                  onSelectNewGame();
+                } else {
+                  const selectedVocab = flashcards.map(f => ({
+                    id: f.id,
+                    word: f.front_text,
+                    meaning: f.back_text
+                  }));
+                  navigate('/ai-listening-section3-intro', {
+                    state: { selectedVocab }
+                  });
+                }
               }}
               className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
             >
@@ -197,7 +202,7 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext }: FlashcardQuiz
             </Button>
 
             <Button
-              onClick={onNext || onClose}
+              onClick={onClose}
               className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
             >
               {t('common.next')}

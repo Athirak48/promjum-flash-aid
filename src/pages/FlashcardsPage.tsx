@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -242,10 +243,14 @@ function DraggableFlashcardSet({
 }
 function DroppableFolder({
   folder,
-  onDrop
+  onDrop,
+  onRename,
+  onDelete
 }: {
   folder: Folder;
   onDrop: (setId: string, folderId: string) => void;
+  onRename: (folder: Folder) => void;
+  onDelete: (folder: Folder) => void;
 }) {
   const {
     t
@@ -293,11 +298,11 @@ function DroppableFolder({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="rounded-xl">
-            <DropdownMenuItem className="rounded-lg">
+            <DropdownMenuItem className="rounded-lg" onClick={(e) => { e.stopPropagation(); onRename(folder); }}>
               <Edit className="h-4 w-4 mr-2" />
               {t('common.rename')}
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive rounded-lg">
+            <DropdownMenuItem className="text-destructive rounded-lg" onClick={(e) => { e.stopPropagation(); onDelete(folder); }}>
               <Trash className="h-4 w-4 mr-2" />
               {t('common.delete')}
             </DropdownMenuItem>
@@ -316,16 +321,23 @@ export default function FlashcardsPage() {
   const [showCreateFlashcardDialog, setShowCreateFlashcardDialog] = useState(false);
   const [newFlashcardSetTitle, setNewFlashcardSetTitle] = useState('');
   const [selectedFolderForFlashcard, setSelectedFolderForFlashcard] = useState<string>('');
-  const [flashcardRows, setFlashcardRows] = useState([{
-    id: 1,
-    front: '',
-    back: '',
-    frontImage: null as File | null,
-    backImage: null as File | null
-  }]);
+  const [flashcardRows, setFlashcardRows] = useState([
+    { id: 1, front: '', back: '', partOfSpeech: 'Noun', frontImage: null as File | null, backImage: null as File | null },
+    { id: 2, front: '', back: '', partOfSpeech: 'Noun', frontImage: null as File | null, backImage: null as File | null },
+    { id: 3, front: '', back: '', partOfSpeech: 'Noun', frontImage: null as File | null, backImage: null as File | null },
+    { id: 4, front: '', back: '', partOfSpeech: 'Noun', frontImage: null as File | null, backImage: null as File | null },
+    { id: 5, front: '', back: '', partOfSpeech: 'Noun', frontImage: null as File | null, backImage: null as File | null },
+  ]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
   const [loadingFolders, setLoadingFolders] = useState(true);
+
+  // Rename/Delete folder states
+  const [folderToRename, setFolderToRename] = useState<Folder | null>(null);
+  const [renameText, setRenameText] = useState('');
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { flashcards, loading } = useFlashcards();
 
   // Fetch folders from Supabase
@@ -475,22 +487,118 @@ export default function FlashcardsPage() {
       });
     }
   };
+
+  // Rename folder handler
+  const handleOpenRenameDialog = (folder: Folder) => {
+    setFolderToRename(folder);
+    setRenameText(folder.title);
+    setShowRenameDialog(true);
+  };
+
+  const handleRenameFolder = async () => {
+    if (!folderToRename || !renameText.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_folders')
+        .update({ title: renameText.trim() })
+        .eq('id', folderToRename.id);
+
+      if (error) throw error;
+
+      setFolders(prev => prev.map(f =>
+        f.id === folderToRename.id ? { ...f, title: renameText.trim() } : f
+      ));
+      setShowRenameDialog(false);
+      setFolderToRename(null);
+      setRenameText('');
+
+      toast({
+        title: "เปลี่ยนชื่อสำเร็จ",
+        description: `เปลี่ยนชื่อโฟลเดอร์เป็น "${renameText.trim()}" แล้ว`,
+      });
+    } catch (error) {
+      console.error('Error renaming folder:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถเปลี่ยนชื่อโฟลเดอร์ได้",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Delete folder handler
+  const handleOpenDeleteDialog = (folder: Folder) => {
+    setFolderToDelete(folder);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteFolder = async () => {
+    if (!folderToDelete) return;
+
+    try {
+      // First, move all flashcard sets in this folder to no folder
+      const { error: updateError } = await supabase
+        .from('user_flashcard_sets')
+        .update({ folder_id: null })
+        .eq('folder_id', folderToDelete.id);
+
+      if (updateError) throw updateError;
+
+      // Then delete the folder
+      const { error } = await supabase
+        .from('user_folders')
+        .delete()
+        .eq('id', folderToDelete.id);
+
+      if (error) throw error;
+
+      setFolders(prev => prev.filter(f => f.id !== folderToDelete.id));
+      setShowDeleteDialog(false);
+      setFolderToDelete(null);
+
+      // Refresh to update flashcard sets
+      await fetchFolders();
+
+      toast({
+        title: "ลบโฟลเดอร์สำเร็จ",
+        description: `ลบโฟลเดอร์ "${folderToDelete.title}" แล้ว`,
+      });
+    } catch (error) {
+      console.error('Error deleting folder:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถลบโฟลเดอร์ได้",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const flashcardScrollRef = React.useRef<HTMLDivElement>(null);
+
   const handleAddFlashcardRow = () => {
     const newRow = {
       id: Date.now(),
       front: '',
       back: '',
+      partOfSpeech: 'Noun',
       frontImage: null as File | null,
       backImage: null as File | null
     };
     setFlashcardRows([...flashcardRows, newRow]);
+    // Scroll to bottom after adding
+    setTimeout(() => {
+      if (flashcardScrollRef.current) {
+        flashcardScrollRef.current.scrollTop = flashcardScrollRef.current.scrollHeight;
+      }
+    }, 100);
   };
   const handleRemoveFlashcardRow = (id: number) => {
     if (flashcardRows.length > 1) {
       setFlashcardRows(flashcardRows.filter(row => row.id !== id));
     }
   };
-  const handleFlashcardTextChange = (id: number, field: 'front' | 'back', value: string) => {
+  const handleFlashcardTextChange = (id: number, field: 'front' | 'back' | 'partOfSpeech', value: string) => {
     setFlashcardRows(rows => rows.map(row => row.id === id ? {
       ...row,
       [field]: value
@@ -564,7 +672,8 @@ export default function FlashcardsPage() {
         user_id: user.id,
         flashcard_set_id: flashcardSet.id,
         front_text: row.front.trim(),
-        back_text: row.back.trim()
+        back_text: row.back.trim(),
+        part_of_speech: row.partOfSpeech || 'Noun'
       }));
 
       const { error: flashcardsError } = await supabase
@@ -580,13 +689,13 @@ export default function FlashcardsPage() {
       setShowCreateFlashcardDialog(false);
       setNewFlashcardSetTitle('');
       setSelectedFolderForFlashcard('');
-      setFlashcardRows([{
-        id: 1,
-        front: '',
-        back: '',
-        frontImage: null,
-        backImage: null
-      }]);
+      setFlashcardRows([
+        { id: 1, front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null },
+        { id: 2, front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null },
+        { id: 3, front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null },
+        { id: 4, front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null },
+        { id: 5, front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null },
+      ]);
 
       toast({
         title: "สร้างแฟลชการ์ดสำเร็จ",
@@ -607,289 +716,358 @@ export default function FlashcardsPage() {
   );
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-background">
-        <BackgroundDecorations />
-        <div className="container mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                {t('flashcards.title')}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {t('flashcards.subtitle')}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {/* Search */}
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t('flashcards.search')}
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+    <>
+      <DndProvider backend={HTML5Backend}>
+        <div className="min-h-screen bg-background">
+          <BackgroundDecorations />
+          <div className="container mx-auto px-4 py-8">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  {t('flashcards.title')}
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  {t('flashcards.subtitle')}
+                </p>
               </div>
+              <div className="flex flex-wrap gap-3">
+                {/* Search */}
+                <div className="relative w-full md:w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t('flashcards.search')}
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
 
-              {/* Create Flashcard Button */}
-              <Dialog open={showCreateFlashcardDialog} onOpenChange={setShowCreateFlashcardDialog}>
-                <DialogTrigger asChild>
-                  <Button className="w-full md:w-auto bg-gradient-primary text-primary-foreground hover:shadow-glow">
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t('flashcards.createFlashcard')}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-bold">สร้างแฟลชการ์ดใหม่</DialogTitle>
-                    <DialogDescription>
-                      สร้างแฟลชการ์ดใหม่สำหรับการเรียนรู้ของคุณ
-                    </DialogDescription>
-                  </DialogHeader>
+                {/* Create Flashcard Button */}
+                <Dialog open={showCreateFlashcardDialog} onOpenChange={setShowCreateFlashcardDialog}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full md:w-auto bg-gradient-primary text-primary-foreground hover:shadow-glow">
+                      <Plus className="h-4 w-4 mr-2" />
+                      {t('flashcards.createFlashcard')}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-6 rounded-2xl">
+                    <DialogHeader>
+                      <DialogTitle className="text-xl font-bold">สร้างแฟลชการ์ดใหม่</DialogTitle>
+                      <DialogDescription>
+                        สร้างชุดคำศัพท์ใหม่สำหรับการเรียนรู้ของคุณ
+                      </DialogDescription>
+                    </DialogHeader>
 
-                  <div className="space-y-6 flex-1 flex flex-col min-h-0">
-                    {/* Flashcard Set Title */}
-                    <div className="space-y-2">
-                      <Label htmlFor="flashcard-set-title" className="text-sm font-medium">
-                        ชื่อชุดแฟลชการ์ด *
-                      </Label>
-                      <Input
-                        id="flashcard-set-title"
-                        placeholder="เช่น คำศัพท์ภาษาอังกฤษพื้นฐาน"
-                        value={newFlashcardSetTitle}
-                        onChange={(e) => setNewFlashcardSetTitle(e.target.value)}
-                        className="w-full"
-                      />
-                    </div>
-
-                    {/* Folder Selection Section */}
-                    <div className="border-t pt-4">
-                      <Label className="text-sm font-medium mb-3 block">จัดเก็บในโฟลเดอร์</Label>
-                      <div className="flex gap-3">
-                        {/* Create New Folder Button */}
-                        <Button variant="outline" onClick={() => setShowNewFolderDialog(true)} className="flex items-center gap-2 flex-shrink-0">
-                          <FolderPlus className="h-4 w-4" />
-                          สร้างโฟลเดอร์ใหม่
-                        </Button>
-
-                        {/* Folder Dropdown with Search */}
+                    <div className="space-y-4 flex-1 flex flex-col min-h-0 mt-4">
+                      {/* Title + Folder Row - Inline Layout */}
+                      <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+                        {/* Flashcard Set Title */}
                         <div className="flex-1">
-                          <Select value={selectedFolderForFlashcard} onValueChange={setSelectedFolderForFlashcard}>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="เลือกโฟลเดอร์ (ไม่บังคับ)" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">ไม่เลือกโฟลเดอร์</SelectItem>
-                              {folders.map(folder => (
-                                <SelectItem key={folder.id} value={folder.id}>
-                                  <div className="flex items-center gap-2">
-                                    <Folder className="h-4 w-4" />
-                                    {folder.title}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Label htmlFor="flashcard-set-title" className="text-sm font-medium mb-1.5 block">
+                            ชื่อชุดแฟลชการ์ด *
+                          </Label>
+                          <Input
+                            id="flashcard-set-title"
+                            placeholder="เช่น คำศัพท์ภาษาอังกฤษพื้นฐาน"
+                            value={newFlashcardSetTitle}
+                            onChange={(e) => setNewFlashcardSetTitle(e.target.value)}
+                            className="w-full"
+                          />
+                        </div>
+
+                        {/* Folder Selection */}
+                        <div className="md:w-[280px]">
+                          <Label className="text-sm font-medium mb-1.5 block">โฟลเดอร์</Label>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="icon" onClick={() => setShowNewFolderDialog(true)} className="h-10 w-10 flex-shrink-0" title="สร้างโฟลเดอร์ใหม่">
+                              <FolderPlus className="h-4 w-4" />
+                            </Button>
+                            <Select value={selectedFolderForFlashcard} onValueChange={setSelectedFolderForFlashcard}>
+                              <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="เลือกโฟลเดอร์" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">ไม่เลือกโฟลเดอร์</SelectItem>
+                                {folders.map(folder => (
+                                  <SelectItem key={folder.id} value={folder.id}>
+                                    <div className="flex items-center gap-2">
+                                      <Folder className="h-4 w-4" />
+                                      {folder.title}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Headers - Hidden on mobile, shown on desktop */}
-                    <div className="hidden md:grid grid-cols-2 gap-4 px-4 mb-2">
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">ด้านหน้า</Label>
+                      {/* Section Header */}
+                      <div className="flex items-center justify-between border-t pt-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200">รายการคำศัพท์</Label>
+                        <Badge variant="secondary" className="text-xs">{flashcardRows.length} ใบ</Badge>
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">ด้านหลัง</Label>
-                      </div>
-                    </div>
 
-                    {/* Flashcard Rows */}
-                    <div className="space-y-4 flex-1 overflow-y-auto pr-2">
-                      {flashcardRows.map((row, index) => (
-                        <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-xl bg-card hover:shadow-md transition-all duration-200 relative">
-                          <div className="flex items-center justify-between w-full sm:w-auto sm:justify-center">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 sm:bg-transparent">
-                              <span className="text-sm sm:text-lg font-semibold text-muted-foreground/70">
-                                {index + 1}
-                              </span>
+                      {/* Flashcard Rows - Expanded Area */}
+                      <div ref={flashcardScrollRef} className="space-y-3 flex-1 overflow-y-auto pr-2 min-h-[250px] max-h-[40vh]">
+                        {flashcardRows.map((row, index) => (
+                          <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-xl bg-card hover:shadow-md transition-all duration-200 relative">
+                            <div className="flex items-center justify-between w-full sm:w-auto sm:justify-center">
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 sm:bg-transparent">
+                                <span className="text-sm sm:text-lg font-semibold text-muted-foreground/70">
+                                  {index + 1}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="sm:hidden text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-8 w-8 rounded-full"
+                                onClick={() => handleRemoveFlashcardRow(row.id)}
+                                disabled={flashcardRows.length === 1}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
                             </div>
+
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-4 w-full items-center">
+                              {/* Front Side */}
+                              <div className="relative group/input">
+                                <Input
+                                  value={row.front}
+                                  onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
+                                  placeholder="คำศัพท์ (ด้านหน้า)"
+                                  className="pr-10 h-10 sm:h-11 rounded-full bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 transition-all font-medium text-sm sm:text-base"
+                                />
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                  {row.frontImage && (
+                                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden border border-border">
+                                      <img
+                                        src={URL.createObjectURL(row.frontImage)}
+                                        alt="Front"
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${row.frontImage ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
+                                    onClick={() => handleImageUpload(row.id, 'front')}
+                                    title={row.frontImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
+                                  >
+                                    <ImagePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Part of Speech Dropdown */}
+                              <Select
+                                value={row.partOfSpeech}
+                                onValueChange={(value) => handleFlashcardTextChange(row.id, 'partOfSpeech', value)}
+                              >
+                                <SelectTrigger className="w-full md:w-[160px] h-11 sm:h-12 rounded-full bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-200 dark:border-purple-700 focus:ring-purple-500 text-sm font-medium px-4">
+                                  <SelectValue placeholder="Part of Speech" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Noun">Noun</SelectItem>
+                                  <SelectItem value="Verb">Verb</SelectItem>
+                                  <SelectItem value="Adjective">Adjective</SelectItem>
+                                  <SelectItem value="Adverb">Adverb</SelectItem>
+                                  <SelectItem value="Preposition">Preposition</SelectItem>
+                                  <SelectItem value="Conjunction">Conjunction</SelectItem>
+                                  <SelectItem value="Pronoun">Pronoun</SelectItem>
+                                  <SelectItem value="Interjection">Interjection</SelectItem>
+                                  <SelectItem value="Article">Article</SelectItem>
+                                  <SelectItem value="Phrase">Phrase</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {/* Back Side */}
+                              <div className="relative group/input">
+                                <Input
+                                  value={row.back}
+                                  onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
+                                  placeholder="ความหมาย (ด้านหลัง)"
+                                  className="pr-10 h-10 sm:h-11 rounded-full bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 transition-all font-medium text-sm sm:text-base"
+                                />
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                  {row.backImage && (
+                                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden border border-border">
+                                      <img
+                                        src={URL.createObjectURL(row.backImage)}
+                                        alt="Back"
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${row.backImage ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
+                                    onClick={() => handleImageUpload(row.id, 'back')}
+                                    title={row.backImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
+                                  >
+                                    <ImagePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="sm:hidden text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-8 w-8 rounded-full"
+                              className="hidden sm:flex text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-9 w-9 rounded-full opacity-0 group-hover:opacity-100 transition-all"
                               onClick={() => handleRemoveFlashcardRow(row.id)}
                               disabled={flashcardRows.length === 1}
                             >
                               <Trash className="h-4 w-4" />
                             </Button>
                           </div>
+                        ))}
 
-                          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full">
-                            {/* Front Side */}
-                            <div className="relative group/input">
-                              <Input
-                                value={row.front}
-                                onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
-                                placeholder="คำศัพท์ (ด้านหน้า)"
-                                className="pr-10 h-10 sm:h-11 rounded-full bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 transition-all font-medium text-sm sm:text-base"
-                              />
-                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                                {row.frontImage && (
-                                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden border border-border">
-                                    <img
-                                      src={URL.createObjectURL(row.frontImage)}
-                                      alt="Front"
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${row.frontImage ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
-                                  onClick={() => handleImageUpload(row.id, 'front')}
-                                  title={row.frontImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
-                                >
-                                  <ImagePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* Back Side */}
-                            <div className="relative group/input">
-                              <Input
-                                value={row.back}
-                                onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
-                                placeholder="ความหมาย (ด้านหลัง)"
-                                className="pr-10 h-10 sm:h-11 rounded-full bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 transition-all font-medium text-sm sm:text-base"
-                              />
-                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                                {row.backImage && (
-                                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden border border-border">
-                                    <img
-                                      src={URL.createObjectURL(row.backImage)}
-                                      alt="Back"
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${row.backImage ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
-                                  onClick={() => handleImageUpload(row.id, 'back')}
-                                  title={row.backImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
-                                >
-                                  <ImagePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-
+                        {/* Add Row Button - Inside Scroll Area */}
+                        <div className="flex justify-center py-4">
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="hidden sm:flex text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-9 w-9 rounded-full opacity-0 group-hover:opacity-100 transition-all"
-                            onClick={() => handleRemoveFlashcardRow(row.id)}
-                            disabled={flashcardRows.length === 1}
+                            variant="outline"
+                            onClick={handleAddFlashcardRow}
+                            className="text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300 rounded-full px-6"
                           >
-                            <Trash className="h-4 w-4" />
+                            <Plus className="h-4 w-4 mr-2" />
+                            เพิ่มแถว
                           </Button>
                         </div>
-                      ))}
+                      </div>
                     </div>
 
-                    {/* Add Row Button */}
-                    <div className="flex justify-center">
+                    {/* Footer - Fixed at bottom */}
+                    <div className="flex items-center justify-between pt-4 border-t mt-2">
                       <Button
-                        variant="outline"
-                        onClick={handleAddFlashcardRow}
-                        className="text-pink-600 border-pink-200 hover:bg-pink-50 hover:border-pink-300"
+                        variant="ghost"
+                        onClick={() => setShowCreateFlashcardDialog(false)}
+                        className="text-muted-foreground"
                       >
-                        <Plus className="h-4 w-4 mr-2" />
-                        เพิ่มแถว
+                        ยกเลิก
                       </Button>
-                    </div>
-
-                    {/* Create Button */}
-                    <div className="flex justify-end pt-4">
                       <Button
                         onClick={handleCreateFlashcards}
-                        className="bg-gradient-primary text-primary-foreground hover:shadow-glow px-8 py-2"
+                        className="bg-gradient-primary text-primary-foreground hover:shadow-glow px-6"
                       >
-                        สร้าง
+                        สร้างชุดแฟลชการ์ด
                       </Button>
                     </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
 
-              {/* Create Folder Button */}
-              <Dialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full md:w-auto">
-                    <FolderPlus className="h-4 w-4 mr-2" />
-                    {t('flashcards.createFolder')}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{t('flashcards.createFolder')}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <Input
-                      placeholder={t('flashcards.enterFolderName')}
-                      value={newFolderName}
-                      onChange={e => setNewFolderName(e.target.value)}
-                    />
-                    <div className="flex gap-2">
-                      <Button onClick={handleCreateFolder} className="flex-1">
-                        {t('flashcards.create')}
-                      </Button>
-                      <Button variant="outline" onClick={() => setShowNewFolderDialog(false)}>
-                        {t('flashcards.cancel')}
-                      </Button>
+                {/* Create Folder Button */}
+                <Dialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full md:w-auto">
+                      <FolderPlus className="h-4 w-4 mr-2" />
+                      {t('flashcards.createFolder')}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{t('flashcards.createFolder')}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <Input
+                        placeholder={t('flashcards.enterFolderName')}
+                        value={newFolderName}
+                        onChange={e => setNewFolderName(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <Button onClick={handleCreateFolder} className="flex-1">
+                          {t('flashcards.create')}
+                        </Button>
+                        <Button variant="outline" onClick={() => setShowNewFolderDialog(false)}>
+                          {t('flashcards.cancel')}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-
-          {/* Folders Section */}
-          {folders.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Folder className="h-5 w-5" />
-                {t('common.folders')}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {folders.map(folder => (
-                  <DroppableFolder key={folder.id} folder={folder} onDrop={handleMoveToFolder} />
-                ))}
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
-          )}
 
-          {/* Empty State */}
-          {folders.length === 0 && (
-            <div className="text-center py-12">
-              <Folder className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">{t('flashcards.noSets')}</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm ? t('flashcards.noSearchResults') : t('flashcards.noSetsDesc')}
-              </p>
-              <Button onClick={() => setShowNewFolderDialog(true)}>
-                <FolderPlus className="h-4 w-4 mr-2" />
-                {t('flashcards.createFolder')}
-              </Button>
-            </div>
-          )}
+            {/* Folders Section */}
+            {folders.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <Folder className="h-5 w-5" />
+                  {t('common.folders')}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {folders.map(folder => (
+                    <DroppableFolder key={folder.id} folder={folder} onDrop={handleMoveToFolder} onRename={handleOpenRenameDialog} onDelete={handleOpenDeleteDialog} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {folders.length === 0 && (
+              <div className="text-center py-12">
+                <Folder className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">{t('flashcards.noSets')}</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchTerm ? t('flashcards.noSearchResults') : t('flashcards.noSetsDesc')}
+                </p>
+                <Button onClick={() => setShowNewFolderDialog(true)}>
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  {t('flashcards.createFolder')}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </DndProvider>
+      </DndProvider>
+
+      {/* Rename Folder Dialog */}
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>เปลี่ยนชื่อโฟลเดอร์</DialogTitle>
+            <DialogDescription>
+              กรุณาใส่ชื่อใหม่สำหรับโฟลเดอร์
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="ชื่อโฟลเดอร์"
+              value={renameText}
+              onChange={e => setRenameText(e.target.value)}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+                ยกเลิก
+              </Button>
+              <Button onClick={handleRenameFolder}>
+                บันทึก
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Folder Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ลบโฟลเดอร์นี้?</AlertDialogTitle>
+            <AlertDialogDescription>
+              คุณแน่ใจหรือว่าต้องการลบโฟลเดอร์ "{folderToDelete?.title}" ชุดแฟลชการ์ดที่อยู่ในโฟลเดอร์จะถูกย้ายออกมา
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteFolder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              ลบโฟลเดอร์
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

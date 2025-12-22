@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,8 +59,8 @@ interface VocabWord {
     difficulty?: 'easy' | 'medium' | 'hard';
 }
 
-// Mock Data - Rankings
-const mockRankings: RankingEntry[] = [
+// Mock Data - Rankings (UNIVERSITY Mode)
+const mockUniversityRankings: RankingEntry[] = [
     { rank: 1, userId: 'u001', displayName: 'สมชาย เก่งมาก', email: 'somchai@example.com', bestTime: 8.4300, bestWordCount: 30, accuracy: 100, gamesPlayed: 156, lastPlayed: '2024-12-14T10:30:00' },
     { rank: 2, userId: 'u002', displayName: 'สมหญิง ฉลาด', email: 'somying@example.com', bestTime: 9.2150, bestWordCount: 30, accuracy: 100, gamesPlayed: 89, lastPlayed: '2024-12-14T09:15:00' },
     { rank: 3, userId: 'u003', displayName: 'JohnDoe123', email: 'john@example.com', bestTime: 10.5420, bestWordCount: 30, accuracy: 96.7, gamesPlayed: 234, lastPlayed: '2024-12-13T22:45:00' },
@@ -70,6 +71,20 @@ const mockRankings: RankingEntry[] = [
     { rank: 8, userId: 'u008', displayName: 'StudyHard', email: 'study@example.com', bestTime: 15.7800, bestWordCount: 25, accuracy: 83.3, gamesPlayed: 34, lastPlayed: '2024-12-11T14:00:00' },
     { rank: 9, userId: 'u009', displayName: 'FlashMaster', email: 'flash@example.com', bestTime: 16.4500, bestWordCount: 24, accuracy: 80.0, gamesPlayed: 56, lastPlayed: '2024-12-14T07:45:00' },
     { rank: 10, userId: 'u010', displayName: 'TopStudent', email: 'top@example.com', bestTime: 18.9200, bestWordCount: 23, accuracy: 76.7, gamesPlayed: 23, lastPlayed: '2024-12-10T20:15:00' },
+];
+
+// Mock Data - Rankings (INDIVIDUAL Mode)
+const mockIndividualRankings: RankingEntry[] = [
+    { rank: 1, userId: 'i001', displayName: 'SpeedRunner_TH', email: 'speed@example.com', bestTime: 7.8900, bestWordCount: 30, accuracy: 100, gamesPlayed: 245, lastPlayed: '2024-12-14T11:30:00' },
+    { rank: 2, userId: 'i002', displayName: 'VocabKing2024', email: 'king@example.com', bestTime: 8.1200, bestWordCount: 30, accuracy: 100, gamesPlayed: 178, lastPlayed: '2024-12-14T10:45:00' },
+    { rank: 3, userId: 'i003', displayName: 'นักเรียนเก่ง', email: 'student@example.com', bestTime: 8.5540, bestWordCount: 30, accuracy: 96.7, gamesPlayed: 312, lastPlayed: '2024-12-14T09:20:00' },
+    { rank: 4, userId: 'i004', displayName: 'FlashQueen', email: 'queen@example.com', bestTime: 9.2300, bestWordCount: 30, accuracy: 100, gamesPlayed: 89, lastPlayed: '2024-12-14T08:15:00' },
+    { rank: 5, userId: 'i005', displayName: 'WordChampion', email: 'champ@example.com', bestTime: 9.8700, bestWordCount: 29, accuracy: 96.7, gamesPlayed: 134, lastPlayed: '2024-12-13T22:30:00' },
+    { rank: 6, userId: 'i006', displayName: 'ภาษาอังกฤษPro', email: 'eng@example.com', bestTime: 10.4500, bestWordCount: 29, accuracy: 93.3, gamesPlayed: 67, lastPlayed: '2024-12-14T07:00:00' },
+    { rank: 7, userId: 'i007', displayName: 'QuizMaster99', email: 'quiz@example.com', bestTime: 11.2300, bestWordCount: 28, accuracy: 90.0, gamesPlayed: 156, lastPlayed: '2024-12-13T21:45:00' },
+    { rank: 8, userId: 'i008', displayName: 'LearnerX', email: 'lx@example.com', bestTime: 12.5600, bestWordCount: 27, accuracy: 86.7, gamesPlayed: 45, lastPlayed: '2024-12-12T19:30:00' },
+    { rank: 9, userId: 'i009', displayName: 'VocabNinja', email: 'vninja@example.com', bestTime: 13.8900, bestWordCount: 26, accuracy: 83.3, gamesPlayed: 78, lastPlayed: '2024-12-14T06:45:00' },
+    { rank: 10, userId: 'i010', displayName: 'StudyPro2024', email: 'sp@example.com', bestTime: 15.4500, bestWordCount: 25, accuracy: 80.0, gamesPlayed: 34, lastPlayed: '2024-12-11T20:00:00' },
 ];
 
 // Monthly Hall of Fame Data
@@ -268,8 +283,6 @@ const mockMonthlyAnalytics: MonthlyAnalytics[] = [
 ];
 
 export default function AdminVocabChallenge() {
-    const [rankings, setRankings] = useState<RankingEntry[]>(mockRankings);
-    const [vocabSet, setVocabSet] = useState<VocabWord[]>(mockVocabSet);
     const [activeTab, setActiveTab] = useState('overview');
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddVocabOpen, setIsAddVocabOpen] = useState(false);
@@ -280,19 +293,139 @@ export default function AdminVocabChallenge() {
     const [playerSearch, setPlayerSearch] = useState('');
     const [analyticsYear, setAnalyticsYear] = useState(2024);
     const [selectedMonthDetail, setSelectedMonthDetail] = useState<MonthlyAnalytics | null>(null);
+    const [challengeMode, setChallengeMode] = useState<'individual' | 'university'>('individual');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Individual Mode - Month/Year selection for vocab
+    const currentDate = new Date();
+    const [selectedIndividualMonth, setSelectedIndividualMonth] = useState(currentDate.getMonth() + 1); // 1-12
+    const [selectedIndividualYear, setSelectedIndividualYear] = useState(currentDate.getFullYear());
+    const [loadingIndividualVocab, setLoadingIndividualVocab] = useState(false);
+    const [savingVocab, setSavingVocab] = useState(false);
 
+    // Mode-specific vocab sets
+    const [individualVocabSet, setIndividualVocabSet] = useState<VocabWord[]>([]);
+    const [universityVocabSet, setUniversityVocabSet] = useState<VocabWord[]>(mockVocabSet);
 
     // New vocab form
     const [newVocab, setNewVocab] = useState({ front: '', partOfSpeech: 'noun', back: '' });
 
-    // Stats
-    const totalPlayers = 2847;
-    const todayPlayers = 342;
-    const avgBestTime = 12.45;
-    const totalGamesPlayed = 15678;
-    const activePlayersNow = 23;
+    // Thai month names
+    const thaiMonthNames = [
+        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+
+    // Fetch Individual vocab from database when month/year changes
+    useEffect(() => {
+        if (challengeMode === 'individual') {
+            fetchIndividualVocab();
+        }
+    }, [selectedIndividualMonth, selectedIndividualYear, challengeMode]);
+
+    const fetchIndividualVocab = async () => {
+        setLoadingIndividualVocab(true);
+        try {
+            const { data, error } = await supabase
+                .from('individual_challenge_vocab')
+                .select('*')
+                .eq('month', selectedIndividualMonth)
+                .eq('year', selectedIndividualYear)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
+            const vocabWords: VocabWord[] = (data || []).map((item: any, idx: number) => ({
+                id: item.id,
+                front: item.front,
+                partOfSpeech: item.part_of_speech || 'noun',
+                back: item.back,
+            }));
+
+            setIndividualVocabSet(vocabWords);
+        } catch (error) {
+            console.error('Error fetching individual vocab:', error);
+            toast.error('ไม่สามารถโหลดคำศัพท์ได้');
+        } finally {
+            setLoadingIndividualVocab(false);
+        }
+    };
+
+    const handleAddIndividualVocab = async () => {
+        if (!newVocab.front || !newVocab.back) {
+            toast.error('กรุณากรอกคำศัพท์และความหมาย');
+            return;
+        }
+        if (individualVocabSet.length >= 30) {
+            toast.error('มีคำศัพท์ครบ 30 คำแล้ว');
+            return;
+        }
+
+        setSavingVocab(true);
+        try {
+            const { data, error } = await supabase
+                .from('individual_challenge_vocab')
+                .insert({
+                    month: selectedIndividualMonth,
+                    year: selectedIndividualYear,
+                    front: newVocab.front.trim(),
+                    back: newVocab.back.trim(),
+                    part_of_speech: newVocab.partOfSpeech,
+                })
+                .select()
+                .single();
+
+            if (error) {
+                if (error.code === '23505') {
+                    toast.error('คำศัพท์นี้มีอยู่แล้วในเดือนนี้');
+                    return;
+                }
+                throw error;
+            }
+
+            setIndividualVocabSet([...individualVocabSet, {
+                id: data.id,
+                front: data.front,
+                partOfSpeech: data.part_of_speech || 'noun',
+                back: data.back,
+            }]);
+            setNewVocab({ front: '', partOfSpeech: 'noun', back: '' });
+            setIsAddVocabOpen(false);
+            toast.success('เพิ่มคำศัพท์สำเร็จ');
+        } catch (error) {
+            console.error('Error adding vocab:', error);
+            toast.error('ไม่สามารถเพิ่มคำศัพท์ได้');
+        } finally {
+            setSavingVocab(false);
+        }
+    };
+
+    const handleDeleteIndividualVocab = async (id: string) => {
+        try {
+            const { error } = await supabase
+                .from('individual_challenge_vocab')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            setIndividualVocabSet(individualVocabSet.filter(v => v.id !== id));
+            toast.success('ลบคำศัพท์สำเร็จ');
+        } catch (error) {
+            console.error('Error deleting vocab:', error);
+            toast.error('ไม่สามารถลบคำศัพท์ได้');
+        }
+    };
+
+    // Mode-specific rankings and stats
+    const rankings = challengeMode === 'individual' ? mockIndividualRankings : mockUniversityRankings;
+    const vocabSet = challengeMode === 'individual' ? individualVocabSet : universityVocabSet;
+    const setVocabSet = challengeMode === 'individual' ? setIndividualVocabSet : setUniversityVocabSet;
+
+    // Mode-specific Stats
+    const stats = challengeMode === 'individual'
+        ? { totalPlayers: 1856, todayPlayers: 234, avgBestTime: 11.23, totalGamesPlayed: 12456, activePlayersNow: 18 }
+        : { totalPlayers: 2847, todayPlayers: 342, avgBestTime: 12.45, totalGamesPlayed: 15678, activePlayersNow: 23 };
 
     // Filter rankings
     const filteredRankings = rankings.filter(r =>
@@ -413,6 +546,29 @@ export default function AdminVocabChallenge() {
                 </div>
             </div>
 
+            {/* Mode Toggle */}
+            <div className="flex items-center justify-center">
+                <div className="relative bg-slate-100 dark:bg-slate-800 p-1 rounded-full flex items-center gap-1">
+                    {/* Sliding background indicator */}
+                    <div
+                        className="absolute h-[calc(100%-8px)] w-[calc(50%-4px)] bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-300 ease-out shadow-lg"
+                        style={{ left: challengeMode === 'individual' ? '4px' : 'calc(50%)' }}
+                    />
+                    <button
+                        onClick={() => setChallengeMode('individual')}
+                        className={`relative z-10 px-6 py-2 text-sm font-bold tracking-wider transition-colors text-center rounded-full ${challengeMode === 'individual' ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        🎯 INDIVIDUAL
+                    </button>
+                    <button
+                        onClick={() => setChallengeMode('university')}
+                        className={`relative z-10 px-6 py-2 text-sm font-bold tracking-wider transition-colors text-center rounded-full ${challengeMode === 'university' ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        🏫 UNIVERSITY
+                    </button>
+                </div>
+            </div>
+
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-blue-200/50">
@@ -422,7 +578,7 @@ export default function AdminVocabChallenge() {
                                 <Users className="h-5 w-5 text-blue-600" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-blue-600">{totalPlayers.toLocaleString()}</p>
+                                <p className="text-2xl font-bold text-blue-600">{stats.totalPlayers.toLocaleString()}</p>
                                 <p className="text-xs text-muted-foreground">ผู้เล่นทั้งหมด</p>
                             </div>
                         </div>
@@ -436,7 +592,7 @@ export default function AdminVocabChallenge() {
                                 <Eye className="h-5 w-5 text-green-600" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-green-600">{todayPlayers}</p>
+                                <p className="text-2xl font-bold text-green-600">{stats.todayPlayers}</p>
                                 <p className="text-xs text-muted-foreground">เล่นวันนี้</p>
                             </div>
                         </div>
@@ -450,7 +606,7 @@ export default function AdminVocabChallenge() {
                                 <Zap className="h-5 w-5 text-purple-600" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-purple-600">{activePlayersNow}</p>
+                                <p className="text-2xl font-bold text-purple-600">{stats.activePlayersNow}</p>
                                 <p className="text-xs text-muted-foreground">เล่นอยู่ตอนนี้</p>
                             </div>
                         </div>
@@ -464,7 +620,7 @@ export default function AdminVocabChallenge() {
                                 <Clock className="h-5 w-5 text-amber-600" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-amber-600">{avgBestTime}s</p>
+                                <p className="text-2xl font-bold text-amber-600">{stats.avgBestTime}s</p>
                                 <p className="text-xs text-muted-foreground">เวลาเฉลี่ย</p>
                             </div>
                         </div>
@@ -478,7 +634,7 @@ export default function AdminVocabChallenge() {
                                 <BarChart3 className="h-5 w-5 text-rose-600" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-rose-600">{totalGamesPlayed.toLocaleString()}</p>
+                                <p className="text-2xl font-bold text-rose-600">{stats.totalGamesPlayed.toLocaleString()}</p>
                                 <p className="text-xs text-muted-foreground">เกมทั้งหมด</p>
                             </div>
                         </div>
@@ -1056,14 +1212,59 @@ export default function AdminVocabChallenge() {
                 <TabsContent value="vocabulary" className="space-y-4">
                     <Card>
                         <CardHeader>
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between flex-wrap gap-4">
                                 <div>
                                     <CardTitle className="flex items-center gap-2">
                                         <Target className="h-5 w-5 text-primary" />
-                                        คำศัพท์ปัจจุบัน ({vocabSet.length}/30 คำ)
+                                        {challengeMode === 'individual' ? (
+                                            <span>คำศัพท์ {thaiMonthNames[selectedIndividualMonth - 1]} {selectedIndividualYear + 543} ({vocabSet.length}/30 คำ)</span>
+                                        ) : (
+                                            <span>คำศัพท์ปัจจุบัน ({vocabSet.length}/30 คำ)</span>
+                                        )}
                                     </CardTitle>
-                                    <CardDescription>คำศัพท์ที่ใช้ในเกม Vocab Challenge</CardDescription>
+                                    <CardDescription>
+                                        {challengeMode === 'individual'
+                                            ? 'เลือกเดือนเพื่อจัดการคำศัพท์ Individual Challenge'
+                                            : 'คำศัพท์ที่ใช้ในเกม Vocab Challenge'}
+                                    </CardDescription>
                                 </div>
+
+                                {/* Month/Year Selector for INDIVIDUAL Mode */}
+                                {challengeMode === 'individual' && (
+                                    <div className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200/50">
+                                        <Calendar className="h-5 w-5 text-purple-500" />
+                                        <Select
+                                            value={selectedIndividualMonth.toString()}
+                                            onValueChange={(v) => setSelectedIndividualMonth(parseInt(v))}
+                                        >
+                                            <SelectTrigger className="w-[130px] bg-white dark:bg-background">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {thaiMonthNames.map((month, idx) => (
+                                                    <SelectItem key={idx} value={(idx + 1).toString()}>
+                                                        {month}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select
+                                            value={selectedIndividualYear.toString()}
+                                            onValueChange={(v) => setSelectedIndividualYear(parseInt(v))}
+                                        >
+                                            <SelectTrigger className="w-[100px] bg-white dark:bg-background">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {[2024, 2025, 2026, 2027].map((year) => (
+                                                    <SelectItem key={year} value={year.toString()}>
+                                                        {year + 543}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
                                 <div className="flex gap-2">
                                     <Button variant="outline" className="gap-2" onClick={handleDownloadTemplate}>
                                         <Download className="h-4 w-4" />
@@ -1132,9 +1333,12 @@ export default function AdminVocabChallenge() {
                                                 </div>
                                             </div>
                                             <DialogFooter>
-                                                <Button variant="outline" onClick={() => setIsAddVocabOpen(false)}>ยกเลิก</Button>
-                                                <Button onClick={handleAddVocab} disabled={!newVocab.front || !newVocab.back}>
-                                                    เพิ่มคำศัพท์
+                                                <Button onClick={() => setIsAddVocabOpen(false)} variant="outline">ยกเลิก</Button>
+                                                <Button
+                                                    onClick={challengeMode === 'individual' ? handleAddIndividualVocab : handleAddVocab}
+                                                    disabled={!newVocab.front || !newVocab.back || savingVocab}
+                                                >
+                                                    {savingVocab ? 'กำลังบันทึก...' : 'เพิ่มคำศัพท์'}
                                                 </Button>
                                             </DialogFooter>
                                         </DialogContent>
@@ -1155,10 +1359,21 @@ export default function AdminVocabChallenge() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {vocabSet.length === 0 ? (
+                                        {loadingIndividualVocab && challengeMode === 'individual' ? (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center py-8">
+                                                    <div className="flex items-center justify-center gap-2 text-purple-500">
+                                                        <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                                                        กำลังโหลดคำศัพท์...
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : vocabSet.length === 0 ? (
                                             <TableRow>
                                                 <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                                                    ยังไม่มีคำศัพท์ กรุณาเพิ่มหรือ Upload CSV
+                                                    {challengeMode === 'individual'
+                                                        ? `ยังไม่มีคำศัพท์สำหรับ ${thaiMonthNames[selectedIndividualMonth - 1]} ${selectedIndividualYear + 543}`
+                                                        : 'ยังไม่มีคำศัพท์ กรุณาเพิ่มหรือ Upload CSV'}
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
@@ -1175,7 +1390,7 @@ export default function AdminVocabChallenge() {
                                                             variant="ghost"
                                                             size="sm"
                                                             className="text-destructive hover:text-destructive"
-                                                            onClick={() => handleDeleteVocab(word.id)}
+                                                            onClick={() => challengeMode === 'individual' ? handleDeleteIndividualVocab(word.id) : handleDeleteVocab(word.id)}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>

@@ -21,9 +21,10 @@ interface FlashcardHangmanGameProps {
   flashcards: Flashcard[];
   onClose: () => void;
   onNext?: () => void;
+  onSelectNewGame?: () => void;
 }
 
-export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardHangmanGameProps) {
+export function FlashcardHangmanGame({ flashcards, onClose, onNext, onSelectNewGame }: FlashcardHangmanGameProps) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { updateFromHangman } = useSRSProgress();
@@ -227,6 +228,7 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
 
             {/* Action Buttons */}
             <div className="flex flex-row gap-2 justify-center">
+              {/* ปุ่ม 1: เล่นใหม่ - เล่นเกมนี้อีกครั้ง */}
               <Button
                 onClick={handleRestart}
                 className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:shadow-lg transition-all rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm px-2 sm:px-4"
@@ -236,16 +238,12 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
                 <span className="sm:hidden">{t('games.playAgainShort')}</span>
               </Button>
 
+              {/* ปุ่ม 2: เกมใหม่ - กลับไปหน้าเลือกเกมในคลังคำศัพท์ */}
               <Button
                 onClick={() => {
-                  const selectedVocab = flashcards.map(f => ({
-                    id: f.id,
-                    word: f.front_text,
-                    meaning: f.back_text
-                  }));
-                  navigate('/ai-listening-section3-intro', {
-                    state: { selectedVocab }
-                  });
+                  if (onSelectNewGame) {
+                    onSelectNewGame();
+                  }
                 }}
                 variant="outline"
                 className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-orange-200 text-orange-700 hover:bg-orange-50 px-2 sm:px-4"
@@ -255,8 +253,9 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
                 <span className="sm:hidden">{t('games.selectGameShort')}</span>
               </Button>
 
+              {/* ปุ่ม 3: ถัดไป - กลับไปหน้าชุดคำศัพท์ */}
               <Button
-                onClick={onNext || onClose}
+                onClick={onClose}
                 variant="outline"
                 className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-gray-200 px-2 sm:px-4"
               >
@@ -310,11 +309,22 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext }: FlashcardH
                   {currentCard.front_image ? (
                     <img src={currentCard.front_image} alt="Target" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="text-6xl animate-bounce-slow">🎯</div>
+                    <div className="text-6xl animate-bounce-slow">
+                      {/* Emoji เปลี่ยนตามจำนวนครั้งที่ผิด */}
+                      {wrongGuesses === 0 && '😊'}
+                      {wrongGuesses === 1 && '🙂'}
+                      {wrongGuesses === 2 && '😐'}
+                      {wrongGuesses === 3 && '😟'}
+                      {wrongGuesses === 4 && '😰'}
+                      {wrongGuesses === 5 && '😨'}
+                      {wrongGuesses === 6 && '😱'}
+                      {wrongGuesses >= 7 && '💀'}
+                    </div>
                   )}
                 </div>
                 {/* Mistakes Badge */}
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white px-4 py-1 rounded-full shadow-md border border-orange-100 text-xs font-bold text-orange-500 whitespace-nowrap">
+                <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white px-4 py-1 rounded-full shadow-md border text-xs font-bold whitespace-nowrap ${wrongGuesses >= 5 ? 'border-red-200 text-red-500' : 'border-orange-100 text-orange-500'
+                  }`}>
                   ผิดได้อีก {maxWrongGuesses - wrongGuesses} ครั้ง
                 </div>
               </div>

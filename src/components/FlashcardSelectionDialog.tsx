@@ -10,6 +10,7 @@ interface Flashcard {
     id: string;
     front_text: string;
     back_text: string;
+    part_of_speech?: string;
     front_image?: string | null;
     back_image?: string | null;
 }

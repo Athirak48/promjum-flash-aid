@@ -95,7 +95,7 @@ export default function DecksPage() {
                   transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
                 >
                   <h1 className="text-5xl md:text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 drop-shadow-sm">
-                    Deck ของฉัน
+                    Shop ของฉัน
                   </h1>
                 </motion.div>
 
@@ -122,34 +122,7 @@ export default function DecksPage() {
 
 
 
-          {/* Current View Label */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex items-center gap-3 mb-6"
-          >
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${activeTab === 'vocab'
-              ? 'bg-gradient-to-br from-violet-500 to-purple-600'
-              : 'bg-gradient-to-br from-pink-500 to-rose-600'
-              }`}>
-              {activeTab === 'vocab' ? (
-                <BookOpen className="w-5 h-5 text-white" />
-              ) : (
-                <MessageSquare className="w-5 h-5 text-white" />
-              )}
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground">
-                {activeTab === 'vocab' ? 'Deck คำศัพท์' : 'Deck ประโยค'}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {activeTab === 'vocab'
-                  ? `${filteredDecks.length} deck พร้อมให้เรียน ✨`
-                  : `${filteredDecks.length} deck พร้อมให้เรียน 💬`}
-              </p>
-            </div>
-          </motion.div>
+          {/* Current View Label - REMOVED */}
 
           {/* Deck Grid */}
           {activeTab === 'vocab' ? (

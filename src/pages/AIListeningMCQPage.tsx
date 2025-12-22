@@ -68,6 +68,7 @@ export default function AIListeningMCQPage() {
     const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
     const [showFeedback, setShowFeedback] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [audioSpeed, setAudioSpeed] = useState<0.75 | 1>(1);
     const [answers, setAnswers] = useState<{ questionId: number; correct: boolean; selectedAnswer: number }[]>([]);
 
     const question = questions[currentQuestion];
@@ -101,7 +102,7 @@ export default function AIListeningMCQPage() {
         setIsPlaying(true);
         const utterance = new SpeechSynthesisUtterance(question.story);
         utterance.lang = 'en-US';
-        utterance.rate = 0.9;
+        utterance.rate = audioSpeed;
         utterance.onend = () => setIsPlaying(false);
         speechSynthesis.speak(utterance);
     };
@@ -111,124 +112,164 @@ export default function AIListeningMCQPage() {
             <BackgroundDecorations />
 
             {/* Header - Fixed at top */}
-            <header className="flex-none w-full max-w-4xl mx-auto px-4 py-4 flex items-center justify-between relative z-10 bg-transparent">
+            <header className="flex-none w-full max-w-4xl mx-auto px-4 py-3 flex items-center justify-between relative z-10 bg-transparent">
                 <Button
                     variant="ghost"
                     onClick={() => navigate('/ai-listening-section4-intro')}
-                    className="rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm border border-white/50 hover:bg-white text-slate-600 h-10 w-10 p-0 sm:w-auto sm:px-4"
+                    className="rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm border border-white/50 hover:bg-white text-slate-600 h-10 w-10 p-0"
                 >
-                    <ArrowLeft className="h-5 w-5 sm:mr-2" />
-                    <span className="hidden sm:inline">ออก</span>
+                    <ArrowLeft className="h-5 w-5" />
                 </Button>
 
-                <div className="flex-1 max-w-xs mx-4">
-                    <div className="flex justify-between text-xs font-medium text-slate-500 mb-1.5 px-1">
-                        <span>Progress</span>
-                        <span>{currentQuestion + 1} / {questions.length}</span>
-                    </div>
-                    <div className="h-2.5 bg-white/50 rounded-full p-0.5 backdrop-blur-sm border border-white/30">
-                        <div
-                            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500 shadow-sm"
-                            style={{ width: `${progress}%` }}
-                        />
+                {/* Cute Round Progress Badge */}
+                <div className="flex items-center gap-3">
+                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                        <span className="text-lg">🎙️</span>
+                        <span className="font-bold text-sm">ข้อ {currentQuestion + 1}/{questions.length}</span>
                     </div>
                 </div>
 
-                <div className="w-10" />
+                {/* Score Badge */}
+                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm border border-white/50">
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        ✨ {answers.filter(a => a.correct).length} ถูก
+                    </span>
+                </div>
             </header>
+
+            {/* Progress Bar */}
+            <div className="w-full max-w-3xl mx-auto px-6 pb-2">
+                <div className="h-2 bg-white/50 rounded-full overflow-hidden backdrop-blur-sm border border-white/30">
+                    <motion.div
+                        className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                    />
+                </div>
+            </div>
 
             {/* Scrollable Content Area */}
             <main className="flex-1 w-full max-w-3xl px-4 pb-64 overflow-y-auto custom-scrollbar relative z-10 mask-fade-bottom">
                 <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-white/50 shadow-2xl rounded-[1.5rem] overflow-hidden flex flex-col min-h-min">
                     <CardContent className="p-5 md:p-6 lg:p-8 space-y-6">
 
-                        {/* Audio Section */}
+                        {/* Audio Section with Controls */}
                         <div className="text-center space-y-4">
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className="relative inline-block"
-                            >
-                                <div className={`absolute inset-0 bg-indigo-500 rounded-full blur-2xl opacity-20 ${isPlaying ? 'animate-pulse' : ''}`} />
-                                <Button
-                                    onClick={handlePlayAudio}
-                                    className={`
-                                        h-20 w-20 md:h-24 md:w-24 rounded-full shadow-xl transition-all duration-300 relative z-10 border-4 border-white dark:border-slate-800
-                                        ${isPlaying
-                                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 scale-105 shadow-pink-500/30'
-                                            : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 shadow-indigo-500/30'
-                                        }
-                                    `}
-                                >
-                                    {isPlaying ? (
-                                        <Volume2 className="w-8 h-8 md:w-10 md:h-10 text-white animate-pulse" />
-                                    ) : (
-                                        <PlayCircle className="w-8 h-8 md:w-10 md:h-10 text-white ml-1" />
-                                    )}
-                                </Button>
-                            </motion.div>
-                            <div>
-                                <h3 className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100">
-                                    {isPlaying ? 'กำลังเล่นเสียง...' : 'ฟังเรื่องราว'}
-                                </h3>
+                            {/* Audio Controls Row */}
+                            <div className="flex items-center justify-center gap-3">
+                                {/* Main Play Button */}
+                                <motion.div className="relative">
+                                    {/* Glow Effect */}
+                                    <div className={`absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-xl opacity-30 ${isPlaying ? 'animate-pulse scale-110' : ''}`} />
+
+                                    <motion.button
+                                        onClick={handlePlayAudio}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className={`
+                                            relative h-20 w-20 rounded-full shadow-xl flex items-center justify-center
+                                            border-4 border-white dark:border-slate-700 transition-all duration-300
+                                            ${isPlaying
+                                                ? 'bg-gradient-to-br from-pink-400 to-rose-500 animate-pulse'
+                                                : 'bg-gradient-to-br from-purple-400 to-indigo-500 hover:from-purple-500 hover:to-indigo-600'
+                                            }
+                                        `}
+                                    >
+                                        <svg className="w-8 h-8 text-white fill-white ml-1" viewBox="0 0 24 24">
+                                            <path d="M8 5v14l11-7z" />
+                                        </svg>
+                                    </motion.button>
+                                </motion.div>
                             </div>
 
-                            {/* Transcript - Limited Height & Scrollable */}
-                            <AnimatePresence>
-                                {showFeedback && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        className="w-full"
-                                    >
-                                        <div className="bg-slate-50/90 dark:bg-slate-800/80 p-4 rounded-xl border border-indigo-100 dark:border-slate-700 text-left overflow-y-auto max-h-[25vh] custom-scrollbar shadow-inner mt-2">
-                                            <h4 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-indigo-500 mb-2 sticky top-0 bg-slate-50/90 dark:bg-slate-800/90 w-full py-1">
-                                                <Volume2 className="h-3 w-3" />
-                                                TRANSCRIPT
-                                            </h4>
-                                            <p className="text-slate-700 dark:text-slate-200 text-sm md:text-base leading-relaxed font-medium mb-3">
-                                                {question.story}
-                                            </p>
-                                            <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-3">
-                                                {question.storyTh}
-                                            </p>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                            {/* Speed Toggle */}
+                            <div className="flex items-center justify-center gap-2">
+                                <button
+                                    onClick={() => setAudioSpeed(0.75)}
+                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold transition-all ${audioSpeed === 0.75
+                                        ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'
+                                        }`}
+                                >
+                                    🐢 x0.75
+                                </button>
+                                <button
+                                    onClick={() => setAudioSpeed(1)}
+                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold transition-all ${audioSpeed === 1
+                                        ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'
+                                        }`}
+                                >
+                                    🐇 Normal
+                                </button>
+                            </div>
                         </div>
+
+                        {/* Transcript - Limited Height & Scrollable */}
+                        <AnimatePresence>
+                            {showFeedback && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="w-full"
+                                >
+                                    <div className="bg-slate-50/90 dark:bg-slate-800/80 p-4 rounded-xl border border-indigo-100 dark:border-slate-700 text-left overflow-y-auto max-h-[25vh] custom-scrollbar shadow-inner mt-2">
+                                        <h4 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-indigo-500 mb-2 sticky top-0 bg-slate-50/90 dark:bg-slate-800/90 w-full py-1">
+                                            <Volume2 className="h-3 w-3" />
+                                            TRANSCRIPT
+                                        </h4>
+                                        <p className="text-slate-700 dark:text-slate-200 text-sm md:text-base leading-relaxed font-medium mb-3">
+                                            {question.story}
+                                        </p>
+                                        <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-3">
+                                            {question.storyTh}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         {/* Question */}
-                        <div className="text-center max-w-2xl mx-auto mt-2">
-                            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 dark:text-slate-100 leading-tight">
+                        <div className="text-center max-w-2xl mx-auto">
+                            <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 px-3 py-1 rounded-full text-xs font-bold mb-2">
+                                🤔 คำถาม
+                            </div>
+                            <h2 className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100 leading-tight">
                                 {language === 'th' ? question.questionTh : question.question}
                             </h2>
-                            <div className="h-1 w-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full mx-auto mt-3 opacity-50" />
                         </div>
 
-                        {/* Options */}
-                        <div className="grid grid-cols-1 gap-3 content-center">
+                        {/* Options - Cute Cards */}
+                        <div className="grid grid-cols-1 gap-2">
                             <AnimatePresence mode="wait">
                                 {question.options.map((option, index) => {
                                     const isSelected = selectedAnswer === index;
                                     const isCorrectOption = index === question.correctAnswer;
                                     const showStatus = showFeedback;
+                                    const optionEmojis = ['🍀', '🌸', '🌻', '🌼'];
+                                    const optionColors = [
+                                        'from-emerald-400 to-teal-500',
+                                        'from-pink-400 to-rose-500',
+                                        'from-amber-400 to-orange-500',
+                                        'from-purple-400 to-indigo-500'
+                                    ];
 
-                                    let cardStyle = "relative p-3 md:p-4 rounded-xl border-2 text-left transition-all duration-300 cursor-pointer flex items-center gap-3 group";
+                                    let cardStyle = "relative p-3 rounded-xl border-2 text-left transition-all duration-300 cursor-pointer flex items-center gap-3 group";
 
                                     if (showStatus) {
                                         if (isCorrectOption) {
-                                            cardStyle += " bg-green-500 border-green-600 text-white shadow-md";
+                                            cardStyle += " bg-gradient-to-r from-green-400 to-emerald-500 border-green-500 text-white shadow-lg scale-[1.02]";
                                         } else if (isSelected && !isCorrectOption) {
-                                            cardStyle += " bg-red-100 border-red-200 text-red-800 opacity-60";
+                                            cardStyle += " bg-red-100 border-red-300 text-red-700 opacity-70";
                                         } else {
-                                            cardStyle += " bg-gray-50 border-transparent opacity-40";
+                                            cardStyle += " bg-slate-50 border-slate-200 opacity-50";
                                         }
                                     } else {
                                         cardStyle += isSelected
-                                            ? " bg-indigo-50 border-indigo-500 shadow-md transform scale-[1.01]"
-                                            : " bg-white border-slate-100 hover:border-indigo-200 hover:shadow-md";
+                                            ? ` bg-gradient-to-r ${optionColors[index]} border-transparent text-white shadow-lg scale-[1.02]`
+                                            : " bg-white/80 border-slate-200 hover:border-purple-300 hover:shadow-md hover:scale-[1.01]";
                                     }
 
                                     return (
@@ -241,16 +282,18 @@ export default function AIListeningMCQPage() {
                                             onClick={() => handleSelectAnswer(index)}
                                         >
                                             <div className={`
-                                                flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition-colors
+                                                flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg
                                                 ${showStatus && isCorrectOption
-                                                    ? 'bg-white border-white text-green-600'
-                                                    : 'border-slate-200 text-slate-500 group-hover:border-indigo-500 group-hover:text-indigo-600'
+                                                    ? 'bg-white/30'
+                                                    : isSelected && !showStatus
+                                                        ? 'bg-white/30'
+                                                        : 'bg-slate-100'
                                                 }
                                             `}>
-                                                {['A', 'B', 'C', 'D'][index]}
+                                                {showStatus && isCorrectOption ? '✅' : optionEmojis[index]}
                                             </div>
 
-                                            <span className={`text-base md:text-lg font-medium flex-1 ${showStatus && isCorrectOption ? 'text-white' : 'text-slate-700'}`}>
+                                            <span className={`text-sm font-medium flex-1 ${(showStatus && isCorrectOption) || (isSelected && !showStatus) ? 'text-white' : 'text-slate-700'}`}>
                                                 {option}
                                             </span>
 
@@ -314,6 +357,6 @@ export default function AIListeningMCQPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }

@@ -21,6 +21,7 @@ interface FlashcardListenChooseGameProps {
   flashcards: Flashcard[];
   onClose: () => void;
   onNext?: () => void;
+  onSelectNewGame?: () => void;
 }
 
 interface Question {
@@ -31,7 +32,7 @@ interface Question {
   isUserFlashcard?: boolean;
 }
 
-export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: FlashcardListenChooseGameProps) => {
+export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelectNewGame }: FlashcardListenChooseGameProps) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { updateFromListenChoose } = useSRSProgress();
@@ -212,6 +213,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: Flash
             )}
 
             <div className="flex flex-row gap-2 justify-center">
+              {/* ปุ่ม 1: เล่นใหม่ */}
               <Button
                 onClick={handleRestart}
                 className="flex-1 bg-gradient-to-r from-pink-600 to-rose-600 hover:shadow-lg transition-all rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm px-2 sm:px-4"
@@ -221,16 +223,12 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: Flash
                 <span className="sm:hidden">{t('games.playAgainShort')}</span>
               </Button>
 
+              {/* ปุ่ม 2: เกมใหม่ */}
               <Button
                 onClick={() => {
-                  const selectedVocab = flashcards.map(f => ({
-                    id: f.id,
-                    word: f.front_text,
-                    meaning: f.back_text
-                  }));
-                  navigate('/ai-listening-section3-intro', {
-                    state: { selectedVocab }
-                  });
+                  if (onSelectNewGame) {
+                    onSelectNewGame();
+                  }
                 }}
                 variant="outline"
                 className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-pink-200 text-pink-700 hover:bg-pink-50 px-2 sm:px-4"
@@ -240,8 +238,9 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext }: Flash
                 <span className="sm:hidden">{t('games.selectGameShort')}</span>
               </Button>
 
+              {/* ปุ่ม 3: ถัดไป - กลับชุดคำศัพท์ */}
               <Button
-                onClick={onNext || onClose}
+                onClick={onClose}
                 variant="outline"
                 className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-gray-200 px-2 sm:px-4"
               >

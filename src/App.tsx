@@ -24,7 +24,7 @@ import FlashcardsReview from "./pages/FlashcardsReview";
 import DecksPage from "./pages/DecksPage";
 import SubDecksPage from "./pages/SubDecksPage";
 import AIRealtimePracticePage from "./pages/AIRealtimePracticePage";
-import AIPracticeLandingPage from "./pages/AIPracticeLandingPage";
+// import AIPracticeLandingPage from "./pages/AIPracticeLandingPage";
 import AIPracticeSentencePage from "./pages/AIPracticeSentencePage";
 import AIListeningGuidePage from "./pages/AIListeningGuidePage";
 import AIListeningSection1IntroPage from "./pages/AIListeningSection1IntroPage";
@@ -47,6 +47,8 @@ import AIReadingSection4IntroPage from "./pages/AIReadingSection4IntroPage";
 import AIReadingMCQPage from "./pages/AIReadingMCQPage";
 import AIReadingFinalSummaryPage from "./pages/AIReadingFinalSummaryPage";
 import VocabSpeedrunPage from "./pages/VocabSpeedrunPage";
+import LearningSessionPage from "./pages/LearningSessionPage";
+import LearningResultsPage from "./pages/LearningResultsPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
@@ -56,7 +58,6 @@ import AdminMembers from "./pages/admin/AdminMembers";
 import AdminPromotions from "./pages/admin/AdminPromotions";
 import AdminFeedback from "./pages/admin/AdminFeedback";
 import AdminNotification from "./pages/admin/AdminNotification";
-import AdminFlashcards from "./pages/admin/AdminFlashcards";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminVocabChallenge from "./pages/admin/AdminVocabChallenge";
@@ -141,7 +142,6 @@ const App = () => {
                       <Route path="promotions" element={<AdminPromotions />} />
                       <Route path="notification" element={<AdminNotification />} />
                       <Route path="feedback" element={<AdminFeedback />} />
-                      <Route path="flashcards" element={<AdminFlashcards />} />
                       <Route path="subscriptions" element={<AdminSubscriptions />} />
                       <Route path="settings" element={<AdminSettings />} />
                       <Route path="vocab-challenge" element={<AdminVocabChallenge />} />
@@ -174,14 +174,14 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     />
-                    <Route
+                    {/* <Route
                       path="/practice"
                       element={
                         <ProtectedRoute>
                           <><Navbar /><AIPracticeLandingPage /></>
                         </ProtectedRoute>
                       }
-                    />
+                    /> */}
                     <Route
                       path="/vocab-speedrun"
                       element={
@@ -373,6 +373,23 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <><Navbar /><AIReadingFinalSummaryPage /></>
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Learning Now Routes */}
+                    <Route
+                      path="/learning-session"
+                      element={
+                        <ProtectedRoute>
+                          <LearningSessionPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/learning-results"
+                      element={
+                        <ProtectedRoute>
+                          <LearningResultsPage />
                         </ProtectedRoute>
                       }
                     />

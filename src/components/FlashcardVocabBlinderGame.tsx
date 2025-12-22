@@ -20,6 +20,7 @@ interface FlashcardVocabBlinderGameProps {
   flashcards: Flashcard[];
   onClose: () => void;
   onNext?: () => void;
+  onSelectNewGame?: () => void;
 }
 
 interface BlindedWord {
@@ -29,7 +30,7 @@ interface BlindedWord {
   missingLetters: string[];
 }
 
-export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext }: FlashcardVocabBlinderGameProps) {
+export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext, onSelectNewGame }: FlashcardVocabBlinderGameProps) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { updateFromVocabBlinder } = useSRSProgress();
@@ -225,6 +226,7 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext }: Flash
             )}
 
             <div className="flex flex-row gap-2 justify-center">
+              {/* ปุ่ม 1: เล่นใหม่ */}
               <Button
                 onClick={handleRestart}
                 className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg transition-all rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm px-2 sm:px-4"
@@ -234,16 +236,12 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext }: Flash
                 <span className="sm:hidden">{t('games.playAgainShort')}</span>
               </Button>
 
+              {/* ปุ่ม 2: เกมใหม่ */}
               <Button
                 onClick={() => {
-                  const selectedVocab = flashcards.map(f => ({
-                    id: f.id,
-                    word: f.front_text,
-                    meaning: f.back_text
-                  }));
-                  navigate('/ai-listening-section3-intro', {
-                    state: { selectedVocab }
-                  });
+                  if (onSelectNewGame) {
+                    onSelectNewGame();
+                  }
                 }}
                 variant="outline"
                 className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-2 sm:px-4"
@@ -253,8 +251,9 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext }: Flash
                 <span className="sm:hidden">{t('games.selectGameShort')}</span>
               </Button>
 
+              {/* ปุ่ม 3: ถัดไป - กลับชุดคำศัพท์ */}
               <Button
-                onClick={onNext || onClose}
+                onClick={onClose}
                 variant="outline"
                 className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-gray-200 px-2 sm:px-4"
               >

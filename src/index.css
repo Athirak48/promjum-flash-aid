@@ -8,266 +8,137 @@
   }
 }
 
-
-/* Promjum Design System - Minimal Chrome with Purple-Pink Gradients
-All colors MUST be HSL for consistency and theming support.
+/* Promjum Design System - Kawaii Edition 🐱💖
+   Pastel Colors, Super Rounded, Cute & Sweet
 */
 
 @layer base {
   :root {
-    /* Base colors - Minimal Light Purple Theme (Duolingo-inspired) */
-    --background: 270 50% 98%;
-    /* Very light purple tint */
-    --foreground: 270 10% 20%;
-    /* Soft dark purple text */
+    /* Kawaii Theme - Soft Pastels */
+    --background: 340 100% 99%;
+    /* Soft pink white */
+    --foreground: 340 30% 25%;
+    /* Soft brown-pink */
 
-    /* Card system */
+    /* Card system - Fluffy Clouds */
     --card: 0 0% 100%;
-    --card-foreground: 270 10% 20%;
+    --card-foreground: 340 30% 25%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 270 10% 20%;
+    --popover-foreground: 340 30% 25%;
 
-    /* Primary - The main "Duolingo" purple */
-    --primary: 270 80% 60%;
-    /* Vibrant but soft purple */
+    /* Primary - Sakura Pink */
+    --primary: 340 80% 65%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 270 80% 70%;
+    --primary-glow: 340 80% 75%;
 
-    /* Secondary - Lighter accent */
-    --secondary: 270 30% 90%;
-    --secondary-foreground: 270 60% 40%;
+    /* Secondary - Soft Lavender */
+    --secondary: 270 50% 95%;
+    --secondary-foreground: 270 40% 45%;
 
-    /* Muted elements */
-    --muted: 270 20% 95%;
-    --muted-foreground: 270 10% 60%;
+    /* Muted */
+    --muted: 340 30% 96%;
+    --muted-foreground: 340 20% 55%;
 
-    /* Accent - For highlights/success */
-    --accent: 150 60% 45%;
-    /* Soft green for success/accent */
+    /* Accents - Mint Green */
+    --accent: 160 60% 55%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 85% 60%;
+    --success: 160 70% 50%;
+    /* Mint */
+    --warning: 35 100% 65%;
+    /* Peach */
+    --info: 200 80% 65%;
+    /* Sky Blue */
+
+    --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 100%;
 
     /* Borders and inputs */
-    --border: 270 20% 90%;
-    --input: 270 20% 95%;
-    --ring: 270 80% 60%;
+    --border: 340 30% 92%;
+    --input: 340 30% 96%;
+    --ring: 340 80% 65%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(270 80% 60%), hsl(290 70% 60%));
-    --gradient-secondary: linear-gradient(135deg, hsl(270 30% 90%), hsl(290 30% 90%));
-    --gradient-hero: linear-gradient(180deg, hsl(270 50% 98%) 0%, hsl(270 30% 95%) 100%);
-    --gradient-card: linear-gradient(145deg, #ffffff, #f8f5ff);
+    /* Kawaii Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(340 80% 70%), hsl(320 70% 75%));
+    --gradient-secondary: linear-gradient(135deg, hsl(160 60% 60%), hsl(180 60% 65%));
+    --gradient-hero: linear-gradient(180deg, hsl(340 100% 99%) 0%, hsl(340 50% 97%) 100%);
+    --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 240, 245, 0.9));
+    --gradient-rainbow: linear-gradient(135deg, #ffecd2 0%, #fcb69f 25%, #fbc2eb 50%, #a6c1ee 75%, #c2e9fb 100%);
 
-    /* Shadows - Soft and playful */
-    --shadow-soft: 0 4px 12px -2px hsl(270 20% 80% / 0.3);
-    --shadow-medium: 0 8px 24px -4px hsl(270 20% 80% / 0.4);
-    --shadow-large: 0 12px 48px -6px hsl(270 20% 80% / 0.5);
-    --shadow-glow: 0 0 20px hsl(270 80% 60% / 0.3);
+    /* Shadows - Soft & Dreamy */
+    --shadow-soft: 0 8px 25px -5px rgba(244, 114, 182, 0.15);
+    --shadow-medium: 0 15px 35px -8px rgba(244, 114, 182, 0.2);
+    --shadow-large: 0 25px 50px -12px rgba(244, 114, 182, 0.25);
+    --shadow-glow: 0 0 30px rgba(244, 114, 182, 0.3);
 
     /* Transitions */
-    --transition-smooth: all 0.2s ease-in-out;
-    --transition-bounce: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    /* Radius - Rounded and friendly */
-    --radius: 1rem;
-    /* More rounded */
+    /* Radius - Super Rounded */
+    --radius: 1.5rem;
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 270 10% 20%;
-    --sidebar-primary: 270 80% 60%;
+    --sidebar-foreground: 340 30% 25%;
+    --sidebar-primary: 340 80% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 30% 95%;
-    --sidebar-accent-foreground: 270 80% 60%;
-    --sidebar-border: 270 20% 90%;
-    --sidebar-ring: 270 80% 60%;
+    --sidebar-accent: 340 50% 97%;
+    --sidebar-accent-foreground: 340 80% 65%;
+    --sidebar-border: 340 30% 94%;
+    --sidebar-ring: 340 80% 65%;
   }
 
   .dark {
-    /* Dark mode - Deep purple/midnight - High Contrast */
-    --background: 260 50% 4%;
-    /* Deep void purple - Recedes */
-    --foreground: 270 10% 98%;
-    /* Bright white-purple - Pops */
+    /* Dark Kawaii - Cozy Night */
+    --background: 270 30% 10%;
+    --foreground: 340 20% 92%;
 
-    --card: 260 30% 10%;
-    /* Slightly lighter than bg */
-    --card-foreground: 270 10% 98%;
+    --card: 270 25% 14%;
+    --card-foreground: 340 20% 92%;
 
-    --popover: 260 30% 10%;
-    --popover-foreground: 270 10% 98%;
+    --popover: 270 25% 14%;
+    --popover-foreground: 340 20% 92%;
 
-    --primary: 270 70% 65%;
+    --primary: 340 70% 70%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 270 70% 75%;
+    --primary-glow: 340 70% 60%;
 
-    --secondary: 270 20% 20%;
-    --secondary-foreground: 270 10% 95%;
+    --secondary: 270 20% 22%;
+    --secondary-foreground: 270 20% 85%;
 
-    --muted: 270 20% 20%;
-    /* Visible separation */
-    --muted-foreground: 270 10% 70%;
+    --muted: 270 20% 18%;
+    --muted-foreground: 270 15% 60%;
 
-    --accent: 150 50% 50%;
+    --accent: 160 50% 55%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 60% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 270 20% 30%;
-    /* Clear definition */
+    --border: 270 20% 25%;
     --input: 270 20% 20%;
-    --ring: 270 70% 65%;
+    --ring: 340 70% 70%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(270 70% 65%), hsl(290 60% 65%));
-    --gradient-secondary: linear-gradient(135deg, hsl(270 20% 20%), hsl(290 20% 20%));
-    --gradient-hero: linear-gradient(180deg, hsl(260 40% 6%) 0%, hsl(270 30% 8%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(270 30% 12%), hsl(270 30% 9%));
+    --gradient-primary: linear-gradient(135deg, hsl(340 70% 65%), hsl(320 60% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(160 50% 50%), hsl(180 50% 55%));
+    --gradient-hero: linear-gradient(180deg, hsl(270 30% 10%) 0%, hsl(270 25% 14%) 100%);
+    --gradient-card: linear-gradient(145deg, rgba(35, 30, 50, 0.95), rgba(35, 30, 50, 0.8));
 
-    --shadow-soft: 0 4px 12px -2px hsl(0 0% 0% / 0.5);
-    --shadow-medium: 0 8px 24px -4px hsl(0 0% 0% / 0.6);
-    --shadow-large: 0 12px 48px -6px hsl(0 0% 0% / 0.7);
-    --shadow-glow: 0 0 25px hsl(270 70% 65% / 0.25);
+    --shadow-soft: 0 8px 25px -5px rgba(0, 0, 0, 0.4);
+    --shadow-medium: 0 15px 35px -8px rgba(0, 0, 0, 0.5);
+    --shadow-large: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 35px rgba(244, 114, 182, 0.2);
 
-    --sidebar-background: 260 50% 6%;
-    --sidebar-foreground: 270 10% 98%;
-    --sidebar-primary: 270 70% 65%;
+    --sidebar-background: 270 30% 12%;
+    --sidebar-foreground: 340 20% 92%;
+    --sidebar-primary: 340 70% 70%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 20% 20%;
-    --sidebar-accent-foreground: 270 10% 98%;
-    --sidebar-border: 270 20% 30%;
-    --sidebar-ring: 270 70% 65%;
-  }
-
-  .warm {
-    /* Warm mode - Cozy, readable, high contrast */
-    --background: 35 60% 90%;
-    /* Richer Warm Cream */
-    --foreground: 20 25% 20%;
-    /* Warm Brown */
-
-    --card: 35 50% 95%;
-    /* Distinct card color */
-    --card-foreground: 20 25% 20%;
-
-    --popover: 35 50% 95%;
-    --popover-foreground: 20 25% 20%;
-
-    --primary: 25 95% 50%;
-    /* Vibrant Burnt Orange */
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 25 95% 60%;
-
-    --secondary: 35 40% 85%;
-    /* Darker beige for contrast */
-    --secondary-foreground: 20 25% 20%;
-
-    --muted: 35 40% 85%;
-    --muted-foreground: 20 30% 45%;
-    /* Readable warm gray-brown */
-
-    --accent: 35 95% 50%;
-    /* Golden amber */
-    --accent-foreground: 20 25% 20%;
-
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 20 30% 75%;
-    /* Distinct warm border */
-    --input: 20 30% 80%;
-    --ring: 25 95% 50%;
-
-    --gradient-primary: linear-gradient(135deg, hsl(25 95% 50%), hsl(35 95% 50%));
-    --gradient-secondary: linear-gradient(135deg, hsl(35 50% 85%), hsl(45 50% 85%));
-    --gradient-hero: linear-gradient(180deg, hsl(35 60% 90%) 0%, hsl(35 40% 85%) 100%);
-    --gradient-card: linear-gradient(145deg, #fffdf9, #f0e6d2);
-
-    --shadow-soft: 0 4px 12px -2px hsl(20 30% 60% / 0.3);
-    --shadow-medium: 0 8px 24px -4px hsl(20 30% 60% / 0.4);
-    --shadow-large: 0 12px 48px -6px hsl(20 30% 60% / 0.5);
-    --shadow-glow: 0 0 20px hsl(25 95% 50% / 0.3);
-
-    --sidebar-background: 35 60% 88%;
-    --sidebar-foreground: 20 25% 20%;
-    --sidebar-primary: 25 95% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 35 40% 82%;
-    --sidebar-accent-foreground: 25 95% 50%;
-    --sidebar-border: 20 30% 75%;
-    --sidebar-ring: 25 95% 50%;
-  }
-
-  .christmas {
-    /* Christmas mode - Festive Red, Green, Gold & Snow White */
-    --background: 0 0% 98%;
-    /* Snow White */
-    --foreground: 145 60% 15%;
-    /* Dark Pine Green Text - HIGH CONTRAST */
-
-    --card: 0 0% 100%;
-    /* Pure White */
-    --card-foreground: 145 60% 15%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 145 60% 15%;
-
-    --primary: 350 85% 50%;
-    /* Festive Red */
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 350 85% 60%;
-
-    --secondary: 145 65% 35%;
-    /* Pine Green */
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 145 20% 92%;
-    /* Very light green tint */
-    --muted-foreground: 145 40% 35%;
-    /* Readable green-brown */
-
-    --accent: 45 95% 50%;
-    /* Gold */
-    --accent-foreground: 0 0% 15%;
-
-    --destructive: 0 85% 55%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 145 30% 85%;
-    --input: 145 30% 92%;
-    --ring: 350 85% 50%;
-
-    /* Christmas Gradients - Red & Green */
-    --gradient-primary: linear-gradient(135deg, hsl(350 85% 50%), hsl(10 85% 55%));
-    --gradient-secondary: linear-gradient(135deg, hsl(145 65% 35%), hsl(155 65% 40%));
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 98%) 0%, hsl(145 20% 95%) 100%);
-    --gradient-card: linear-gradient(145deg, #ffffff, #f0fff4);
-
-    /* Christmas Shadows */
-    --shadow-soft: 0 4px 12px -2px hsl(145 30% 70% / 0.3);
-    --shadow-medium: 0 8px 24px -4px hsl(145 30% 70% / 0.4);
-    --shadow-large: 0 12px 48px -6px hsl(145 30% 70% / 0.5);
-    --shadow-glow: 0 0 20px hsl(350 85% 50% / 0.3);
-
-    /* Transitions */
-    --transition-smooth: all 0.2s ease-in-out;
-    --transition-bounce: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-
-    /* Radius */
-    --radius: 1rem;
-
-    /* Sidebar - Christmas Theme */
-    --sidebar-background: 0 0% 97%;
-    --sidebar-foreground: 145 60% 15%;
-    --sidebar-primary: 350 85% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 145 20% 92%;
-    --sidebar-accent-foreground: 350 85% 50%;
-    --sidebar-border: 145 30% 85%;
-    --sidebar-ring: 350 85% 50%;
+    --sidebar-accent: 270 20% 22%;
+    --sidebar-accent-foreground: 340 70% 70%;
+    --sidebar-border: 270 20% 25%;
+    --sidebar-ring: 340 70% 70%;
   }
 
   body {
@@ -285,93 +156,81 @@ All colors MUST be HSL for consistency and theming support.
     scrollbar-width: none;
   }
 
-  /* Custom Scrollbar */
+  /* Kawaii Scrollbar */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+    background: hsl(340 30% 95%);
+    border-radius: 99px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(270 20% 90%);
-    border-radius: 9px;
+    background: linear-gradient(180deg, hsl(340 80% 75%), hsl(320 70% 75%));
+    border-radius: 99px;
+    border: 2px solid hsl(340 30% 95%);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: hsl(270 20% 80%);
+    background: linear-gradient(180deg, hsl(340 80% 65%), hsl(320 70% 65%));
   }
 
-  /* Christmas Utilities */
-  .bg-candy-cane {
-    background-image: var(--pattern-candy-cane);
+  .dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(270 20% 18%);
   }
 
-  .glass-frost {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  /* Fluffy Cloud Card */
+  .fluffy-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(12px);
+    border: 2px solid rgba(244, 114, 182, 0.2);
+    box-shadow: 0 8px 32px rgba(244, 114, 182, 0.1);
+  }
+
+  .dark .fluffy-card {
+    background: rgba(35, 30, 50, 0.8);
+    border: 2px solid rgba(244, 114, 182, 0.15);
+  }
+
+  /* Kawaii Button */
+  .btn-kawaii {
+    position: relative;
+    border-bottom: 4px solid rgba(0, 0, 0, 0.1);
+    transition: all 0.15s ease;
+  }
+
+  .btn-kawaii:active {
+    border-bottom-width: 2px;
+    transform: translateY(2px);
   }
 
   /* Animations */
-  @keyframes twinkle {
-
-    0%,
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    50% {
-      opacity: 0.3;
-      transform: scale(0.8);
-    }
-  }
-
-  @keyframes fall {
-    0% {
-      transform: translateY(-10vh) translateX(0) rotate(0deg);
-      opacity: 0;
-    }
-
-    10% {
-      opacity: 1;
-    }
-
-    100% {
-      transform: translateY(110vh) translateX(20px) rotate(360deg);
-      opacity: 0;
-    }
-  }
-
   @keyframes float {
 
     0%,
     100% {
-      transform: translateY(0);
+      transform: translateY(0) rotate(0deg);
     }
 
     50% {
-      transform: translateY(-20px);
+      transform: translateY(-8px) rotate(2deg);
     }
   }
 
-  .animate-twinkle {
-    animation: twinkle 3s infinite ease-in-out;
+  @keyframes bounce-cute {
+
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+
+    50% {
+      transform: translateY(-6px) scale(1.02);
+    }
   }
 
-  .animate-fall {
-    animation: fall 10s linear infinite;
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  /* Fun Emoji Animations */
   @keyframes wiggle {
 
     0%,
@@ -384,39 +243,17 @@ All colors MUST be HSL for consistency and theming support.
     }
   }
 
-  @keyframes jiggle {
+  @keyframes sparkle {
 
     0%,
     100% {
-      transform: translateY(0) scale(1);
-    }
-
-    25% {
-      transform: translateY(-2px) scale(1.05);
+      opacity: 1;
+      transform: scale(1);
     }
 
     50% {
-      transform: translateY(0) scale(1);
-    }
-
-    75% {
-      transform: translateY(2px) scale(0.95);
-    }
-  }
-
-  @keyframes swing {
-
-    0%,
-    100% {
-      transform: rotate(0deg);
-    }
-
-    25% {
-      transform: rotate(10deg);
-    }
-
-    75% {
-      transform: rotate(-10deg);
+      opacity: 0.5;
+      transform: scale(0.8);
     }
   }
 
@@ -427,221 +264,77 @@ All colors MUST be HSL for consistency and theming support.
       transform: scale(1);
     }
 
-    10% {
-      transform: scale(1.15);
-    }
-
-    20% {
-      transform: scale(1);
-    }
-
-    30% {
+    25% {
       transform: scale(1.1);
     }
 
-    40% {
-      transform: scale(1);
-    }
-  }
-
-  @keyframes rubberBand {
-    0% {
-      transform: scale(1);
-    }
-
-    30% {
-      transform: scaleX(1.15) scaleY(0.85);
-    }
-
-    40% {
-      transform: scaleX(0.85) scaleY(1.15);
-    }
-
     50% {
-      transform: scaleX(1.05) scaleY(0.95);
-    }
-
-    65% {
-      transform: scaleX(0.98) scaleY(1.02);
+      transform: scale(1);
     }
 
     75% {
-      transform: scaleX(1.02) scaleY(0.98);
-    }
-
-    100% {
-      transform: scale(1);
+      transform: scale(1.1);
     }
   }
 
-  @keyframes shake {
-
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-
-    20% {
-      transform: translateX(-2px) rotate(-2deg);
-    }
-
-    40% {
-      transform: translateX(2px) rotate(2deg);
-    }
-
-    60% {
-      transform: translateX(-2px) rotate(-2deg);
-    }
-
-    80% {
-      transform: translateX(2px) rotate(2deg);
-    }
-  }
-
-  @keyframes boing {
+  @keyframes shimmer {
     0% {
-      transform: scale(1) translateY(0);
-    }
-
-    10% {
-      transform: scale(1.2, 0.8) translateY(0);
-    }
-
-    30% {
-      transform: scale(0.9, 1.1) translateY(-5px);
-    }
-
-    50% {
-      transform: scale(1.05, 0.95) translateY(0);
-    }
-
-    70% {
-      transform: scale(0.97, 1.03) translateY(-2px);
+      background-position: -200% 0;
     }
 
     100% {
-      transform: scale(1) translateY(0);
+      background-position: 200% 0;
     }
+  }
+
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .animate-bounce-cute {
+    animation: bounce-cute 2s ease-in-out infinite;
   }
 
   .animate-wiggle {
-    animation: wiggle 0.5s ease-in-out infinite;
+    animation: wiggle 1s ease-in-out infinite;
   }
 
-  .animate-jiggle {
-    animation: jiggle 2s ease-in-out infinite;
-  }
-
-  .animate-swing {
-    animation: swing 1.5s ease-in-out infinite;
-    transform-origin: top center;
+  .animate-sparkle {
+    animation: sparkle 1.5s ease-in-out infinite;
   }
 
   .animate-heartbeat {
     animation: heartbeat 1.5s ease-in-out infinite;
   }
 
-  .animate-rubberBand {
-    animation: rubberBand 2s ease-in-out infinite;
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
   }
+}
 
-  .animate-shake {
-    animation: shake 2.5s ease-in-out infinite;
-  }
+/* Global Kawaii Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
 
-  .animate-boing {
-    animation: boing 2s ease-in-out infinite;
-  }
+::-webkit-scrollbar-track {
+  background: hsl(340 30% 95%);
+  border-radius: 99px;
+}
 
-  /* Hover animations for emojis */
-  .emoji-hover:hover {
-    animation: rubberBand 0.6s ease-in-out;
-  }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, hsl(340 80% 75%), hsl(320 70% 75%));
+  border-radius: 99px;
+}
 
-  /* Flip card styles */
-  .flip-card {
-    perspective: 1000px;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, hsl(340 80% 65%), hsl(320 70% 65%));
+}
 
-  .flip-card-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    transition: transform 0.6s;
-    transform-style: preserve-3d;
-  }
-
-  .flip-card-inner.flipped {
-    transform: rotateY(180deg);
-  }
-
-  .flip-card-front,
-  .flip-card-back {
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-  }
-
-  .flip-card-back {
-    transform: rotateY(180deg);
-  }
-
-  .backface-hidden {
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-  }
-
-  /* Jelly / Glass Effect */
-  .glass-jelly {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-top: 1px solid rgba(255, 255, 255, 0.9);
-    border-left: 1px solid rgba(255, 255, 255, 0.9);
-    box-shadow:
-      0 8px 32px 0 rgba(31, 38, 135, 0.15),
-      inset 0 4px 6px rgba(255, 255, 255, 0.5),
-      inset 0 -4px 6px rgba(0, 0, 0, 0.05);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .glass-jelly::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -50%;
-    width: 200%;
-    height: 100%;
-    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transform: rotate(30deg);
-    pointer-events: none;
-    animation: shine 6s infinite linear;
-  }
-
-  @keyframes shine {
-    0% {
-      transform: translateX(-100%) rotate(30deg);
-    }
-
-    20% {
-      transform: translateX(100%) rotate(30deg);
-    }
-
-    100% {
-      transform: translateX(100%) rotate(30deg);
-    }
-  }
-
-  /* Jelly / Glass Effect - Dark Mode Override */
-  .dark .glass-jelly {
-    background: linear-gradient(135deg, rgba(30, 30, 30, 0.6), rgba(30, 30, 30, 0.2));
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    border-left: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow:
-      0 8px 32px 0 rgba(0, 0, 0, 0.4),
-      inset 0 4px 6px rgba(255, 255, 255, 0.05),
-      inset 0 -4px 6px rgba(0, 0, 0, 0.3);
-  }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(340 80% 75%) hsl(340 30% 95%);
 }
