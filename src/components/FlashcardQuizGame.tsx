@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
+import { useXP } from '@/hooks/useXP';
+import { XPGainAnimation } from '@/components/xp/XPGainAnimation';
 
 interface Flashcard {
   id: string;
@@ -33,6 +35,7 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { updateFromQuiz } = useSRSProgress();
+  const { addGameXP, lastGain, clearLastGain } = useXP();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -40,6 +43,9 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
   const [isAnswered, setIsAnswered] = useState(false);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isGameComplete, setIsGameComplete] = useState(false);
+  const [totalXPEarned, setTotalXPEarned] = useState(0);
+  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [timeTakenForCurrent, setTimeTakenForCurrent] = useState(0);
 
   // Stats
   const [correctCount, setCorrectCount] = useState(0);
@@ -56,8 +62,16 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
     setCorrectCount(0);
     setWrongCount(0);
     setWrongWords([]);
+    setCorrectCount(0);
+    setWrongCount(0);
+    setWrongWords([]);
     generateQuestions();
+    setQuestionStartTime(Date.now());
   };
+
+  useEffect(() => {
+    setQuestionStartTime(Date.now());
+  }, [currentIndex, questions]);
 
   useEffect(() => {
     generateQuestions();
@@ -84,11 +98,14 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
     setQuestions(newQuestions);
   };
 
-  const handleAnswerSelect = (answer: string) => {
+  const handleAnswerSelect = async (answer: string) => {
     if (isAnswered) return;
 
     setSelectedAnswer(answer);
     setIsAnswered(true);
+
+    const timeTaken = (Date.now() - questionStartTime) / 1000;
+    setTimeTakenForCurrent(timeTaken);
 
     const isCorrect = answer === currentQuestion.correctAnswer;
 
@@ -96,6 +113,11 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
       setScore(score + 10 + (streak * 2));
       setStreak(streak + 1);
       setCorrectCount(correctCount + 1);
+      // Add XP for correct answer
+      const xpResult = await addGameXP('quiz', true, false);
+      if (xpResult?.xpAdded) {
+        setTotalXPEarned(prev => prev + xpResult.xpAdded);
+      }
     } else {
       setStreak(0);
       setWrongCount(wrongCount + 1);
@@ -105,7 +127,8 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
 
   const handleNext = async () => {
     const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-    await updateFromQuiz(currentQuestion.card.id, isCorrect, currentQuestion.card.isUserFlashcard);
+    await updateFromQuiz(currentQuestion.card.id, isCorrect, timeTakenForCurrent, currentQuestion.card.isUserFlashcard);
+    console.log(`🧠 Quiz SRS: ${currentQuestion.card.id} Correct=${isCorrect} Time=${timeTakenForCurrent.toFixed(1)}s`);
 
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
@@ -125,38 +148,46 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
     const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
     return (
-      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-auto flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-auto flex items-center justify-center p-4 z-50">
         <motion.div
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
+          className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
         >
-          <div className="absolute top-0 left-0 w-full h-24 sm:h-32 bg-gradient-to-b from-violet-50 to-transparent -z-10"></div>
+          <div className="absolute top-0 left-0 w-full h-20 sm:h-24 bg-gradient-to-b from-violet-50 to-transparent -z-10"></div>
 
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl sm:rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-slate-50">
-            <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-yellow-500 drop-shadow-sm" />
+          <div className="w-14 h-14 sm:w-20 sm:h-20 bg-white rounded-2xl sm:rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-3 sm:mb-4 border border-slate-50">
+            <Trophy className="h-7 w-7 sm:h-10 sm:w-10 text-yellow-500 drop-shadow-sm" />
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-800 mb-2 tracking-tight">{t('games.excellent')}</h2>
-          <p className="text-slate-500 mb-4 sm:mb-6 font-medium text-sm sm:text-base">
+          <h2 className="text-lg sm:text-xl font-black text-slate-800 mb-1 tracking-tight">{t('games.excellent')}</h2>
+          <p className="text-slate-500 mb-3 sm:mb-4 font-medium text-xs sm:text-sm">
             {t('games.completedQuiz')}
           </p>
 
-          <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 mb-3 sm:mb-4 border border-slate-100">
-            <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">{t('games.totalScore')}</p>
-            <p className="text-xl sm:text-2xl font-black text-violet-600 tracking-tight">{score} {t('common.points')}</p>
+          <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-2 sm:p-3 mb-3 sm:mb-4 border border-slate-100">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">{t('games.totalScore')}</p>
+            <p className="text-lg sm:text-xl font-black text-violet-600 tracking-tight">{score} {t('common.points')}</p>
           </div>
+
+          {/* XP Earned Section */}
+          {totalXPEarned > 0 && (
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl sm:rounded-2xl p-2 sm:p-3 mb-3 sm:mb-4 border border-purple-100">
+              <p className="text-[10px] text-purple-400 uppercase tracking-wider font-bold mb-0.5">XP Earned</p>
+              <p className="text-lg sm:text-xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent tracking-tight">+{totalXPEarned} XP ⚡</p>
+            </div>
+          )}
 
           {/* Wrong Words Section */}
           {wrongWords.length > 0 ? (
-            <div className="bg-red-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-red-100 mb-4 sm:mb-6 text-left">
-              <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <span className="text-red-500">❌</span>
-                <span className="font-bold text-sm sm:text-base text-red-700">{t('games.wrongWords')} ({wrongWords.length})</span>
+            <div className="bg-red-50 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-red-100 mb-3 sm:mb-4 text-left">
+              <div className="flex items-center gap-1.5 mb-1.5 sm:mb-2">
+                <span className="text-red-500 text-sm">❌</span>
+                <span className="font-bold text-xs sm:text-sm text-red-700">{t('games.wrongWords')} ({wrongWords.length})</span>
               </div>
-              <div className="space-y-1.5 sm:space-y-2 max-h-20 sm:max-h-28 overflow-y-auto">
+              <div className="space-y-1 sm:space-y-1.5 max-h-20 sm:max-h-24 overflow-y-auto custom-scrollbar">
                 {wrongWords.map((w, idx) => (
-                  <div key={idx} className="flex justify-between items-center bg-white rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
+                  <div key={idx} className="flex justify-between items-center bg-white rounded-md px-2 py-1 text-[10px] sm:text-xs">
                     <span className="font-medium text-red-800 truncate mr-2">{w.word}</span>
                     <span className="text-red-500 truncate">{w.meaning}</span>
                   </div>
@@ -164,16 +195,16 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
               </div>
             </div>
           ) : (
-            <div className="bg-green-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-green-100 mb-4 sm:mb-6 text-center">
-              <span className="text-2xl sm:text-3xl mb-2 block">🎉</span>
-              <span className="font-bold text-sm sm:text-base text-green-700">{t('games.noWrongWords')}</span>
+            <div className="bg-green-50 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-green-100 mb-3 sm:mb-4 text-center">
+              <span className="text-2xl sm:text-3xl mb-1 block">🎉</span>
+              <span className="font-bold text-xs sm:text-sm text-green-700">{t('games.noWrongWords')}</span>
             </div>
           )}
 
           <div className="flex flex-row gap-2 justify-center w-full">
             <Button
               onClick={handleRestart}
-              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 transition-all rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 px-2 sm:px-4"
+              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 transition-all rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs font-bold active:scale-95 px-1 sm:px-3"
             >
               <span className="hidden sm:inline">{t('games.playAgain')}</span>
               <span className="sm:hidden">{t('games.playAgainShort')}</span>
@@ -194,16 +225,16 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
                   });
                 }
               }}
-              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
+              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs font-bold active:scale-95 transition-all px-1 sm:px-3"
             >
-              <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 shrink-0" />
+              <Gamepad2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 shrink-0" />
               <span className="hidden sm:inline">{t('games.selectGame')}</span>
               <span className="sm:hidden">{t('games.selectGameShort')}</span>
             </Button>
 
             <Button
               onClick={onClose}
-              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
+              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs font-bold active:scale-95 transition-all px-1 sm:px-3"
             >
               {t('common.next')}
             </Button>
@@ -216,6 +247,15 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-fuchsia-50 to-violet-100 dark:from-violet-950 dark:via-fuchsia-900 dark:to-violet-950 overflow-auto">
       <BackgroundDecorations />
+
+      {/* XP Gain Animation */}
+      {lastGain && (
+        <XPGainAnimation
+          amount={lastGain.amount}
+          levelUp={lastGain.levelUp}
+          onComplete={clearLastGain}
+        />
+      )}
 
       <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 relative z-10 min-h-screen flex flex-col">
         {/* Header */}

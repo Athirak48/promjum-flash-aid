@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
-import { Flame, Star, BookOpen, Play, Brain, GamepadIcon, Sparkles, Trophy } from 'lucide-react';
+import { Flame, Star, BookOpen, Play, Brain, GamepadIcon, Sparkles, Trophy, Users } from 'lucide-react';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,17 +12,25 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { LearningFlowDialog } from '@/components/learning/LearningFlowDialog';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { useXP } from '@/hooks/useXP';
 
 interface DailyDeckQuickStartProps {
   streak?: number;
   totalXP?: number;
   wordsLearnedToday?: number;
+  wordsLearned?: number;
+  timeSpentToday?: number;
+  ranking?: number;
 }
 
 export function DailyDeckQuickStart({
   streak = 0,
   totalXP = 0,
-  wordsLearnedToday = 0
+  wordsLearnedToday = 0,
+  wordsLearned = 0,
+  timeSpentToday = 0,
+  ranking = 0
 }: DailyDeckQuickStartProps) {
   const navigate = useNavigate();
   const [showModeDialog, setShowModeDialog] = useState(false);
@@ -31,21 +39,34 @@ export function DailyDeckQuickStart({
   const { flashcards } = useFlashcards();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const { trackButtonClick } = useAnalytics();
+  const { xpData } = useXP();
+
+  // Use real XP data from database
+  const realTotalXP = xpData?.totalXP ?? totalXP;
+  const realGamesXPToday = xpData?.gamesXPToday ?? 0;
+
+  // Format time helper
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   // Mock flashcards data for fallback
   const getMockFlashcards = (): Array<{ id: string; front: string; back: string; upload_id?: string }> => [
-    { id: 'mock-1', front: 'Hello', back: 'สวัสดี' },
-    { id: 'mock-2', front: 'Thank you', back: 'ขอบคุณ' },
-    { id: 'mock-3', front: 'Goodbye', back: 'ลาก่อน' },
-    { id: 'mock-4', front: 'Good morning', back: 'สวัสดีตอนเช้า' },
-    { id: 'mock-5', front: 'How are you?', back: 'สบายดีไหม' },
-    { id: 'mock-6', front: 'I am fine', back: 'ฉันสบายดี' },
-    { id: 'mock-7', front: 'Please', back: 'กรุณา' },
-    { id: 'mock-8', front: 'Excuse me', back: 'ขอโทษ' },
-    { id: 'mock-9', front: 'Yes', back: 'ใช่' },
-    { id: 'mock-10', front: 'No', back: 'ไม่' },
-    { id: 'mock-11', front: 'Water', back: 'น้ำ' },
-    { id: 'mock-12', front: 'Food', back: 'อาหาร' },
+    { id: 'mock-1', front: 'Hello', back: 'สวัสดี', partOfSpeech: 'Interjection' },
+    { id: 'mock-2', front: 'Thank you', back: 'ขอบคุณ', partOfSpeech: 'Phrase' },
+    { id: 'mock-3', front: 'Goodbye', back: 'ลาก่อน', partOfSpeech: 'Phrase' },
+    { id: 'mock-4', front: 'Good morning', back: 'สวัสดีตอนเช้า', partOfSpeech: 'Phrase' },
+    { id: 'mock-5', front: 'How are you?', back: 'สบายดีไหม', partOfSpeech: 'Phrase' },
+    { id: 'mock-6', front: 'I am fine', back: 'ฉันสบายดี', partOfSpeech: 'Phrase' },
+    { id: 'mock-7', front: 'Please', back: 'กรุณา', partOfSpeech: 'Adverb' },
+    { id: 'mock-8', front: 'Excuse me', back: 'ขอโทษ', partOfSpeech: 'Phrase' },
+    { id: 'mock-9', front: 'Yes', back: 'ใช่', partOfSpeech: 'Adverb' },
+    { id: 'mock-10', front: 'No', back: 'ไม่', partOfSpeech: 'Adverb' },
+    { id: 'mock-11', front: 'Water', back: 'น้ำ', partOfSpeech: 'Noun' },
+    { id: 'mock-12', front: 'Food', back: 'อาหาร', partOfSpeech: 'Noun' },
   ];
 
   // Get cards: prioritize scheduled review near now, then fallback to smart selection
@@ -154,7 +175,7 @@ export function DailyDeckQuickStart({
 
       const { data: randomStart } = await supabase
         .from('flashcards')
-        .select('id, front_text, back_text, upload_id')
+        .select('id, front_text, back_text, upload_id, part_of_speech')
         .limit(12);
 
       if (randomStart && randomStart.length > 0) {
@@ -162,6 +183,7 @@ export function DailyDeckQuickStart({
           id: c.id,
           front: c.front_text,
           back: c.back_text,
+          partOfSpeech: c.part_of_speech,
           upload_id: c.upload_id
         }));
       }
@@ -200,7 +222,7 @@ export function DailyDeckQuickStart({
     });
   };
 
-  const handleGameSelect = async (gameType: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch') => {
+  const handleGameSelect = async (gameType: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch' | 'scramble' | 'ninja') => {
     setShowGameSelection(false);
 
     // Get cards for game
@@ -227,19 +249,18 @@ export function DailyDeckQuickStart({
   };
 
   return (
-    <Card className="bg-white dark:bg-slate-900 shadow-lg border border-slate-100 dark:border-slate-800 h-full p-2 overflow-hidden relative">
-      {/* Decorative Background */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-2xl" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-pink-500/10 to-transparent rounded-full blur-xl" />
+    <Card className="bg-black/40 backdrop-blur-xl border-white/10 h-full p-6 overflow-hidden relative rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      {/* Glass Shimmer handled by glass-card::before */}
 
-      <CardHeader className="pb-2 relative">
+      <CardHeader className="pb-4 relative">
+
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="flex items-center gap-4"
         >
           <motion.div
-            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-pink-500/20 dark:from-primary/30 dark:to-pink-500/30 flex items-center justify-center shadow-md"
+            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-white/10"
             animate={{
               y: [0, -3, 0],
               rotate: [0, 2, -2, 0]
@@ -253,10 +274,10 @@ export function DailyDeckQuickStart({
             <Flame className="w-8 h-8 text-primary" />
           </motion.div>
           <div>
-            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+            <h3 className="text-xl font-bold text-white">
               Continuous Progress
             </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-white/70">
               Keep your learning streak alive!
             </p>
           </div>
@@ -271,20 +292,20 @@ export function DailyDeckQuickStart({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             whileHover={{ scale: 1.03, y: -2 }}
-            className="bg-white dark:bg-slate-800 rounded-3xl p-5 flex flex-col items-center gap-3 shadow-lg hover:shadow-xl transition-all border border-slate-100 dark:border-slate-700"
+            className="bg-white/5 backdrop-blur-md rounded-[1.5rem] p-5 flex flex-col items-center gap-3 border border-white/10 hover:border-orange-400/50 hover:bg-orange-400/10 transition-all group"
           >
             {/* Icon Circle */}
             <motion.div
               animate={{ rotate: [0, -5, 5, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/40 dark:to-red-900/40 flex items-center justify-center"
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center group-hover:shadow-[0_0_20px_rgba(251,146,60,0.4)] transition-all"
             >
-              <Flame className="w-7 h-7 text-orange-500" />
+              <Flame className="w-7 h-7 text-orange-400 drop-shadow-lg" />
             </motion.div>
             {/* Content */}
             <div className="text-center">
-              <div className="text-3xl font-black text-slate-800 dark:text-white">{streak}</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Day Streak</div>
+              <div className="text-4xl font-black text-white drop-shadow-lg">{streak}</div>
+              <div className="text-sm text-white font-semibold">Day Streak</div>
             </div>
           </motion.div>
 
@@ -294,24 +315,26 @@ export function DailyDeckQuickStart({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             whileHover={{ scale: 1.03, y: -2 }}
-            className="bg-white dark:bg-slate-800 rounded-3xl p-5 flex flex-col items-center gap-3 shadow-lg hover:shadow-xl transition-all border border-slate-100 dark:border-slate-700 relative"
+            className="bg-white/5 backdrop-blur-md rounded-[1.5rem] p-5 flex flex-col items-center gap-3 border border-white/10 hover:border-yellow-400/50 hover:bg-yellow-400/10 transition-all group relative"
           >
             {/* Today Badge */}
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-green-400 to-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
-              +120 today
-            </div>
+            {realGamesXPToday > 0 && (
+              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(250,204,21,0.5)]">
+                +{realGamesXPToday} today
+              </div>
+            )}
             {/* Icon Circle */}
             <motion.div
               animate={{ y: [0, -3, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-100 to-amber-100 dark:from-yellow-900/40 dark:to-amber-900/40 flex items-center justify-center"
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-400/20 to-amber-400/20 flex items-center justify-center group-hover:shadow-[0_0_20px_rgba(250,204,21,0.4)] transition-all"
             >
-              <Star className="w-7 h-7 text-amber-500 fill-amber-500" />
+              <Star className="w-7 h-7 text-yellow-400 fill-yellow-400 drop-shadow-md" />
             </motion.div>
             {/* Content */}
             <div className="text-center">
-              <div className="text-3xl font-black text-slate-800 dark:text-white">{totalXP.toLocaleString()}</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">XP Points</div>
+              <div className="text-4xl font-black text-white drop-shadow-lg">{realTotalXP.toLocaleString()}</div>
+              <div className="text-sm text-white font-semibold">XP Points</div>
             </div>
           </motion.div>
 
@@ -321,54 +344,56 @@ export function DailyDeckQuickStart({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             whileHover={{ scale: 1.03, y: -2 }}
-            className="bg-white dark:bg-slate-800 rounded-3xl p-5 flex flex-col items-center gap-3 shadow-lg hover:shadow-xl transition-all border border-slate-100 dark:border-slate-700 relative"
+            className="bg-white/5 backdrop-blur-md rounded-[1.5rem] p-5 flex flex-col items-center gap-3 border border-white/10 hover:border-pink-400/50 hover:bg-pink-400/10 transition-all group relative"
           >
             {/* Today Badge */}
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-green-400 to-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.5)]">
               +{wordsLearnedToday} today
             </div>
             {/* Icon Circle */}
             <motion.div
               animate={{ y: [0, -3, 0], x: [0, 2, -2, 0] }}
               transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/40 dark:to-violet-900/40 flex items-center justify-center"
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-400/20 to-purple-400/20 flex items-center justify-center group-hover:shadow-[0_0_20px_rgba(236,72,153,0.4)] transition-all"
             >
-              <BookOpen className="w-7 h-7 text-purple-500" />
+              <BookOpen className="w-7 h-7 text-pink-300 drop-shadow-lg" />
             </motion.div>
             {/* Content */}
             <div className="text-center">
-              <div className="text-3xl font-black text-slate-800 dark:text-white">342</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Vocab Learned</div>
+              <div className="text-4xl font-black text-white drop-shadow-lg">{wordsLearned}</div>
+              <div className="text-sm text-white font-semibold">Vocab Learned</div>
             </div>
           </motion.div>
         </div>
 
-        {/* Daily Snapshot */}
+        {/* Vocab Challenge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm"
+          className="bg-white/5 backdrop-blur-md rounded-[1.2rem] p-4 border border-white/10 hover:bg-white/10 transition-all"
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-lg">📊</span>
-              <span className="font-bold text-slate-800 dark:text-slate-100">Daily Snapshot</span>
+              <span className="text-lg">🏆</span>
+              <span className="font-bold text-white">Vocab Challenge</span>
             </div>
-            <span className="text-xs font-semibold text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-full">TODAY</span>
+            <span className="text-xs font-bold text-cyan-300 bg-cyan-950/30 border border-cyan-500/30 px-2 py-1 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.2)]">TODAY</span>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Words Learned</div>
-              <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{wordsLearnedToday}</div>
+              <div className="text-xs text-white/90 mb-1 font-medium">Words Learned</div>
+              <div className="text-2xl font-black text-white drop-shadow-lg">{wordsLearnedToday}</div>
             </div>
-            <div className="border-x border-slate-200 dark:border-slate-600">
-              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Time Spent</div>
-              <div className="text-xl font-bold text-slate-800 dark:text-slate-100">45.2104<span className="text-sm">m</span></div>
+            <div className="border-x border-white/20">
+              <div className="text-xs text-white/90 mb-1 font-medium">Time Spent</div>
+              <div className="text-2xl font-black text-white drop-shadow-lg">
+                {formatTime(timeSpentToday)}
+              </div>
             </div>
             <div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Ranking</div>
-              <div className="text-xl font-bold text-green-600 dark:text-green-400">#15</div>
+              <div className="text-xs text-white/90 mb-1 font-medium">Ranking</div>
+              <div className="text-2xl font-black text-emerald-400 drop-shadow-md">#{ranking}</div>
             </div>
           </div>
         </motion.div>
@@ -384,8 +409,11 @@ export function DailyDeckQuickStart({
             className="flex-1"
           >
             <Button
-              onClick={() => setShowLearningFlow(true)}
-              className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold shadow-lg hover:shadow-xl transition-all"
+              onClick={() => {
+                trackButtonClick('Learning Now', 'dashboard');
+                setShowLearningFlow(true);
+              }}
+              className="w-full btn-space-glass text-white rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold transition-all"
             >
               <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 fill-current" />
               <span className="sm:hidden">เรียนเลย</span>
@@ -393,7 +421,7 @@ export function DailyDeckQuickStart({
             </Button>
           </motion.div>
 
-          {/* Vocab Challenge Button */}
+          {/* Multiplayer Button */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -403,11 +431,37 @@ export function DailyDeckQuickStart({
             className="flex-1"
           >
             <Button
-              onClick={() => navigate('/vocab-challenge')}
+              onClick={() => {
+                trackButtonClick('Multiplayer', 'dashboard');
+                navigate('/multiplayer');
+              }}
               variant="outline"
-              className="w-full rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold shadow-sm hover:shadow-md transition-all border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+              className="w-full rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold transition-all border-2 border-teal-400/50 bg-white/10 hover:bg-white/20 text-white neon-rim-teal"
             >
-              <Trophy className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-purple-500" />
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-teal-300" />
+              <span className="sm:hidden">แข่ง</span>
+              <span className="hidden sm:inline">แข่งกับเพื่อน</span>
+            </Button>
+          </motion.div>
+
+          {/* Vocab Challenge Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex-1"
+          >
+            <Button
+              onClick={() => {
+                trackButtonClick('Vocab Challenge', 'dashboard');
+                navigate('/vocab-challenge');
+              }}
+              variant="outline"
+              className="w-full rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold transition-all border-2 border-purple-400/50 bg-white/10 hover:bg-white/20 text-white neon-rim-purple"
+            >
+              <Trophy className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-purple-300" />
               <span className="sm:hidden">ท้าทาย</span>
               <span className="hidden sm:inline">Vocab Challenge</span>
             </Button>

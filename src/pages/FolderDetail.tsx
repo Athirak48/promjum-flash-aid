@@ -21,6 +21,9 @@ import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGam
 import { FlashcardHangmanGame } from '@/components/FlashcardHangmanGame';
 import { FlashcardVocabBlinderGame } from '@/components/FlashcardVocabBlinderGame';
 import { FlashcardWordSearchGame } from '@/components/FlashcardWordSearchGame';
+import { FlashcardWordScrambleGame } from '@/components/FlashcardWordScrambleGame';
+import { FlashcardNinjaSliceGame } from '@/components/FlashcardNinjaSliceGame';
+import { FlashcardHoneyCombGame } from '@/components/FlashcardHoneyCombGame';
 import { FlashcardSelectionDialog } from '@/components/FlashcardSelectionDialog';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { supabase } from '@/integrations/supabase/client';
@@ -87,7 +90,7 @@ export function FolderDetail() {
   const [loading, setLoading] = useState(true);
   const [showNewCardDialog, setShowNewCardDialog] = useState(false);
   const [selectedSet, setSelectedSet] = useState<FlashcardSet | null>(null);
-  const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch' | null>(null);
+  const [gameMode, setGameMode] = useState<'swiper' | 'review' | 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch' | 'scramble' | 'ninja' | 'honeycomb' | null>(null);
   const [showGameSelection, setShowGameSelection] = useState(false);
   const [showFlashcardSelection, setShowFlashcardSelection] = useState(false);
   const [showReviewFlashcardSelection, setShowReviewFlashcardSelection] = useState(false);
@@ -274,7 +277,7 @@ export function FolderDetail() {
     setShowGameSelection(true);
   };
 
-  const handleGameSelect = (game: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch') => {
+  const handleGameSelect = (game: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch' | 'scramble' | 'ninja' | 'honeycomb') => {
     setGameMode(game);
     setShowGameSelection(false);
     setShowFlashcardSelection(false);
@@ -356,6 +359,11 @@ export function FolderDetail() {
   const handleGameClose = () => {
     setSelectedSet(null);
     setGameMode(null);
+  };
+
+  const handleSelectNewGame = () => {
+    setGameMode(null);
+    setShowGameSelection(true);
   };
 
   const handleAddFlashcardRow = () => {
@@ -833,6 +841,7 @@ export function FolderDetail() {
             created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
+          onSelectNewGame={handleSelectNewGame}
         />
       );
     }
@@ -848,6 +857,7 @@ export function FolderDetail() {
             created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
+          onSelectNewGame={handleSelectNewGame}
         />
       );
     }
@@ -863,6 +873,7 @@ export function FolderDetail() {
             created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
+          onSelectNewGame={handleSelectNewGame}
         />
       );
     }
@@ -876,6 +887,7 @@ export function FolderDetail() {
             created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
+          onSelectNewGame={handleSelectNewGame}
         />
       );
     }
@@ -889,6 +901,7 @@ export function FolderDetail() {
             created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
+          onSelectNewGame={handleSelectNewGame}
         />
       );
     }
@@ -902,6 +915,50 @@ export function FolderDetail() {
             created_at: new Date().toISOString()
           }))}
           onClose={handleGameClose}
+          onSelectNewGame={handleSelectNewGame}
+        />
+      );
+    }
+
+    if (gameMode === 'scramble') {
+      return (
+        <FlashcardWordScrambleGame
+          vocabList={selectedFlashcards.map(c => ({
+            id: c.id,
+            word: c.front,
+            meaning: c.back
+          }))}
+          onExit={handleGameClose}
+          onGameFinish={(results) => handleReviewComplete()}
+          onSelectNewGame={handleSelectNewGame}
+        />
+      );
+    }
+    if (gameMode === 'ninja') {
+      return (
+        <FlashcardNinjaSliceGame
+          vocabList={selectedFlashcards.map(c => ({
+            id: c.id,
+            word: c.front,
+            meaning: c.back
+          }))}
+          onExit={handleGameClose}
+          onGameFinish={(results) => handleReviewComplete()}
+          onSelectNewGame={handleSelectNewGame}
+        />
+      );
+    }
+    if (gameMode === 'honeycomb') {
+      return (
+        <FlashcardHoneyCombGame
+          vocabList={selectedFlashcards.map(c => ({
+            id: c.id,
+            word: c.front,
+            meaning: c.back
+          }))}
+          onExit={handleGameClose}
+          onGameFinish={(results) => handleReviewComplete()}
+          onNewGame={handleSelectNewGame}
         />
       );
     }
@@ -944,12 +1001,12 @@ export function FolderDetail() {
                 สร้างชุดใหม่
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-6 rounded-2xl border-none shadow-2xl bg-white/95 backdrop-blur-md">
+            <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-6 rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+                <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
                   {isEditing ? 'แก้ไขชุดแฟลชการ์ด' : 'สร้างชุดแฟลชการ์ดใหม่'}
                 </DialogTitle>
-                <DialogDescription className="text-muted-foreground">
+                <DialogDescription className="text-white/50">
                   {isEditing ? 'แก้ไขข้อมูลชุดแฟลชการ์ดของคุณ' : 'สร้างชุดคำศัพท์ใหม่ในโฟลเดอร์นี้'}
                 </DialogDescription>
               </DialogHeader>
@@ -1137,88 +1194,95 @@ export function FolderDetail() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredSets.map((set) => (
-                <Card key={set.id} className="group hover:shadow-glow transition-all duration-300 hover:scale-105">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg mb-2">{set.title}</h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                          <BookOpen className="h-4 w-4" />
-                          <span>{set.cardCount} การ์ด</span>
-                        </div>
-                        <Badge variant="secondary" className="text-xs">
-                          {set.source}
-                        </Badge>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleOpenEditSet(set)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            แก้ไข
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteSetClick(set)} className="text-destructive">
-                            <Trash className="h-4 w-4 mr-2" />
-                            ลบ
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                <div key={set.id} className="group relative transition-all duration-300 hover:scale-[1.02]">
+                  <div className="glass-card rounded-[2rem] border border-white/20 hover:border-white/40 bg-white/10 backdrop-blur-md p-6 relative overflow-hidden shadow-lg h-full flex flex-col">
+                    {/* Light Reflection */}
+                    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
 
-                    <div className="mb-4">
-                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                        <span>ความก้าวหน้า</span>
-                        <span>{set.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div
-                          className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${set.progress}%` }}
-                        ></div>
-                      </div>
-                    </div>
+                    {/* Hover Gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-                    <div className="space-y-2 text-xs text-muted-foreground mb-4">
-                      {set.lastReviewed && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-3 w-3" />
-                          <span>ทบทวนล่าสุด: {set.lastReviewed.toLocaleDateString('th-TH')}</span>
+                    <div className="relative z-10 flex flex-col h-full">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-xl text-white mb-2 line-clamp-1 group-hover:text-primary transition-colors">{set.title}</h3>
+                          <div className="flex items-center gap-2 text-sm text-white/60 mb-2">
+                            <BookOpen className="h-4 w-4 text-cyan-400" />
+                            <span>{set.cardCount} การ์ด</span>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] border-white/20 text-white/50 bg-white/5 hover:bg-white/10">
+                            {set.source}
+                          </Badge>
                         </div>
-                      )}
-                      {set.nextReview && (
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-3 w-3" />
-                          <span>ทบทวนครั้งต่อไป: {set.nextReview.toLocaleDateString('th-TH')}</span>
-                        </div>
-                      )}
-                    </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white/40 hover:text-white hover:bg-white/10 rounded-full">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-black/90 border-white/20 text-white rounded-xl">
+                            <DropdownMenuItem onClick={() => handleOpenEditSet(set)} className="focus:bg-white/10 focus:text-white rounded-lg">
+                              <Edit className="h-4 w-4 mr-2" />
+                              แก้ไข
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteSetClick(set)} className="text-red-400 focus:bg-red-500/10 focus:text-red-300 rounded-lg">
+                              <Trash className="h-4 w-4 mr-2" />
+                              ลบ
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
 
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => handleReviewCards(set)}
-                      >
-                        <BookOpen className="h-3 w-3 mr-1" />
-                        ทบทวน
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="default"
-                        className="flex-1"
-                        onClick={() => handlePlayGame(set)}
-                      >
-                        <GamepadIcon className="h-3 w-3 mr-1" />
-                        เล่นเกม
-                      </Button>
+                      <div className="mb-4 mt-auto">
+                        <div className="flex justify-between text-xs font-medium text-white/50 mb-1">
+                          <span>ความก้าวหน้า</span>
+                          <span className="text-primary">{set.progress}%</span>
+                        </div>
+                        <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="bg-primary h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                            style={{ width: `${set.progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-[10px] text-white/40 mb-4">
+                        {set.lastReviewed && (
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-3 w-3" />
+                            <span>ทบทวนล่าสุด: {set.lastReviewed.toLocaleDateString('th-TH')}</span>
+                          </div>
+                        )}
+                        {set.nextReview && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3 w-3" />
+                            <span>ทบทวนครั้งต่อไป: {set.nextReview.toLocaleDateString('th-TH')}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 mt-auto pt-2 border-t border-white/5">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 bg-transparent border-white/10 text-white hover:bg-white/10 hover:text-white hover:border-white/30 rounded-xl"
+                          onClick={() => handleReviewCards(set)}
+                        >
+                          <BookOpen className="h-3 w-3 mr-1" />
+                          ทบทวน
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-white/10 hover:bg-primary hover:text-white text-white/90 border-0 shadow-lg hover:shadow-glow transition-all rounded-xl"
+                          onClick={() => handlePlayGame(set)}
+                        >
+                          <GamepadIcon className="h-3 w-3 mr-1" />
+                          เล่นเกม
+                        </Button>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -1271,16 +1335,16 @@ export function FolderDetail() {
 
 
         <AlertDialog open={!!setToDelete} onOpenChange={(open) => !open && setSetToDelete(null)}>
-          <AlertDialogContent>
+          <AlertDialogContent className="rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(244,63,94,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
             <AlertDialogHeader>
-              <AlertDialogTitle>คุณแน่ใจหรือไม่?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-white">คุณแน่ใจหรือไม่?</AlertDialogTitle>
+              <AlertDialogDescription className="text-white/50">
                 การกระทำนี้ไม่สามารถย้อนกลับได้ ชุดแฟลชการ์ด "{setToDelete?.title}" จะถูกลบถาวร
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">ยกเลิก</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
                 ลบ
               </AlertDialogAction>
             </AlertDialogFooter>

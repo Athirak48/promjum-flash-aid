@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
 import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
@@ -26,7 +25,10 @@ import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGam
 import { FlashcardHangmanGame } from '@/components/FlashcardHangmanGame';
 import { FlashcardVocabBlinderGame } from '@/components/FlashcardVocabBlinderGame';
 import { FlashcardWordSearchGame } from '@/components/FlashcardWordSearchGame';
+import { FlashcardWordScrambleGame } from '@/components/FlashcardWordScrambleGame';
+import { FlashcardNinjaSliceGame } from '@/components/FlashcardNinjaSliceGame';
 import { LearningModes, VocabItem, AudioSettings, ListeningMCQPhase, ReadingMCQPhase } from '@/components/learning';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { VocabWord } from '@/services/storyGenerationService';
 import { LearningErrorBoundary } from '@/components/common/LearningErrorBoundary';
 
@@ -61,6 +63,7 @@ export default function LearningSessionPage() {
     const [showGameSelection, setShowGameSelection] = useState(false);
     const [selectedGameType, setSelectedGameType] = useState<string | null>(null);
     const [isPhaseComplete, setIsPhaseComplete] = useState(false);
+    const { trackFeatureUsage } = useAnalytics();
 
     // Redirect if no state
     useEffect(() => {
@@ -83,6 +86,8 @@ export default function LearningSessionPage() {
         id: v.id,
         front: v.front_text,
         back: v.back_text,
+        partOfSpeech: v.part_of_speech,
+        isUserFlashcard: v.isUserFlashcard
     }));
 
     const gameFlashcards = selectedVocab.map(v => ({
@@ -90,6 +95,7 @@ export default function LearningSessionPage() {
         front_text: v.front_text,
         back_text: v.back_text,
         created_at: new Date().toISOString(),
+        isUserFlashcard: v.isUserFlashcard
     }));
 
     // Convert to VocabWord format for AI story generation
@@ -100,16 +106,25 @@ export default function LearningSessionPage() {
 
     // Handle phase completion
     const handlePhaseComplete = (result?: any) => {
+        const timeSpent = result?.timeSpent || 0;
         const phaseResult: PhaseResult = {
             correct: result?.correct || 0,
             total: result?.total || selectedVocab.length,
-            timeSpent: result?.timeSpent,
+            timeSpent: timeSpent,
         };
 
         setPhaseResults(prev => ({
             ...prev,
             [currentPhase]: phaseResult,
         }));
+
+        // Track time spent
+        trackFeatureUsage(
+            currentPhase === 'game' ? `game_${selectedGameType || 'unknown'}` : `learning_${currentPhase}`,
+            'complete',
+            timeSpent,
+            { correct: phaseResult.correct, total: phaseResult.total }
+        );
 
         setIsPhaseComplete(true);
     };
@@ -205,8 +220,20 @@ export default function LearningSessionPage() {
                             // Reset flashcard to review again
                             window.location.reload();
                         }}
-                        onContinue={() => {
-                            // Go to next phase
+                        onContinue={(results) => {
+                            // If results are passed (from "Contniue" button), save them
+                            if (results) {
+                                const phaseResult: PhaseResult = {
+                                    correct: results.correct || 0,
+                                    total: (results.correct || 0) + (results.incorrect || 0),
+                                };
+                                setPhaseResults(prev => ({
+                                    ...prev,
+                                    [currentPhase]: phaseResult,
+                                }));
+                            }
+
+                            // Go directly to next phase (skipping overlay)
                             if (currentPhaseIndex < totalPhases - 1) {
                                 setCurrentPhaseIndex(prev => prev + 1);
                                 setSelectedGameType(null);
@@ -314,6 +341,31 @@ export default function LearningSessionPage() {
                         return <FlashcardVocabBlinderGame {...gameProps} />;
                     case 'wordSearch':
                         return <FlashcardWordSearchGame {...gameProps} />;
+                    case 'scramble':
+                        return <FlashcardWordScrambleGame
+                            vocabList={gameFlashcards.map(c => ({
+                                id: c.id,
+                                word: c.front_text,
+                                meaning: c.back_text
+                            }))}
+                            onExit={gameProps.onClose}
+                            onGameFinish={(results) => {
+                                // Map results if necessary, or just call onNext
+                                gameProps.onNext();
+                            }}
+                        />;
+                    case 'ninja':
+                        return <FlashcardNinjaSliceGame
+                            vocabList={gameFlashcards.map(c => ({
+                                id: c.id,
+                                word: c.front_text,
+                                meaning: c.back_text
+                            }))}
+                            onExit={gameProps.onClose}
+                            onGameFinish={(results) => {
+                                gameProps.onNext();
+                            }}
+                        />;
                     default:
                         return <FlashcardQuizGame {...gameProps} />;
                 }
@@ -324,8 +376,8 @@ export default function LearningSessionPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-pink-50/30 dark:from-slate-900 dark:via-purple-950/30 dark:to-pink-950/30">
-            <BackgroundDecorations />
+        <div className="min-h-screen bg-transparent">
+
 
             {/* Header */}
             <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-slate-200/50 dark:border-slate-700/50">

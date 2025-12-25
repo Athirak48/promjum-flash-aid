@@ -154,7 +154,7 @@ export default function AdminDeckDetail() {
     return (
       <div className="p-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">ไม่พบข้อมูล Deck</h1>
+          <h1 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">ไม่พบข้อมูล Deck</h1>
           <Button onClick={() => navigate('/admin/decks')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             กลับไปหน้า Decks
@@ -167,7 +167,7 @@ export default function AdminDeckDetail() {
   const IconComponent = (Icons as any)[deck.icon] || Icons.BookOpen;
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
@@ -175,29 +175,30 @@ export default function AdminDeckDetail() {
             variant="ghost"
             size="icon"
             onClick={() => navigate('/admin/decks')}
+            className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex items-start gap-6">
-            <div className="p-4 rounded-xl bg-gradient-primary shadow-soft">
-              <IconComponent className="w-12 h-12 text-primary-foreground" />
+            <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <IconComponent className="w-12 h-12 text-slate-700 dark:text-slate-300" />
             </div>
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold text-foreground">{deck.name}</h1>
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{deck.name}</h1>
                 {deck.is_premium && (
-                  <Badge variant="secondary" className="gap-1">
+                  <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50">
                     <Star className="w-3 h-3 fill-current" />
                     Premium
                   </Badge>
                 )}
-                <Badge variant={deck.is_published ? 'default' : 'secondary'}>
+                <Badge variant={deck.is_published ? 'default' : 'secondary'} className={deck.is_published ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}>
                   {deck.is_published ? 'Published' : 'Draft'}
                 </Badge>
               </div>
-              <p className="text-muted-foreground text-lg mb-2">{deck.name_en}</p>
-              <p className="text-foreground/80">{deck.description}</p>
-              <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+              <p className="text-slate-500 dark:text-slate-400 text-lg mb-2">{deck.name_en}</p>
+              <p className="text-slate-600 dark:text-slate-300">{deck.description}</p>
+              <div className="flex items-center gap-4 mt-3 text-sm text-slate-500 dark:text-slate-400">
                 <span>หมวดหมู่: {deck.category}</span>
                 <span>•</span>
                 <span>ระดับ: {deck.level}</span>
@@ -208,7 +209,7 @@ export default function AdminDeckDetail() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowEditDeck(true)}>
+          <Button variant="outline" onClick={() => setShowEditDeck(true)} className="border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
             <Edit className="w-4 h-4 mr-2" />
             แก้ไข Deck
           </Button>
@@ -220,12 +221,12 @@ export default function AdminDeckDetail() {
       </div>
 
       {/* Subdecks Section */}
-      <Card>
-        <CardHeader>
+      <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardHeader className="border-b border-slate-100 dark:border-slate-800/50 pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Subdecks</CardTitle>
-              <CardDescription>จัดการ Subdeck ทั้งหมดใน Deck นี้</CardDescription>
+              <CardTitle className="text-slate-800 dark:text-slate-100">Subdecks</CardTitle>
+              <CardDescription className="text-slate-500 dark:text-slate-400">จัดการ Subdeck ทั้งหมดใน Deck นี้</CardDescription>
             </div>
             <Button onClick={() => setShowCreateSubDeck(true)}>
               <Plus className="w-4 h-4 mr-2" />
@@ -233,12 +234,12 @@ export default function AdminDeckDetail() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {subDecks.length === 0 ? (
             <div className="text-center py-12">
-              <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">ยังไม่มี Subdeck</h3>
-              <p className="text-muted-foreground mb-4">เริ่มสร้าง Subdeck แรกของคุณ</p>
+              <BookOpen className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+              <h3 className="text-lg font-semibold mb-2 text-slate-700 dark:text-slate-300">ยังไม่มี Subdeck</h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-4">เริ่มสร้าง Subdeck แรกของคุณ</p>
               <Button onClick={() => setShowCreateSubDeck(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 สร้าง Subdeck
@@ -247,24 +248,24 @@ export default function AdminDeckDetail() {
           ) : (
             <div className="space-y-4">
               {subDecks.map((subdeck) => (
-                <Card key={subdeck.id} className="border-l-4">
+                <Card key={subdeck.id} className="border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
                   <CardContent className="p-6">
-                     <div 
+                    <div
                       className="flex items-center justify-between gap-4 cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => navigate(`/admin/decks/${deckId}/subdecks/${subdeck.id}`)}
                     >
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center gap-2">
-                          <CardTitle className="text-xl mb-1">{subdeck.name}</CardTitle>
+                          <CardTitle className="text-xl mb-1 text-slate-900 dark:text-white">{subdeck.name}</CardTitle>
                           {!subdeck.is_published && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                               ไม่เผยแพร่
                             </Badge>
                           )}
                         </div>
-                        <CardDescription>{subdeck.name_en}</CardDescription>
+                        <CardDescription className="text-slate-500 dark:text-slate-400">{subdeck.name_en}</CardDescription>
 
-                        <p className="text-sm text-foreground/70 line-clamp-2">
+                        <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
                           {subdeck.description}
                         </p>
 
@@ -272,12 +273,12 @@ export default function AdminDeckDetail() {
                           <Badge className={`${getDifficultyColor(subdeck.difficulty_level)} border`}>
                             {getDifficultyText(subdeck.difficulty_level)}
                           </Badge>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                             <BookOpen className="w-4 h-4" />
                             <span>{subdeck.flashcard_count} คำศัพท์</span>
                           </div>
                           {!subdeck.is_free && (
-                            <Badge variant="secondary" className="gap-1">
+                            <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50">
                               <Lock className="w-3 h-3" />
                               Locked
                             </Badge>
@@ -290,7 +291,7 @@ export default function AdminDeckDetail() {
                           variant={subdeck.is_published ? "default" : "outline"}
                           size="sm"
                           onClick={() => handleTogglePublish(subdeck.id, subdeck.is_published)}
-                          className="gap-2 w-full"
+                          className={`gap-2 w-full ${!subdeck.is_published ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' : ''}`}
                         >
                           {subdeck.is_published ? (
                             <>
@@ -309,7 +310,7 @@ export default function AdminDeckDetail() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setEditingSubDeck(subdeck)}
-                            className="flex-1"
+                            className="flex-1 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                           >
                             <Edit className="w-4 h-4 mr-2" />
                             แก้ไข
@@ -318,7 +319,7 @@ export default function AdminDeckDetail() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setDeletingSubDeck(subdeck)}
-                            className="flex-1"
+                            className="flex-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
                             ลบ

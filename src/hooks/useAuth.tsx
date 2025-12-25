@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ data: any; error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string, fullName: string) => {
     const redirectUrl = `${window.location.origin}/`;
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -84,41 +84,79 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       },
     });
 
-    return { error };
+    return { data, error };
   };
 
   const signIn = async (email: string, password: string) => {
+    // 1. Try to sign in normally
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) return { error };
+    // 2. If valid login, check if blocked
+    if (!error && data.user) {
+      return checkUserBlocked(data.user);
+    }
 
-    // Check if user is blocked
-    if (data.user) {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_blocked, blocked_reason')
-        .eq('user_id', data.user.id)
-        .maybeSingle();
+    // 3. If login failed, it might be a new user. Try to auto-register.
+    // We only try this if the error implies strictly "invalid credentials" (meaning user might not exist or wrong password)
+    // However, Supabase often gives generic "Invalid login credentials" for both "user not found" and "wrong password".
+    // So we try SignUp.
+    if (error) {
+      console.log("Login failed, attempting Auto-SignUp for:", email);
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: email.split('@')[0], // Default name from email
+          },
+        },
+      });
 
-      if (profileError) {
-        console.error('Error checking user status:', profileError);
+      if (signUpError) {
+        // If SignUp also fails (e.g. User already registered but password was wrong), return the original login error
+        // forcing them to use the correct password for existing accounts.
+        return { error: error };
       }
 
-      if (profile?.is_blocked) {
-        // Sign out the blocked user immediately
-        await supabase.auth.signOut();
-        return {
-          error: {
-            message: 'บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ',
-            code: 'user_blocked'
-          }
-        };
+      if (signUpData.user) {
+        // Auto-signup successful!
+        // We need to check if they are now logged in (session exists)
+        // If email confirmation is ON, session might be null.
+        if (!signUpData.session) {
+          return { error: { message: "Account created! Please check your email to confirm." } };
+        }
+
+        // If we have a session, they are in!
+        return checkUserBlocked(signUpData.user);
       }
     }
 
+    return { error };
+  };
+
+  const checkUserBlocked = async (user: User) => {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_blocked, blocked_reason')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Error checking user status:', profileError);
+    }
+
+    if (profile?.is_blocked) {
+      await supabase.auth.signOut();
+      return {
+        error: {
+          message: 'บัญชีของคุณถูกระงับ กรุณาติดต่อผู้ดูแลระบบ',
+          code: 'user_blocked'
+        }
+      };
+    }
     return { error: null };
   };
 

@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Checkbox } from "@/components/ui/checkbox";
 import promjumLogo from "@/assets/promjum-logo.png";
 import { supabase } from "@/integrations/supabase/client";
-import BackgroundDecorations from "@/components/BackgroundDecorations";
+
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -101,7 +101,7 @@ export default function AuthPage() {
       return;
     }
 
-    const { error } = await signUp(email, password, fullName);
+    const { data, error } = await signUp(email, password, fullName);
 
     if (error) {
       toast({
@@ -109,7 +109,15 @@ export default function AuthPage() {
         description: error.message || "กรุณาลองใหม่อีกครั้ง",
         variant: "destructive",
       });
+    } else if (data?.session) {
+      // Login immediately if email verification is disabled
+      toast({
+        title: "สมัครสมาชิกสำเร็จ!",
+        description: "ยินดีต้อนรับสู่ Promjum",
+      });
+      navigate('/dashboard');
     } else {
+      // Email verification required
       toast({
         title: "สมัครสมาชิกสำเร็จ!",
         description: "กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชีก่อนเข้าสู่ระบบ",
@@ -146,40 +154,41 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden font-prompt">
-      <BackgroundDecorations />
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-4 relative overflow-hidden font-prompt">
+
       <div className="w-full max-w-md relative z-10">
         {/* Back button */}
-        <Button variant="ghost" asChild className="mb-6 hover:bg-white/50">
+        <Button variant="ghost" asChild className="mb-3 hover:bg-white/10 text-white hover:text-primary">
           <Link to="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
             กลับหน้าหลัก
           </Link>
         </Button>
 
-        <Card className="bg-white/80 backdrop-blur-md shadow-large border-white/50 rounded-[2rem]">
-          <CardHeader className="text-center pb-2">
-            <div className="flex items-center justify-center space-x-2 mb-6">
-              <img
-                src={promjumLogo}
-                alt="Promjum Logo"
-                className="h-12 w-12 object-contain"
-              />
-              <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+        <Card className="glass-card border-white/20 rounded-[2rem]">
+          <CardHeader className="text-center pb-1 pt-4">
+            <div className="flex flex-col items-center justify-center gap-2 mb-3">
+              <div className="p-2 bg-white/95 rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.3)] backdrop-blur-md border border-white/50">
+                <img
+                  src={promjumLogo}
+                  alt="Promjum Logo"
+                  className="h-12 w-12 object-contain"
+                />
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent font-cute tracking-wide drop-shadow-md">
                 Promjum
               </span>
             </div>
-            <CardTitle className="text-2xl font-bold">ยินดีต้อนรับ</CardTitle>
-            <CardDescription className="text-base">
+            <CardTitle className="text-xl font-bold text-white">ยินดีต้อนรับ</CardTitle>
+            <CardDescription className="text-sm text-white/60">
               เข้าสู่ระบบหรือสมัครสมาชิกเพื่อเริ่มใช้งาน
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-3">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-8 bg-secondary/50 p-1 rounded-2xl h-auto">
-                <TabsTrigger value="login" className="rounded-xl py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">เข้าสู่ระบบ</TabsTrigger>
-                <TabsTrigger value="signup" className="rounded-xl py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">สมัครสมาชิก</TabsTrigger>
-                <TabsTrigger value="reset" className="rounded-xl py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">รีเซ็ต</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-4 bg-black/40 p-1 rounded-xl h-auto border border-white/10">
+                <TabsTrigger value="login" className="rounded-lg py-1.5 text-sm text-white/50 data-[state=active]:bg-white/20 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">เข้าสู่ระบบ</TabsTrigger>
+                <TabsTrigger value="register" className="rounded-lg py-1.5 text-sm text-white/50 data-[state=active]:bg-white/20 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all">สมัครสมาชิก</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login" className="mt-0 focus-visible:outline-none">
@@ -187,7 +196,7 @@ export default function AuthPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-12 text-base rounded-xl mb-4 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-3"
+                  className="w-full h-12 text-base rounded-xl mb-4 border-white/20 bg-white/5 hover:bg-white/10 text-white hover:text-white flex items-center justify-center gap-3 backdrop-blur-sm"
                   onClick={async () => {
                     setIsLoading(true);
                     const { error } = await signInWithGoogle();
@@ -212,217 +221,205 @@ export default function AuthPage() {
                 </Button>
 
                 {/* Divider */}
-                <div className="relative mb-4">
+                <div className="relative mb-6">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
+                    <div className="w-full border-t border-white/10"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-gray-500">หรือ</span>
+                    <span className="px-4 bg-transparent text-white/40 font-medium bg-black/20 backdrop-blur-md rounded-full">หรือด้วยอีเมล</span>
                   </div>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">อีเมล</Label>
+                <form onSubmit={handleLogin} className="space-y-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="login-email" className="text-white/80 font-medium text-sm">อีเมล</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
                       <Input
-                        id="email"
+                        id="login-email"
                         name="email"
                         type="email"
                         placeholder="your@email.com"
-                        className="pl-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
+                        className="pl-9 h-10 text-sm rounded-xl bg-white/5 border-white/10 focus:bg-white/10 focus:border-primary/50 text-white placeholder:text-white/20 transition-all font-light"
                         required
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">รหัสผ่าน</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="login-password" className="text-white/80 font-medium text-sm">รหัสผ่าน</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
                       <Input
-                        id="password"
+                        id="login-password"
                         name="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-10 pr-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
+                        className="pl-9 pr-9 h-10 text-sm rounded-xl bg-white/5 border-white/10 focus:bg-white/10 focus:border-primary/50 text-white placeholder:text-white/20 transition-all font-light"
                         required
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
+                        className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-transparent text-white/40 hover:text-white"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          <EyeOff className="h-4 w-4" />
                         ) : (
-                          <Eye className="h-4 w-4 text-muted-foreground" />
+                          <Eye className="h-4 w-4" />
                         )}
                       </Button>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="remember"
-                      checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                      className="rounded-md border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                    />
-                    <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
-                      จำฉันไว้
-                    </Label>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    variant="hero"
-                    className="w-full h-12 text-lg rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-                  </Button>
-
-                  <div className="text-center pt-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="remember"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                        className="rounded-md border-white/30 data-[state=checked]:bg-primary data-[state=checked]:text-white h-4 w-4"
+                      />
+                      <Label htmlFor="remember" className="text-xs font-normal cursor-pointer text-white/70">
+                        จำฉันไว้
+                      </Label>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setActiveTab('reset')}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      className="text-xs text-white/60 hover:text-white transition-colors font-medium decoration-1 underline-offset-4 hover:underline"
                     >
                       ลืมรหัสผ่าน?
                     </button>
                   </div>
+
+                  <Button
+                    type="submit"
+                    className="btn-space-glass w-full h-10 text-base rounded-xl shadow-[0_4px_15px_rgba(168,85,247,0.4)] hover:shadow-[0_8px_25px_rgba(168,85,247,0.6)]"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+                  </Button>
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup" className="mt-0 focus-visible:outline-none">
-                <form onSubmit={handleSignUp} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullname">ชื่อ-นามสกุล</Label>
+              <TabsContent value="register" className="mt-0 focus-visible:outline-none">
+                <form onSubmit={handleSignUp} className="space-y-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="full-name" className="text-white/80 font-medium text-sm">ชื่อ-นามสกุล</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                      <User className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
                       <Input
-                        id="fullname"
+                        id="full-name"
                         name="fullName"
                         type="text"
-                        placeholder="ชื่อ นามสกุล"
-                        className="pl-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
+                        placeholder="Promjum User"
+                        className="pl-9 h-10 text-sm rounded-xl bg-white/5 border-white/10 focus:bg-white/10 focus:border-primary/50 text-white placeholder:text-white/20 transition-all font-light"
                         required
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">อีเมล</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="register-email" className="text-white/80 font-medium text-sm">อีเมล</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
                       <Input
-                        id="signup-email"
+                        id="register-email"
                         name="email"
                         type="email"
                         placeholder="your@email.com"
-                        className="pl-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
+                        className="pl-9 h-10 text-sm rounded-xl bg-white/5 border-white/10 focus:bg-white/10 focus:border-primary/50 text-white placeholder:text-white/20 transition-all font-light"
                         required
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">รหัสผ่าน</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="register-password" className="text-white/80 font-medium text-sm">รหัสผ่าน</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
                       <Input
-                        id="signup-password"
+                        id="register-password"
                         name="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-10 pr-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
-                        minLength={6}
+                        className="pl-9 pr-9 h-10 text-sm rounded-xl bg-white/5 border-white/10 focus:bg-white/10 focus:border-primary/50 text-white placeholder:text-white/20 transition-all font-light"
                         required
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
+                        className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-transparent text-white/40 hover:text-white"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          <EyeOff className="h-4 w-4" />
                         ) : (
-                          <Eye className="h-4 w-4 text-muted-foreground" />
+                          <Eye className="h-4 w-4" />
                         )}
                       </Button>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">ยืนยันรหัสผ่าน</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="confirm-password" className="text-white/80 font-medium text-sm">ยืนยันรหัสผ่าน</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
                       <Input
                         id="confirm-password"
                         name="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-10 pr-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
-                        minLength={6}
+                        className="pl-9 pr-9 h-10 text-sm rounded-xl bg-white/5 border-white/10 focus:bg-white/10 focus:border-primary/50 text-white placeholder:text-white/20 transition-all font-light"
                         required
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 h-9 w-9 p-0 hover:bg-transparent"
+                        className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-transparent text-white/40 hover:text-white"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       >
                         {showConfirmPassword ? (
-                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          <EyeOff className="h-4 w-4" />
                         ) : (
-                          <Eye className="h-4 w-4 text-muted-foreground" />
+                          <Eye className="h-4 w-4" />
                         )}
                       </Button>
                     </div>
                   </div>
+
                   <Button
                     type="submit"
-                    variant="hero"
-                    className="w-full h-12 text-lg rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                    className="btn-space-glass w-full h-10 text-base rounded-xl mt-4 shadow-[0_4px_15px_rgba(168,85,247,0.4)] hover:shadow-[0_8px_25px_rgba(168,85,247,0.6)]"
                     disabled={isLoading}
                   >
-                    {isLoading ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
+                    {isLoading ? "กำลังสมัคร..." : "ยืนยันการสมัคร"}
                   </Button>
-                  <p className="text-xs text-muted-foreground text-center leading-relaxed">
-                    การสมัครสมาชิกแสดงว่าคุณยอมรับ{" "}
-                    <Button variant="link" size="sm" className="p-0 h-auto text-xs font-normal">
-                      เงื่อนไขการใช้งาน
-                    </Button>{" "}
-                    และ{" "}
-                    <Button variant="link" size="sm" className="p-0 h-auto text-xs font-normal">
-                      นโยบายความเป็นส่วนตัว
-                    </Button>
-                  </p>
                 </form>
               </TabsContent>
+
+
 
               <TabsContent value="reset" className="mt-0 focus-visible:outline-none">
                 <div className="space-y-6">
                   <div className="text-center space-y-2">
-                    <h3 className="text-lg font-semibold">รีเซ็ตรหัสผ่าน</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="text-lg font-semibold text-white">รีเซ็ตรหัสผ่าน</h3>
+                    <p className="text-sm text-white/60">
                       กรอกอีเมลของคุณ เราจะส่งลิงก์สำหรับรีเซ็ตรหัสผ่านให้
                     </p>
                   </div>
                   <form onSubmit={handleForgotPassword} className="space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="reset-email">อีเมล</Label>
+                      <Label htmlFor="reset-email" className="text-white/80 font-medium">อีเมล</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                        <Mail className="absolute left-3 top-3 h-5 w-5 text-white/40" />
                         <Input
                           id="reset-email"
                           name="email"
                           type="email"
                           placeholder="your@email.com"
-                          className="pl-10 h-11 rounded-xl bg-white/50 border-border/50 focus:bg-white transition-all"
+                          className="pl-10 h-11 rounded-xl bg-white/5 border-white/10 focus:bg-white/10 focus:border-primary/50 text-white placeholder:text-white/20 transition-all font-light"
                           required
                         />
                       </div>
@@ -430,8 +427,7 @@ export default function AuthPage() {
 
                     <Button
                       type="submit"
-                      variant="hero"
-                      className="w-full h-12 text-lg rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                      className="btn-space-glass w-full h-12 text-lg rounded-xl shadow-[0_4px_15px_rgba(168,85,247,0.4)] hover:shadow-[0_8px_25px_rgba(168,85,247,0.6)]"
                       disabled={isLoading}
                     >
                       {isLoading ? "กำลังส่ง..." : "ส่งลิงก์รีเซ็ต"}
@@ -441,7 +437,7 @@ export default function AuthPage() {
                       <button
                         type="button"
                         onClick={() => setActiveTab('login')}
-                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                        className="text-sm text-white/60 hover:text-white transition-colors font-medium decoration-1 underline-offset-4 hover:underline"
                       >
                         กลับไปเข้าสู่ระบบ
                       </button>
@@ -453,10 +449,10 @@ export default function AuthPage() {
           </CardContent>
         </Card>
 
-        <div className="text-center mt-8">
-          <p className="text-sm text-muted-foreground">
+        <div className="text-center mt-4">
+          <p className="text-xs text-white/50">
             ต้องการความช่วยเหลือ?{" "}
-            <Button variant="link" size="sm" className="p-0 h-auto text-sm font-normal">
+            <Button variant="link" size="sm" className="p-0 h-auto text-xs font-normal text-white/80 hover:text-white">
               ติดต่อทีมงาน
             </Button>
           </p>

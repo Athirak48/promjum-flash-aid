@@ -8,6 +8,7 @@ import { Volume2, CheckCircle2, XCircle, ArrowRight, Pause, RotateCcw, Home, Tro
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
+import { useXP } from '@/hooks/useXP';
 
 interface Flashcard {
   id: string;
@@ -36,6 +37,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { updateFromListenChoose } = useSRSProgress();
+  const { addGameXP } = useXP();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -45,6 +47,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [playCount, setPlayCount] = useState(0);
   const maxPlayCount = 3;
+  const [totalXPEarned, setTotalXPEarned] = useState(0);
 
   useEffect(() => {
     // Generate questions from flashcards
@@ -99,6 +102,12 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
 
     if (isCorrect) {
       setScore(score + 1);
+      // Add XP for correct answer
+      addGameXP('listen-choose', true, false).then(xpResult => {
+        if (xpResult?.xpAdded) {
+          setTotalXPEarned(prev => prev + xpResult.xpAdded);
+        }
+      });
     } else {
       setWrongAnswers([...wrongAnswers, currentQuestion]);
     }
@@ -157,33 +166,33 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 dark:from-pink-950 dark:via-rose-900 dark:to-pink-950 overflow-auto flex items-center justify-center p-2 sm:p-4">
         <BackgroundDecorations />
-        <Card className="max-w-md w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-2xl sm:rounded-[2rem]">
-          <CardHeader className="text-center pb-2 pt-4 sm:pt-6">
-            <div className="text-4xl sm:text-6xl mb-2 sm:mb-4 animate-bounce">🎧</div>
-            <CardTitle className="text-xl sm:text-3xl font-bold text-foreground bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+        <Card className="max-w-sm w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-2xl sm:rounded-[2rem]">
+          <CardHeader className="text-center pb-1 pt-3">
+            <div className="text-3xl mb-1 animate-bounce">🎧</div>
+            <CardTitle className="text-lg font-bold text-foreground bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
               {t('games.summary')} {t('games.listenChoose')}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-6 p-4 sm:p-6">
-            <div className="bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
-              <div className="text-4xl sm:text-6xl font-bold mb-2">{score}/{questions.length}</div>
-              <div className="text-base sm:text-xl opacity-90 font-medium">{scoreLevel.text}</div>
+          <CardContent className="space-y-2 p-3">
+            <div className="bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl p-3 text-white text-center shadow-lg">
+              <div className="text-3xl font-bold mb-1">{score}/{questions.length}</div>
+              <div className="text-sm opacity-90 font-medium">{scoreLevel.text}</div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-4">
-              <div className="text-center p-3 sm:p-4 bg-green-50 dark:bg-green-900/30 rounded-lg sm:rounded-2xl border border-green-100">
-                <div className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="text-center p-2 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-100">
+                <div className="text-xl font-bold text-green-600 dark:text-green-400">
                   {score}
                 </div>
-                <div className="text-xs sm:text-sm text-green-700 dark:text-green-300 mt-1 font-medium">
+                <div className="text-xs text-green-700 dark:text-green-300 font-medium">
                   {t('common.correct')}
                 </div>
               </div>
-              <div className="text-center p-3 sm:p-4 bg-red-50 dark:bg-red-900/30 rounded-lg sm:rounded-2xl border border-red-100">
-                <div className="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400">
+              <div className="text-center p-2 bg-red-50 dark:bg-red-900/30 rounded-lg border border-red-100">
+                <div className="text-xl font-bold text-red-600 dark:text-red-400">
                   {totalWrong}
                 </div>
-                <div className="text-xs sm:text-sm text-red-700 dark:text-red-300 mt-1 font-medium">
+                <div className="text-xs text-red-700 dark:text-red-300 font-medium">
                   {t('common.incorrect')}
                 </div>
               </div>
@@ -191,14 +200,14 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
 
             {/* Wrong Words Section */}
             {wrongAnswers.length > 0 ? (
-              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-red-100">
-                <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                  <span className="text-red-500">❌</span>
-                  <span className="font-bold text-sm sm:text-base text-red-700 dark:text-red-300">{t('games.wrongWords')} ({wrongAnswers.length})</span>
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-2 border border-red-100">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="text-red-500 text-sm">❌</span>
+                  <span className="font-bold text-xs text-red-700 dark:text-red-300">{t('games.wrongWords')} ({wrongAnswers.length})</span>
                 </div>
-                <div className="space-y-1.5 sm:space-y-2 max-h-24 sm:max-h-32 overflow-y-auto">
+                <div className="space-y-1 max-h-20 overflow-y-auto">
                   {wrongAnswers.map((q, idx) => (
-                    <div key={idx} className="flex justify-between items-center bg-white dark:bg-red-900/30 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
+                    <div key={idx} className="flex justify-between items-center bg-white dark:bg-red-900/30 rounded px-2 py-1 text-xs">
                       <span className="font-medium text-red-800 dark:text-red-200 truncate mr-2">{q.word}</span>
                       <span className="text-red-500 dark:text-red-400 truncate">{q.correctAnswer}</span>
                     </div>
@@ -206,21 +215,20 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
                 </div>
               </div>
             ) : (
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-green-100 text-center">
-                <span className="text-3xl sm:text-4xl mb-2 block">🎉</span>
-                <span className="font-bold text-sm sm:text-base text-green-700 dark:text-green-300">{t('games.noWrongWords')}</span>
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2 border border-green-100 text-center">
+                <span className="text-2xl mb-1 block">🎉</span>
+                <span className="font-bold text-xs text-green-700 dark:text-green-300">{t('games.noWrongWords')}</span>
               </div>
             )}
 
-            <div className="flex flex-row gap-2 justify-center">
+            <div className="flex flex-row gap-1.5 justify-center">
               {/* ปุ่ม 1: เล่นใหม่ */}
               <Button
                 onClick={handleRestart}
-                className="flex-1 bg-gradient-to-r from-pink-600 to-rose-600 hover:shadow-lg transition-all rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm px-2 sm:px-4"
+                className="flex-1 bg-gradient-to-r from-pink-600 to-rose-600 hover:shadow-lg transition-all rounded-lg h-8 text-[9px] px-1.5"
               >
-                <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
-                <span className="hidden sm:inline">{t('games.playAgain')}</span>
-                <span className="sm:hidden">{t('games.playAgainShort')}</span>
+                <RotateCcw className="h-3 w-3 mr-0.5 shrink-0" />
+                <span>{t('games.playAgainShort')}</span>
               </Button>
 
               {/* ปุ่ม 2: เกมใหม่ */}
@@ -231,21 +239,20 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
                   }
                 }}
                 variant="outline"
-                className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-pink-200 text-pink-700 hover:bg-pink-50 px-2 sm:px-4"
+                className="flex-1 rounded-lg h-8 text-[9px] border-pink-200 text-pink-700 hover:bg-pink-50 px-1.5"
               >
-                <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
-                <span className="hidden sm:inline">{t('games.selectGame')}</span>
-                <span className="sm:hidden">{t('games.selectGameShort')}</span>
+                <Gamepad2 className="h-3 w-3 mr-0.5 shrink-0" />
+                <span>{t('games.selectGameShort')}</span>
               </Button>
 
               {/* ปุ่ม 3: ถัดไป - กลับชุดคำศัพท์ */}
               <Button
                 onClick={onClose}
                 variant="outline"
-                className="flex-1 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm border-gray-200 px-2 sm:px-4"
+                className="flex-1 rounded-lg h-8 text-[9px] border-gray-200 px-1.5"
               >
                 {t('common.next')}
-                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2 shrink-0" />
+                <ArrowRight className="h-3 w-3 ml-0.5 shrink-0" />
               </Button>
             </div>
           </CardContent>
@@ -309,31 +316,31 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
         {/* Main Game Area */}
         <div className="flex-1 flex items-center justify-center max-w-2xl mx-auto w-full">
           <Card className="w-full bg-white/90 backdrop-blur-xl border-white/50 shadow-2xl rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden">
-            <CardHeader className="pb-0 md:pb-2 pt-4 md:pt-6">
-              <CardTitle className="text-center text-xl md:text-2xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
-                <span className="text-2xl md:text-3xl">🎧</span> Listen & Choose
+            <CardHeader className="pb-1 pt-3">
+              <CardTitle className="text-center text-lg font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+                <span className="text-xl">🎧</span> Listen & Choose
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 md:p-8">
+            <CardContent className="p-4">
               {/* Audio Button */}
-              <div className="text-center mb-4 md:mb-8">
+              <div className="text-center mb-4">
                 <div className="relative inline-block">
                   <Button
                     onClick={handlePlayAudio}
                     size="lg"
                     disabled={playCount >= maxPlayCount}
-                    className="h-24 w-24 md:h-32 md:w-32 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 hover:shadow-glow transition-all duration-300 hover:scale-105 shadow-xl border-4 border-white/50"
+                    className="h-20 w-20 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 hover:shadow-glow transition-all duration-300 hover:scale-105 shadow-xl border-3 border-white/50"
                   >
-                    <Volume2 className="h-12 w-12 md:h-16 md:w-16 text-white" />
+                    <Volume2 className="h-10 w-10 text-white" />
                   </Button>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white px-2 md:px-3 py-0.5 md:py-1 rounded-full shadow-md border border-gray-100 text-xs md:text-sm font-bold text-pink-600 whitespace-nowrap">
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white px-2.5 py-1 rounded-full shadow-md border border-gray-100 text-xs font-bold text-pink-600 whitespace-nowrap">
                     {playCount >= maxPlayCount ? 'หมดโควต้า' : `ฟังได้อีก ${maxPlayCount - playCount} ครั้ง`}
                   </div>
                 </div>
               </div>
 
               {/* Choices */}
-              <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
+              <div className="space-y-2 mb-4">
                 {currentQuestion.choices.map((choice, index) => {
                   const isSelected = selectedAnswer === choice;
                   const isCorrect = choice === currentQuestion.correctAnswer;
@@ -345,7 +352,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
                       key={index}
                       onClick={() => handleAnswerSelect(choice)}
                       disabled={showFeedback}
-                      className={`w-full p-3 md:p-4 rounded-xl md:rounded-2xl border-2 text-left transition-all duration-200 hover:scale-102 ${showCorrect
+                      className={`w-full p-2.5 rounded-xl border-2 text-left transition-all duration-200 hover:scale-102 ${showCorrect
                         ? 'bg-green-50 border-green-500 dark:bg-green-900/20 shadow-md'
                         : showWrong
                           ? 'bg-red-50 border-red-500 dark:bg-red-900/20 shadow-md'
@@ -355,8 +362,8 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
                         }`}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 md:gap-4">
-                          <div className={`flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-base md:text-lg ${showCorrect
+                        <div className="flex items-center gap-2.5">
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${showCorrect
                             ? 'bg-green-500 text-white'
                             : showWrong
                               ? 'bg-red-500 text-white'
@@ -364,10 +371,10 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
                             }`}>
                             {String.fromCharCode(65 + index)}
                           </div>
-                          <span className="font-medium text-base md:text-lg">{choice}</span>
+                          <span className="font-medium text-sm text-black">{choice}</span>
                         </div>
-                        {showCorrect && <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 text-green-600" />}
-                        {showWrong && <XCircle className="h-5 w-5 md:h-6 md:w-6 text-red-600" />}
+                        {showCorrect && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                        {showWrong && <XCircle className="h-5 w-5 text-red-600" />}
                       </div>
                     </button>
                   );
@@ -379,7 +386,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
                   <Button
                     onClick={handleNext}
-                    className="w-full h-12 md:h-14 text-lg md:text-xl rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all bg-gradient-to-r from-pink-600 to-rose-600 border-0"
+                    className="w-full h-11 text-base rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all bg-gradient-to-r from-pink-600 to-rose-600 border-0"
                     size="lg"
                   >
                     {currentQuestionIndex < questions.length - 1 ? (

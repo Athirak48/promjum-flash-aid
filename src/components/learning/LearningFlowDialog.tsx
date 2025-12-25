@@ -6,11 +6,12 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import { ModeSelectionStep, LearningModes } from './ModeSelectionStep';
+import { WordCountStep, WordCountSettings } from './WordCountStep';
 import { VocabSelectionStep, VocabItem } from './VocabSelectionStep';
 import { AudioSetupStep, AudioSettings } from './AudioSetupStep';
 import { ReadyToStartStep } from './ReadyToStartStep';
 
-type FlowStep = 'mode' | 'vocab' | 'audio' | 'ready';
+type FlowStep = 'mode' | 'wordcount' | 'vocab' | 'audio' | 'ready';
 
 interface LearningFlowDialogProps {
     open: boolean;
@@ -34,6 +35,9 @@ export function LearningFlowDialog({ open, onOpenChange }: LearningFlowDialogPro
     // Vocab selection state
     const [selectedVocab, setSelectedVocab] = useState<VocabItem[]>([]);
 
+    // Word count settings state
+    const [wordCountSettings, setWordCountSettings] = useState<WordCountSettings | null>(null);
+
     // Audio settings state
     const [audioSettings, setAudioSettings] = useState<AudioSettings>({
         accent: 'us',
@@ -53,13 +57,23 @@ export function LearningFlowDialog({ open, onOpenChange }: LearningFlowDialogPro
                 reading: false,
             });
             setSelectedVocab([]);
+            setWordCountSettings(null);
             setAudioSettings({ accent: 'us', level: 'B1' });
         }, 300);
     };
 
     // Navigation handlers
     const handleModeNext = () => {
+        setCurrentStep('wordcount');
+    };
+
+    const handleWordCountNext = (settings: WordCountSettings) => {
+        setWordCountSettings(settings);
         setCurrentStep('vocab');
+    };
+
+    const handleWordCountBack = () => {
+        setCurrentStep('mode');
     };
 
     const handleVocabNext = () => {
@@ -72,7 +86,7 @@ export function LearningFlowDialog({ open, onOpenChange }: LearningFlowDialogPro
     };
 
     const handleVocabBack = () => {
-        setCurrentStep('mode');
+        setCurrentStep('wordcount');
     };
 
     const handleAudioNext = () => {
@@ -118,7 +132,7 @@ export function LearningFlowDialog({ open, onOpenChange }: LearningFlowDialogPro
 
     // Get step progress
     const getStepNumber = () => {
-        const steps: FlowStep[] = ['mode', 'vocab'];
+        const steps: FlowStep[] = ['mode', 'wordcount', 'vocab'];
         if (selectedModes.listening) steps.push('audio');
         steps.push('ready');
 
@@ -191,6 +205,21 @@ export function LearningFlowDialog({ open, onOpenChange }: LearningFlowDialogPro
                             </motion.div>
                         )}
 
+                        {currentStep === 'wordcount' && (
+                            <motion.div
+                                key="wordcount"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <WordCountStep
+                                    onNext={handleWordCountNext}
+                                    onBack={handleWordCountBack}
+                                />
+                            </motion.div>
+                        )}
+
                         {currentStep === 'vocab' && (
                             <motion.div
                                 key="vocab"
@@ -204,7 +233,8 @@ export function LearningFlowDialog({ open, onOpenChange }: LearningFlowDialogPro
                                     onVocabChange={setSelectedVocab}
                                     onNext={handleVocabNext}
                                     onBack={handleVocabBack}
-                                    maxSelection={12}
+                                    maxSelection={wordCountSettings?.wordCount || 12}
+                                    wordCountSettings={wordCountSettings}
                                 />
                             </motion.div>
                         )}

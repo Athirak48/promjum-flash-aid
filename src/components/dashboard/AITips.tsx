@@ -27,16 +27,16 @@ export function AITips({
   };
 
   return (
-    <Card className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-xl shadow-soft border border-primary/20 rounded-[2rem] relative overflow-hidden group">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-50" />
-      <CardContent className="p-6 flex items-start gap-4 relative z-10">
-        <div className="p-3 rounded-2xl bg-white shadow-md flex-shrink-0 animate-bounce-slow">
-          <Sparkles className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+    <Card className="bg-black/30 backdrop-blur-xl border-white/10 rounded-[2rem] relative overflow-hidden group p-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400 via-violet-400 to-pink-400 opacity-70" />
+      <CardContent className="p-0 flex items-start gap-4 relative z-10">
+        <div className="p-3 rounded-2xl bg-purple-400/30 border border-purple-300/40 flex-shrink-0">
+          <Sparkles className="w-6 h-6 text-yellow-200 fill-yellow-200" />
         </div>
 
         <div className="flex-1 pt-1">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-lg bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent">
+            <h3 className="font-bold text-lg text-white">
               AI Learning Tips
             </h3>
             <div className="flex items-center gap-2">
@@ -44,7 +44,7 @@ export function AITips({
                 variant="ghost"
                 size="sm"
                 onClick={handleNext}
-                className="h-7 text-xs hover:bg-primary/10 text-primary rounded-full px-3"
+                className="h-7 text-xs hover:bg-white/10 text-white/80 hover:text-white rounded-full px-3 border border-white/20"
               >
                 Next Tip
               </Button>
@@ -52,22 +52,18 @@ export function AITips({
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsVisible(false)}
-                className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive rounded-full"
+                className="h-7 w-7 hover:bg-white/10 text-white/60 hover:text-white rounded-full"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
           </div>
 
-          <p className="text-foreground/80 text-sm leading-relaxed font-medium animate-fade-in">
+          <p className="text-white/80 text-sm leading-relaxed font-medium">
             {tips[currentTipIndex]}
           </p>
         </div>
       </CardContent>
-
-      {/* Decorative background elements */}
-      <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
-      <div className="absolute -top-10 -left-10 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl group-hover:bg-purple-500/10 transition-colors" />
     </Card>
   );
 }

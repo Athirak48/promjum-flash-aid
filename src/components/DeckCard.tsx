@@ -1,4 +1,3 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -26,70 +25,72 @@ export function DeckCard({ deck, customSubDecks, customLabel }: DeckCardProps & 
 
   return (
     <>
-      <Card className="hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group h-full flex flex-col bg-white dark:bg-slate-800 rounded-3xl border-0 shadow-lg overflow-hidden">
-        <CardHeader className="pb-3">
+      <div className="glass-card group h-full flex flex-col rounded-[2.5rem] border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] transition-all duration-300 relative overflow-visible bg-black/40">
+
+        {/* Glow Effect on Hover */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2.5rem] pointer-events-none" />
+
+        <div className="p-6 pb-3 relative z-10">
           <div className="flex items-start justify-between mb-3">
-            {/* Cute Icon Circle */}
-            <div className={`p-4 rounded-2xl shadow-md ${deck.icon === 'Home' ? 'bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40' :
-                deck.icon === 'Plane' ? 'bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/40 dark:to-blue-900/40' :
-                  deck.icon === 'Briefcase' ? 'bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/40 dark:to-violet-900/40' :
-                    'bg-gradient-to-br from-pink-100 to-rose-100 dark:from-pink-900/40 dark:to-rose-900/40'
+            {/* Cute Icon Circle - Glass Style */}
+            <div className={`p-4 rounded-2xl border border-white/20 shadow-lg backdrop-blur-md ${deck.icon === 'Home' ? 'bg-green-500/20 text-green-400' :
+              deck.icon === 'Plane' ? 'bg-cyan-500/20 text-cyan-400' :
+                deck.icon === 'Briefcase' ? 'bg-purple-500/20 text-purple-400' :
+                  'bg-pink-500/20 text-pink-400'
               }`}>
-              <IconComponent className={`w-7 h-7 ${deck.icon === 'Home' ? 'text-green-600' :
-                  deck.icon === 'Plane' ? 'text-cyan-600' :
-                    deck.icon === 'Briefcase' ? 'text-purple-600' :
-                      'text-pink-600'
-                }`} />
+              <IconComponent className="w-7 h-7 drop-shadow-md" />
             </div>
+
             {/* Premium/Free Badge */}
             {deck.is_premium ? (
-              <Badge className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white border-0 shadow-md font-bold gap-1 px-3 py-1 rounded-full">
+              <Badge className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white border-0 shadow-[0_0_15px_rgba(251,191,36,0.5)] font-bold gap-1 px-3 py-1 rounded-full">
                 <Star className="w-3 h-3 fill-current" />
                 Premium
               </Badge>
             ) : (
-              <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white border-0 shadow-md font-bold px-3 py-1 rounded-full">
+              <Badge className="glass-card bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)] font-bold px-3 py-1 rounded-full">
                 Free
               </Badge>
             )}
           </div>
-          <CardTitle className="text-xl font-black text-slate-800 dark:text-white mb-1">{deck.name}</CardTitle>
-          <CardDescription className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+          <h3 className="text-xl font-black text-white mb-1 drop-shadow-sm group-hover:text-primary transition-colors duration-300">{deck.name}</h3>
+          <p className="text-sm text-white/50 font-medium">
             {deck.name_en}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 flex-1 flex flex-col pt-0">
-          <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{deck.description}</p>
+          </p>
+        </div>
 
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-              <BookOpen className="w-4 h-4 text-primary" />
+        <div className="p-6 pt-0 space-y-4 flex-1 flex flex-col relative z-10">
+          <p className="text-sm text-white/70 line-clamp-2 leading-relaxed font-light">{deck.description}</p>
+
+          <div className="flex items-center gap-4 text-sm mt-2">
+            <div className="flex items-center gap-1.5 text-white/60 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+              <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
               <span className="font-medium">{deck.total_flashcards} {customLabel || 'คำศัพท์'}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-              <Star className="w-4 h-4 text-amber-500" />
+            <div className="flex items-center gap-1.5 text-white/60 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+              <Star className="w-3.5 h-3.5 text-yellow-400" />
               <span className="font-medium">{subDecks.length} Sub-decks</span>
             </div>
           </div>
 
           {deck.progress && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">ความคืบหน้า</span>
-                <span className="font-bold text-primary">{deck.progress.progress_percentage}%</span>
+            <div className="space-y-2 pt-2">
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-white/40">ความคืบหน้า</span>
+                <span className="text-primary-foreground drop-shadow-sm">{deck.progress.progress_percentage}%</span>
               </div>
-              <Progress value={deck.progress.progress_percentage} className="h-2" />
+              <Progress value={deck.progress.progress_percentage} className="h-1.5 bg-white/10" />
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
+          <div className="grid grid-cols-2 gap-3 mt-auto pt-6">
             <Button
               variant="outline"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowDownloadDialog(true);
               }}
-              className="gap-2 rounded-xl border-2 hover:bg-slate-50 dark:hover:bg-slate-700"
+              className="gap-2 rounded-xl bg-transparent border-white/20 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/40 h-11"
               disabled={subDecksLoading || subDecks.length === 0}
             >
               <Download className="w-4 h-4" />
@@ -97,13 +98,16 @@ export function DeckCard({ deck, customSubDecks, customLabel }: DeckCardProps & 
             </Button>
             <Button
               onClick={() => navigate(`/decks/${deck.id}/subdecks`)}
-              className="gap-2 rounded-xl bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-400 text-white font-bold shadow-md"
+              className="gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold shadow-[0_4px_15px_rgba(168,85,247,0.4)] border-none h-11 relative overflow-hidden group/btn"
             >
-              เข้า Deck →
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+              <span className="relative z-10 flex items-center gap-2">
+                เข้า Deck <span className="text-lg leading-none">→</span>
+              </span>
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <DownloadSelectionDialog
         open={showDownloadDialog}

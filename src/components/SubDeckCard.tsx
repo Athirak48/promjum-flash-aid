@@ -1,4 +1,3 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -56,10 +55,10 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
 
   const getDifficultyColor = (level: string) => {
     switch (level) {
-      case 'beginner': return 'bg-green-500/10 text-green-500 border-green-500/20';
-      case 'intermediate': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'advanced': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      default: return 'bg-muted';
+      case 'beginner': return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'intermediate': return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
+      case 'advanced': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+      default: return 'bg-white/10 text-white/50 border-white/10';
     }
   };
 
@@ -125,9 +124,6 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
   };
 
   const handleSaveToFolder = async (folderId: string, folderName: string) => {
-    // Dialog closing is handled by the caller/component state after success
-    // setShowFolderSelection(false); // REMOVED from here
-
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({
@@ -254,58 +250,62 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
 
   return (
     <>
-      <Card
-        className="hover:shadow-lg transition-all duration-300 cursor-pointer group border-l-4"
+      <div
+        className="glass-card hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] transition-all duration-300 cursor-pointer group border-l-4 border-l-transparent hover:border-l-primary bg-black/40 rounded-3xl overflow-hidden relative"
         onClick={handleCardClick}
       >
-        <CardContent className="p-6">
+        {/* Hover Glow */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+        <div className="p-6 relative z-10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             {/* Left: Main Info */}
             <div className="flex-1 space-y-3 w-full">
               <div className="flex items-center gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <CardTitle className="text-xl">{subdeck.name}</CardTitle>
+                    <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">{subdeck.name}</h3>
                     {subdeck.progress?.is_completed && (
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <CheckCircle2 className="w-5 h-5 text-green-400 drop-shadow-[0_0_5px_rgba(74,222,128,0.5)]" />
                     )}
                   </div>
-                  <CardDescription className="text-sm">
+                  <p className="text-sm text-white/50">
                     {subdeck.name_en}
-                  </CardDescription>
+                  </p>
                 </div>
               </div>
 
-              <p className="text-sm text-foreground/70 line-clamp-2">
+              <p className="text-sm text-white/70 line-clamp-2 font-light">
                 {subdeck.description}
               </p>
 
               <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                <Badge className={`${getDifficultyColor(subdeck.difficulty_level)} border`}>
+                <Badge className={`${getDifficultyColor(subdeck.difficulty_level)} border rounded-lg px-2`}>
                   {getDifficultyText(subdeck.difficulty_level)}
                 </Badge>
                 {!subdeck.is_free && (
-                  <Badge variant="secondary" className="gap-1 bg-gradient-primary text-primary-foreground">
+                  <Badge variant="secondary" className="gap-1 bg-gradient-brand text-white border-0 shadow-md">
                     <Lock className="w-3 h-3" />
                     Premium
                   </Badge>
                 )}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
-                  <BookOpen className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-sm text-white/40 whitespace-nowrap bg-white/5 px-2 py-0.5 rounded-lg border border-white/5">
+                  <BookOpen className="w-3.5 h-3.5" />
                   <span>{subdeck.flashcard_count} คำศัพท์</span>
                 </div>
               </div>
 
               {subdeck.progress && (
-                <div className="space-y-2 max-w-md">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">เรียนไปแล้ว</span>
-                    <span className="font-medium text-primary">
+                <div className="space-y-2 max-w-md pt-1">
+                  <div className="flex justify-between text-xs text-white/40">
+                    <span>เรียนไปแล้ว</span>
+                    <span className="font-bold text-primary">
                       {subdeck.progress.cards_learned}/{subdeck.flashcard_count} คำ
                     </span>
                   </div>
                   <Progress
                     value={(subdeck.progress.cards_learned / subdeck.flashcard_count) * 100}
+                    className="h-1.5 bg-white/10"
                   />
                 </div>
               )}
@@ -320,7 +320,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                   e.stopPropagation();
                   handleCardClick();
                 }}
-                className="gap-2 flex-1 sm:flex-none w-full bg-gradient-primary hover:shadow-glow"
+                className="gap-2 flex-1 sm:flex-none w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl"
                 disabled={loadingFlashcards}
               >
                 <Eye className="w-4 h-4" />
@@ -332,7 +332,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                   size="sm"
                   variant="default"
                   onClick={handlePurchase}
-                  className="gap-2 flex-1 sm:flex-none w-full"
+                  className="gap-2 flex-1 sm:flex-none w-full rounded-xl btn-space-glass"
                   disabled={checkingPurchase}
                 >
                   <ShoppingCart className="w-4 h-4" />
@@ -343,7 +343,7 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
                   size="sm"
                   variant="outline"
                   onClick={handleDownload}
-                  className="gap-2 flex-1 sm:flex-none w-full"
+                  className="gap-2 flex-1 sm:flex-none w-full rounded-xl bg-gradient-to-r from-primary to-pink-500 hover:from-primary/80 hover:to-pink-400 text-white border-none shadow-[0_0_15px_rgba(168,85,247,0.3)]"
                   disabled={checkingPurchase}
                 >
                   <Download className="w-4 h-4" />
@@ -352,8 +352,8 @@ export function SubDeckCard({ subdeck }: SubDeckCardProps) {
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <WordPreviewDialog
         open={showPreview}

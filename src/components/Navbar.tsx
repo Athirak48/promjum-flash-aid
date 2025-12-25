@@ -17,6 +17,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import promjumLogo from "@/assets/promjum-logo.png";
 import { NotificationHub } from "./notifications/NotificationHub";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { FriendRequestsPopover } from "./friends/FriendRequestsPopover";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,6 +26,7 @@ const Navbar = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const { trackButtonClick } = useAnalytics();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -59,12 +62,12 @@ const Navbar = () => {
   ];
 
   const userNavItems = [
-    { href: "/dashboard", label: t('nav.dashboard') },
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/classroom", label: "Classroom" },
     { href: "/decks", label: "Shop" },
-    // { href: "/practice", label: "Practice" },
     { href: "/flashcards", label: "Deck" },
     { href: "/vocab-challenge", label: "Vocab Challenge" },
-    { href: "/feedback", label: "ความคิดเห็น" },
+    { href: "/feedback", label: "Opinion" },
   ];
 
   const adminNavItems = [
@@ -77,17 +80,19 @@ const Navbar = () => {
   const navItems = userProfile?.role === "admin" ? adminNavItems : userProfile ? userNavItems : publicNavItems;
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/40 backdrop-blur-md supports-[backdrop-filter]:bg-black/20">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-1.5 flex-shrink-0">
-            <img
-              src={promjumLogo}
-              alt="Promjum Logo"
-              className="h-8 w-8 lg:h-10 lg:w-10 object-contain dark:bg-white dark:rounded-full dark:p-1 transition-all"
-            />
-            <span className="text-lg lg:text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          <Link to="/" className="flex items-center gap-3 flex-shrink-0 group">
+            <div className="p-1.5 bg-white/95 rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.3)] backdrop-blur-md border border-white/50 group-hover:bg-white transition-all">
+              <img
+                src={promjumLogo}
+                alt="Promjum Logo"
+                className="h-8 w-8 lg:h-10 lg:w-10 object-contain"
+              />
+            </div>
+            <span className="text-lg lg:text-xl font-bold bg-gradient-primary bg-clip-text text-transparent drop-shadow-sm group-hover:drop-shadow-md transition-all">
               Promjum
             </span>
           </Link>
@@ -98,6 +103,7 @@ const Navbar = () => {
               <Link
                 key={item.href}
                 to={item.href}
+                onClick={() => trackButtonClick(item.label, 'navbar')}
                 className={`text-xs xl:text-sm font-medium transition-colors hover:text-primary whitespace-nowrap px-2 py-1 rounded-md hover:bg-muted ${isActive(item.href) ? "text-primary bg-primary/10" : "text-muted-foreground"
                   }`}
               >
@@ -110,6 +116,7 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center space-x-1">
             {userProfile ? (
               <>
+                <FriendRequestsPopover />
                 <NotificationHub />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -122,34 +129,34 @@ const Navbar = () => {
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuContent className="w-56 bg-white border-slate-200 shadow-lg" align="end" forceMount>
                     <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium">{userProfile.full_name || userProfile.email}</p>
+                        <p className="font-medium text-slate-900">{userProfile.full_name || userProfile.email}</p>
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground">{userProfile.email}</span>
+                          <span className="text-xs text-slate-500">{userProfile.email}</span>
                           {userProfile.role === "admin" && (
                             <Star className="h-3 w-3 text-yellow-500" />
                           )}
                         </div>
                       </div>
                     </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuSeparator className="bg-slate-200" />
+                    <DropdownMenuItem asChild className="text-slate-700 hover:bg-slate-100 focus:bg-slate-100">
                       <Link to="/profile" className="cursor-pointer">
-                        <User className="mr-2 h-4 w-4" />
+                        <User className="mr-2 h-4 w-4 text-slate-500" />
                         {t('nav.profile')}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild className="text-slate-700 hover:bg-slate-100 focus:bg-slate-100">
                       <Link to="/checkout" className="cursor-pointer">
-                        <CreditCard className="mr-2 h-4 w-4" />
+                        <CreditCard className="mr-2 h-4 w-4 text-slate-500" />
                         ชำระเงิน
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
+                    <DropdownMenuSeparator className="bg-slate-200" />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-slate-700 hover:bg-slate-100 focus:bg-slate-100">
+                      <LogOut className="mr-2 h-4 w-4 text-slate-500" />
                       {t('nav.logout')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -175,6 +182,11 @@ const Navbar = () => {
 
           {/* Mobile menu button + all icons in one row */}
           <div className="lg:hidden flex items-center space-x-0.5">
+            {userProfile && (
+              <div className="mr-0.5">
+                <FriendRequestsPopover />
+              </div>
+            )}
             {/* Notification - only when logged in */}
             {userProfile && (
               <div className="mr-0.5">
@@ -217,7 +229,10 @@ const Navbar = () => {
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:text-primary"
                     }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={() => {
+                    trackButtonClick(item.label, 'navbar-mobile');
+                    setIsMobileMenuOpen(false);
+                  }}
                 >
                   {item.label}
                 </Link>

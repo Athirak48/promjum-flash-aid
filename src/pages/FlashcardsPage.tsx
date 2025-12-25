@@ -19,7 +19,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 interface FlashcardSet {
@@ -169,77 +168,93 @@ function DraggableFlashcardSet({
     if (progress >= 60) return 'bg-amber-500';
     return 'bg-rose-500';
   };
-  return <Card ref={drag} className={`transition-all cursor-move ${isDragging ? 'opacity-50 rotate-1 scale-105' : 'hover:shadow-large'}`}>
-    <CardHeader className="pb-3">
-      <div className="flex items-start justify-between mb-2">
-        <CardTitle className="text-lg line-clamp-2">{set.title}</CardTitle>
-        <div className="flex items-center gap-2">
-          {getSourceBadge(set.source)}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Type className="h-4 w-4 mr-2" />
-                แก้ไขข้อความ
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Upload className="h-4 w-4 mr-2" />
-                อัปโหลดรูปภาพ
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Edit className="h-4 w-4 mr-2" />
-                {t('common.edit')}
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Move className="h-4 w-4 mr-2" />
-                {t('common.move')}
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
-                <Trash className="h-4 w-4 mr-2" />
-                {t('common.delete')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+  return <div ref={drag} className={`transition-all cursor-move group relative ${isDragging ? 'opacity-50 rotate-1 scale-105' : 'hover:scale-[1.02]'}`}>
+    <div className="glass-card rounded-[2rem] border border-white/20 hover:border-white/40 bg-white/10 backdrop-blur-md p-5 relative overflow-hidden shadow-lg">
+      {/* Light Reflection */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+
+      {/* Hover Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+      <div className="relative z-10">
+        <div className="flex items-start justify-between mb-3">
+          <h3 className="text-lg font-bold text-white line-clamp-2 leading-tight group-hover:text-primary transition-colors">{set.title}</h3>
+          <div className="flex items-center gap-2 pl-2">
+            {getSourceBadge(set.source)}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white/50 hover:text-white hover:bg-white/10 rounded-full">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-black/90 border-white/20 text-white">
+                <DropdownMenuItem className="focus:bg-white/10 focus:text-white">
+                  <Type className="h-4 w-4 mr-2" />
+                  แก้ไขข้อความ
+                </DropdownMenuItem>
+                <DropdownMenuItem className="focus:bg-white/10 focus:text-white">
+                  <Upload className="h-4 w-4 mr-2" />
+                  อัปโหลดรูปภาพ
+                </DropdownMenuItem>
+                <DropdownMenuItem className="focus:bg-white/10 focus:text-white">
+                  <Edit className="h-4 w-4 mr-2" />
+                  {t('common.edit')}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="focus:bg-white/10 focus:text-white">
+                  <Move className="h-4 w-4 mr-2" />
+                  {t('common.move')}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-red-400 focus:bg-red-500/10 focus:text-red-400">
+                  <Trash className="h-4 w-4 mr-2" />
+                  {t('common.delete')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 text-sm text-white/50 mb-4">
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/5">
+            <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="font-medium text-white/70">{set.cardCount} {t('flashcards.cards')}</span>
+          </span>
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/5">
+            <Zap className="w-3.5 h-3.5 text-yellow-400" />
+            <span className="font-medium text-white/70">Mastery {set.progress}%</span>
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs font-medium text-white/40">
+              <span>Mastery Progress</span>
+              <span className="text-primary">{set.progress}%</span>
+            </div>
+            <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+              <div className={`h-full transition-all duration-1000 ease-out ${getProgressColor(set.progress)} shadow-[0_0_10px_rgba(var(--primary),0.5)]`} style={{
+                width: `${set.progress}%`
+              }} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-[10px] text-white/30">
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3 w-3" />
+              <span>{t('flashcards.lastReviewed')}: {new Date(set.lastReviewed).toLocaleDateString('th-TH')}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3 w-3" />
+              <span>{t('flashcards.nextReview')}: {new Date(set.nextReview).toLocaleDateString('th-TH')}</span>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <FlashcardActions setId={set.id} />
+          </div>
         </div>
       </div>
-      <CardDescription className="flex items-center gap-4 text-sm">
-        <span>{set.cardCount} {t('flashcards.cards')}</span>
-        <span>•</span>
-        <span>Mastery {set.progress}%</span>
-      </CardDescription>
-    </CardHeader>
-
-    <CardContent className="space-y-4">
-      <div className="space-y-2">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Mastery Level</span>
-          <span>{set.progress}%</span>
-        </div>
-        <div className="w-full bg-muted rounded-full h-2">
-          <div className={`h-2 rounded-full transition-all ${getProgressColor(set.progress)}`} style={{
-            width: `${set.progress}%`
-          }} />
-        </div>
-      </div>
-
-      <div className="text-xs text-muted-foreground space-y-1">
-        <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          <span>{t('flashcards.lastReviewed')}: {new Date(set.lastReviewed).toLocaleDateString('th-TH')}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          <span>{t('flashcards.nextReview')}: {new Date(set.nextReview).toLocaleDateString('th-TH')}</span>
-        </div>
-      </div>
-
-      <FlashcardActions setId={set.id} />
-    </CardContent>
-  </Card>;
+    </div>
+  </div>;
 }
 function DroppableFolder({
   folder,
@@ -270,47 +285,61 @@ function DroppableFolder({
   const handleFolderClick = () => {
     navigate(`/flashcards/${folder.id}`);
   };
-  return <Card
+  return <div
     ref={drop}
     className={`
-      transition-all cursor-pointer bg-white dark:bg-slate-800 
-      rounded-3xl border-0 shadow-lg hover:shadow-xl hover:-translate-y-1
-      ${isOver ? 'ring-2 ring-primary shadow-glow scale-105' : ''}
+      transition-all duration-300 cursor-pointer group
+      ${isOver ? 'scale-105' : 'hover:-translate-y-1'}
     `}
     onClick={handleFolderClick}
   >
-    <CardContent className="p-5">
-      <div className="flex items-center gap-4">
-        {/* Cute Folder Icon */}
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/40 dark:to-violet-900/40 flex items-center justify-center shadow-md">
-          <Folder className="h-7 w-7 text-purple-500" />
+    <div className={`
+      relative overflow-hidden rounded-[2rem] p-5 h-full
+      ${isOver ? 'border-primary/50 shadow-[0_0_50px_rgba(var(--primary),0.3)] bg-white/20' : 'border-white/20 hover:border-white/40 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)]'}
+      bg-white/10 backdrop-blur-md border shadow-lg
+    `}>
+      {/* Light Reflection */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+
+      {/* Decorative Gradient Blob - Lighter */}
+      <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/10 blur-3xl rounded-full pointer-events-none group-hover:bg-white/20 transition-colors" />
+
+      <div className="flex items-center gap-4 relative z-10">
+        {/* Cute Folder Icon - Glass Style */}
+        <div className="w-16 h-16 rounded-[1.2rem] bg-gradient-to-br from-purple-500/20 to-blue-500/10 border border-white/10 flex items-center justify-center shadow-lg backdrop-blur-md group-hover:scale-110 transition-transform duration-500">
+          <Folder className="h-8 w-8 text-purple-300 drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]" />
         </div>
+
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-lg text-slate-800 dark:text-white truncate">{folder.title}</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <span className="font-medium">{folder.cardSetsCount}</span> {t('common.sets')}
+          <h3 className="font-bold text-xl text-white mb-1 truncate group-hover:text-primary transition-colors">{folder.title}</h3>
+          <p className="text-sm text-white/50 flex items-center gap-2">
+            <span className="flex items-center justify-center bg-white/10 min-w-[24px] h-6 px-2 rounded-full text-xs font-bold text-white/90">
+              {folder.cardSetsCount}
+            </span>
+            <span>{t('common.sets')}</span>
           </p>
         </div>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700">
-              <MoreVertical className="h-5 w-5 text-slate-400" />
+            <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-xl text-white/40 hover:text-white hover:bg-white/10">
+              <MoreVertical className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="rounded-xl">
-            <DropdownMenuItem className="rounded-lg" onClick={(e) => { e.stopPropagation(); onRename(folder); }}>
+          <DropdownMenuContent align="end" className="rounded-xl bg-black/90 border-white/20 text-white">
+            <DropdownMenuItem className="rounded-lg focus:bg-white/10 focus:text-white" onClick={(e) => { e.stopPropagation(); onRename(folder); }}>
               <Edit className="h-4 w-4 mr-2" />
               {t('common.rename')}
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive rounded-lg" onClick={(e) => { e.stopPropagation(); onDelete(folder); }}>
+            <DropdownMenuItem className="text-red-400 focus:text-red-300 focus:bg-red-500/10 rounded-lg" onClick={(e) => { e.stopPropagation(); onDelete(folder); }}>
               <Trash className="h-4 w-4 mr-2" />
               {t('common.delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </CardContent>
-  </Card>;
+    </div>
+  </div>;
 }
 export default function FlashcardsPage() {
   const { t } = useLanguage();
@@ -718,8 +747,7 @@ export default function FlashcardsPage() {
   return (
     <>
       <DndProvider backend={HTML5Backend}>
-        <div className="min-h-screen bg-background">
-          <BackgroundDecorations />
+        <div className="min-h-screen bg-transparent">
           <div className="container mx-auto px-4 py-8">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -746,15 +774,15 @@ export default function FlashcardsPage() {
                 {/* Create Flashcard Button */}
                 <Dialog open={showCreateFlashcardDialog} onOpenChange={setShowCreateFlashcardDialog}>
                   <DialogTrigger asChild>
-                    <Button className="w-full md:w-auto bg-gradient-primary text-primary-foreground hover:shadow-glow">
+                    <Button className="w-full md:w-auto bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-semibold shadow-lg hover:shadow-cyan-500/25">
                       <Plus className="h-4 w-4 mr-2" />
                       {t('flashcards.createFlashcard')}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-6 rounded-2xl">
+                  <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-6 rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
                     <DialogHeader>
-                      <DialogTitle className="text-xl font-bold">สร้างแฟลชการ์ดใหม่</DialogTitle>
-                      <DialogDescription>
+                      <DialogTitle className="text-xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">สร้างแฟลชการ์ดใหม่</DialogTitle>
+                      <DialogDescription className="text-white/50">
                         สร้างชุดคำศัพท์ใหม่สำหรับการเรียนรู้ของคุณ
                       </DialogDescription>
                     </DialogHeader>
@@ -764,7 +792,7 @@ export default function FlashcardsPage() {
                       <div className="flex flex-col md:flex-row gap-3 md:gap-4">
                         {/* Flashcard Set Title */}
                         <div className="flex-1">
-                          <Label htmlFor="flashcard-set-title" className="text-sm font-medium mb-1.5 block">
+                          <Label htmlFor="flashcard-set-title" className="text-sm font-medium mb-1.5 block text-slate-200">
                             ชื่อชุดแฟลชการ์ด *
                           </Label>
                           <Input
@@ -772,19 +800,19 @@ export default function FlashcardsPage() {
                             placeholder="เช่น คำศัพท์ภาษาอังกฤษพื้นฐาน"
                             value={newFlashcardSetTitle}
                             onChange={(e) => setNewFlashcardSetTitle(e.target.value)}
-                            className="w-full"
+                            className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10 focus:border-purple-500/50"
                           />
                         </div>
 
                         {/* Folder Selection */}
                         <div className="md:w-[280px]">
-                          <Label className="text-sm font-medium mb-1.5 block">โฟลเดอร์</Label>
+                          <Label className="text-sm font-medium mb-1.5 block text-slate-200">โฟลเดอร์</Label>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="icon" onClick={() => setShowNewFolderDialog(true)} className="h-10 w-10 flex-shrink-0" title="สร้างโฟลเดอร์ใหม่">
+                            <Button variant="outline" size="icon" onClick={() => setShowNewFolderDialog(true)} className="h-10 w-10 flex-shrink-0 bg-white/5 border-white/10 hover:bg-white/10 hover:text-white" title="สร้างโฟลเดอร์ใหม่">
                               <FolderPlus className="h-4 w-4" />
                             </Button>
                             <Select value={selectedFolderForFlashcard} onValueChange={setSelectedFolderForFlashcard}>
-                              <SelectTrigger className="flex-1">
+                              <SelectTrigger className="flex-1 bg-white/5 border-white/10 text-white focus:ring-purple-500/50">
                                 <SelectValue placeholder="เลือกโฟลเดอร์" />
                               </SelectTrigger>
                               <SelectContent>
@@ -809,13 +837,13 @@ export default function FlashcardsPage() {
                         <Badge variant="secondary" className="text-xs">{flashcardRows.length} ใบ</Badge>
                       </div>
 
-                      {/* Flashcard Rows - Expanded Area */}
-                      <div ref={flashcardScrollRef} className="space-y-3 flex-1 overflow-y-auto pr-2 min-h-[250px] max-h-[40vh]">
+                      {/* Flashcard Rows - Expanded Area - With Custom Scrollbar */}
+                      <div ref={flashcardScrollRef} className="space-y-3 flex-1 overflow-y-auto pr-2 min-h-[250px] max-h-[40vh] custom-scrollbar">
                         {flashcardRows.map((row, index) => (
-                          <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-xl bg-card hover:shadow-md transition-all duration-200 relative">
+                          <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border-0 rounded-2xl bg-white text-slate-900 shadow-sm relative animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="flex items-center justify-between w-full sm:w-auto sm:justify-center">
-                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 sm:bg-transparent">
-                                <span className="text-sm sm:text-lg font-semibold text-muted-foreground/70">
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 sm:bg-transparent">
+                                <span className="text-sm sm:text-lg font-bold text-slate-400">
                                   {index + 1}
                                 </span>
                               </div>
@@ -837,7 +865,7 @@ export default function FlashcardsPage() {
                                   value={row.front}
                                   onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
                                   placeholder="คำศัพท์ (ด้านหน้า)"
-                                  className="pr-10 h-10 sm:h-11 rounded-full bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 transition-all font-medium text-sm sm:text-base"
+                                  className="pr-10 h-10 sm:h-11 rounded-xl bg-slate-100 border-transparent text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all font-medium text-sm sm:text-base"
                                 />
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                                   {row.frontImage && (
@@ -866,7 +894,7 @@ export default function FlashcardsPage() {
                                 value={row.partOfSpeech}
                                 onValueChange={(value) => handleFlashcardTextChange(row.id, 'partOfSpeech', value)}
                               >
-                                <SelectTrigger className="w-full md:w-[160px] h-11 sm:h-12 rounded-full bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-200 dark:border-purple-700 focus:ring-purple-500 text-sm font-medium px-4">
+                                <SelectTrigger className="w-full md:w-[160px] h-11 sm:h-12 rounded-full bg-purple-100 border-2 border-purple-200 text-purple-700 hover:bg-purple-200 focus:ring-purple-500 font-medium px-4 shadow-sm">
                                   <SelectValue placeholder="Part of Speech" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -889,7 +917,7 @@ export default function FlashcardsPage() {
                                   value={row.back}
                                   onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
                                   placeholder="ความหมาย (ด้านหลัง)"
-                                  className="pr-10 h-10 sm:h-11 rounded-full bg-muted/30 border-transparent focus:bg-background focus:border-primary/50 transition-all font-medium text-sm sm:text-base"
+                                  className="pr-10 h-10 sm:h-11 rounded-xl bg-slate-100 border-transparent text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all font-medium text-sm sm:text-base"
                                 />
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                                   {row.backImage && (
@@ -967,9 +995,9 @@ export default function FlashcardsPage() {
                       {t('flashcards.createFolder')}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
                     <DialogHeader>
-                      <DialogTitle>{t('flashcards.createFolder')}</DialogTitle>
+                      <DialogTitle className="text-white">{t('flashcards.createFolder')}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                       <Input
@@ -1026,10 +1054,10 @@ export default function FlashcardsPage() {
 
       {/* Rename Folder Dialog */}
       <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
-        <DialogContent>
+        <DialogContent className="rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
           <DialogHeader>
-            <DialogTitle>เปลี่ยนชื่อโฟลเดอร์</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">เปลี่ยนชื่อโฟลเดอร์</DialogTitle>
+            <DialogDescription className="text-white/50">
               กรุณาใส่ชื่อใหม่สำหรับโฟลเดอร์
             </DialogDescription>
           </DialogHeader>
@@ -1053,16 +1081,16 @@ export default function FlashcardsPage() {
 
       {/* Delete Folder Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(244,63,94,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
           <AlertDialogHeader>
-            <AlertDialogTitle>ลบโฟลเดอร์นี้?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-white">ลบโฟลเดอร์นี้?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/50">
               คุณแน่ใจหรือว่าต้องการลบโฟลเดอร์ "{folderToDelete?.title}" ชุดแฟลชการ์ดที่อยู่ในโฟลเดอร์จะถูกย้ายออกมา
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteFolder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteFolder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
               ลบโฟลเดอร์
             </AlertDialogAction>
           </AlertDialogFooter>

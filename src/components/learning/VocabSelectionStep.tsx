@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,16 +24,20 @@ import {
     Loader2,
     AlertCircle,
     Folder,
-    Layers
+    Layers,
+    Zap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useOptimalCards, type LearningMode, type OptimalCardsResult } from '@/hooks/useOptimalCards';
 
 export interface VocabItem {
     id: string;
     front_text: string;
     back_text: string;
+    part_of_speech?: string;
     srs_score?: number | null;
     srs_level?: number | null;
+    isUserFlashcard?: boolean;
 }
 
 interface FlashcardSet {
@@ -47,12 +51,19 @@ interface UserFolder {
     title: string;
 }
 
+interface WordCountSettings {
+    wordCount: number;
+    learningMode: 'review-only' | 'review-and-new';
+    breakdown: { review: number; new: number };
+}
+
 interface VocabSelectionStepProps {
     selectedVocab: VocabItem[];
     onVocabChange: (vocab: VocabItem[]) => void;
     onNext: () => void;
     onBack: () => void;
     maxSelection?: number;
+    wordCountSettings?: WordCountSettings | null;
 }
 
 const getSrsLevelInfo = (level: number | null | undefined) => {
@@ -72,13 +83,33 @@ export function VocabSelectionStep({
     onVocabChange,
     onNext,
     onBack,
-    maxSelection = 12
+    maxSelection = 12,
+    wordCountSettings
 }: VocabSelectionStepProps) {
+    // Use wordCountSettings from parent, or fallback to defaults
+    const wordCount = wordCountSettings?.wordCount || maxSelection;
+    const learningMode = wordCountSettings?.learningMode || 'review-and-new';
+    const breakdown = wordCountSettings?.breakdown || { review: Math.ceil(wordCount * 0.3), new: wordCount - Math.ceil(wordCount * 0.3) };
+
     const [activeTab, setActiveTab] = useState<'due' | 'latest' | 'library'>('due');
     const [dueVocab, setDueVocab] = useState<VocabItem[]>([]);
     const [latestVocab, setLatestVocab] = useState<VocabItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [autoSelected, setAutoSelected] = useState<Set<string>>(new Set());
+
+    // Smart algorithm hook
+    const { getOptimalCards, isLoading: isLoadingOptimal } = useOptimalCards();
+    const [smartBreakdown, setSmartBreakdown] = useState<OptimalCardsResult['breakdown'] | null>(null);
+
+    // Auto-select using smart algorithm
+    const handleAutoSelect = useCallback(async () => {
+        const result = await getOptimalCards(wordCount, learningMode);
+        if (result.cards.length > 0) {
+            onVocabChange(result.cards);
+            setAutoSelected(new Set(result.cards.map(c => c.id)));
+            setSmartBreakdown(result.breakdown);
+        }
+    }, [getOptimalCards, wordCount, learningMode, onVocabChange]);
 
     // Library tab state
     const [folders, setFolders] = useState<UserFolder[]>([]);
@@ -133,11 +164,15 @@ export function VocabSelectionStep({
 
                     setDueVocab(mappedDue);
 
-                    // Auto-select first 4 lowest SRS
-                    if (selectedVocab.length === 0 && mappedDue.length >= 4) {
-                        const autoCards = mappedDue.slice(0, 4);
-                        onVocabChange(autoCards);
-                        setAutoSelected(new Set(autoCards.map(c => c.id)));
+                    // Auto-fill review cards using smart algorithm
+                    if (selectedVocab.length === 0) {
+                        // Get optimal cards for review (based on breakdown.review count)
+                        const result = await getOptimalCards(breakdown.review, 'review-only');
+                        if (result.cards.length > 0) {
+                            onVocabChange(result.cards);
+                            setAutoSelected(new Set(result.cards.map(c => c.id)));
+                            setSmartBreakdown(result.breakdown);
+                        }
                     }
                 }
 
@@ -246,7 +281,7 @@ export function VocabSelectionStep({
         if (isSelected) {
             // Remove from selection
             onVocabChange(selectedVocab.filter(v => v.id !== vocab.id));
-        } else if (selectedVocab.length < maxSelection) {
+        } else if (selectedVocab.length < wordCount) {
             // Add to selection
             onVocabChange([...selectedVocab, vocab]);
         }
@@ -256,11 +291,11 @@ export function VocabSelectionStep({
         onVocabChange(selectedVocab.filter(v => v.id !== vocabId));
     };
 
-    const canProceed = selectedVocab.length >= 4;
+    const canProceed = selectedVocab.length >= wordCount;
 
     return (
         <div className="flex flex-col h-full max-h-[70vh]">
-            {/* Header */}
+            {/* Header - Show selected settings summary */}
             <div className="text-center space-y-2 mb-4 flex-shrink-0">
                 <motion.h2
                     initial={{ opacity: 0, y: 10 }}
@@ -269,14 +304,32 @@ export function VocabSelectionStep({
                 >
                     เลือกคำศัพท์
                 </motion.h2>
-                <motion.p
+
+                {/* Settings Summary */}
+                <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="text-sm text-slate-500 dark:text-slate-400"
+                    className="flex items-center justify-center gap-3 text-sm"
                 >
-                    เลือก {maxSelection} คำ (ขั้นต่ำ 4 คำ) • ระบบเลือก 4 คำที่ต้องทบทวนให้อัตโนมัติ
-                </motion.p>
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        {breakdown.review} ทบทวน
+                    </span>
+                    {learningMode === 'review-and-new' && (
+                        <>
+                            <span className="text-slate-400">+</span>
+                            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 font-semibold">
+                                <Sparkles className="w-3.5 h-3.5" />
+                                {breakdown.new} ใหม่
+                            </span>
+                        </>
+                    )}
+                    <span className="text-slate-400">=</span>
+                    <span className="font-bold text-purple-600 dark:text-purple-400">
+                        {wordCount} คำ
+                    </span>
+                </motion.div>
             </div>
 
             {/* Two Column Layout - Always 2 columns */}
@@ -309,42 +362,39 @@ export function VocabSelectionStep({
                                                 exit={{ opacity: 0, x: -20 }}
                                                 layout
                                                 className={`
-                          group relative p-2.5 rounded-xl border-2 transition-all
-                          ${isAutoSelected
+                                                    group relative p-2 rounded-lg border transition-all
+                                                    ${isAutoSelected
                                                         ? 'bg-gradient-to-r from-red-500 to-rose-500 border-red-400 text-white'
                                                         : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
                                                     }
-                        `}
+                                                `}
                                             >
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className={`font-bold text-sm truncate ${isAutoSelected ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex-1 min-w-0 overflow-hidden">
+                                                        <p className={`font-semibold text-xs truncate ${isAutoSelected ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
                                                             {vocab.front_text}
                                                         </p>
-                                                        <p className={`text-xs truncate ${isAutoSelected ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                        <p className={`text-[10px] truncate ${isAutoSelected ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
                                                             {vocab.back_text}
                                                         </p>
                                                     </div>
 
-                                                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                                                        {vocab.srs_level !== null && vocab.srs_level !== undefined && (
-                                                            <Badge className={`text-[10px] px-1.5 py-0 ${isAutoSelected ? 'bg-white/20 text-white' : levelInfo.color}`}>
-                                                                {levelInfo.label}
-                                                            </Badge>
-                                                        )}
-                                                        <button
-                                                            onClick={() => handleRemoveVocab(vocab.id)}
-                                                            className={`
-                                p-1 rounded-full transition-all
-                                ${isAutoSelected
-                                                                    ? 'hover:bg-white/20 text-white'
-                                                                    : 'hover:bg-red-100 text-slate-400 hover:text-red-500'
-                                                                }
-                              `}
-                                                        >
-                                                            <X className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </div>
+                                                    <Badge className={`text-[8px] px-1 py-0 whitespace-nowrap ${isAutoSelected ? 'bg-white/20 text-white' : levelInfo.color}`}>
+                                                        {levelInfo.label}
+                                                    </Badge>
+
+                                                    <button
+                                                        onClick={() => handleRemoveVocab(vocab.id)}
+                                                        className={`
+                                                            p-0.5 rounded-full transition-all flex-shrink-0
+                                                            ${isAutoSelected
+                                                                ? 'hover:bg-white/20 text-white'
+                                                                : 'hover:bg-red-100 text-slate-400 hover:text-red-500'
+                                                            }
+                                                        `}
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
                                                 </div>
                                             </motion.div>
                                         );
@@ -398,16 +448,12 @@ export function VocabSelectionStep({
                                             <TabsContent value="due" className="mt-0 space-y-1.5">
                                                 {dueVocab.length > 0 ? (
                                                     <>
-                                                        <p className="text-xs text-slate-500 mb-2 flex items-center gap-1">
-                                                            <Sparkles className="w-3 h-3 text-red-500" />
-                                                            คำศัพท์ที่มีคะแนน SRS ต่ำสุด
-                                                        </p>
                                                         {dueVocab.map((vocab) => (
                                                             <VocabCard
                                                                 key={vocab.id}
                                                                 vocab={vocab}
                                                                 isSelected={selectedVocab.some(v => v.id === vocab.id)}
-                                                                isDisabled={selectedVocab.length >= maxSelection && !selectedVocab.some(v => v.id === vocab.id)}
+                                                                isDisabled={selectedVocab.length >= wordCount && !selectedVocab.some(v => v.id === vocab.id)}
                                                                 onClick={() => handleToggleVocab(vocab)}
                                                             />
                                                         ))}
@@ -424,7 +470,7 @@ export function VocabSelectionStep({
                                                             key={vocab.id}
                                                             vocab={vocab}
                                                             isSelected={selectedVocab.some(v => v.id === vocab.id)}
-                                                            isDisabled={selectedVocab.length >= maxSelection && !selectedVocab.some(v => v.id === vocab.id)}
+                                                            isDisabled={selectedVocab.length >= wordCount && !selectedVocab.some(v => v.id === vocab.id)}
                                                             onClick={() => handleToggleVocab(vocab)}
                                                         />
                                                     ))
@@ -439,17 +485,17 @@ export function VocabSelectionStep({
                                                     {/* Folder Dropdown - Compact */}
                                                     <div className="flex-1">
                                                         <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
-                                                            <SelectTrigger className="w-full h-8 text-xs rounded-lg border-purple-200 dark:border-purple-800 focus:ring-purple-400 bg-white/50 dark:bg-slate-800/50">
+                                                            <SelectTrigger className="w-full h-8 text-xs rounded-lg border-purple-200 dark:border-purple-800 focus:ring-purple-400 bg-white/90 text-black">
                                                                 <div className="flex items-center gap-1.5 truncate">
                                                                     {!selectedFolderId && <Folder className="w-3 h-3 text-purple-400 flex-shrink-0" />}
                                                                     <SelectValue placeholder="โฟลเดอร์" />
                                                                 </div>
                                                             </SelectTrigger>
-                                                            <SelectContent portal={false}>
+                                                            <SelectContent portal={false} className="bg-white dark:bg-white border-slate-200 shadow-lg">
                                                                 {/* <SelectItem value="all" className="text-xs">📁 ทั้งหมด</SelectItem>
                                                                 <SelectItem value="no-folder" className="text-xs">📄 ไม่มีโฟลเดอร์</SelectItem> */}
                                                                 {folders.map(folder => (
-                                                                    <SelectItem key={folder.id} value={folder.id} className="text-xs">
+                                                                    <SelectItem key={folder.id} value={folder.id} className="text-xs text-black focus:text-black dark:text-black dark:focus:text-black">
                                                                         📂 {folder.title}
                                                                     </SelectItem>
                                                                 ))}
@@ -464,21 +510,21 @@ export function VocabSelectionStep({
                                                             onValueChange={setSelectedSetId}
                                                             disabled={!selectedFolderId}
                                                         >
-                                                            <SelectTrigger className={`w-full h-8 text-xs rounded-lg border-pink-200 dark:border-pink-800 focus:ring-pink-400 bg-white/50 dark:bg-slate-800/50 ${!selectedFolderId && 'opacity-50 cursor-not-allowed'}`}>
+                                                            <SelectTrigger className={`w-full h-8 text-xs rounded-lg border-pink-200 dark:border-pink-800 focus:ring-pink-400 bg-white/90 text-black ${!selectedFolderId && 'opacity-50 cursor-not-allowed'}`}>
                                                                 <div className="flex items-center gap-1.5 truncate">
                                                                     {!selectedSetId && <Layers className="w-3 h-3 text-pink-400 flex-shrink-0" />}
                                                                     <SelectValue placeholder={selectedFolderId ? "ชุดคำศัพท์" : "เลือกโฟลเดอร์ก่อน"} />
                                                                 </div>
                                                             </SelectTrigger>
-                                                            <SelectContent portal={false}>
+                                                            <SelectContent portal={false} className="bg-white dark:bg-white border-slate-200 shadow-lg">
                                                                 {filteredSets.length > 0 ? (
                                                                     filteredSets.map(set => (
-                                                                        <SelectItem key={set.id} value={set.id} className="text-xs">
+                                                                        <SelectItem key={set.id} value={set.id} className="text-xs text-black focus:text-black dark:text-black dark:focus:text-black">
                                                                             🗂️ {set.title}
                                                                         </SelectItem>
                                                                     ))
                                                                 ) : (
-                                                                    <SelectItem value="none" disabled className="text-xs">
+                                                                    <SelectItem value="none" disabled className="text-xs text-black/50">
                                                                         ไม่พบชุดคำศัพท์
                                                                     </SelectItem>
                                                                 )}
@@ -504,7 +550,7 @@ export function VocabSelectionStep({
                                                                 key={vocab.id}
                                                                 vocab={vocab}
                                                                 isSelected={selectedVocab.some(v => v.id === vocab.id)}
-                                                                isDisabled={selectedVocab.length >= maxSelection && !selectedVocab.some(v => v.id === vocab.id)}
+                                                                isDisabled={selectedVocab.length >= wordCount && !selectedVocab.some(v => v.id === vocab.id)}
                                                                 onClick={() => handleToggleVocab(vocab)}
                                                             />
                                                         ))}
@@ -550,7 +596,7 @@ export function VocabSelectionStep({
                         }
           `}
                 >
-                    ถัดไป ({selectedVocab.length}/{maxSelection})
+                    ถัดไป ({selectedVocab.length}/{wordCount})
                     <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
             </div>

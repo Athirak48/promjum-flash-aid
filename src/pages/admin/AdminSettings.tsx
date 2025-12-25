@@ -115,14 +115,14 @@ export default function AdminSettings() {
     };
 
     return (
-        <div className="p-8 space-y-8">
+        <div className="space-y-8">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                     <Settings className="h-8 w-8 text-primary" />
                     System Settings
                 </h1>
-                <p className="text-muted-foreground mt-1">จัดการการตั้งค่าระบบ</p>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">จัดการการตั้งค่าระบบ</p>
             </div>
 
             {/* Tabs */}
@@ -221,8 +221,8 @@ export default function AdminSettings() {
                                             <span className="text-2xl">🤖</span>
                                         </div>
                                         <div>
-                                            <p className="font-medium">AI Features</p>
-                                            <p className="text-sm text-muted-foreground">ฟีเจอร์ AI สร้างประโยค, อ่านออกเสียง</p>
+                                            <p className="font-medium text-slate-900 dark:text-white">AI Features</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">ฟีเจอร์ AI สร้างประโยค, อ่านออกเสียง</p>
                                         </div>
                                     </div>
                                     <Switch
@@ -238,8 +238,8 @@ export default function AdminSettings() {
                                             <span className="text-2xl">🏆</span>
                                         </div>
                                         <div>
-                                            <p className="font-medium">Vocab Challenge</p>
-                                            <p className="text-sm text-muted-foreground">โหมดแข่งขันคำศัพท์</p>
+                                            <p className="font-medium text-slate-900 dark:text-white">Vocab Challenge</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">โหมดแข่งขันคำศัพท์</p>
                                         </div>
                                     </div>
                                     <Switch
@@ -255,8 +255,8 @@ export default function AdminSettings() {
                                             <span className="text-2xl">👥</span>
                                         </div>
                                         <div>
-                                            <p className="font-medium">Multiplayer Mode</p>
-                                            <p className="text-sm text-muted-foreground">โหมดเล่นหลายคน (Beta)</p>
+                                            <p className="font-medium text-slate-900 dark:text-white">Multiplayer Mode</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">โหมดเล่นหลายคน (Beta)</p>
                                         </div>
                                     </div>
                                     <Switch
@@ -272,8 +272,8 @@ export default function AdminSettings() {
                                             <span className="text-2xl">🎄</span>
                                         </div>
                                         <div>
-                                            <p className="font-medium">Christmas Theme</p>
-                                            <p className="text-sm text-muted-foreground">ธีมคริสต์มาส</p>
+                                            <p className="font-medium text-slate-900 dark:text-white">Christmas Theme</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">ธีมคริสต์มาส</p>
                                         </div>
                                     </div>
                                     <Switch
@@ -289,8 +289,8 @@ export default function AdminSettings() {
                                             <span className="text-2xl">🧪</span>
                                         </div>
                                         <div>
-                                            <p className="font-medium">Beta Features</p>
-                                            <p className="text-sm text-muted-foreground">เปิดใช้ฟีเจอร์ทดลอง (อาจไม่เสถียร)</p>
+                                            <p className="font-medium text-slate-900 dark:text-white">Beta Features</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">เปิดใช้ฟีเจอร์ทดลอง (อาจไม่เสถียร)</p>
                                         </div>
                                     </div>
                                     <Switch

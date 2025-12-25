@@ -158,7 +158,7 @@ export default function AdminSubDeckDetail() {
 
   const handleEditSave = async () => {
     if (!selectedFlashcard) return;
-    
+
     try {
       const { error } = await supabase
         .from('flashcards')
@@ -171,8 +171,8 @@ export default function AdminSubDeckDetail() {
       if (error) throw error;
 
       // Update state directly to preserve order
-      setFlashcards(flashcards.map(fc => 
-        fc.id === selectedFlashcard.id 
+      setFlashcards(flashcards.map(fc =>
+        fc.id === selectedFlashcard.id
           ? { ...fc, front_text: editForm.front_text, back_text: editForm.back_text }
           : fc
       ));
@@ -309,7 +309,7 @@ export default function AdminSubDeckDetail() {
     return (
       <div className="p-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">ไม่พบข้อมูล Subdeck</h1>
+          <h1 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">ไม่พบข้อมูล Subdeck</h1>
           <Button onClick={() => navigate(`/admin/decks/${deckId}`)}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             กลับไปหน้า Deck
@@ -320,95 +320,99 @@ export default function AdminSubDeckDetail() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(`/admin/decks/${deckId}`)}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">{subdeck.name}</h1>
-              <p className="text-muted-foreground text-lg">{subdeck.name_en}</p>
-              <p className="text-foreground/80 mt-2">จำนวนคำศัพท์ทั้งหมด: {flashcards.length}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              อัปโหลดไฟล์ .xlsx
-            </Button>
-            <Button onClick={handleAddClick}>
-              <Plus className="w-4 h-4 mr-2" />
-              เพิ่มคำศัพท์
-            </Button>
-            {flashcards.length > 0 && (
-              <Button variant="destructive" onClick={handleDeleteAllClick}>
-                <Trash className="w-4 h-4 mr-2" />
-                ลบทั้งหมด
-              </Button>
-            )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(`/admin/decks/${deckId}`)}
+            className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{subdeck.name}</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-lg">{subdeck.name_en}</p>
+            <p className="text-slate-600 dark:text-slate-300 mt-2">จำนวนคำศัพท์ทั้งหมด: {flashcards.length}</p>
           </div>
         </div>
+        <div className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            className="border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            อัปโหลดไฟล์ .xlsx
+          </Button>
+          <Button onClick={handleAddClick}>
+            <Plus className="w-4 h-4 mr-2" />
+            เพิ่มคำศัพท์
+          </Button>
+          {flashcards.length > 0 && (
+            <Button variant="destructive" onClick={handleDeleteAllClick}>
+              <Trash className="w-4 h-4 mr-2" />
+              ลบทั้งหมด
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Flashcards Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>คำศัพท์ทั้งหมด</CardTitle>
-          <CardDescription>จัดการคำศัพท์ใน Subdeck นี้</CardDescription>
+      <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardHeader className="border-b border-slate-100 dark:border-slate-800/50 pb-4">
+          <CardTitle className="text-slate-800 dark:text-slate-100">คำศัพท์ทั้งหมด</CardTitle>
+          <CardDescription className="text-slate-500 dark:text-slate-400">จัดการคำศัพท์ใน Subdeck นี้</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {flashcards.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground text-lg">ยังไม่มีคำศัพท์ใน subdeck นี้</p>
-              <p className="text-muted-foreground text-sm mt-2">
+              <p className="text-slate-500 dark:text-slate-400 text-lg">ยังไม่มีคำศัพท์ใน subdeck นี้</p>
+              <p className="text-slate-400 dark:text-slate-500 text-sm mt-2">
                 อัปโหลดไฟล์ .xlsx หรือเพิ่มคำศัพท์ด้วยตนเอง
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[80px]">No.</TableHead>
-                  <TableHead>Front</TableHead>
-                  <TableHead>Back</TableHead>
-                  <TableHead className="w-[150px]">การจัดการ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {flashcards.map((flashcard, index) => (
-                  <TableRow key={flashcard.id}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell>{flashcard.front_text}</TableCell>
-                    <TableCell>{flashcard.back_text}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(flashcard)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(flashcard)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                    <TableHead className="w-[80px] font-semibold text-slate-700 dark:text-slate-300">No.</TableHead>
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Front</TableHead>
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Back</TableHead>
+                    <TableHead className="w-[150px] font-semibold text-slate-700 dark:text-slate-300">การจัดการ</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {flashcards.map((flashcard, index) => (
+                    <TableRow key={flashcard.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                      <TableCell className="font-medium text-slate-500 dark:text-slate-400">{index + 1}</TableCell>
+                      <TableCell className="text-slate-900 dark:text-white font-medium">{flashcard.front_text}</TableCell>
+                      <TableCell className="text-slate-600 dark:text-slate-300">{flashcard.back_text}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(flashcard)} className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(flashcard)} className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

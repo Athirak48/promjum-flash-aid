@@ -23,32 +23,11 @@ import Navbar from "./components/Navbar";
 import FlashcardsReview from "./pages/FlashcardsReview";
 import DecksPage from "./pages/DecksPage";
 import SubDecksPage from "./pages/SubDecksPage";
-import AIRealtimePracticePage from "./pages/AIRealtimePracticePage";
-// import AIPracticeLandingPage from "./pages/AIPracticeLandingPage";
-import AIPracticeSentencePage from "./pages/AIPracticeSentencePage";
-import AIListeningGuidePage from "./pages/AIListeningGuidePage";
-import AIListeningSection1IntroPage from "./pages/AIListeningSection1IntroPage";
-import AIListeningVocabSelectionPage from "./pages/AIListeningVocabSelectionPage";
-import AIListeningSection2IntroPage from "./pages/AIListeningSection2IntroPage";
-import AIListeningFlashcardPlayPage from "./pages/AIListeningFlashcardPlayPage";
-import AIListeningFlashcardSummaryPage from "./pages/AIListeningFlashcardSummaryPage";
-import AIListeningSection3IntroPage from "./pages/AIListeningSection3IntroPage";
-import AIListeningSection4IntroPage from "./pages/AIListeningSection4IntroPage";
-import AIListeningMCQPage from "./pages/AIListeningMCQPage";
-import AIListeningFinalSummaryPage from "./pages/AIListeningFinalSummaryPage";
-import AIReadingGuidePage from "./pages/AIReadingGuidePage";
-import AIReadingSection1IntroPage from "./pages/AIReadingSection1IntroPage";
-import AIReadingVocabSelectionPage from "./pages/AIReadingVocabSelectionPage";
-import AIReadingSection2IntroPage from "./pages/AIReadingSection2IntroPage";
-import AIReadingFlashcardPlayPage from "./pages/AIReadingFlashcardPlayPage";
-import AIReadingFlashcardSummaryPage from "./pages/AIReadingFlashcardSummaryPage";
-import AIReadingSection3IntroPage from "./pages/AIReadingSection3IntroPage";
-import AIReadingSection4IntroPage from "./pages/AIReadingSection4IntroPage";
-import AIReadingMCQPage from "./pages/AIReadingMCQPage";
-import AIReadingFinalSummaryPage from "./pages/AIReadingFinalSummaryPage";
-import VocabSpeedrunPage from "./pages/VocabSpeedrunPage";
+
 import LearningSessionPage from "./pages/LearningSessionPage";
 import LearningResultsPage from "./pages/LearningResultsPage";
+import MultiplayerPage from "./pages/MultiplayerPage";
+import VocabChallengePage from "./pages/VocabChallengePage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
@@ -60,8 +39,8 @@ import AdminFeedback from "./pages/admin/AdminFeedback";
 import AdminNotification from "./pages/admin/AdminNotification";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminSettings from "./pages/admin/AdminSettings";
-import AdminVocabChallenge from "./pages/admin/AdminVocabChallenge";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import BackgroundDecorations from "./components/BackgroundDecorations";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +54,7 @@ const App = () => {
               <Toaster />
               <Sonner />
               <MaintenanceCheck>
+                <BackgroundDecorations />
                 <BrowserRouter>
                   <Routes>
                     <Route path="/" element={<><Navbar /><LandingPage /></>} />
@@ -144,7 +124,6 @@ const App = () => {
                       <Route path="feedback" element={<AdminFeedback />} />
                       <Route path="subscriptions" element={<AdminSubscriptions />} />
                       <Route path="settings" element={<AdminSettings />} />
-                      <Route path="vocab-challenge" element={<AdminVocabChallenge />} />
                       <Route path="analytics" element={<AdminAnalytics />} />
                     </Route>
                     <Route
@@ -174,205 +153,11 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     />
-                    {/* <Route
-                      path="/practice"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIPracticeLandingPage /></>
-                        </ProtectedRoute>
-                      }
-                    /> */}
-                    <Route
-                      path="/vocab-speedrun"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><VocabSpeedrunPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
                     <Route
                       path="/vocab-challenge"
                       element={
                         <ProtectedRoute>
-                          <><Navbar /><VocabSpeedrunPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-practice-sentence"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIPracticeSentencePage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-guide"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIListeningGuidePage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-section1-intro"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIListeningSection1IntroPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-vocab-selection"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIListeningVocabSelectionPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-section2-intro"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIListeningSection2IntroPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-flashcard-play"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIListeningFlashcardPlayPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-flashcard-summary"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIListeningFlashcardSummaryPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-section3-intro"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIListeningSection3IntroPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-practice"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIRealtimePracticePage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-section4-intro"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIListeningSection4IntroPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-mcq"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIListeningMCQPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-listening-final-summary"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIListeningFinalSummaryPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-
-                    {/* AI Reading Routes */}
-                    <Route
-                      path="/ai-reading-guide"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIReadingGuidePage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-reading-section1-intro"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIReadingSection1IntroPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-reading-vocab-selection"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIReadingVocabSelectionPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-reading-section2-intro"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIReadingSection2IntroPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-reading-flashcard-play"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIReadingFlashcardPlayPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-reading-flashcard-summary"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIReadingFlashcardSummaryPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-reading-section3-intro"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIReadingSection3IntroPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-reading-section4-intro"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIReadingSection4IntroPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-reading-mcq"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIReadingMCQPage /></>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-reading-final-summary"
-                      element={
-                        <ProtectedRoute>
-                          <><Navbar /><AIReadingFinalSummaryPage /></>
+                          <><Navbar /><VocabChallengePage /></>
                         </ProtectedRoute>
                       }
                     />
@@ -390,6 +175,15 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <LearningResultsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Multiplayer Route */}
+                    <Route
+                      path="/multiplayer"
+                      element={
+                        <ProtectedRoute>
+                          <MultiplayerPage />
                         </ProtectedRoute>
                       }
                     />
