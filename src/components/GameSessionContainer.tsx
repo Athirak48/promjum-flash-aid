@@ -112,31 +112,31 @@ export function GameSessionContainer({ availableDecks, selectedGame, onExit }: G
             // For simplicity, let's assuming we can fetch by joining subdecks.
 
             // Fetch subdecks for the deck
-            const { data: subdecks, error: subdeckError } = await supabase
-                .from('flashcard_sets') // Assuming this is the table for subdecks based on DeckCard logic (useSubDecks)
+            const { data: subdecks, error: subdeckError } = await (supabase
+                .from('sub_decks') as any) // Using sub_decks table
                 .select('id')
                 .eq('deck_id', deckId);
 
             if (subdeckError) throw subdeckError;
 
-            const subdeckIds = subdecks.map(sd => sd.id);
+            const subdeckIds = (subdecks || []).map((sd: any) => sd.id);
 
             if (subdeckIds.length === 0) {
                 setAvailableWords([]);
                 return;
             }
 
-            const { data: cards, error: cardsError } = await supabase
-                .from('flashcards')
+            const { data: cards, error: cardsError } = await (supabase
+                .from('flashcards') as any)
                 .select('*')
-                .in('set_id', subdeckIds) // Assuming 'set_id' links to 'flashcard_sets'
-                .limit(50); // Limit for performance in preview
+                .in('subdeck_id', subdeckIds)
+                .limit(50);
 
             if (cardsError) throw cardsError;
 
-            setAvailableWords(cards as Flashcard[]);
+            setAvailableWords((cards || []) as Flashcard[]);
             // Default select all (up to a reasonable limit for a game)
-            const initialSelection = new Set(cards.slice(0, 15).map(c => c.id));
+            const initialSelection: Set<string> = new Set((cards || []).slice(0, 15).map((c: any) => String(c.id)));
             setSelectedWordIds(initialSelection);
 
         } catch (error) {
