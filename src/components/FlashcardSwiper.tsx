@@ -14,6 +14,7 @@ interface FlashcardData {
   id: string;
   front: string;
   back: string;
+  partOfSpeech?: string;
   frontImage?: string | null;
   backImage?: string | null;
 }
@@ -28,9 +29,18 @@ interface FlashcardSwiperProps {
     cardStats: Record<string, { missCount: number }>;
   }) => void;
   onAnswer?: (cardId: string, known: boolean, timeTaken: number) => void;
+  /** Called when user wants to continue to next phase (for Learning Now flow) */
+  onContinue?: (results?: {
+    correct: number;
+    incorrect: number;
+    needsReview: number;
+    cardStats: Record<string, { missCount: number }>;
+  }) => void;
+  /** Called when user wants to review again (for Learning Now flow) */
+  onReviewAgain?: () => void;
 }
 
-export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: FlashcardSwiperProps) {
+export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContinue, onReviewAgain }: FlashcardSwiperProps) {
   const { t } = useLanguage();
 
   // Core state
@@ -71,9 +81,15 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
   const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
   const cardStartTimeRef = useRef<number>(Date.now());
 
+  const [showTutorial, setShowTutorial] = useState(true);
+
   useEffect(() => {
     cardStartTimeRef.current = Date.now();
   }, [currentIndex]);
+
+  const handleDismissTutorial = () => {
+    setShowTutorial(false);
+  };
 
   const currentCard = reviewQueue[currentIndex];
   const totalCards = cards.length;
@@ -83,6 +99,9 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Game Control Logic
+      if (showTutorial) return;
+
       if (isComplete) return;
 
       switch (e.key) {
@@ -136,7 +155,25 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFlipped, currentIndex, isComplete, isAutoPlaying]);
+  }, [isFlipped, currentIndex, isComplete, isAutoPlaying, showTutorial]);
+
+  // Dedicated Tutorial Key Listener
+  useEffect(() => {
+    if (!showTutorial) return;
+
+    const handleTutorialKey = (e: KeyboardEvent) => {
+      // Tab, Space, Enter, or Escape to dismiss tutorial
+      if (e.key === 'Tab' || e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowTutorial(false);
+      }
+    };
+
+    // Use keyup for better reliability
+    window.addEventListener('keyup', handleTutorialKey, true);
+    return () => window.removeEventListener('keyup', handleTutorialKey, true);
+  }, [showTutorial]);
 
   // Mouse/Touch handlers
   const handleStart = (clientX: number) => {
@@ -233,12 +270,8 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
 
         if (newQueue.length === 0) {
           // All mastered!
-          onComplete({
-            correct: rememberedCount + 1,
-            incorrect: needPracticeCount,
-            needsReview: 0,
-            cardStats
-          });
+          // We don't call onComplete here anymore, because we want to show the Summary Screen first.
+          // The user will click "Finish" to trigger onClose/onComplete.
         } else {
           // Move to next (or loop to start)
           setCurrentIndex(prev => prev >= newQueue.length ? 0 : prev);
@@ -288,39 +321,119 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
 
   if (isComplete) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-purple-950 dark:to-slate-900 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-gradient-to-br from-[#2e1065] via-[#4c1d95] to-[#1e1b4b] flex items-center justify-center p-4 z-50 backdrop-blur-md">
         <BackgroundDecorations />
-        <Card className="max-w-lg w-full shadow-2xl relative z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-0 rounded-3xl">
-          <div className="p-8 text-center space-y-6">
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              เสร็จสิ้น!
-            </h2>
 
-            <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-6 text-white">
-              <div className="text-5xl font-bold mb-2">{totalCards}/{totalCards}</div>
-              <div className="text-lg opacity-90">จำได้ทั้งหมด</div>
+        {/* Main Glass Card - Wider */}
+        <Card className="max-w-[550px] w-full shadow-[0_0_60px_rgba(168,85,247,0.4)] relative z-10 bg-white/10 backdrop-blur-3xl border border-white/20 rounded-[2.5rem] overflow-hidden animate-in zoom-in-95 duration-300">
+          {/* Decorative gradients */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-pink-500 to-transparent opacity-80" />
+          <div className="absolute -top-20 -right-20 w-48 h-48 bg-purple-500/30 rounded-full blur-[80px]" />
+          <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-pink-500/30 rounded-full blur-[80px]" />
+
+          <div className="p-6 text-center space-y-4 relative">
+            <div className="text-4xl mb-1 animate-bounce">🎉</div>
+
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold text-white drop-shadow-md">
+                ยอดเยี่ยมมาก!
+              </h2>
+              <p className="text-purple-200 text-xs">การฝึกฝนวันนี้เสร็จสิ้นแล้ว</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-green-50 dark:bg-green-900/30 rounded-2xl p-4 border border-green-200 dark:border-green-800">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">{rememberedCount}</div>
-                <div className="text-sm text-green-700 dark:text-green-300 mt-1">รอบที่ตอบถูก</div>
+            {/* Main Score Card */}
+            <div className="bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-2xl p-4 text-white relative overflow-hidden group shadow-lg">
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="text-4xl font-bold mb-0.5 drop-shadow-lg text-white">{cards.length - Object.keys(cardStats).length}/{totalCards}</div>
+              <div className="text-xs font-medium text-white/80">ปัดขวาครั้งแรก</div>
+            </div>
+
+            {/* Two Column Vocabulary Lists */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Remembered vocabulary list - LEFT */}
+              <div className="bg-emerald-500/10 rounded-xl p-3 border border-emerald-500/20 text-left flex flex-col max-h-[30vh]">
+                <div className="text-xs font-bold text-emerald-300 mb-2 flex items-center gap-1.5 flex-shrink-0">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <Check className="h-2.5 w-2.5" />
+                  </div>
+                  คำที่จำได้ ({cards.length - Object.keys(cardStats).length})
+                </div>
+                <div className="space-y-1.5 overflow-y-auto custom-scrollbar pr-1">
+                  {cards.filter(card => !cardStats[card.id]?.missCount).map(card => (
+                    <div key={card.id} className="text-[11px] bg-white/5 hover:bg-white/10 transition-colors rounded-lg px-2 py-1.5 border border-white/5">
+                      <div className="font-medium text-purple-100 truncate">{card.front}</div>
+                      <div className="text-purple-200/70 truncate text-[10px]">{card.back}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="bg-orange-50 dark:bg-orange-900/30 rounded-2xl p-4 border border-orange-200 dark:border-orange-800">
-                <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{needPracticeCount}</div>
-                <div className="text-sm text-orange-700 dark:text-orange-300 mt-1">รอบที่ทวน</div>
+
+              {/* Missed vocabulary list - RIGHT */}
+              <div className="bg-rose-500/10 rounded-xl p-3 border border-rose-500/20 text-left flex flex-col max-h-[30vh]">
+                <div className="text-xs font-bold text-rose-300 mb-2 flex items-center gap-1.5 flex-shrink-0">
+                  <div className="w-4 h-4 rounded-full bg-rose-500/20 flex items-center justify-center">
+                    <X className="h-2.5 w-2.5" />
+                  </div>
+                  คำที่ลืม ({Object.keys(cardStats).length})
+                </div>
+                <div className="space-y-1.5 overflow-y-auto custom-scrollbar pr-1">
+                  {cards.filter(card => cardStats[card.id]?.missCount > 0).length > 0 ? (
+                    cards.filter(card => cardStats[card.id]?.missCount > 0).map(card => (
+                      <div key={card.id} className="text-[11px] bg-white/5 hover:bg-white/10 transition-colors rounded-lg px-2 py-1.5 border border-white/5">
+                        <div className="font-medium text-purple-100 truncate">{card.front}</div>
+                        <div className="text-purple-200/70 truncate text-[10px]">{card.back}</div>
+                        <span className="text-rose-300 font-bold text-[9px]">
+                          ลืม {cardStats[card.id]?.missCount || 0} ครั้ง
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-[11px] text-rose-200/50 text-center py-3">ไม่มี 🎉</div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
-              <Button onClick={() => window.location.reload()} className="flex-1 h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600">
-                <RotateCcw className="h-4 w-4 mr-2" />
-                เล่นอีกครั้ง
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => {
+                  setMasteredCards([]);
+                  setReviewQueue([...cards]);
+                  setCurrentIndex(0);
+                  setIsFlipped(false);
+                  setHasViewedAnswer(false);
+                  setRememberedCount(0);
+                  setNeedPracticeCount(0);
+                  setStreak(0);
+                  setCardStats({});
+                  setHistory([]);
+                  setIsAutoPlaying(false);
+                }}
+                variant="outline"
+                className="flex-1 h-10 text-xs rounded-xl border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all backdrop-blur-sm"
+              >
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                ทบทวน
               </Button>
-              <Button onClick={onClose} variant="outline" className="flex-1 h-12 rounded-xl border-2">
-                <X className="h-4 w-4 mr-2" />
-                ปิด
+
+              <Button
+                onClick={() => {
+                  const results = {
+                    correct: rememberedCount,
+                    incorrect: needPracticeCount,
+                    needsReview: needPracticeCount,
+                    cardStats: cardStats
+                  };
+                  if (onContinue) {
+                    onContinue(results);
+                  } else {
+                    onClose();
+                  }
+                }}
+                className="flex-1 h-10 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg shadow-purple-500/30 border-0 transition-all hover:scale-[1.02]"
+              >
+                <span className="mr-1.5">ไปกันต่อ</span>
+                <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
@@ -332,7 +445,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
   if (!currentCard) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-purple-950 dark:to-slate-900">
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-[#1a1c2e] via-[#2d1b4e] to-[#1c1a2e]">
       <BackgroundDecorations />
 
       <div className="relative z-10 h-full flex flex-col">
@@ -340,18 +453,18 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
         <div className="flex items-center justify-between mb-4 md:mb-6 px-3 pt-4 gap-2">
           {/* Left: Back Button & Progress */}
           <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-            <Button variant="ghost" onClick={onClose} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white dark:bg-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex-shrink-0">
+            <Button variant="ghost" onClick={onClose} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white/10 hover:bg-white/20 text-white shadow-sm flex-shrink-0 border border-white/10">
               <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
 
             <div className="flex flex-col gap-0.5 sm:gap-1 flex-1 max-w-[120px] sm:max-w-[200px]">
-              <div className="flex items-center justify-between text-[10px] sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+              <div className="flex items-center justify-between text-[10px] sm:text-sm font-bold text-white/90">
                 <span className="hidden sm:inline">ความคืบหน้า</span>
                 <span>{masteredCards.length} / {totalCards}</span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-white dark:bg-slate-800 overflow-hidden">
+              <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden backdrop-blur-sm">
                 <div
-                  className="h-full rounded-full bg-primary transition-all duration-300 ease-in-out"
+                  className="h-full rounded-full bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-300 ease-in-out shadow-[0_0_10px_rgba(232,121,249,0.5)]"
                   style={{ width: `${(masteredCards.length / totalCards) * 100}%` }}
                 />
               </div>
@@ -360,21 +473,21 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
 
           {/* Right: Stats Section */}
           <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-            <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full">
-              <div className="bg-green-500 rounded-full p-0.5">
+            <div className="flex items-center gap-1 bg-emerald-500/20 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border border-emerald-500/30 backdrop-blur-sm">
+              <div className="bg-emerald-500 rounded-full p-0.5">
                 <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
               </div>
-              <span className="font-bold text-xs sm:text-sm text-green-700 dark:text-green-400">{rememberedCount}</span>
+              <span className="font-bold text-xs sm:text-sm text-emerald-100">{rememberedCount}</span>
             </div>
 
-            <div className="flex items-center gap-1 bg-red-100 dark:bg-red-900/30 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full">
-              <div className="bg-red-500 rounded-full p-0.5">
+            <div className="flex items-center gap-1 bg-rose-500/20 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border border-rose-500/30 backdrop-blur-sm">
+              <div className="bg-rose-500 rounded-full p-0.5">
                 <X className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
               </div>
-              <span className="font-bold text-xs sm:text-sm text-red-700 dark:text-red-400">{needPracticeCount}</span>
+              <span className="font-bold text-xs sm:text-sm text-rose-100">{needPracticeCount}</span>
             </div>
 
-            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 text-slate-400 hover:text-slate-600">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 text-white/40 hover:text-white hover:bg-white/10">
               <MoreHorizontal className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
           </div>
@@ -465,9 +578,16 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
                         </div>
                       )}
 
-                      <div className="text-3xl sm:text-4xl md:text-4xl lg:text-4xl font-bold text-slate-800 dark:text-white mb-4 leading-normal py-2 break-words line-clamp-4">
+                      <div className="text-3xl sm:text-4xl md:text-4xl lg:text-4xl font-bold text-slate-800 dark:text-white mb-2 leading-normal py-2 break-words line-clamp-4">
                         {currentCard.front}
                       </div>
+                      {currentCard.partOfSpeech && (
+                        <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/40 border border-purple-200 dark:border-purple-700 mb-4">
+                          <span className="text-sm font-semibold text-purple-700 dark:text-purple-300 italic">
+                            {currentCard.partOfSpeech}
+                          </span>
+                        </div>
+                      )}
                       <div className="text-sm md:text-base text-slate-400 font-medium absolute bottom-8">แตะเพื่อดูความหมาย</div>
                     </div>
                   </Card>
@@ -600,6 +720,65 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer }: Flashc
           </div>
         </div>
       </div>
+
+      {/* Tutorial Overlay */}
+      {showTutorial && (
+        <div
+          className="fixed inset-0 z-[100] flex cursor-pointer"
+        >
+          {/* Left Half - Forgot (Red) - Clicking also answers "forgot" */}
+          <div
+            className="w-1/2 h-full bg-red-500/80 hover:bg-red-500/90 transition-colors flex items-center justify-center relative backdrop-blur-sm"
+            onClick={() => {
+              setShowTutorial(false);
+              // Auto flip and mark as "forgot"
+              setIsFlipped(true);
+              setHasViewedAnswer(true);
+              setTimeout(() => handleAnswer(false), 100);
+            }}
+          >
+            <div className="text-center animate-in fade-in slide-in-from-left duration-700">
+              <div className="bg-white text-red-600 rounded-full p-6 mb-6 shadow-xl mx-auto w-24 h-24 flex items-center justify-center">
+                <X className="w-12 h-12 stroke-[3]" />
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-white drop-shadow-md mb-2">จำไม่ได้</h2>
+              <p className="text-white/80 text-lg font-medium">ปัดไปทางซ้าย</p>
+            </div>
+            {/* Arrow decoration */}
+            <div className="absolute left-8 top-1/2 -translate-y-1/2 text-white/20">
+              <ChevronLeft className="w-32 h-32" />
+            </div>
+          </div>
+
+          {/* Right Half - Remember (Green) - Clicking also answers "remember" */}
+          <div
+            className="w-1/2 h-full bg-green-500/80 hover:bg-green-500/90 transition-colors flex items-center justify-center relative backdrop-blur-sm"
+            onClick={() => {
+              setShowTutorial(false);
+              // Auto flip and mark as "remember"
+              setIsFlipped(true);
+              setHasViewedAnswer(true);
+              setTimeout(() => handleAnswer(true), 100);
+            }}
+          >
+            <div className="text-center animate-in fade-in slide-in-from-right duration-700">
+              <div className="bg-white text-green-600 rounded-full p-6 mb-6 shadow-xl mx-auto w-24 h-24 flex items-center justify-center">
+                <Check className="w-12 h-12 stroke-[3]" />
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-white drop-shadow-md mb-2">จำได้</h2>
+              <p className="text-white/80 text-lg font-medium">ปัดไปทางขวา</p>
+            </div>
+            {/* Arrow decoration */}
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 text-white/20">
+              <ChevronRight className="w-32 h-32" />
+            </div>
+          </div>
+
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white/90 text-sm font-medium animate-pulse bg-black/20 px-4 py-2 rounded-full backdrop-blur-md">
+            กด Tab เพื่อปิด หรือ คลิกเลือก
+          </div>
+        </div>
+      )}
 
       <style>{`
         .backface-hidden {

@@ -55,7 +55,7 @@ const DraggableRow = ({ deck, index, moveRow, children }: any) => {
     >
       <TableCell className="w-8">
         <div ref={drag} className="cursor-grab active:cursor-grabbing">
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
+          <GripVertical className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" />
         </div>
       </TableCell>
       {children}
@@ -175,15 +175,15 @@ export default function AdminDecks() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="p-8 space-y-8">
+      <div className="space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
               <BookOpen className="h-8 w-8 text-primary" />
               Deck / Subdeck
             </h1>
-            <p className="text-muted-foreground mt-1">จัดการ Deck, Subdeck และ Flashcard</p>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">จัดการ Deck, Subdeck และ Flashcard</p>
           </div>
           <Button onClick={() => setShowCreateDeck(true)}>
             <Plus className="w-4 h-4 mr-2" />
@@ -193,57 +193,57 @@ export default function AdminDecks() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-blue-200/50">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
+          <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+            <CardContent className="pt-6 pb-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                  <BookOpen className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-blue-600">{totalDecks}</p>
-                  <p className="text-xs text-muted-foreground">Decks ทั้งหมด</p>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{totalDecks}</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Decks ทั้งหมด</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200/50">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+          <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+            <CardContent className="pt-6 pb-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
+                  <CheckCircle className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-green-600">{publishedDecks}</p>
-                  <p className="text-xs text-muted-foreground">Published</p>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{publishedDecks}</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Published</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-200/50">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
-                  <FileText className="h-5 w-5 text-amber-600" />
+          <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+            <CardContent className="pt-6 pb-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
+                  <FileText className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-amber-600">{draftDecks}</p>
-                  <p className="text-xs text-muted-foreground">Draft</p>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{draftDecks}</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Draft</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-purple-200/50">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50">
-                  <Layers className="h-5 w-5 text-purple-600" />
+          <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+            <CardContent className="pt-6 pb-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
+                  <Layers className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-purple-600">{totalFlashcards}</p>
-                  <p className="text-xs text-muted-foreground">Flashcards</p>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{totalFlashcards}</p>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Flashcards</p>
                 </div>
               </div>
             </CardContent>

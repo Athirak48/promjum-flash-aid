@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface Flashcard {
   id: string;
@@ -30,11 +29,6 @@ export function WordPreviewDialog({ open, onOpenChange, flashcards, subdeckName 
     { id: '3', front_text: 'Good morning', back_text: 'สวัสดีตอนเช้า' },
     { id: '4', front_text: 'Goodbye', back_text: 'ลาก่อน' },
     { id: '5', front_text: 'How are you?', back_text: 'สบายดีไหม?' },
-    { id: '6', front_text: 'I love you', back_text: 'ฉันรักคุณ' },
-    { id: '7', front_text: 'Beautiful', back_text: 'สวยงาม' },
-    { id: '8', front_text: 'Delicious', back_text: 'อร่อย' },
-    { id: '9', front_text: 'Happy', back_text: 'มีความสุข' },
-    { id: '10', front_text: 'Friend', back_text: 'เพื่อน' },
   ];
 
   const displayCards = flashcards.length > 0 ? flashcards : mockFlashcards;
@@ -53,50 +47,56 @@ export function WordPreviewDialog({ open, onOpenChange, flashcards, subdeckName 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[85vh]">
+      <DialogContent className="max-w-5xl max-h-[85vh] bg-slate-900/95 backdrop-blur-xl border-white/20 text-white p-6">
         <DialogHeader>
-          <DialogTitle className="text-2xl bg-gradient-primary bg-clip-text text-transparent">
+          <DialogTitle className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
             {subdeckName} - คำศัพท์ทั้งหมด ({displayCards.length} คำ)
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[65vh] pr-4">
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-4">
+        <ScrollArea className="h-[60vh] mt-4">
+          <div className="grid grid-cols-5 gap-3 pr-4">
             {displayCards.map((card) => {
               const isFlipped = flippedCards.has(card.id);
 
               return (
-                <div
+                <motion.div
                   key={card.id}
-                  className="flip-card h-32 sm:h-40 cursor-pointer"
+                  className="aspect-square cursor-pointer perspective-1000"
                   onClick={() => toggleFlip(card.id)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <div className={cn(
-                    "flip-card-inner",
-                    isFlipped && "flipped"
-                  )}>
+                  <motion.div
+                    className="relative w-full h-full"
+                    animate={{ rotateY: isFlipped ? 180 : 0 }}
+                    transition={{ duration: 0.4 }}
+                    style={{ transformStyle: 'preserve-3d' }}
+                  >
                     {/* Front */}
-                    <Card className="flip-card-front absolute inset-0 backface-hidden bg-card border-primary/20">
-                      <div className="h-full p-2 sm:p-4 flex flex-col items-center justify-center text-center">
-                        <p className="text-xs sm:text-lg font-semibold text-foreground line-clamp-3">
-                          {card.front_text}
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-auto">
-                          แตะดูคำแปล
-                        </p>
-                      </div>
-                    </Card>
+                    <div
+                      className="absolute inset-0 rounded-xl bg-slate-800 border border-purple-500/30 flex flex-col items-center justify-center p-3 text-center"
+                      style={{ backfaceVisibility: 'hidden' }}
+                    >
+                      <p className="text-sm font-bold text-white line-clamp-3">
+                        {card.front_text}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-2">
+                        แตะดูคำแปล
+                      </p>
+                    </div>
 
                     {/* Back */}
-                    <Card className="flip-card-back absolute inset-0 backface-hidden bg-primary/10 border-primary/30">
-                      <div className="h-full p-2 sm:p-4 flex items-center justify-center text-center">
-                        <p className="text-xs sm:text-base font-medium text-foreground line-clamp-4">
-                          {card.back_text}
-                        </p>
-                      </div>
-                    </Card>
-                  </div>
-                </div>
+                    <div
+                      className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-700 to-pink-700 border border-purple-400/50 flex items-center justify-center p-3 text-center"
+                      style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                    >
+                      <p className="text-sm font-semibold text-white line-clamp-4">
+                        {card.back_text}
+                      </p>
+                    </div>
+                  </motion.div>
+                </motion.div>
               );
             })}
           </div>

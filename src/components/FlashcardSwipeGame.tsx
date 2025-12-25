@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, RotateCcw, X, Trophy, CheckCircle, XCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
+import { useXP } from '@/hooks/useXP';
 
 interface Flashcard {
     id: string;
@@ -21,6 +22,7 @@ interface FlashcardSwipeGameProps {
 
 export const FlashcardSwipeGame = ({ flashcards, onClose, onComplete }: FlashcardSwipeGameProps) => {
     const { t } = useLanguage();
+    const { addGameXP } = useXP();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [swipeOffset, setSwipeOffset] = useState(0);
@@ -31,6 +33,7 @@ export const FlashcardSwipeGame = ({ flashcards, onClose, onComplete }: Flashcar
     const [needPracticeWords, setNeedPracticeWords] = useState<{ word: string; meaning: string }[]>([]);
     const [isComplete, setIsComplete] = useState(false);
     const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+    const [totalXPEarned, setTotalXPEarned] = useState(0);
 
     const cardRef = useRef<HTMLDivElement>(null);
     const startXRef = useRef(0);
@@ -119,6 +122,13 @@ export const FlashcardSwipeGame = ({ flashcards, onClose, onComplete }: Flashcar
         // Update counters
         if (direction === 'right') {
             setRemembered(prev => prev + 1);
+
+            // Add XP for remembering
+            addGameXP('swipe', true, false).then(xpResult => {
+                if (xpResult?.xpAdded) {
+                    setTotalXPEarned(prev => prev + xpResult.xpAdded);
+                }
+            });
         } else {
             setNeedPractice(prev => prev + 1);
             setNeedPracticeWords(prev => [...prev, { word: currentCard.front_text, meaning: currentCard.back_text }]);

@@ -234,15 +234,15 @@ export default function AdminNotification() {
     const totalReads = notifications.reduce((acc, n) => acc + n.read_count, 0);
 
     return (
-        <div className="p-8 space-y-8">
+        <div className="space-y-8">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                         <Bell className="h-8 w-8 text-primary" />
                         Notification Center
                     </h1>
-                    <p className="text-muted-foreground mt-1">ส่งการแจ้งเตือนและจัดการข้อความถึงผู้ใช้</p>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">ส่งการแจ้งเตือนและจัดการข้อความถึงผู้ใช้</p>
                 </div>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                     <DialogTrigger asChild>
@@ -353,54 +353,54 @@ export default function AdminNotification() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-xl bg-green-100 dark:bg-green-900/30">
-                                <Send className="h-6 w-6 text-green-600" />
+                <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                    <CardContent className="pt-6 pb-4">
+                        <div className="flex flex-col items-center text-center gap-2">
+                            <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
+                                <Send className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{totalSent}</p>
-                                <p className="text-sm text-muted-foreground">ส่งแล้ว</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalSent}</p>
+                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">ส่งแล้ว</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30">
-                                <Clock className="h-6 w-6 text-blue-600" />
+                <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                    <CardContent className="pt-6 pb-4">
+                        <div className="flex flex-col items-center text-center gap-2">
+                            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                                <Clock className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{totalScheduled}</p>
-                                <p className="text-sm text-muted-foreground">ตั้งเวลาไว้</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalScheduled}</p>
+                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">ตั้งเวลาไว้</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/30">
-                                <Eye className="h-6 w-6 text-purple-600" />
+                <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                    <CardContent className="pt-6 pb-4">
+                        <div className="flex flex-col items-center text-center gap-2">
+                            <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
+                                <Eye className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{totalReads.toLocaleString()}</p>
-                                <p className="text-sm text-muted-foreground">ยอดอ่าน</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalReads.toLocaleString()}</p>
+                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">ยอดอ่าน</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-900/30">
-                                <Users className="h-6 w-6 text-amber-600" />
+                <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                    <CardContent className="pt-6 pb-4">
+                        <div className="flex flex-col items-center text-center gap-2">
+                            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
+                                <Users className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{notifications.length}</p>
-                                <p className="text-sm text-muted-foreground">ทั้งหมด</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{notifications.length}</p>
+                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">ทั้งหมด</p>
                             </div>
                         </div>
                     </CardContent>
@@ -408,58 +408,58 @@ export default function AdminNotification() {
             </div>
 
             {/* Notifications Table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>รายการการแจ้งเตือน</CardTitle>
-                    <CardDescription>ประวัติและสถานะการแจ้งเตือนทั้งหมด</CardDescription>
+            <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+                <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/50">
+                    <CardTitle className="text-slate-800 dark:text-slate-100">รายการการแจ้งเตือน</CardTitle>
+                    <CardDescription className="text-slate-500 dark:text-slate-400">ประวัติและสถานะการแจ้งเตือนทั้งหมด</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-                        <TabsList>
-                            <TabsTrigger value="all">ทั้งหมด</TabsTrigger>
-                            <TabsTrigger value="sent">ส่งแล้ว</TabsTrigger>
-                            <TabsTrigger value="scheduled">ตั้งเวลาไว้</TabsTrigger>
+                        <TabsList className="bg-slate-100 dark:bg-slate-800 p-1">
+                            <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">ทั้งหมด</TabsTrigger>
+                            <TabsTrigger value="sent" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">ส่งแล้ว</TabsTrigger>
+                            <TabsTrigger value="scheduled" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">ตั้งเวลาไว้</TabsTrigger>
                         </TabsList>
                     </Tabs>
 
-                    <div className="border rounded-lg">
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
                         <Table>
                             <TableHeader>
-                                <TableRow>
-                                    <TableHead>หัวข้อ</TableHead>
-                                    <TableHead>ประเภท</TableHead>
-                                    <TableHead>กลุ่มเป้าหมาย</TableHead>
-                                    <TableHead>สถานะ</TableHead>
-                                    <TableHead>ยอดอ่าน</TableHead>
-                                    <TableHead>วันที่</TableHead>
-                                    <TableHead>การกระทำ</TableHead>
+                                <TableRow className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">หัวข้อ</TableHead>
+                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ประเภท</TableHead>
+                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">กลุ่มเป้าหมาย</TableHead>
+                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">สถานะ</TableHead>
+                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ยอดอ่าน</TableHead>
+                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">วันที่</TableHead>
+                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">การกระทำ</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredNotifications.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                                        <TableCell colSpan={7} className="text-center text-slate-400 py-8">
                                             ไม่พบการแจ้งเตือน
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     filteredNotifications.map((notification) => (
                                         <TableRow key={notification.id}>
-                                            <TableCell className="font-medium max-w-[200px] truncate">
+                                            <TableCell className="font-medium max-w-[200px] truncate text-slate-900 dark:text-white">
                                                 {notification.title}
                                             </TableCell>
                                             <TableCell>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                                                     {getTypeIcon(notification.type)}
                                                     {getTypeLabel(notification.type)}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant="outline">{getAudienceLabel(notification.target_audience)}</Badge>
+                                                <Badge variant="outline" className="border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">{getAudienceLabel(notification.target_audience)}</Badge>
                                             </TableCell>
                                             <TableCell>{getStatusBadge(notification.status)}</TableCell>
-                                            <TableCell>{notification.read_count.toLocaleString()}</TableCell>
-                                            <TableCell>
+                                            <TableCell className="text-slate-600 dark:text-slate-300">{notification.read_count.toLocaleString()}</TableCell>
+                                            <TableCell className="text-slate-600 dark:text-slate-300">
                                                 {new Date(notification.sent_at || notification.scheduled_at || notification.created_at).toLocaleDateString('th-TH', {
                                                     day: 'numeric',
                                                     month: 'short',
@@ -473,6 +473,7 @@ export default function AdminNotification() {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
+                                                        className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                                                         onClick={() => {
                                                             setSelectedNotification(notification);
                                                             setIsViewDialogOpen(true);
@@ -483,7 +484,7 @@ export default function AdminNotification() {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="text-destructive hover:text-destructive"
+                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                                                         onClick={() => handleDeleteNotification(notification.id)}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -508,28 +509,28 @@ export default function AdminNotification() {
                     </DialogHeader>
                     {selectedNotification && (
                         <div className="space-y-4">
-                            <div className="p-4 bg-muted rounded-lg">
-                                <p className="whitespace-pre-wrap">{selectedNotification.message}</p>
+                            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                                <p className="whitespace-pre-wrap text-slate-700 dark:text-slate-300">{selectedNotification.message}</p>
                             </div>
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <p className="text-muted-foreground">ประเภท</p>
-                                    <p className="font-medium flex items-center gap-2">
+                                    <p className="text-slate-500 dark:text-slate-400">ประเภท</p>
+                                    <p className="font-medium flex items-center gap-2 text-slate-900 dark:text-white">
                                         {getTypeIcon(selectedNotification.type)}
                                         {getTypeLabel(selectedNotification.type)}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-muted-foreground">กลุ่มเป้าหมาย</p>
-                                    <p className="font-medium">{getAudienceLabel(selectedNotification.target_audience)}</p>
+                                    <p className="text-slate-500 dark:text-slate-400">กลุ่มเป้าหมาย</p>
+                                    <p className="font-medium text-slate-900 dark:text-white">{getAudienceLabel(selectedNotification.target_audience)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-muted-foreground">สถานะ</p>
+                                    <p className="text-slate-500 dark:text-slate-400">สถานะ</p>
                                     <div>{getStatusBadge(selectedNotification.status)}</div>
                                 </div>
                                 <div>
-                                    <p className="text-muted-foreground">ยอดอ่าน</p>
-                                    <p className="font-medium">{selectedNotification.read_count.toLocaleString()} คน</p>
+                                    <p className="text-slate-500 dark:text-slate-400">ยอดอ่าน</p>
+                                    <p className="font-medium text-slate-900 dark:text-white">{selectedNotification.read_count.toLocaleString()} คน</p>
                                 </div>
                             </div>
                         </div>

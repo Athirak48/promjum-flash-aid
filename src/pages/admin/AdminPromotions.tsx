@@ -168,15 +168,15 @@ export default function AdminPromotions() {
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
             <Tag className="h-8 w-8 text-primary" />
             Promotions
           </h1>
-          <p className="text-muted-foreground mt-1">จัดการโค้ดส่วนลดและโปรโมชั่น</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">จัดการโค้ดส่วนลดและโปรโมชั่น</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
@@ -261,57 +261,57 @@ export default function AdminPromotions() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200/50">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
-                <ToggleRight className="h-5 w-5 text-green-600" />
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+          <CardContent className="pt-6 pb-4">
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
+                <ToggleRight className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-600">{activePromos}</p>
-                <p className="text-xs text-muted-foreground">Active Codes</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{activePromos}</p>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Active Codes</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-blue-200/50">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
-                <Users className="h-5 w-5 text-blue-600" />
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+          <CardContent className="pt-6 pb-4">
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                <Users className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-600">{totalUsage}</p>
-                <p className="text-xs text-muted-foreground">Total Usage</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalUsage}</p>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Usage</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-purple-200/50">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50">
-                <Tag className="h-5 w-5 text-purple-600" />
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+          <CardContent className="pt-6 pb-4">
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
+                <Tag className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-purple-600">{promotions.length}</p>
-                <p className="text-xs text-muted-foreground">Total Codes</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{promotions.length}</p>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Codes</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-200/50">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
-                <Calendar className="h-5 w-5 text-amber-600" />
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+          <CardContent className="pt-6 pb-4">
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
+                <Calendar className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-amber-600">{expiredPromos}</p>
-                <p className="text-xs text-muted-foreground">Expired</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{expiredPromos}</p>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Expired</p>
               </div>
             </div>
           </CardContent>
@@ -319,36 +319,36 @@ export default function AdminPromotions() {
       </div>
 
       {/* Table Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>โค้ดโปรโมชั่นทั้งหมด</CardTitle>
-          <CardDescription>จัดการและติดตามโค้ดส่วนลด</CardDescription>
+      <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/50">
+          <CardTitle className="text-slate-800 dark:text-slate-100">โค้ดโปรโมชั่นทั้งหมด</CardTitle>
+          <CardDescription className="text-slate-500 dark:text-slate-400">จัดการและติดตามโค้ดส่วนลด</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-6">
           <Input
             placeholder="ค้นหาโค้ด..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
+            className="max-w-sm bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
           />
 
-          <div className="border rounded-lg">
+          <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>โค้ด</TableHead>
-                  <TableHead>ประเภท</TableHead>
-                  <TableHead>มูลค่า</TableHead>
-                  <TableHead>ใช้แล้ว/ทั้งหมด</TableHead>
-                  <TableHead>วันหมดอายุ</TableHead>
-                  <TableHead>สถานะ</TableHead>
-                  <TableHead>การกระทำ</TableHead>
+                <TableRow className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">โค้ด</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ประเภท</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">มูลค่า</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ใช้แล้ว/ทั้งหมด</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">วันหมดอายุ</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">สถานะ</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">การกระทำ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredPromotions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-slate-400 py-8">
                       ไม่พบโค้ดโปรโมชั่น
                     </TableCell>
                   </TableRow>
@@ -357,30 +357,30 @@ export default function AdminPromotions() {
                     <TableRow key={promo.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold">{promo.code}</span>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleCopyCode(promo.code)}>
+                          <span className="font-mono font-bold text-slate-900 dark:text-white">{promo.code}</span>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-slate-400 hover:text-slate-600" onClick={() => handleCopyCode(promo.code)}>
                             <Copy className="h-3 w-3" />
                           </Button>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="gap-1">
+                        <Badge variant="outline" className="gap-1 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
                           {promo.discount_type === 'percentage' ? <Percent className="h-3 w-3" /> : <DollarSign className="h-3 w-3" />}
                           {promo.discount_type === 'percentage' ? '%' : '฿'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium text-slate-900 dark:text-white">
                         {promo.discount_value}
                         {promo.discount_type === 'percentage' ? '%' : ' ฿'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-slate-600 dark:text-slate-300">
                         {promo.current_uses || 0}/{promo.max_uses || '∞'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-slate-600 dark:text-slate-300">
                         {new Date(promo.valid_until).toLocaleDateString('th-TH')}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={promo.is_active ? 'default' : 'secondary'}>
+                        <Badge variant={promo.is_active ? 'default' : 'secondary'} className={!promo.is_active ? 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' : ''}>
                           {promo.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
@@ -394,13 +394,13 @@ export default function AdminPromotions() {
                             {promo.is_active ? (
                               <ToggleRight className="h-4 w-4 text-green-600" />
                             ) : (
-                              <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                              <ToggleLeft className="h-4 w-4 text-slate-400" />
                             )}
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-destructive hover:text-destructive"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                             onClick={() => {
                               setPromoToDelete(promo);
                               setDeleteDialogOpen(true);
@@ -430,7 +430,7 @@ export default function AdminPromotions() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePromo} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction onClick={handleDeletePromo} className="bg-red-600 hover:bg-red-700 text-white">
               ลบ
             </AlertDialogAction>
           </AlertDialogFooter>

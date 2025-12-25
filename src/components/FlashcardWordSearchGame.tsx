@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useXP } from '@/hooks/useXP';
+import { useSRSProgress } from '@/hooks/useSRSProgress';
 
 interface Flashcard {
     id: string;
@@ -14,12 +16,14 @@ interface Flashcard {
     back_text: string;
     front_image?: string | null;
     back_image?: string | null;
+    isUserFlashcard?: boolean;
 }
 
 interface FlashcardWordSearchGameProps {
     flashcards: Flashcard[];
     onClose: () => void;
     onNext?: () => void;
+    onSelectNewGame?: () => void;
 }
 
 interface GridCell {
@@ -39,6 +43,7 @@ interface WordLocation {
     endRow: number;
     endCol: number;
     color: string; // Color for highlighting when found
+    isUserFlashcard?: boolean;
 }
 
 const COLORS = [
@@ -46,9 +51,11 @@ const COLORS = [
     'bg-purple-400/50', 'bg-pink-400/50', 'bg-indigo-400/50', 'bg-orange-400/50'
 ];
 
-export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: FlashcardWordSearchGameProps) {
+export function FlashcardWordSearchGame({ flashcards, onClose, onNext, onSelectNewGame }: FlashcardWordSearchGameProps) {
     const navigate = useNavigate();
     const { t } = useLanguage();
+    const { addGameXP } = useXP();
+    const { updateFromWordSearch } = useSRSProgress();
     const [grid, setGrid] = useState<GridCell[][]>([]);
     const [wordsToFind, setWordsToFind] = useState<Flashcard[]>([]);
     const [foundWords, setFoundWords] = useState<string[]>([]); // IDs of found flashcards
@@ -60,6 +67,7 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
     const [elapsedTime, setElapsedTime] = useState<string>('');
     const [gridSize, setGridSize] = useState(10);
     const [wordLocations, setWordLocations] = useState<WordLocation[]>([]);
+    const [totalXPEarned, setTotalXPEarned] = useState(0);
 
     // Hint System State
     const [hintsUsed, setHintsUsed] = useState(0);
@@ -271,6 +279,20 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
             // Found a word!
             const newFound = [...foundWords, match.id];
             setFoundWords(newFound);
+
+            // Add XP for finding a word
+            addGameXP('word-search', true, false).then(xpResult => {
+                if (xpResult?.xpAdded) {
+                    setTotalXPEarned(prev => prev + xpResult.xpAdded);
+                }
+            });
+
+            // Update SRS
+            if (startTime) {
+                const timeStr = ((Date.now() - startTime) / 1000);
+                updateFromWordSearch(match.id, true, timeStr, match.isUserFlashcard);
+                console.log(`🔍 SRS Updated: ${match.id} Found in ${timeStr.toFixed(1)}s`);
+            }
 
             // Mark permanently in grid
             const newGrid = [...grid];
@@ -531,48 +553,48 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-2 sm:p-4"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
-                            className="bg-white rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
+                            className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
                         >
-                            <div className="absolute top-0 left-0 w-full h-24 sm:h-32 bg-gradient-to-b from-blue-50 to-transparent -z-10"></div>
+                            <div className="absolute top-0 left-0 w-full h-20 sm:h-24 bg-gradient-to-b from-blue-50 to-transparent -z-10"></div>
 
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl sm:rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-slate-50">
-                                <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-yellow-500 drop-shadow-sm" />
+                            <div className="w-14 h-14 sm:w-20 sm:h-20 bg-white rounded-2xl sm:rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-3 sm:mb-4 border border-slate-50">
+                                <Trophy className="h-7 w-7 sm:h-10 sm:w-10 text-yellow-500 drop-shadow-sm" />
                             </div>
 
-                            <h2 className="text-2xl sm:text-3xl font-black text-slate-800 mb-2 tracking-tight">{t('games.excellent')}</h2>
-                            <p className="text-slate-500 mb-4 sm:mb-6 font-medium text-sm sm:text-base">
+                            <h2 className="text-lg sm:text-xl font-black text-slate-800 mb-1 tracking-tight">{t('games.excellent')}</h2>
+                            <p className="text-slate-500 mb-3 sm:mb-4 font-medium text-xs sm:text-sm">
                                 {t('games.foundAllWords')}
                             </p>
 
                             {revealedHintIds.length > 0 && (
-                                <div className="mb-4 sm:mb-6 w-full">
-                                    <div className="flex items-center justify-between mb-2 sm:mb-3 px-1">
-                                        <h4 className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                <div className="mb-3 sm:mb-4 w-full">
+                                    <div className="flex items-center justify-between mb-1.5 sm:mb-2 px-1">
+                                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                                             {t('games.wordsToReview')}
                                         </h4>
-                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-1.5 sm:px-2 py-0.5 rounded-full">{revealedHintIds.length}</span>
+                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-full">{revealedHintIds.length}</span>
                                     </div>
 
-                                    <div className="bg-slate-50/50 rounded-xl sm:rounded-2xl p-2 border border-slate-100/60 max-h-[120px] sm:max-h-[160px] overflow-y-auto custom-scrollbar">
-                                        <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                                    <div className="bg-slate-50/50 rounded-xl p-2 border border-slate-100/60 max-h-[100px] sm:max-h-[120px] overflow-y-auto custom-scrollbar">
+                                        <div className="grid grid-cols-2 gap-1.5">
                                             {wordsToFind.filter(w => revealedHintIds.includes(w.id)).map((word, idx) => (
                                                 <motion.div
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: idx * 0.05 }}
                                                     key={word.id}
-                                                    className="bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl border border-slate-100 shadow-sm flex flex-col items-start gap-0.5 relative overflow-hidden group hover:shadow-md transition-all text-left"
+                                                    className="bg-white p-2 rounded-lg border border-slate-100 shadow-sm flex flex-col items-start gap-0.5 relative overflow-hidden group hover:shadow-md transition-all text-left"
                                                 >
-                                                    <div className="absolute top-0 right-0 w-6 sm:w-8 h-6 sm:h-8 bg-amber-50 rounded-bl-full -mr-3 sm:-mr-4 -mt-3 sm:-mt-4 z-0 transition-transform group-hover:scale-125"></div>
-                                                    <Eye className="absolute top-0.5 sm:top-1 right-0.5 sm:right-1 w-2.5 sm:w-3 h-2.5 sm:h-3 text-amber-300 z-10" />
+                                                    <div className="absolute top-0 right-0 w-5 h-5 bg-amber-50 rounded-bl-full -mr-2 -mt-2 z-0 transition-transform group-hover:scale-125"></div>
+                                                    <Eye className="absolute top-0.5 right-0.5 w-2 h-2 text-amber-300 z-10" />
 
-                                                    <span className="font-bold text-slate-700 text-xs sm:text-sm z-10 relative truncate w-full pr-2">{word.back_text}</span>
-                                                    <span className="text-[10px] sm:text-xs text-slate-400 font-medium z-10 relative truncate w-full">{word.front_text}</span>
+                                                    <span className="font-bold text-slate-700 text-[10px] sm:text-xs z-10 relative truncate w-full pr-2">{word.back_text}</span>
+                                                    <span className="text-[10px] text-slate-400 font-medium z-10 relative truncate w-full">{word.front_text}</span>
                                                 </motion.div>
                                             ))}
                                         </div>
@@ -580,41 +602,39 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext }: Flashca
                                 </div>
                             )}
 
-                            <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 mb-4 sm:mb-8 border border-slate-100">
-                                <p className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">{t('games.timeUsed')}</p>
-                                <p className="text-xl sm:text-2xl font-black text-blue-600 tracking-tight">{elapsedTime}</p>
+                            <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-2 sm:p-3 mb-3 sm:mb-4 border border-slate-100">
+                                <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">{t('games.timeUsed')}</p>
+                                <p className="text-lg sm:text-xl font-black text-blue-600 tracking-tight">{elapsedTime}</p>
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-2 justify-center w-full">
+                                {/* ปุ่ม 1: เล่นใหม่ */}
                                 <Button
                                     onClick={initializeGame}
-                                    className="w-full sm:flex-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition-all rounded-xl h-10 sm:h-12 text-xs sm:text-sm font-bold active:scale-95 px-4"
+                                    className="w-full sm:flex-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition-all rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs font-bold active:scale-95 px-3"
                                 >
                                     {t('games.playAgain')}
                                 </Button>
 
                                 <div className="flex flex-row gap-2 w-full sm:contents">
+                                    {/* ปุ่ม 2: เกมใหม่ */}
                                     <Button
                                         onClick={() => {
-                                            const selectedVocab = flashcards.map(f => ({
-                                                id: f.id,
-                                                word: f.front_text,
-                                                meaning: f.back_text
-                                            }));
-                                            navigate('/ai-listening-section3-intro', {
-                                                state: { selectedVocab }
-                                            });
+                                            if (onSelectNewGame) {
+                                                onSelectNewGame();
+                                            }
                                         }}
-                                        className="flex-1 sm:flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
+                                        className="flex-1 sm:flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs font-bold active:scale-95 transition-all px-1 sm:px-3"
                                     >
-                                        <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 shrink-0" />
+                                        <Gamepad2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 shrink-0" />
                                         <span className="hidden sm:inline">{t('games.selectGame')}</span>
                                         <span className="sm:hidden">{t('games.selectGameShort')}</span>
                                     </Button>
 
+                                    {/* ปุ่ม 3: ถัดไป - กลับชุดคำศัพท์ */}
                                     <Button
-                                        onClick={onNext || onClose}
-                                        className="flex-1 sm:flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-xl h-10 sm:h-12 text-[10px] sm:text-sm font-bold active:scale-95 transition-all px-2 sm:px-4"
+                                        onClick={onClose}
+                                        className="flex-1 sm:flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs font-bold active:scale-95 transition-all px-1 sm:px-3"
                                     >
                                         {t('common.next')}
                                     </Button>

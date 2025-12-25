@@ -1,308 +1,280 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Target, Trophy, Zap, Plus, BookOpen, Star, Award, Flame, Heart, Brain, Rocket, Crown, Medal, CheckCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Target, Trophy, Zap, Plus, BookOpen, Star, Flame, Rocket, CheckCircle, ChevronUp, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Goal {
-  id: number;
+  id: string;
+  goal_type: string;
   title: string;
-  description?: string;
-  icon: LucideIcon;
-  current: number;
-  target: number;
-  color: string;
-  bgColor: string;
+  target_value: number;
+  current_value: number;
+  emoji: string;
+  icon_name: string;
+  is_completed: boolean;
 }
 
-const availableIcons = [
-  { value: 'Target', icon: Target, label: 'เป้าหมาย', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
-  { value: 'Trophy', icon: Trophy, label: 'ถ้วยรางวัล', color: 'text-yellow-500', bgColor: 'bg-yellow-500/10' },
-  { value: 'Zap', icon: Zap, label: 'พลังงาน', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
-  { value: 'BookOpen', icon: BookOpen, label: 'หนังสือ', color: 'text-green-500', bgColor: 'bg-green-500/10' },
-  { value: 'Star', icon: Star, label: 'ดาว', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-  { value: 'Award', icon: Award, label: 'รางวัล', color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
-  { value: 'Flame', icon: Flame, label: 'ไฟ', color: 'text-red-500', bgColor: 'bg-red-500/10' },
-  { value: 'Heart', icon: Heart, label: 'หัวใจ', color: 'text-pink-500', bgColor: 'bg-pink-500/10' },
-  { value: 'Brain', icon: Brain, label: 'สมอง', color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
-  { value: 'Rocket', icon: Rocket, label: 'จรวด', color: 'text-cyan-500', bgColor: 'bg-cyan-500/10' },
-  { value: 'Crown', icon: Crown, label: 'มงกุฎ', color: 'text-yellow-600', bgColor: 'bg-yellow-600/10' },
-  { value: 'Medal', icon: Medal, label: 'เหรียญ', color: 'text-orange-600', bgColor: 'bg-orange-600/10' },
-  { value: 'CheckCircle', icon: CheckCircle, label: 'ถูกต้อง', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+// Goal templates for dropdown - only 2 options
+const goalTemplates = [
+  { type: 'streak', title: '___-Day Streak', defaultTarget: 7, emoji: '🔥', icon: 'Flame' },
+  { type: 'words', title: 'Learn ___ Words', defaultTarget: 100, emoji: '📚', icon: 'BookOpen' },
 ];
+
+const iconMap: { [key: string]: any } = {
+  Target, Trophy, Zap, BookOpen, Star, Flame, Rocket
+};
 
 export function GoalsMotivation() {
   const { toast } = useToast();
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newGoal, setNewGoal] = useState({
-    title: '',
-    description: '',
-    target: '',
-    iconValue: 'Target'
-  });
+  const [selectedTemplate, setSelectedTemplate] = useState<typeof goalTemplates[0] | null>(null);
+  const [targetValue, setTargetValue] = useState(10);
 
-  const [goals, setGoals] = useState<Goal[]>([
-    {
-      id: 1,
-      title: "เรียนครบ 7 วัน",
-      icon: Target,
-      current: 1,
-      target: 7,
-      color: "text-blue-500",
-      bgColor: "bg-blue-50"
-    },
-    {
-      id: 2,
-      title: "คำศัพท์ 1000 คำ",
-      icon: Trophy,
-      current: 20,
-      target: 1000,
-      color: "text-yellow-500",
-      bgColor: "bg-yellow-50"
-    },
-    {
-      id: 3,
-      title: "จบ Subdeck 10 ชุด",
-      icon: Zap,
-      current: 0,
-      target: 10,
-      color: "text-purple-500",
-      bgColor: "bg-purple-50"
+  useEffect(() => {
+    loadGoals();
+  }, []);
+
+  const loadGoals = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setGoals(data || []);
+    } catch (error) {
+      console.error('Error loading goals:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
-  const handleAddGoal = () => {
-    if (!newGoal.title.trim() || !newGoal.target) {
-      toast({
-        title: "กรุณากรอกข้อมูลให้ครบ",
-        description: "โปรดระบุหัวข้อและจำนวนเป้าหมาย",
-        variant: "destructive"
-      });
-      return;
+  const handleTemplateSelect = (template: typeof goalTemplates[0]) => {
+    setSelectedTemplate(template);
+    setTargetValue(template.defaultTarget);
+    setIsDialogOpen(true);
+  };
+
+  const handleCreateGoal = async () => {
+    if (!selectedTemplate) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "กรุณาเข้าสู่ระบบก่อน", variant: "destructive" });
+        return;
+      }
+
+      const goalTitle = selectedTemplate.title.replace('___', targetValue.toString());
+
+      const { data, error } = await supabase
+        .from('user_goals')
+        .insert({
+          user_id: user.id,
+          goal_type: selectedTemplate.type,
+          title: goalTitle,
+          target_value: targetValue,
+          current_value: 0,
+          emoji: selectedTemplate.emoji,
+          icon_name: selectedTemplate.icon
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setGoals([...goals, data]);
+      setIsDialogOpen(false);
+      setSelectedTemplate(null);
+
+      toast({ title: "สร้างเป้าหมายสำเร็จ! 🎉", description: `"${goalTitle}" ถูกเพิ่มแล้ว` });
+    } catch (error) {
+      console.error('Error creating goal:', error);
+      toast({ title: "เกิดข้อผิดพลาด", variant: "destructive" });
     }
+  };
 
-    const selectedIcon = availableIcons.find(i => i.value === newGoal.iconValue) || availableIcons[0];
-
-    const goalToAdd: Goal = {
-      id: Date.now(),
-      title: newGoal.title,
-      description: newGoal.description,
-      icon: selectedIcon.icon,
-      current: 0,
-      target: parseInt(newGoal.target),
-      color: selectedIcon.color,
-      bgColor: selectedIcon.bgColor.replace('/10', '') // Adjust opacity for solid bg
-    };
-
-    setGoals([...goals, goalToAdd]);
-    setIsDialogOpen(false);
-    setNewGoal({ title: '', description: '', target: '', iconValue: 'Target' });
-
-    toast({
-      title: "เพิ่มเป้าหมายสำเร็จ",
-      description: `เพิ่ม "${newGoal.title}" แล้ว`
-    });
+  const adjustTargetValue = (delta: number) => {
+    const step = selectedTemplate?.type === 'words' ? 50 :
+      selectedTemplate?.type === 'review' ? 100 : 1;
+    setTargetValue(prev => Math.max(1, prev + (delta * step)));
   };
 
   return (
-    <Card className="h-full bg-card/80 dark:bg-card/90 backdrop-blur-xl border border-border/50 shadow-soft rounded-[2rem] overflow-hidden hover:shadow-lg transition-all duration-300">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+    <Card className="bg-black/30 backdrop-blur-xl border-white/10 h-full flex flex-col overflow-hidden rounded-[2rem] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <CardHeader className="pb-4 p-0 relative overflow-hidden">
+        <div className="flex items-center justify-between relative z-10">
           <CardTitle className="flex items-center gap-3 text-xl">
-            <div className="p-2 rounded-xl bg-purple-50 shadow-inner">
-              <Target className="h-6 w-6 text-purple-600" />
-            </div>
-            <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-bold">
-              เป้าหมายการเรียน
-            </span>
+            <motion.div
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center shadow-[0_0_10px_rgba(244,63,94,0.3)]"
+            >
+              <Target className="h-5 w-5 text-rose-300" />
+            </motion.div>
+            <span className="text-white font-bold drop-shadow-md">My Goals</span>
           </CardTitle>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-purple-50 text-purple-600 rounded-full">
+
+          {/* Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-9 w-9 p-0 hover:bg-white/10 text-white/70 hover:text-white rounded-full border-2 border-dashed border-white/30 hover:border-white/50 transition-all">
                 <Plus className="h-5 w-5" />
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] bg-card/95 dark:bg-card backdrop-blur-xl border-border/50 rounded-[2rem] p-6">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">✨ เพิ่มเป้าหมายใหม่</DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-6 py-4">
-                {/* Preview Card */}
-                {newGoal.title && (
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-dashed border-primary/20 animate-fade-in">
-                    <div className="flex items-center gap-3">
-                      {(() => {
-                        const selectedIcon = availableIcons.find(i => i.value === newGoal.iconValue);
-                        if (selectedIcon) {
-                          const PreviewIcon = selectedIcon.icon;
-                          return (
-                            <div className={`p-3 rounded-xl ${selectedIcon.bgColor}`}>
-                              <PreviewIcon className={`h-6 w-6 ${selectedIcon.color}`} />
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
-                      <div className="flex-1">
-                        <h4 className="font-bold text-sm text-foreground">{newGoal.title}</h4>
-                        {newGoal.description && (
-                          <p className="text-xs text-muted-foreground mt-1">{newGoal.description}</p>
-                        )}
-                        {newGoal.target && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
-                              <div className="h-full w-0 bg-primary rounded-full" />
-                            </div>
-                            <span className="text-xs font-bold text-muted-foreground">
-                              0 / {newGoal.target}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Form Fields */}
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title" className="text-sm font-bold">
-                      หัวข้อเป้าหมาย <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="title"
-                      placeholder="เช่น เรียนครบ 30 วัน"
-                      value={newGoal.title}
-                      onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
-                      maxLength={100}
-                      className="h-11 rounded-xl bg-muted/30 border-border/50 focus:bg-white transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-sm font-bold">
-                      รายละเอียด <span className="text-xs text-muted-foreground font-normal">(ไม่บังคับ)</span>
-                    </Label>
-                    <Input
-                      id="description"
-                      placeholder="เพิ่มรายละเอียดเพิ่มเติม..."
-                      value={newGoal.description}
-                      onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
-                      maxLength={200}
-                      className="h-11 rounded-xl bg-muted/30 border-border/50 focus:bg-white transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="target" className="text-sm font-bold">
-                      จำนวนเป้าหมาย <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="target"
-                      type="number"
-                      placeholder="เช่น 30"
-                      value={newGoal.target}
-                      onChange={(e) => setNewGoal({ ...newGoal, target: e.target.value })}
-                      min="1"
-                      max="10000"
-                      className="h-11 rounded-xl bg-muted/30 border-border/50 focus:bg-white transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold">
-                      เลือกไอคอน <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="grid grid-cols-6 gap-2">
-                      {availableIcons.map((iconOption) => {
-                        const IconComponent = iconOption.icon;
-                        const isSelected = newGoal.iconValue === iconOption.value;
-                        return (
-                          <button
-                            key={iconOption.value}
-                            type="button"
-                            onClick={() => setNewGoal({ ...newGoal, iconValue: iconOption.value })}
-                            className={`
-                              aspect-square p-2.5 rounded-xl border-2 transition-all duration-200
-                              hover:scale-110 hover:shadow-md flex items-center justify-center
-                              ${isSelected
-                                ? `${iconOption.bgColor} ${iconOption.color} border-current ring-2 ring-offset-2 ring-current shadow-md`
-                                : 'bg-muted/30 border-transparent hover:bg-muted/50'
-                              }
-                            `}
-                            title={iconOption.label}
-                          >
-                            <IconComponent className={`w-5 h-5 ${isSelected ? '' : 'text-muted-foreground'}`} />
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <DialogFooter className="gap-3 sm:gap-0">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsDialogOpen(false);
-                    setNewGoal({ title: '', description: '', target: '', iconValue: 'Target' });
-                  }}
-                  className="w-full sm:w-auto rounded-xl h-11"
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-slate-900/95 backdrop-blur-xl border-white/20 text-white rounded-xl p-2">
+              <p className="text-xs text-white/50 px-2 py-1 font-semibold">เลือกเป้าหมาย</p>
+              {goalTemplates.map((template) => (
+                <DropdownMenuItem
+                  key={template.type}
+                  onClick={() => handleTemplateSelect(template)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-white/10 focus:bg-white/10 focus:text-white"
                 >
-                  ยกเลิก
-                </Button>
-                <Button
-                  onClick={handleAddGoal}
-                  className="w-full sm:w-auto rounded-xl h-11 bg-gradient-primary hover:shadow-lg transition-all"
-                  disabled={!newGoal.title || !newGoal.target}
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  เพิ่มเป้าหมาย
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                  <span className="text-xl">{template.emoji}</span>
+                  <span className="font-medium">{template.title.replace('___', '...')}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 gap-4">
-          {goals.map((goal) => {
-            const Icon = goal.icon;
-            const progress = (goal.current / goal.target) * 100;
 
-            return (
-              <div key={goal.id} className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/30 hover:border-primary/30 hover:shadow-md transition-all group">
-                <div className={`p-3 rounded-xl ${goal.bgColor} flex-shrink-0 group-hover:scale-110 transition-transform`}>
-                  <Icon className={`h-6 w-6 ${goal.color}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-foreground text-sm">{goal.title}</h3>
-                    <span className="text-xs font-bold text-muted-foreground whitespace-nowrap ml-2 bg-muted/50 px-2 py-0.5 rounded-md">
-                      {goal.current} / {goal.target}
-                    </span>
-                  </div>
-                  <Progress value={progress} className="h-2.5 mb-1 rounded-full bg-muted/50" />
-                  <div className="flex justify-between text-[10px] font-medium mt-1">
-                    <span className="text-muted-foreground">{Math.round(progress)}% เสร็จสมบูรณ์</span>
-                    {progress === 100 && (
-                      <span className="text-primary font-bold animate-pulse flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3" /> สำเร็จ!
-                      </span>
-                    )}
-                  </div>
-                </div>
+      {/* Target Value Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[360px] rounded-3xl bg-slate-900/95 backdrop-blur-xl border-white/20 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black flex items-center gap-2 justify-center">
+              <span className="text-3xl">{selectedTemplate?.emoji}</span>
+              สร้างเป้าหมาย
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-6">
+            <p className="text-center text-white/70 mb-4">
+              {selectedTemplate?.title.split('___')[0]}
+              <span className="text-2xl font-black text-rose-400 mx-1">{targetValue}</span>
+              {selectedTemplate?.title.split('___')[1]}
+            </p>
+
+            {/* Number Adjuster */}
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => adjustTargetValue(-1)}
+                className="h-14 w-14 rounded-full border-2 border-white/20 hover:bg-white/10 hover:border-rose-400"
+              >
+                <ChevronDown className="h-6 w-6" />
+              </Button>
+
+              <div className="text-5xl font-black text-white w-32 text-center">
+                {targetValue}
               </div>
-            );
-          })}
-        </div>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => adjustTargetValue(1)}
+                className="h-14 w-14 rounded-full border-2 border-white/20 hover:bg-white/10 hover:border-rose-400"
+              >
+                <ChevronUp className="h-6 w-6" />
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl border-white/20 text-white hover:bg-white/10">
+              ยกเลิก
+            </Button>
+            <Button
+              onClick={handleCreateGoal}
+              className="rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:opacity-90 text-white font-bold px-6"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              สร้างเป้าหมาย
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <CardContent className="flex-1 flex flex-col p-0 pt-4">
+        {loading ? (
+          <div className="text-center text-white/50 py-8">กำลังโหลด...</div>
+        ) : goals.length === 0 ? (
+          <div className="text-center text-white/50 py-8">
+            <Target className="h-12 w-12 mx-auto mb-3 opacity-30" />
+            <p>ยังไม่มีเป้าหมาย</p>
+            <p className="text-xs mt-1">กด + เพื่อสร้างเป้าหมายใหม่</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {goals.map((goal, index) => {
+              const progress = (goal.current_value / goal.target_value) * 100;
+              const Icon = iconMap[goal.icon_name] || Target;
+
+              return (
+                <motion.div
+                  key={goal.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="flex items-center gap-3 p-3 rounded-[1.5rem] bg-white/5 backdrop-blur-md border border-white/10 hover:border-rose-400/50 hover:bg-white/10 transition-all group shadow-sm"
+                >
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-xl shadow-inner"
+                  >
+                    {goal.emoji}
+                  </motion.div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h3 className="font-bold text-white text-sm truncate">{goal.title}</h3>
+                      <span className="text-[10px] font-black text-white/80 bg-white/5 px-2.5 py-1 rounded-full ml-2 border border-white/10 shadow-inner">
+                        {goal.current_value}/{goal.target_value}
+                      </span>
+                    </div>
+                    <div className="h-2.5 bg-white/10 rounded-full overflow-hidden border border-white/20">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(progress, 100)}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 rounded-full relative shadow-[0_0_10px_rgba(236,72,153,0.5)]"
+                      >
+                        <div className="absolute inset-0 bg-white/30 animate-shimmer" />
+                      </motion.div>
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold mt-1">
+                      <span className="text-white/60">{Math.round(progress)}%</span>
+                      {progress >= 100 && (
+                        <span className="text-green-300 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" /> Done! 🎉
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

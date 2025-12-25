@@ -2,9 +2,15 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, UserPlus, Trophy, Star, Medal, Timer, ChevronRight } from "lucide-react";
+import { Users, UserPlus, Trophy, Star, Medal, Timer, Globe, User2, Crown, Heart, Loader2, Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useFriends } from "@/hooks/useFriends";
+import { useXP } from "@/hooks/useXP";
+import { AddFriendDialog } from "@/components/friends/AddFriendDialog";
+import { FriendRequestsPopover } from "@/components/friends/FriendRequestsPopover";
+import { SetNicknameDialog } from "@/components/friends/SetNicknameDialog";
 
 interface FriendsLeaderboardProps {
   isWidget?: boolean;
@@ -12,177 +18,251 @@ interface FriendsLeaderboardProps {
 
 export function FriendsLeaderboard({ isWidget = false }: FriendsLeaderboardProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'xp' | 'challenge'>('challenge');
+  const [activeTab, setActiveTab] = useState<'xp' | 'challenge'>('xp');
+  const [leaderboardScope, setLeaderboardScope] = useState<'world' | 'friends'>('friends');
+  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [showSetNickname, setShowSetNickname] = useState(false);
 
-  // Mock data for XP (more items for scrolling)
-  const friendsXP = [
-    { id: 1, name: "Sarah M.", avatar: "https://i.pravatar.cc/150?u=sarah", xp: 1250, rank: 1, level: 8, isMe: false },
-    { id: 2, name: "Mike T.", avatar: "https://i.pravatar.cc/150?u=mike", xp: 1180, rank: 2, level: 7, isMe: false },
-    { id: 3, name: "Emily R.", avatar: "https://i.pravatar.cc/150?u=emily", xp: 1050, rank: 3, level: 6, isMe: false },
-    { id: 4, name: "David K.", avatar: "https://i.pravatar.cc/150?u=david", xp: 980, rank: 4, level: 5, isMe: false },
-    { id: 5, name: "Anna L.", avatar: "https://i.pravatar.cc/150?u=anna", xp: 920, rank: 5, level: 5, isMe: false },
-    { id: 6, name: "Tom W.", avatar: "https://i.pravatar.cc/150?u=tom", xp: 880, rank: 6, level: 4, isMe: false },
-    { id: 7, name: "Lisa P.", avatar: "https://i.pravatar.cc/150?u=lisa", xp: 850, rank: 7, level: 4, isMe: false },
+  // Real data from hooks
+  const { friends, pendingRequests, loading: friendsLoading } = useFriends();
+  const { xpData } = useXP();
+
+  // Challenge mock data (to be replaced later with real data)
+  const challengersWorld = [
+    { id: 1, name: "Somchai_TH", avatar: "🐰", time: "01:12.45", score: "30/30", rank: 1, isMe: false },
+    { id: 2, name: "EmmaW", avatar: "🐱", time: "01:15.20", score: "30/30", rank: 2, isMe: false },
+    { id: 3, name: "Kenji_JP", avatar: "🐻", time: "01:16.88", score: "30/30", rank: 3, isMe: false },
+    { id: 4, name: "Lisa_KR", avatar: "🐼", time: "01:22.33", score: "29/30", rank: 4, isMe: false },
+    { id: 5, name: "Alex_US", avatar: "🦊", time: "01:25.11", score: "29/30", rank: 5, isMe: false },
   ];
-  const myXPRank = { id: 99, name: "You", avatar: "https://i.pravatar.cc/150?u=me", xp: 720, rank: 12, level: 4, isMe: true };
 
-  // Mock data for Challenge (more items for scrolling)
-  const challengers = [
-    { id: 1, name: "Somchai_TH", avatar: "🦁", time: "01:12.4500", score: "30/30", rank: 1, isMe: false },
-    { id: 2, name: "EmmaW", avatar: "🦊", time: "01:15.2000", score: "30/30", rank: 2, isMe: false },
-    { id: 3, name: "Kenji_JP", avatar: "🐻", time: "01:16.8800", score: "30/30", rank: 3, isMe: false },
-    { id: 4, name: "Lisa_KR", avatar: "🐰", time: "01:22.3300", score: "29/30", rank: 4, isMe: false },
-    { id: 5, name: "Alex_US", avatar: "🦅", time: "01:25.1100", score: "29/30", rank: 5, isMe: false },
-    { id: 6, name: "Maria_BR", avatar: "🦋", time: "01:28.0500", score: "28/30", rank: 6, isMe: false },
-    { id: 7, name: "Chen_CN", avatar: "🐉", time: "01:30.2200", score: "28/30", rank: 7, isMe: false },
-  ];
-  const myChallengeRank = { id: 99, name: "You", avatar: "🐼", time: "01:45.3000", score: "27/30", rank: 15, isMe: true };
+  const myChallengeRank = { id: 99, name: "You", avatar: "🐰", time: "01:45.30", score: "27/30", rank: 15, isMe: true };
 
-  const getRankIcon = (rank: number) => {
-    if (rank === 1) return <div className="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center"><Trophy className="w-3.5 h-3.5 text-yellow-600 fill-yellow-600" /></div>;
-    if (rank === 2) return <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center"><Medal className="w-3.5 h-3.5 text-slate-500 fill-slate-300" /></div>;
-    if (rank === 3) return <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center"><Medal className="w-3.5 h-3.5 text-orange-600 fill-orange-400" /></div>;
-    return <span className="text-muted-foreground font-bold w-6 text-center text-xs">#{rank}</span>;
+  const getRankBadge = (rank: number) => {
+    if (rank === 1) return <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-300 to-amber-400 flex items-center justify-center shadow-md"><Crown className="w-4 h-4 text-white" /></div>;
+    if (rank === 2) return <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center shadow-md"><Medal className="w-4 h-4 text-white" /></div>;
+    if (rank === 3) return <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-300 to-orange-400 flex items-center justify-center shadow-md"><Medal className="w-4 h-4 text-white" /></div>;
+    return <span className="w-8 text-center font-black text-white/60 text-sm">#{rank}</span>;
   };
 
-  const renderXPItem = (friend: typeof friendsXP[0]) => (
-    <div
-      key={friend.id}
-      className={`flex items-center gap-2 p-2 rounded-[1.5rem] border transition-all ${friend.isMe
-        ? "bg-blue-50/50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800"
-        : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:shadow-md"
-        }`}
+  const renderFriendItem = (friend: typeof friends[0], index: number) => (
+    <motion.div
+      key={friend.friendId}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className="flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer hover:scale-[1.01] hover:shadow-lg bg-white/5 border-white/10 hover:border-purple-400/30 hover:bg-white/10"
     >
-      <div className="flex-shrink-0 w-8 flex justify-center">{getRankIcon(friend.rank)}</div>
+      <div className="flex-shrink-0">{getRankBadge(friend.rank)}</div>
       <div className="relative">
-        <Avatar className="w-9 h-9 border-2 border-white dark:border-slate-800 shadow-sm">
-          <AvatarImage src={friend.avatar} />
-          <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
+        <Avatar className="w-10 h-10 border-2 border-purple-300/50 shadow-sm">
+          <AvatarImage src={friend.avatarUrl || undefined} />
+          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white font-bold">
+            {friend.nickname?.charAt(0)?.toUpperCase() || '?'}
+          </AvatarFallback>
         </Avatar>
-        <div className={`absolute -bottom-1 -right-1 px-1 py-[1px] rounded-full text-[8px] font-bold text-white border border-white dark:border-slate-800 ${friend.rank === 1 ? 'bg-purple-500' : 'bg-green-500'}`}>
-          Lvl {friend.level}
+        <div className="absolute -bottom-1 -right-1 bg-purple-400 text-white text-[8px] font-black px-1.5 py-[1px] rounded-full shadow">
+          Lv.{friend.level}
         </div>
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-center w-full">
-          <p className={`font-bold truncate text-sm ${friend.isMe ? 'text-blue-700 dark:text-blue-300' : 'text-slate-900 dark:text-slate-100'}`}>
-            {friend.name}
-          </p>
-          <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
-            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-            <span>{friend.xp.toLocaleString()} XP</span>
-          </div>
-        </div>
+        <p className="font-bold truncate text-sm text-white">
+          {friend.nickname}
+        </p>
       </div>
-    </div>
+      <div className="flex items-center gap-1 text-sm font-black text-amber-300 bg-amber-400/20 border border-amber-300/40 px-2.5 py-1 rounded-full">
+        <Star className="w-3.5 h-3.5 fill-current" />
+        <span>{friend.totalXP.toLocaleString()}</span>
+      </div>
+    </motion.div>
   );
 
-  const renderChallengeItem = (player: typeof challengers[0]) => (
-    <div
-      key={player.id}
-      className={`flex items-center gap-2 p-2 rounded-[1.5rem] border transition-all ${player.isMe
-        ? "bg-green-50/50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
-        : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:shadow-md"
-        }`}
-    >
-      <div className={`flex-shrink-0 w-8 text-center font-bold text-xs ${player.rank <= 3 ? "text-yellow-500" : "text-slate-400"}`}>
-        #{player.rank}
-      </div>
-      <div className="relative">
-        <Avatar className="w-9 h-9 border-2 border-white dark:border-slate-800 shadow-sm bg-slate-100 flex items-center justify-center text-lg">
-          {player.avatar}
-        </Avatar>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-center w-full">
-          <p className={`font-bold truncate text-sm ${player.isMe ? 'text-green-700 dark:text-green-300' : 'text-slate-900 dark:text-slate-100'}`}>
-            {player.name}
-          </p>
-          <div className="flex flex-col items-end gap-0.5">
-            <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">{player.score}</span>
-            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
-              <Timer className="w-3 h-3" />
-              <span>{player.time}</span>
-            </div>
+  const renderMyPosition = () => {
+    const myRank = friends.length > 0 ? friends.length + 1 : 1; // Simplified
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="flex items-center gap-3 p-3 rounded-2xl border transition-all bg-purple-500/20 border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+      >
+        <div className="flex-shrink-0">{getRankBadge(myRank)}</div>
+        <div className="relative">
+          <Avatar className="w-10 h-10 border-2 border-purple-300/50 shadow-sm">
+            <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white font-bold">
+              ME
+            </AvatarFallback>
+          </Avatar>
+          <div className="absolute -bottom-1 -right-1 bg-purple-400 text-white text-[8px] font-black px-1.5 py-[1px] rounded-full shadow">
+            Lv.{xpData?.level || 1}
           </div>
         </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold truncate text-sm text-purple-200">You</p>
+        </div>
+        <div className="flex items-center gap-1 text-sm font-black text-amber-300 bg-amber-400/20 border border-amber-300/40 px-2.5 py-1 rounded-full">
+          <Star className="w-3.5 h-3.5 fill-current" />
+          <span>{(xpData?.totalXP || 0).toLocaleString()}</span>
+        </div>
+      </motion.div>
+    );
+  };
+
+  const renderChallengeItem = (player: typeof challengersWorld[0], index: number) => (
+    <motion.div
+      key={player.id}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer hover:scale-[1.01] hover:shadow-lg ${player.isMe
+        ? "bg-teal-500/20 border-teal-500/40 shadow-[0_0_15px_rgba(20,184,166,0.2)]"
+        : "bg-white/5 border-white/10 hover:border-teal-400/30 hover:bg-white/10"
+        }`}
+    >
+      <div className="flex-shrink-0">{getRankBadge(player.rank)}</div>
+      <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/30 flex items-center justify-center text-xl">
+        {player.avatar}
       </div>
-    </div>
+      <div className="flex-1 min-w-0">
+        <p className={`font-bold truncate text-sm ${player.isMe ? 'text-teal-300' : 'text-white'}`}>
+          {player.name}
+        </p>
+        <div className="flex items-center gap-1 text-[10px] text-white/60">
+          <Timer className="w-3 h-3" />
+          <span>{player.time}</span>
+        </div>
+      </div>
+      <div className="text-right">
+        <span className="text-sm font-black text-teal-300 bg-teal-400/20 border border-teal-300/40 px-2.5 py-1 rounded-full">
+          {player.score}
+        </span>
+      </div>
+    </motion.div>
   );
 
   return (
-    <Card className="h-full bg-white dark:bg-slate-900 border-none shadow-none flex flex-col">
-      <CardHeader className="pb-4 px-0 flex flex-col space-y-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold flex items-center gap-2">
-            {activeTab === 'xp' ? (
-              <>
-                <Users className="w-6 h-6 text-primary" />
-                Friends & Ranking
-              </>
-            ) : (
-              <>
-                <Trophy className="w-6 h-6 text-green-600" />
-                Vocab Challenge
-              </>
-            )}
-          </CardTitle>
-          <Button variant="ghost" className="text-pink-500 hover:text-pink-600 hover:bg-pink-50 font-semibold gap-1 px-2">
-            <UserPlus className="w-4 h-4" />
-            Invite
-          </Button>
-        </div>
+    <>
+      <Card className="bg-black/30 backdrop-blur-xl border-white/10 h-full flex flex-col overflow-hidden rounded-[2rem] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+        <CardHeader className="pb-4 p-0">
+          {/* Title */}
+          <div className="flex items-center justify-between mb-4">
+            <CardTitle className="text-xl font-black flex items-center gap-2">
+              {activeTab === 'xp' ? (
+                <>
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shadow-[0_0_10px_rgba(168,85,247,0.3)]">
+                    <Users className="w-5 h-5 text-purple-300" />
+                  </div>
+                  <span className="text-white drop-shadow-md">Friends</span>
+                </>
+              ) : (
+                <>
+                  <div className="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-500/30 flex items-center justify-center shadow-[0_0_10px_rgba(20,184,166,0.3)]">
+                    <Trophy className="w-5 h-5 text-teal-300" />
+                  </div>
+                  <span className="text-white drop-shadow-md">Challenge</span>
+                </>
+              )}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              {/* Go to Profile Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white/70 hover:text-white hover:bg-white/10 rounded-full h-9 w-9"
+                onClick={() => navigate('/profile')}
+                title="โปรไฟล์"
+              >
+                <User2 className="w-4 h-4" />
+              </Button>
 
-        {/* Toggle Buttons */}
-        <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
-          <Button
-            variant={activeTab === 'challenge' ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab('challenge')}
-            className={`rounded-lg text-xs font-bold ${activeTab === 'challenge' ? 'bg-white text-green-600 shadow-sm hover:bg-white hover:text-green-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}
-          >
-            Challenge Rank
-          </Button>
-          <Button
-            variant={activeTab === 'xp' ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab('xp')}
-            className={`rounded-lg text-xs font-bold ${activeTab === 'xp' ? 'bg-white text-primary shadow-sm hover:bg-white hover:text-primary' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}
-          >
-            XP Ranking
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent className="px-0 pb-0 flex-1 flex flex-col min-h-0">
-        {/* Scrollable List */}
-        <ScrollArea className="h-[180px] pr-2">
-          <div className="space-y-2">
-            {activeTab === 'xp'
-              ? friendsXP.map(renderXPItem)
-              : challengers.map(renderChallengeItem)
-            }
+              {/* Search Friend Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white/70 hover:text-white hover:bg-white/10 rounded-full h-9 w-9"
+                onClick={() => setShowAddFriend(true)}
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-        </ScrollArea>
 
-        {/* Fixed "You" Row at Bottom */}
-        <div className="mt-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-700">
-          <p className="text-[10px] text-slate-400 mb-1.5 text-center">Your Rank</p>
-          {activeTab === 'xp' ? renderXPItem(myXPRank) : renderChallengeItem(myChallengeRank)}
-        </div>
+          {/* Toggle Buttons */}
+          <div className="grid grid-cols-2 gap-1 p-1 bg-white/10 border border-white/20 rounded-full">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveTab('xp')}
+              className={`rounded-full text-xs font-black transition-all ${activeTab === 'xp'
+                ? 'bg-white/20 text-white border border-white/30'
+                : 'text-white/60 hover:text-white/80 hover:bg-white/5'}`}
+            >
+              ⭐ XP Rank
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveTab('challenge')}
+              className={`rounded-full text-xs font-black transition-all ${activeTab === 'challenge'
+                ? 'bg-white/20 text-white border border-white/30'
+                : 'text-white/60 hover:text-white/80 hover:bg-white/5'}`}
+            >
+              🏆 Challenge
+            </Button>
+          </div>
+        </CardHeader>
 
-        {activeTab === 'challenge' && (
-          <Button
-            variant="link"
-            className="w-full mt-2 text-xs text-green-600 hover:text-green-700 p-0 h-auto"
-            onClick={() => navigate('/vocab-challenge')}
-          >
-            View Full Leaderboard
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+        <CardContent className="p-0 pt-4 flex-1 flex flex-col min-h-0">
+          <ScrollArea className="h-[240px] pr-2 custom-scrollbar">
+            <div className="space-y-2 pb-4">
+              {activeTab === 'xp' ? (
+                friendsLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+                  </div>
+                ) : friends.length > 0 ? (
+                  friends.map((friend, i) => renderFriendItem(friend, i))
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-32 text-white/50">
+                    <Users className="w-12 h-12 mb-2 opacity-30" />
+                    <p className="text-sm font-medium">ยังไม่มีเพื่อน</p>
+                    <Button
+                      variant="link"
+                      className="text-purple-400 text-xs mt-1"
+                      onClick={() => setShowAddFriend(true)}
+                    >
+                      <UserPlus className="w-3 h-3 mr-1" /> เพิ่มเพื่อนเลย!
+                    </Button>
+                  </div>
+                )
+              ) : (
+                challengersWorld.map((player, i) => renderChallengeItem(player, i))
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Your Position */}
+          <div className="pt-3 mt-3 border-t border-dashed border-white/20">
+            <p className="text-[10px] text-white/60 font-black text-center mb-2 uppercase tracking-widest">Your Rank 🌟</p>
+            {activeTab === 'xp' ? renderMyPosition() : renderChallengeItem(myChallengeRank, 0)}
+
+            {activeTab === 'challenge' && (
+              <Button
+                variant="link"
+                className="w-full mt-2 text-xs text-white/70 hover:text-white h-auto py-1 font-bold"
+                onClick={() => navigate('/vocab-challenge')}
+              >
+                View Full Leaderboard →
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Add Friend Dialog */}
+      <AddFriendDialog open={showAddFriend} onOpenChange={setShowAddFriend} />
+
+      {/* Set Nickname Dialog */}
+      <SetNicknameDialog open={showSetNickname} onOpenChange={setShowSetNickname} />
+    </>
   );
 }
-
-

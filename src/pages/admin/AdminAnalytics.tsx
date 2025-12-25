@@ -80,23 +80,23 @@ const databaseTables = [
 
 // Components
 const StatCard = ({ title, value, subtext, icon: Icon, trend }: any) => (
-    <Card>
+    <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardContent className="p-6">
             <div className="flex items-center justify-between space-y-0 pb-2">
-                <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
                 <div className="p-2 bg-primary/10 rounded-full">
                     <Icon className="h-4 w-4 text-primary" />
                 </div>
             </div>
             <div className="flex items-baseline justify-between mt-2">
-                <h3 className="text-2xl font-bold">{value}</h3>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{value}</h3>
                 {trend && (
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${trend > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/30' : 'bg-red-100 text-red-700 dark:bg-red-900/30'}`}>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${trend > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
                         {trend > 0 ? '+' : ''}{trend}%
                     </span>
                 )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{subtext}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{subtext}</p>
         </CardContent>
     </Card>
 );
@@ -199,14 +199,14 @@ export default function AdminAnalytics() {
     };
 
     return (
-        <div className="p-8 space-y-8 bg-muted/20 min-h-screen">
+        <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent flex items-center gap-3">
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
                         <Database className="h-8 w-8 text-primary" />
                         Master Analytics
                     </h1>
-                    <p className="text-muted-foreground mt-1">
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">
                         ศุนย์กลางข้อมูลและสถิติทั้งหมดของระบบ (Data Warehouse View)
                     </p>
                 </div>
@@ -356,7 +356,7 @@ export default function AdminAnalytics() {
                         </CardHeader>
                         <CardContent className="h-[300px]">
                             {/* Simple placeholder or another chart */}
-                            <div className="flex items-center justify-center h-full text-muted-foreground">
+                            <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-500">
                                 <BarChart width={800} height={300} data={[
                                     { range: '0-5m', users: 150 },
                                     { range: '5-15m', users: 320 },
@@ -464,7 +464,7 @@ export default function AdminAnalytics() {
                         <CardContent className="p-0">
                             <div className="rounded-md border-t"></div>
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-muted/50 text-muted-foreground">
+                                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                                     <tr>
                                         <th className="px-6 py-3 font-medium">Table Name</th>
                                         <th className="px-6 py-3 font-medium">Records</th>
@@ -481,7 +481,7 @@ export default function AdminAnalytics() {
                                             </td>
                                             <td className="px-6 py-4">{table.rows.toLocaleString()}</td>
                                             <td className="px-6 py-4 font-mono text-xs">{table.size}</td>
-                                            <td className="px-6 py-4 text-muted-foreground">{table.updated}</td>
+                                            <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{table.updated}</td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Button variant="ghost" size="sm" className="h-8" onClick={() => handlePreview(table.name)}>

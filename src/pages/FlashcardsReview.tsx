@@ -9,6 +9,10 @@ import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGam
 import { FlashcardHangmanGame } from '@/components/FlashcardHangmanGame';
 import { FlashcardVocabBlinderGame } from '@/components/FlashcardVocabBlinderGame';
 import { FlashcardWordSearchGame } from '@/components/FlashcardWordSearchGame';
+import { FlashcardWordScrambleGame } from '@/components/FlashcardWordScrambleGame';
+import { FlashcardNinjaSliceGame } from '@/components/FlashcardNinjaSliceGame';
+
+import { GameSelectionDialog } from '@/components/GameSelectionDialog';
 import { useFlashcards } from '@/hooks/useFlashcards';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -19,6 +23,7 @@ interface FlashcardData {
   id: string;
   front: string;
   back: string;
+  isUserFlashcard?: boolean;
 }
 
 export default function FlashcardsReview() {
@@ -26,11 +31,12 @@ export default function FlashcardsReview() {
   const location = useLocation();
   const { t } = useLanguage();
   const { flashcards, loading } = useFlashcards();
+  const [showGameSelection, setShowGameSelection] = React.useState(false);
 
   // Check if this is a quick review from dashboard
   const state = location.state as {
     mode?: 'review' | 'game';
-    gameType?: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch';
+    gameType?: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch' | 'scramble' | 'ninja';
     cards?: FlashcardData[];
     isQuickReview?: boolean;
     fromAIListening?: boolean;
@@ -141,121 +147,21 @@ export default function FlashcardsReview() {
     );
   }
 
-  // Render game mode if specified
-  if (state?.mode === 'game' && state?.gameType) {
-    const gameFlashcards = cards.map(c => ({
-      id: c.id,
-      front_text: c.front,
-      back_text: c.back,
-      created_at: new Date().toISOString()
-    }));
+  // Game selection handlers
+  const handleSelectNewGame = () => {
+    setShowGameSelection(true);
+  };
 
-    const handleNext = () => {
-      if (state?.fromAIListening) {
-        // Navigate to Section 4 Intro instead of MCQ directly
-        navigate('/ai-listening-section4-intro', { state: { cards } });
-      } else if (state?.fromAIReading) {
-        navigate('/ai-reading-section4-intro', { state: { cards } });
-      } else {
-        handleClose();
+  const handleGameSelect = (gameType: 'quiz' | 'matching' | 'listen' | 'hangman' | 'vocabBlinder' | 'wordSearch' | 'scramble' | 'ninja') => {
+    setShowGameSelection(false);
+    navigate('/flashcards/review', {
+      state: {
+        mode: 'game',
+        gameType: gameType,
+        cards: cards,
+        ...state
       }
-    };
-
-    if (state.gameType === 'quiz') {
-      return (
-        <div className="min-h-screen bg-background">
-          <FlashcardQuizGame
-            flashcards={gameFlashcards}
-            onClose={handleClose}
-            onNext={handleNext}
-          />
-        </div>
-      );
-    }
-
-    if (state.gameType === 'matching') {
-      return (
-        <div className="min-h-screen bg-background">
-          <FlashcardMatchingGame
-            flashcards={gameFlashcards}
-            onClose={handleClose}
-            onNext={handleNext}
-          />
-        </div>
-      );
-    }
-
-    if (state.gameType === 'listen') {
-      return (
-        <div className="min-h-screen bg-background">
-          <FlashcardListenChooseGame
-            flashcards={gameFlashcards}
-            onClose={handleClose}
-            onNext={handleNext}
-          />
-        </div>
-      );
-    }
-
-    if (state.gameType === 'hangman') {
-      return (
-        <div className="min-h-screen bg-background">
-          <FlashcardHangmanGame
-            flashcards={gameFlashcards}
-            onClose={handleClose}
-            onNext={handleNext}
-          />
-        </div>
-      );
-    }
-
-    if (state.gameType === 'vocabBlinder') {
-      return (
-        <div className="min-h-screen bg-background">
-          <FlashcardVocabBlinderGame
-            flashcards={gameFlashcards}
-            onClose={handleClose}
-            onNext={handleNext}
-          />
-        </div>
-      );
-    }
-
-    if (state.gameType === 'wordSearch') {
-      return (
-        <div className="min-h-screen bg-background">
-          <FlashcardWordSearchGame
-            flashcards={gameFlashcards}
-            onClose={handleClose}
-            onNext={handleNext}
-          />
-        </div>
-      );
-    }
-  }
-
-  // SRS Hook
-  const { updateFromFlashcardReview } = useSRSProgress();
-  // Track attempts locally to match logic from FlashcardReviewPage
-  const attemptCounts = React.useRef<Map<string, number>>(new Map());
-
-  const handleAnswer = async (cardId: string, known: boolean, timeTaken: number) => {
-    // Find the card to check if it's user flashcard
-    const card = cards.find(c => c.id === cardId);
-    if (!card) return;
-
-    // Track attempt count
-    const currentAttempts = attemptCounts.current.get(cardId) || 0;
-    attemptCounts.current.set(cardId, currentAttempts + 1);
-
-    // Determines if it is a user flashcard (default to false if prop missing/undefined, but FlashcardData usually has it if passed correctly)
-    // The current FlashcardData in this file doesn't explicitly have isUserFlashcard type definition 
-    // but the object passed from FlashcardsPage usually has it.
-    // Let's cast or check safely. 
-    // Actually, let's update FlashcardData definition in this file to match.
-    const isUserCard = (card as any).isUserFlashcard;
-
-    await updateFromFlashcardReview(cardId, known, currentAttempts + 1, timeTaken, isUserCard);
+    });
   };
 
   const handleReviewComplete = async (results: any) => {
@@ -301,6 +207,249 @@ export default function FlashcardsReview() {
     }
 
     handleComplete(results);
+  };
+
+  // Render game mode if specified
+  if (state?.mode === 'game' && state?.gameType) {
+    const gameFlashcards = cards.map(c => ({
+      id: c.id,
+      front_text: c.front,
+      back_text: c.back,
+      created_at: new Date().toISOString(),
+      isUserFlashcard: c.isUserFlashcard
+    }));
+
+    const handleNext = () => {
+      if (state?.fromAIListening) {
+        // Navigate to Section 4 Intro instead of MCQ directly
+        navigate('/ai-listening-section4-intro', { state: { cards } });
+      } else if (state?.fromAIReading) {
+        navigate('/ai-reading-section4-intro', { state: { cards } });
+      } else {
+        handleClose();
+      }
+    };
+
+    if (state.gameType === 'quiz') {
+      return (
+        <>
+          <div className="min-h-screen bg-background">
+            <FlashcardQuizGame
+              flashcards={gameFlashcards}
+              onClose={handleClose}
+              onNext={handleNext}
+              onSelectNewGame={handleSelectNewGame}
+            />
+          </div>
+          {showGameSelection && (
+            <GameSelectionDialog
+              open={showGameSelection}
+              onOpenChange={setShowGameSelection}
+              onSelectGame={handleGameSelect}
+            />
+          )}
+        </>
+      );
+    }
+
+    if (state.gameType === 'matching') {
+      return (
+        <>
+          <div className="min-h-screen bg-background">
+            <FlashcardMatchingGame
+              flashcards={gameFlashcards}
+              onClose={handleClose}
+              onNext={handleNext}
+              onSelectNewGame={handleSelectNewGame}
+            />
+          </div>
+          {showGameSelection && (
+            <GameSelectionDialog
+              open={showGameSelection}
+              onOpenChange={setShowGameSelection}
+              onSelectGame={handleGameSelect}
+            />
+          )}
+        </>
+      );
+    }
+
+    if (state.gameType === 'listen') {
+      return (
+        <>
+          <div className="min-h-screen bg-background">
+            <FlashcardListenChooseGame
+              flashcards={gameFlashcards}
+              onClose={handleClose}
+              onNext={handleNext}
+              onSelectNewGame={handleSelectNewGame}
+            />
+          </div>
+          {showGameSelection && (
+            <GameSelectionDialog
+              open={showGameSelection}
+              onOpenChange={setShowGameSelection}
+              onSelectGame={handleGameSelect}
+            />
+          )}
+        </>
+      );
+    }
+
+    if (state.gameType === 'hangman') {
+      return (
+        <>
+          <div className="min-h-screen bg-background">
+            <FlashcardHangmanGame
+              flashcards={gameFlashcards}
+              onClose={handleClose}
+              onNext={handleNext}
+              onSelectNewGame={handleSelectNewGame}
+            />
+          </div>
+          {showGameSelection && (
+            <GameSelectionDialog
+              open={showGameSelection}
+              onOpenChange={setShowGameSelection}
+              onSelectGame={handleGameSelect}
+            />
+          )}
+        </>
+      );
+    }
+
+    if (state.gameType === 'vocabBlinder') {
+      return (
+        <>
+          <div className="min-h-screen bg-background">
+            <FlashcardVocabBlinderGame
+              flashcards={gameFlashcards}
+              onClose={handleClose}
+              onNext={handleNext}
+              onSelectNewGame={handleSelectNewGame}
+            />
+          </div>
+          {showGameSelection && (
+            <GameSelectionDialog
+              open={showGameSelection}
+              onOpenChange={setShowGameSelection}
+              onSelectGame={handleGameSelect}
+            />
+          )}
+        </>
+      );
+    }
+
+    if (state.gameType === 'wordSearch') {
+      return (
+        <>
+          <div className="min-h-screen bg-background">
+            <FlashcardWordSearchGame
+              flashcards={gameFlashcards}
+              onClose={handleClose}
+              onNext={handleNext}
+              onSelectNewGame={handleSelectNewGame}
+            />
+          </div>
+          {showGameSelection && (
+            <GameSelectionDialog
+              open={showGameSelection}
+              onOpenChange={setShowGameSelection}
+              onSelectGame={handleGameSelect}
+            />
+          )}
+        </>
+      );
+    }
+
+    if (state.gameType === 'scramble') {
+      return (
+        <>
+          <div className="min-h-screen bg-background">
+            <FlashcardWordScrambleGame
+              vocabList={gameFlashcards.map(f => ({
+                id: f.id,
+                word: f.front_text,
+                meaning: f.back_text,
+                isUserFlashcard: f.isUserFlashcard
+              }))}
+              onExit={handleClose}
+              onGameFinish={handleReviewComplete}
+            />
+          </div>
+          {showGameSelection && (
+            <GameSelectionDialog
+              open={showGameSelection}
+              onOpenChange={setShowGameSelection}
+              onSelectGame={handleGameSelect}
+            />
+          )}
+        </>
+      );
+    }
+
+    if (state.gameType === 'ninja') {
+      return (
+        <>
+          <FlashcardNinjaSliceGame
+            vocabList={gameFlashcards.map(f => ({
+              id: f.id,
+              word: f.front_text,
+              meaning: f.back_text,
+              isUserFlashcard: f.isUserFlashcard
+            }))}
+            onExit={handleClose}
+            onGameFinish={handleReviewComplete}
+            onSelectNewGame={handleSelectNewGame}
+          />
+          {showGameSelection && (
+            <GameSelectionDialog
+              open={showGameSelection}
+              onOpenChange={setShowGameSelection}
+              onSelectGame={handleGameSelect}
+            />
+          )}
+        </>
+      );
+    }
+
+  }
+
+  // Render game selection dialog
+  if (showGameSelection) {
+    return (
+      <>
+        <GameSelectionDialog
+          open={showGameSelection}
+          onOpenChange={setShowGameSelection}
+          onSelectGame={handleGameSelect}
+        />
+      </>
+    );
+  }
+
+  // SRS Hook
+  const { updateFromFlashcardReview } = useSRSProgress();
+  // Track attempts locally to match logic from FlashcardReviewPage
+  const attemptCounts = React.useRef<Map<string, number>>(new Map());
+
+  const handleAnswer = async (cardId: string, known: boolean, timeTaken: number) => {
+    // Find the card to check if it's user flashcard
+    const card = cards.find(c => c.id === cardId);
+    if (!card) return;
+
+    // Track attempt count
+    const currentAttempts = attemptCounts.current.get(cardId) || 0;
+    attemptCounts.current.set(cardId, currentAttempts + 1);
+
+    // Determines if it is a user flashcard (default to false if prop missing/undefined, but FlashcardData usually has it if passed correctly)
+    // The current FlashcardData in this file doesn't explicitly have isUserFlashcard type definition 
+    // but the object passed from FlashcardsPage usually has it.
+    // Let's cast or check safely. 
+    // Actually, let's update FlashcardData definition in this file to match.
+    const isUserCard = (card as any).isUserFlashcard;
+
+    await updateFromFlashcardReview(cardId, known, currentAttempts + 1, timeTaken, isUserCard);
   };
 
   // Default to review mode with sidebar -> NOW CHANGED TO SWIPER

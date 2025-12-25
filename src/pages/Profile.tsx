@@ -13,8 +13,7 @@ import {
   Star, Medal, Crown, Sparkles, Edit3, Settings,
   Calendar, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import BackgroundDecorations from '@/components/BackgroundDecorations';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Dialog,
@@ -34,6 +33,7 @@ import {
 } from "@/components/ui/select";
 
 import { useUserStats } from '@/hooks/useUserStats';
+import { SetNicknameDialog } from '@/components/friends/SetNicknameDialog';
 
 interface Profile {
   id: string;
@@ -41,6 +41,7 @@ interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  challenge_nickname: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -103,6 +104,7 @@ export default function Profile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { stats } = useUserStats();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [fullName, setFullName] = useState('');
   const [bio, setBio] = useState('');
@@ -111,6 +113,14 @@ export default function Profile() {
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string>('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Nickname state
+  const [nicknameDialogOpen, setNicknameDialogOpen] = useState(false);
+  const [nickname, setNickname] = useState('');
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [nicknameError, setNicknameError] = useState('');
+  const [checkingNickname, setCheckingNickname] = useState(false);
+  const [savingNickname, setSavingNickname] = useState(false);
 
   // Chart view mode state
   const [chartViewMode, setChartViewMode] = useState<'month' | 'year'>('month');
@@ -190,6 +200,8 @@ export default function Profile() {
         setProfile(data);
         setFullName(data.full_name || '');
         setBio(data.bio || '');
+        setNickname(data.challenge_nickname || '');
+        setNicknameInput(data.challenge_nickname || '');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -232,6 +244,95 @@ export default function Profile() {
     }
   };
 
+  // Check if nickname is available (not taken by another user)
+  const checkNicknameAvailability = async (inputNickname: string) => {
+    if (!inputNickname.trim() || inputNickname.length < 3) {
+      setNicknameError('ชื่อต้องมีอย่างน้อย 3 ตัวอักษร');
+      return false;
+    }
+    if (inputNickname.length > 20) {
+      setNicknameError('ชื่อต้องไม่เกิน 20 ตัวอักษร');
+      return false;
+    }
+    if (!/^[a-zA-Z0-9_ก-๙]+$/.test(inputNickname)) {
+      setNicknameError('ใช้ได้เฉพาะตัวอักษร ตัวเลข และ _ เท่านั้น');
+      return false;
+    }
+
+    setCheckingNickname(true);
+    setNicknameError('');
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('challenge_nickname')
+        .eq('challenge_nickname', inputNickname)
+        .neq('user_id', user?.id || '')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setNicknameError('ชื่อนี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น');
+        return false;
+      }
+
+      setNicknameError('');
+      return true;
+    } catch (error) {
+      console.error('Error checking nickname:', error);
+      setNicknameError('เกิดข้อผิดพลาดในการตรวจสอบ');
+      return false;
+    } finally {
+      setCheckingNickname(false);
+    }
+  };
+
+  // Save nickname to database
+  const saveNickname = async () => {
+    if (!user) return;
+
+    const isAvailable = await checkNicknameAvailability(nicknameInput);
+    if (!isAvailable) return;
+
+    setSavingNickname(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          challenge_nickname: nicknameInput.trim(),
+        });
+
+      if (error) {
+        // Check if it's a unique constraint violation
+        if (error.code === '23505') {
+          setNicknameError('ชื่อนี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น');
+          return;
+        }
+        throw error;
+      }
+
+      setNickname(nicknameInput.trim());
+      toast({
+        title: "บันทึกสำเร็จ! 🎉",
+        description: "ตั้งชื่อ Challenge เรียบร้อยแล้ว",
+        className: "bg-green-50 border-green-200 text-green-800"
+      });
+
+      fetchProfile();
+      setNicknameDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving nickname:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถบันทึกชื่อได้",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingNickname(false);
+    }
+  };
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -243,8 +344,7 @@ export default function Profile() {
   const displayName = fullName || user?.email?.split('@')[0] || 'User';
 
   return (
-    <div className="min-h-screen bg-background py-6 relative overflow-hidden">
-      <BackgroundDecorations />
+    <div className="min-h-screen bg-transparent py-6 relative overflow-hidden">
       <div className="container max-w-6xl mx-auto px-4 relative z-10">
         {/* Back button */}
         <div className="mb-6">
@@ -257,23 +357,48 @@ export default function Profile() {
           </Link>
         </div>
 
-        {/* Profile Header Card */}
+        {/* Profile Header Card - Cute Edition */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6"
         >
-          <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card via-card to-muted/30">
-            <CardContent className="p-6 sm:p-8">
+          <Card className="overflow-hidden border-0 shadow-xl relative">
+            {/* Gradient Background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-100 via-pink-50 to-purple-100 dark:from-purple-950/50 dark:via-pink-950/30 dark:to-purple-950/50" />
+            {/* Floating Decorations */}
+            <motion.div
+              className="absolute top-4 right-8 text-2xl z-10"
+              animate={{ y: [0, -8, 0], rotate: [0, 15, -15, 0] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >⭐</motion.div>
+            <motion.div
+              className="absolute top-8 right-20 text-xl z-10"
+              animate={{ y: [0, -5, 0], scale: [1, 1.2, 1] }}
+              transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+            >✨</motion.div>
+            <motion.div
+              className="absolute bottom-6 right-12 text-lg z-10"
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+            >💫</motion.div>
+            <CardContent className="p-6 sm:p-8 relative z-10">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                 {/* Avatar with Level Badge - Clickable */}
                 <Dialog open={avatarDialogOpen} onOpenChange={setAvatarDialogOpen}>
                   <DialogTrigger asChild>
                     <div className="relative cursor-pointer group">
-                      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 p-1 group-hover:from-primary/40 group-hover:to-secondary/40 transition-all">
-                        <Avatar className="w-full h-full border-4 border-card">
+                      {/* Sparkle Ring Animation */}
+                      <motion.div
+                        className="absolute rounded-full border-2 border-dashed border-purple-300 dark:border-purple-600"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                        style={{ width: 136, height: 136, top: -4, left: -4 }}
+                      />
+                      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-500 p-1 group-hover:scale-105 transition-all shadow-xl">
+                        <Avatar className="w-full h-full border-4 border-white dark:border-slate-800">
                           <AvatarImage src={selectedAvatar || profile?.avatar_url || ''} />
-                          <AvatarFallback className="text-4xl bg-gradient-to-br from-primary to-secondary text-white">
+                          <AvatarFallback className="text-4xl bg-gradient-to-br from-purple-500 to-pink-500 text-white">
                             {displayName.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -282,11 +407,15 @@ export default function Profile() {
                           <Edit3 className="w-8 h-8 text-white" />
                         </div>
                       </div>
-                      {/* Level Badge */}
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg flex items-center gap-1">
-                        <Flame className="w-4 h-4" />
+                      {/* Level Badge - Cute Style */}
+                      <motion.div
+                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg flex items-center gap-1.5 border-2 border-white dark:border-slate-800"
+                        animate={{ y: [0, -3, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <span>🔥</span>
                         Lv.{Math.floor(stats.totalXP / 1000) + 1}
-                      </div>
+                      </motion.div>
                     </div>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-lg">
@@ -371,9 +500,22 @@ export default function Profile() {
                 <div className="flex-1 text-center sm:text-left">
                   <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
                     <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                      {displayName}
+                      {nickname || displayName}
                     </h1>
                     <CheckCircle2 className="w-6 h-6 text-blue-500" />
+
+                    {/* Nickname Edit Button */}
+                    <button
+                      className="p-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 transition-colors group"
+                      onClick={() => setNicknameDialogOpen(true)}
+                    >
+                      <Edit3 className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
+                    </button>
+                    <SetNicknameDialog
+                      open={nicknameDialogOpen}
+                      onOpenChange={setNicknameDialogOpen}
+                      onSuccess={() => fetchProfile()}
+                    />
                   </div>
                   <p className="text-primary font-medium mb-2">{Math.floor(stats.totalXP / 1000) > 10 ? 'Elite Learner 🎓' : DEFAULT_STATS.title}</p>
                   {bio && (
@@ -382,22 +524,37 @@ export default function Profile() {
                     </p>
                   )}
 
-                  {/* XP Progress */}
-                  <div className="mt-4 max-w-sm mx-auto sm:mx-0">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">EXP Progress</span>
-                      <span className="font-medium text-foreground">{stats.totalXP % 1000} / 1000</span>
+                  {/* XP Progress - Cute Enhanced */}
+                  <div className="mt-5 bg-white/60 dark:bg-slate-800/60 rounded-2xl p-4 backdrop-blur-sm max-w-md mx-auto sm:mx-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">⚡</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-200 font-semibold">EXP Progress</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{stats.totalXP % 1000}</span>
+                        <span className="text-xs text-slate-400">/ 1000 XP</span>
+                      </div>
                     </div>
-                    <Progress value={(stats.totalXP % 1000) / 10} className="h-2" />
+                    <div className="h-3 bg-gradient-to-r from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-600 rounded-full overflow-hidden shadow-inner">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-400 rounded-full relative"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.max((stats.totalXP % 1000) / 10, 5)}%` }}
+                        transition={{ duration: 1.2, ease: "easeOut" }}
+                      >
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                          animate={{ x: ["-100%", "200%"] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        />
+                      </motion.div>
+                    </div>
+                    <div className="flex justify-between mt-1.5 text-[10px] text-slate-400">
+                      <span>อีก {1000 - (stats.totalXP % 1000)} XP จะถึงเลเวลถัดไป! 🎯</span>
+                      <span>{Math.round((stats.totalXP % 1000) / 10)}%</span>
+                    </div>
                   </div>
-                </div>
-
-                {/* Action Buttons - Only Share now */}
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Share2 className="w-4 h-4" />
-                    Share
-                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -413,215 +570,148 @@ export default function Profile() {
             transition={{ delay: 0.1 }}
             className="space-y-6"
           >
-            {/* Key Statistics - Cute Redesign */}
-            <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-violet-50/30 dark:to-violet-950/10 overflow-hidden relative">
-              {/* Decorative Elements */}
-              <div className="absolute top-3 right-3 text-3xl opacity-20 animate-jiggle">📊</div>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
-                    <Target className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">สถิติการเรียน</h3>
-                    <p className="text-xs text-muted-foreground">ข้อมูลความก้าวหน้าของคุณ ✨</p>
+            {/* Key Statistics - Modern Clean Design */}
+            <Card className="border-0 shadow-lg bg-card/90 backdrop-blur-sm overflow-hidden">
+              <CardContent className="p-5">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                      <Target className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">สถิติการเรียนรู้</h3>
                   </div>
                 </div>
 
-                {/* Stats Grid - Cute Style */}
+                {/* Main Stats - 2x2 Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 border border-purple-200/50 dark:border-purple-700/30 group hover:scale-105 transition-transform cursor-default">
+                  {/* Words Today */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-violet-500/10 border border-purple-500/20">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl animate-jiggle">📅</span>
-                      <p className="text-xs text-muted-foreground font-medium">เดือนนี้</p>
+                      <Zap className="w-4 h-4 text-purple-500" />
+                      <span className="text-xs text-muted-foreground font-medium">วันนี้</span>
                     </div>
-                    <p className="text-3xl font-black bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">{stats.wordsLearnedToday}</p>
-                    <p className="text-xs text-muted-foreground">คำศัพท์ที่จำได้ (วันนี้)</p>
+                    <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.wordsLearnedToday}</p>
+                    <p className="text-[10px] text-muted-foreground">คำศัพท์</p>
                   </div>
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 border border-blue-200/50 dark:border-blue-700/30 group hover:scale-105 transition-transform cursor-default">
+
+                  {/* Total Words */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl animate-jiggle" style={{ animationDelay: '0.2s' }}>📆</span>
-                      <p className="text-xs text-muted-foreground font-medium">ปีนี้</p>
+                      <Award className="w-4 h-4 text-blue-500" />
+                      <span className="text-xs text-muted-foreground font-medium">ทั้งหมด</span>
                     </div>
-                    <p className="text-3xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{stats.wordsLearned}</p>
-                    <p className="text-xs text-muted-foreground">คำศัพท์ที่จำได้ (ทั้งหมด)</p>
+                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.wordsLearned}</p>
+                    <p className="text-[10px] text-muted-foreground">คำศัพท์</p>
+                  </div>
+
+                  {/* Current Streak */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Flame className="w-4 h-4 text-orange-500" />
+                      <span className="text-xs text-muted-foreground font-medium">Streak</span>
+                    </div>
+                    <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.streak}</p>
+                    <p className="text-[10px] text-muted-foreground">วันต่อเนื่อง</p>
+                  </div>
+
+                  {/* Total XP */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Star className="w-4 h-4 text-emerald-500" />
+                      <span className="text-xs text-muted-foreground font-medium">XP</span>
+                    </div>
+                    <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{stats.totalXP}</p>
+                    <p className="text-[10px] text-muted-foreground">คะแนน</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 border border-orange-200/50 dark:border-orange-700/30 group hover:scale-105 transition-transform cursor-default">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl animate-swing">🏆</span>
-                      <p className="text-xs text-muted-foreground font-medium">Streak สูงสุด</p>
-                    </div>
-                    <p className="text-3xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">-</p>
-                    <p className="text-xs text-muted-foreground">วันต่อเนื่อง 🔥</p>
+                {/* Progress Bar */}
+                <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-foreground">ความก้าวหน้า</span>
+                    <span className="text-sm font-bold text-primary">{stats.progressPercentage}%</span>
                   </div>
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 border border-green-200/50 dark:border-green-700/30 group hover:scale-105 transition-transform cursor-default">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl animate-heartbeat">🔥</span>
-                      <p className="text-xs text-muted-foreground font-medium">Streak ปัจจุบัน</p>
-                    </div>
-                    <p className="text-3xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{stats.streak}</p>
-                    <p className="text-xs text-muted-foreground">วันต่อเนื่อง 💪</p>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${stats.progressPercentage}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                    />
                   </div>
-                </div>
-
-                {/* Additional Stats - Cute List */}
-                <div className="space-y-3 pt-4 border-t border-violet-100 dark:border-violet-900/30">
-                  <div className="flex items-center justify-between p-2 rounded-xl hover:bg-violet-50/50 dark:hover:bg-violet-900/10 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg animate-wiggle">⏰</span>
-                      <span className="text-sm text-muted-foreground">เวลาเรียนรวม</span>
-                    </div>
-                    <span className="font-bold text-foreground bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">128 ชม.</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-xl hover:bg-violet-50/50 dark:hover:bg-violet-900/10 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg animate-jiggle">📚</span>
-                      <span className="text-sm text-muted-foreground">Deck ที่เรียนจบ</span>
-                    </div>
-                    <span className="font-bold text-foreground">15 / 42</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-xl hover:bg-violet-50/50 dark:hover:bg-violet-900/10 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg animate-swing">🗓️</span>
-                      <span className="text-sm text-muted-foreground">วันที่เริ่มใช้งาน</span>
-                    </div>
-                    <span className="font-bold text-foreground">15 ม.ค. 2024</span>
+                  <div className="flex justify-between mt-2 text-[10px] text-muted-foreground">
+                    <span>{stats.subdecksCompleted} / {stats.totalSubdecks} subdecks</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Vocab Challenge - Redesigned with Sections */}
-            <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-amber-50/30 dark:to-amber-950/10 overflow-hidden relative">
-              {/* Decorative Elements */}
-              <div className="absolute top-3 right-3 text-3xl opacity-20 animate-heartbeat">🏅</div>
-              <CardContent className="p-6">
+            {/* Vocab Challenge - Clean Design */}
+            <Card className="border-0 shadow-lg bg-card/90 backdrop-blur-sm overflow-hidden">
+              <CardContent className="p-5">
                 {/* Header */}
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg">
-                    <Trophy className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">Vocab Challenge</h3>
-                    <p className="text-xs text-muted-foreground">แข่งขันกับเพื่อนๆ 🎮</p>
-                  </div>
-                </div>
-
-                {/* ==================== ALL TIME BEST ==================== */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg animate-swing">🏆</span>
-                    <h4 className="text-sm font-bold text-foreground uppercase tracking-wide">สถิติที่ดีที่สุด (All Time)</h4>
-                  </div>
-
-                  {/* Personal Best - Highlight */}
-                  <div className="mb-3 p-4 rounded-2xl bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 border border-amber-200/50 dark:border-amber-700/30">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
-                          <span className="text-xl animate-heartbeat">⚡</span>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Best Time</p>
-                          <p className="font-bold text-foreground">Personal Best</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-3xl font-black bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">{DEFAULT_STATS.personalBest}s</p>
-                        <p className="text-[10px] text-muted-foreground">📅 {DEFAULT_STATS.personalBestDate}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Best Rank & Best Accuracy - 2 columns */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-3 rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-100 dark:border-blue-800/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm animate-wiggle">👑</span>
-                        <p className="text-[10px] text-muted-foreground">Best Rank</p>
-                      </div>
-                      <p className="text-xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">#42</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100 dark:border-green-800/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm animate-jiggle">🎯</span>
-                        <p className="text-[10px] text-muted-foreground">Best Accuracy</p>
-                      </div>
-                      <p className="text-xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">100%</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ==================== THIS MONTH ==================== */}
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg animate-jiggle">📅</span>
-                    <h4 className="text-sm font-bold text-foreground uppercase tracking-wide">สถิติเดือนนี้ (ธ.ค. 2567)</h4>
-                  </div>
-
-                  {/* Current Rank - Highlight */}
-                  <div className="mb-3 p-4 rounded-2xl bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 border border-blue-200/50 dark:border-blue-700/30">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
-                          <span className="text-xl animate-swing">👑</span>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">อันดับโลก</p>
-                          <p className="font-bold text-foreground">Current Rank</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-3xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">#{DEFAULT_STATS.globalRank}</p>
-                        <p className="text-[10px] text-muted-foreground">🌟 Unranked</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Monthly Stats Grid - 2x2 */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-100 dark:border-purple-800/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm animate-wiggle">⏱️</span>
-                        <p className="text-[10px] text-muted-foreground">Avg. Time</p>
-                      </div>
-                      <p className="text-xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">09.8542s</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100 dark:border-green-800/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm animate-jiggle">🎯</span>
-                        <p className="text-[10px] text-muted-foreground">Accuracy</p>
-                      </div>
-                      <p className="text-xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{DEFAULT_STATS.accuracy}%</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-100 dark:border-orange-800/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm animate-shake">🎮</span>
-                        <p className="text-[10px] text-muted-foreground">Games</p>
-                      </div>
-                      <p className="text-xl font-black bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">48</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20 border border-rose-100 dark:border-rose-800/30">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm animate-boing">📈</span>
-                        <p className="text-[10px] text-muted-foreground">Rank Change</p>
-                      </div>
-                      <p className="text-xl font-black text-green-600">+12 ↑</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Total Runs - Footer */}
-                <div className="p-3 rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/10 dark:to-purple-900/10 border border-violet-100 dark:border-violet-800/30 flex items-center justify-between">
+                <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg animate-wiggle">🏁</span>
-                    <span className="text-sm text-muted-foreground">เล่นทั้งหมด (All Time)</span>
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                      <Trophy className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Vocab Challenge</h3>
                   </div>
-                  <span className="font-bold text-foreground">{DEFAULT_STATS.totalRuns.toLocaleString()} ครั้ง</span>
                 </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {/* Personal Best */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className="w-4 h-4 text-amber-500" />
+                      <span className="text-xs text-muted-foreground font-medium">Personal Best</span>
+                    </div>
+                    <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{DEFAULT_STATS.personalBest}s</p>
+                    <p className="text-[10px] text-muted-foreground">เวลาที่ดีที่สุด</p>
+                  </div>
+
+                  {/* Current Rank */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Crown className="w-4 h-4 text-blue-500" />
+                      <span className="text-xs text-muted-foreground font-medium">อันดับ</span>
+                    </div>
+                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">#{DEFAULT_STATS.globalRank}</p>
+                    <p className="text-[10px] text-muted-foreground">อันดับโลก</p>
+                  </div>
+
+                  {/* Accuracy */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Target className="w-4 h-4 text-emerald-500" />
+                      <span className="text-xs text-muted-foreground font-medium">ความแม่นยำ</span>
+                    </div>
+                    <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{DEFAULT_STATS.accuracy}%</p>
+                    <p className="text-[10px] text-muted-foreground">เฉลี่ย</p>
+                  </div>
+
+                  {/* Games Played */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Medal className="w-4 h-4 text-purple-500" />
+                      <span className="text-xs text-muted-foreground font-medium">เกมที่เล่น</span>
+                    </div>
+                    <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{DEFAULT_STATS.totalRuns}</p>
+                    <p className="text-[10px] text-muted-foreground">ครั้ง</p>
+                  </div>
+                </div>
+
+                {/* CTA Button */}
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl h-10 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                  onClick={() => navigate('/vocab-challenge')}
+                >
+                  <Trophy className="w-4 h-4 mr-2" />
+                  เข้าร่วม Challenge
+                </Button>
               </CardContent>
             </Card>
           </motion.div>
@@ -644,7 +734,7 @@ export default function Profile() {
                       <span className="text-xl animate-swing">🏆</span>
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-foreground">ถ้วยรางวัล</h3>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">ถ้วยรางวัล</h3>
                       <p className="text-xs text-muted-foreground">รางวัลที่คุณได้รับ 🌟</p>
                     </div>
                   </div>
@@ -693,7 +783,7 @@ export default function Profile() {
                       <TrendingUp className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-foreground">พัฒนาการเรียนรู้</h3>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">พัฒนาการเรียนรู้</h3>
                       <p className="text-xs text-muted-foreground">ติดตามความก้าวหน้าของคุณ 🎯</p>
                     </div>
                   </div>

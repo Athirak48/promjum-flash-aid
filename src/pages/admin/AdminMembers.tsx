@@ -170,60 +170,60 @@ export default function AdminMembers() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-blue-200/50">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
-                <Users className="h-5 w-5 text-blue-600" />
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="pt-6 pb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                <Users className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-600">{totalMembers}</p>
-                <p className="text-xs text-muted-foreground">สมาชิกทั้งหมด</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">{totalMembers}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">สมาชิกทั้งหมด</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200/50">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
-                <UserPlus className="h-5 w-5 text-green-600" />
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="pt-6 pb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
+                <UserPlus className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-600">+{todayMembers}</p>
-                <p className="text-xs text-muted-foreground">ใหม่วันนี้</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">+{todayMembers}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">ใหม่วันนี้</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-purple-200/50">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50">
-                <Crown className="h-5 w-5 text-purple-600" />
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="pt-6 pb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
+                <Crown className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-purple-600">{premiumMembers}</p>
-                <p className="text-xs text-muted-foreground">Premium</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">{premiumMembers}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Premium</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-950/30 dark:to-red-950/30 border-rose-200/50">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/50">
-                <Shield className="h-5 w-5 text-rose-600" />
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="pt-6 pb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400">
+                <Shield className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-rose-600">{adminCount}</p>
-                <p className="text-xs text-muted-foreground">Admin</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">{adminCount}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Admin</p>
               </div>
             </div>
           </CardContent>
@@ -233,16 +233,16 @@ export default function AdminMembers() {
       {/* Search and Filter Row */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex-1 min-w-[200px] relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             placeholder="ค้นหาผู้ใช้..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-white"
+            className="pl-10 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
           />
         </div>
         <Select value={filterRole} onValueChange={setFilterRole}>
-          <SelectTrigger className="w-[130px] bg-white">
+          <SelectTrigger className="w-[130px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
             <SelectValue placeholder="ทุก Role" />
           </SelectTrigger>
           <SelectContent>
@@ -252,7 +252,7 @@ export default function AdminMembers() {
           </SelectContent>
         </Select>
         <Select value={filterPlan} onValueChange={setFilterPlan}>
-          <SelectTrigger className="w-[130px] bg-white">
+          <SelectTrigger className="w-[130px] bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
             <SelectValue placeholder="ทุก Plan" />
           </SelectTrigger>
           <SelectContent>
@@ -265,51 +265,51 @@ export default function AdminMembers() {
       </div>
 
       {/* Members Table Card */}
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/50">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>จัดการผู้ใช้</CardTitle>
-              <CardDescription>ดู แก้ไข และจัดการผู้ใช้ทั้งหมด</CardDescription>
+              <CardTitle className="text-slate-800 dark:text-slate-100">จัดการผู้ใช้</CardTitle>
+              <CardDescription className="text-slate-500 dark:text-slate-400">ดู แก้ไข และจัดการผู้ใช้ทั้งหมด</CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="border rounded-lg overflow-hidden">
+        <CardContent className="pt-4">
+          <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead className="font-semibold">User ID</TableHead>
-                  <TableHead className="font-semibold">Name / Email</TableHead>
-                  <TableHead className="font-semibold">Role</TableHead>
-                  <TableHead className="font-semibold">Plan Type</TableHead>
-                  <TableHead className="font-semibold">Gender</TableHead>
-                  <TableHead className="font-semibold">Total XP</TableHead>
-                  <TableHead className="font-semibold">Deck</TableHead>
-                  <TableHead className="font-semibold">Last Active</TableHead>
-                  <TableHead className="font-semibold">Joined Date</TableHead>
-                  <TableHead className="font-semibold">Action</TableHead>
+                <TableRow className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900">
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">User ID</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Name / Email</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Role</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Plan Type</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Gender</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Total XP</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Deck</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Last Active</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Joined Date</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredMembers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={10} className="text-center text-slate-400 py-8">
                       ไม่พบข้อมูลสมาชิก
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredMembers.map((member) => (
                     <TableRow key={member.id} className={member.is_blocked ? 'bg-red-50/50' : ''}>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
+                      <TableCell className="font-mono text-xs text-slate-500 dark:text-slate-400">
                         {member.user_id?.substring(0, 8)}...
                         <br />
-                        <span className="text-[10px]">{member.user_id?.substring(8, 20)}</span>
+                        <span className="text-[10px] opacity-70">{member.user_id?.substring(8, 20)}</span>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-foreground">{member.full_name || '-'}</p>
-                          <p className="text-sm text-blue-600">{member.email || '-'}</p>
+                          <p className="font-medium text-slate-900 dark:text-white">{member.full_name || '-'}</p>
+                          <p className="text-sm text-blue-600 dark:text-blue-400">{member.email || '-'}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -320,17 +320,17 @@ export default function AdminMembers() {
                       <TableCell>
                         {getPlanBadge(getUserPlan(member.user_id))}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-slate-600 dark:text-slate-300">
                         {member.gender || '-'}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-slate-600 dark:text-slate-300">
                         {member.total_xp || '-'}
                       </TableCell>
                       <TableCell>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-xs"
+                          className="text-xs text-slate-600 dark:text-slate-300"
                           onClick={() => {
                             setSelectedUser({ userId: member.user_id, email: member.email || '' });
                             setShowFlashcardsDialog(true);
@@ -339,10 +339,10 @@ export default function AdminMembers() {
                           View Decks
                         </Button>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
+                      <TableCell className="text-slate-600 dark:text-slate-300 text-sm">
                         {member.last_active || '-'}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-sm text-slate-600 dark:text-slate-300">
                         {new Date(member.created_at).toLocaleDateString('th-TH', {
                           day: 'numeric',
                           month: 'short',

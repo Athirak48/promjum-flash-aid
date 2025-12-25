@@ -99,32 +99,32 @@ export const NotificationHub = () => {
                     )}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 p-0">
-                <div className="flex items-center justify-between px-4 py-3 border-b">
-                    <h4 className="font-semibold">การแจ้งเตือน</h4>
+            <PopoverContent align="end" className="w-80 p-0 bg-white border-slate-200 shadow-lg">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+                    <h4 className="font-semibold text-slate-900">การแจ้งเตือน</h4>
                     {unreadCount > 0 && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
                             {unreadCount} ใหม่
                         </Badge>
                     )}
                 </div>
                 <ScrollArea className="h-[300px]">
                     {notifications.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full p-4 text-center text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center h-full p-4 text-center text-slate-400">
                             <Bell className="h-8 w-8 mb-2 opacity-50" />
                             <p className="text-sm">ไม่มีการแจ้งเตือน</p>
                         </div>
                     ) : (
-                        <div className="divide-y">
+                        <div className="divide-y divide-slate-100">
                             {notifications.map((notif) => (
-                                <div key={notif.id} className="p-4 hover:bg-muted/50 transition-colors">
+                                <div key={notif.id} className="p-4 hover:bg-slate-50 transition-colors">
                                     <div className="flex justify-between items-start mb-1">
-                                        <h5 className="text-sm font-medium leading-none">{notif.title}</h5>
-                                        <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                                        <h5 className="text-sm font-medium leading-none text-slate-900">{notif.title}</h5>
+                                        <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
                                             {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: th })}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                    <p className="text-xs text-slate-500 line-clamp-2">
                                         {notif.message}
                                     </p>
                                 </div>

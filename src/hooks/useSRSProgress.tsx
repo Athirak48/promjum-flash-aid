@@ -8,6 +8,10 @@ import {
   getVocabBlinderQuality,
   getQuizGameQuality,
   getMatchingGameQuality,
+  getWordSearchQuality,
+  getWordScrambleQuality,
+  getNinjaSliceQuality,
+  getHoneyCombQuality,
   combineSRSScore
 } from '@/utils/srsCalculator';
 
@@ -172,29 +176,35 @@ export function useSRSProgress() {
 
   /**
    * Update SRS from Vocab Blinder game
-   * Q=2: Correct
+   * Q=3: Correct <3s
+   * Q=2: Correct 3-8s
+   * Q=1: Correct >8s
    * Q=0: Wrong
    */
   const updateFromVocabBlinder = useCallback(async (
     flashcardId: string,
     isCorrect: boolean,
+    timeSeconds: number = 5,
     isUserFlashcard: boolean = false
   ) => {
-    const qualityScore = getVocabBlinderQuality(isCorrect);
+    const qualityScore = getVocabBlinderQuality(isCorrect, timeSeconds);
     return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
   }, [updateFlashcardSRS]);
 
   /**
    * Update SRS from Quiz game
-   * Q=2: Correct
+   * Q=3: Correct <5s
+   * Q=2: Correct 5-15s
+   * Q=1: Correct >15s
    * Q=0: Wrong
    */
   const updateFromQuiz = useCallback(async (
     flashcardId: string,
     isCorrect: boolean,
+    timeSeconds: number = 10,
     isUserFlashcard: boolean = false
   ) => {
-    const qualityScore = getQuizGameQuality(isCorrect);
+    const qualityScore = getQuizGameQuality(isCorrect, timeSeconds);
     return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
   }, [updateFlashcardSRS]);
 
@@ -210,6 +220,73 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getMatchingGameQuality(isCorrect, isFirstTry);
+    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
+  }, [updateFlashcardSRS]);
+
+  /**
+   * Update SRS from Word Search game
+   * Q=3: Found <10 seconds
+   * Q=2: Found 10-30 seconds
+   * Q=1: Found >30 seconds
+   * Q=0: Not found
+   */
+  const updateFromWordSearch = useCallback(async (
+    flashcardId: string,
+    isFound: boolean,
+    timeSeconds: number,
+    isUserFlashcard: boolean = false
+  ) => {
+    const qualityScore = getWordSearchQuality(isFound, timeSeconds);
+    return updateFlashcardSRS(flashcardId, qualityScore, isFound, isUserFlashcard);
+  }, [updateFlashcardSRS]);
+
+  /**
+   * Update SRS from Word Scramble game
+   * Q=3: No hints used
+   * Q=2: 1-2 hints
+   * Q=1: >2 hints
+   * Q=0: Failed
+   */
+  const updateFromWordScramble = useCallback(async (
+    flashcardId: string,
+    isComplete: boolean,
+    hintsUsed: number,
+    isUserFlashcard: boolean = false
+  ) => {
+    const qualityScore = getWordScrambleQuality(isComplete, hintsUsed);
+    return updateFlashcardSRS(flashcardId, qualityScore, isComplete, isUserFlashcard);
+  }, [updateFlashcardSRS]);
+
+  /**
+   * Update SRS from Ninja Slice game
+   * Q=3: Correct first try
+   * Q=1: Correct but had mistakes
+   * Q=0: Wrong
+   */
+  const updateFromNinjaSlice = useCallback(async (
+    flashcardId: string,
+    isCorrect: boolean,
+    wasFirstTry: boolean,
+    isUserFlashcard: boolean = false
+  ) => {
+    const qualityScore = getNinjaSliceQuality(isCorrect, wasFirstTry);
+    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
+  }, [updateFlashcardSRS]);
+
+  /**
+   * Update SRS from HoneyComb game
+   * Q=3: First attempt
+   * Q=2: 2-3 attempts
+   * Q=1: >3 attempts
+   * Q=0: Wrong
+   */
+  const updateFromHoneyComb = useCallback(async (
+    flashcardId: string,
+    isCorrect: boolean,
+    attemptsNeeded: number,
+    isUserFlashcard: boolean = false
+  ) => {
+    const qualityScore = getHoneyCombQuality(isCorrect, attemptsNeeded);
     return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
   }, [updateFlashcardSRS]);
 
@@ -340,6 +417,10 @@ export function useSRSProgress() {
     updateFromVocabBlinder,
     updateFromQuiz,
     updateFromMatching,
+    updateFromWordSearch,
+    updateFromWordScramble,
+    updateFromNinjaSlice,
+    updateFromHoneyComb,
     getFlashcardsByDifficulty,
     getRecommendedFlashcards,
     getLowestSRSFlashcards,

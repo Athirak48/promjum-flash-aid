@@ -6,35 +6,29 @@ import {
   Tag,
   MessageSquare,
   ChevronRight,
-  ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
   CreditCard,
-  BarChart3,
   Settings,
-  Layers,
   Trophy,
-  TrendingUp
+  TrendingUp,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from '@/components/ui/use-toast';
-import { useState } from 'react';
+import { toast } from 'sonner';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics' },
-  { icon: BookOpen, label: 'Deck/Subdeck', path: '/admin/decks' },
-  { icon: Layers, label: 'Flashcards', path: '/admin/flashcards' },
-  { icon: Trophy, label: 'Vocab Challenge', path: '/admin/vocab-challenge' },
+  { icon: BookOpen, label: 'Decks & Content', path: '/admin/decks' },
   { icon: Users, label: 'Members', path: '/admin/members' },
   { icon: CreditCard, label: 'Subscriptions', path: '/admin/subscriptions' },
   { icon: Tag, label: 'Promotions', path: '/admin/promotions' },
-  { icon: MessageSquare, label: 'Notification', path: '/admin/notification' },
+  { icon: MessageSquare, label: 'Notifications', path: '/admin/notification' },
   { icon: MessageSquare, label: 'Feedback', path: '/admin/feedback' },
   { icon: Settings, label: 'Settings', path: '/admin/settings' },
 ];
@@ -42,21 +36,17 @@ const menuItems = [
 interface AdminSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  className?: string; // Added className prop
 }
 
-export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
+export default function AdminSidebar({ collapsed, onToggle, className }: AdminSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const handleLogout = async () => {
     await signOut();
-    // Always show success and redirect regardless of error
-    // "Session not found" error means user is already logged out, which is the desired state
-    toast({
-      title: "ออกจากระบบสำเร็จ",
-    });
+    toast.success("ออกจากระบบสำเร็จ");
     navigate('/auth');
   };
 
@@ -65,106 +55,90 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
     return email.substring(0, 2).toUpperCase();
   };
 
-  const toggleExpand = (label: string) => {
-    setExpandedItems(prev =>
-      prev.includes(label)
-        ? prev.filter(item => item !== label)
-        : [...prev, label]
-    );
-  };
-
   return (
     <aside className={cn(
-      "bg-card border-r border-border min-h-screen flex flex-col transition-all duration-300 relative",
-      collapsed ? "w-20" : "w-64"
+      "bg-[#0d1117] border-r border-slate-800 text-slate-300 flex flex-col transition-all duration-300 h-screen sticky top-0",
+      collapsed ? "w-20" : "w-64",
+      className
     )}>
       {/* Admin Profile */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12 bg-primary/10">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {getInitials(user?.email)}
-            </AvatarFallback>
-          </Avatar>
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Admin</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-            </div>
-          )}
-          {/* Toggle Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onToggle}
-            className="h-8 w-8 hover:bg-accent shrink-0"
-          >
-            {collapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
-            ) : (
-              <PanelLeftClose className="h-4 w-4" />
-            )}
-          </Button>
+      <div className="p-4 border-b border-slate-800 flex items-center justify-between h-16">
+        <div className={cn("flex items-center gap-3 overflow-hidden transition-all", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
+          <div className="font-bold text-white text-lg tracking-tight">PromJum Admin</div>
         </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggle}
+          className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800"
+        >
+          {collapsed ? (
+            <PanelLeftOpen className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
+        </Button>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
+      <nav className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
+        <div className="space-y-1">
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path));
             const Icon = item.icon;
 
             return (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg transition-all duration-200",
-                    "hover:bg-accent hover:text-accent-foreground group",
-                    collapsed ? "px-3 py-3 justify-center" : "px-4 py-3",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1 font-medium">{item.label}</span>
-                      {isActive && <ChevronRight className="h-4 w-4" />}
-                    </>
-                  )}
-                </Link>
-              </li>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-slate-800 text-white shadow-sm border-l-4 border-primary"
+                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200",
+                  collapsed && "justify-center px-2"
+                )}
+                title={collapsed ? item.label : undefined}
+              >
+                <Icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-slate-500 group-hover:text-slate-300")} />
+                {!collapsed && (
+                  <span className="flex-1 truncate">{item.label}</span>
+                )}
+              </Link>
             );
           })}
-        </ul>
+        </div>
       </nav>
 
-      {/* Logout Button */}
-      <div className="p-4 border-t border-border">
+      {/* User & Logout Section */}
+      <div className="p-4 border-t border-slate-800 bg-[#0d1117]">
+        {!collapsed && (
+          <div className="mb-4 flex items-center gap-3 px-2">
+            <Avatar className="h-9 w-9 border border-slate-700">
+              <AvatarFallback className="bg-slate-800 text-slate-300 text-xs">
+                {getInitials(user?.email)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">Admin</p>
+              <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+            </div>
+          </div>
+        )}
+
         <Button
           variant="ghost"
           className={cn(
-            "w-full gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
-            collapsed ? "justify-center px-3" : "justify-start"
+            "w-full gap-3 text-slate-400 hover:text-red-400 hover:bg-red-950/30 justify-start",
+            collapsed && "justify-center px-0"
           )}
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5" />
-          {!collapsed && <span className="font-medium">ออกจากระบบ</span>}
+          {!collapsed && <span>Sign Out</span>}
         </Button>
       </div>
-
-      {/* Footer */}
-      {!collapsed && (
-        <div className="p-4 border-t border-border">
-          <p className="text-xs text-muted-foreground text-center">
-            Admin Dashboard v1.0
-          </p>
-        </div>
-      )}
     </aside>
   );
 }
