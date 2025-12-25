@@ -683,7 +683,7 @@ export function FolderDetail() {
 
     // Add empty rows if less than 5
     while (rows.length < 5) {
-      rows.push({ id: Date.now() + Math.random(), front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null });
+      rows.push({ id: String(Date.now() + Math.random()), front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null });
     }
 
     setFlashcardRows(rows as any); // Cast to any because ID type mismatch (number vs string) - verify FlashcardRow interface?
@@ -930,7 +930,7 @@ export function FolderDetail() {
           }))}
           onExit={handleGameClose}
           onGameFinish={(results) => handleReviewComplete()}
-          onSelectNewGame={handleSelectNewGame}
+          onNewGame={handleSelectNewGame}
         />
       );
     }

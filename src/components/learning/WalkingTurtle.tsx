@@ -1,13 +1,14 @@
+import { motion } from 'framer-motion';
 
 // 3D Walking Turtle Component
-const WalkingTurtle = ({ isWalking }: { isWalking: boolean }) => (
+export const WalkingTurtle = ({ isWalking }: { isWalking: boolean }) => (
     <div className="relative flex items-center justify-center w-12 h-12" style={{ perspective: '100px' }}>
         <motion.div
             animate={isWalking ? {
-                rotateX: [0, 10, 0, 10, 0], // Tilt forward/back
-                rotateZ: [0, -10, 10, -10, 0], // Waddle left/right
-                y: [0, -4, 0, -4, 0], // Hop up/down
-                scale: [1, 1.1, 1, 1.1, 1] // Squish effect
+                rotateX: [0, 10, 0, 10, 0],
+                rotateZ: [0, -10, 10, -10, 0],
+                y: [0, -4, 0, -4, 0],
+                scale: [1, 1.1, 1, 1.1, 1]
             } : {
                 rotateX: 0,
                 rotateZ: 0,
@@ -33,3 +34,5 @@ const WalkingTurtle = ({ isWalking }: { isWalking: boolean }) => (
         )}
     </div>
 );
+
+export default WalkingTurtle;

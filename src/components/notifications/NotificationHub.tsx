@@ -57,14 +57,21 @@ export const NotificationHub = () => {
             const { data, error } = await supabase
                 .from('notifications')
                 .select('*')
-                .eq('status', 'sent') // Only show sent notifications
                 .order('created_at', { ascending: false })
                 .limit(10);
 
             if (error) throw error;
 
             if (data) {
-                setNotifications(data as Notification[]);
+                // Map database fields to our interface
+                setNotifications(data.map(n => ({
+                    id: n.id,
+                    title: n.title,
+                    message: n.message,
+                    type: 'in_app' as const,
+                    status: 'sent' as const,
+                    created_at: n.created_at || ''
+                })));
 
                 // Calculate unread
                 const readIds = getReadIds();

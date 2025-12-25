@@ -70,14 +70,14 @@ export function VocabSelectorDialog({
         setLoading(true);
 
         try {
-            const { data } = await supabase
-                .from('uploads')
-                .select('id, original_name')
+            const { data } = await (supabase as any)
+                .from('user_flashcard_sets')
+                .select('id, title')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
             if (data) {
-                setUploads(data.map(u => ({ id: u.id, name: u.original_name })));
+                setUploads(data.map((u: any) => ({ id: u.id, name: u.title })));
                 if (data.length > 0) {
                     setSelectedUpload(data[0].id);
                 }
