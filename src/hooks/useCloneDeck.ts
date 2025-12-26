@@ -20,21 +20,66 @@ export function useCloneDeck() {
                 return null;
             }
 
-            // Call the clone_deck function
-            const { data, error } = await supabase.rpc('clone_deck', {
-                p_source_deck_id: sourceDeckId,
-                p_user_id: user.id,
-                p_target_folder_id: targetFolderId
-            });
+            // Fetch source deck flashcards (from user_flashcard_sets and user_flashcards)
+            const { data: sourceSet, error: sourceSetError } = await supabase
+                .from('user_flashcard_sets')
+                .select('*')
+                .eq('id', sourceDeckId)
+                .single();
 
-            if (error) throw error;
+            if (sourceSetError || !sourceSet) {
+                throw new Error('ไม่พบ Deck ต้นฉบับ');
+            }
+
+            const { data: sourceCards, error: sourceCardsError } = await supabase
+                .from('user_flashcards')
+                .select('*')
+                .eq('flashcard_set_id', sourceDeckId);
+
+            if (sourceCardsError) {
+                throw sourceCardsError;
+            }
+
+            // Create new flashcard set in target folder
+            const { data: newSet, error: newSetError } = await supabase
+                .from('user_flashcard_sets')
+                .insert({
+                    user_id: user.id,
+                    folder_id: targetFolderId,
+                    title: `${sourceSet.title} (คัดลอก)`,
+                    source: 'cloned',
+                    card_count: sourceCards?.length || 0
+                })
+                .select()
+                .single();
+
+            if (newSetError) throw newSetError;
+
+            // Clone flashcards to new set
+            if (sourceCards && sourceCards.length > 0) {
+                const clonedCards = sourceCards.map(card => ({
+                    user_id: user.id,
+                    flashcard_set_id: newSet.id,
+                    front_text: card.front_text,
+                    back_text: card.back_text,
+                    part_of_speech: card.part_of_speech,
+                    front_image_url: card.front_image_url,
+                    back_image_url: card.back_image_url
+                }));
+
+                const { error: insertError } = await supabase
+                    .from('user_flashcards')
+                    .insert(clonedCards);
+
+                if (insertError) throw insertError;
+            }
 
             toast({
                 title: "โคลนสำเร็จ! 🎉",
                 description: "Deck ถูกเพิ่มเข้าโฟลเดอร์ของคุณแล้ว",
             });
 
-            return data;
+            return newSet;
         } catch (error: any) {
             console.error('Error cloning deck:', error);
             toast({

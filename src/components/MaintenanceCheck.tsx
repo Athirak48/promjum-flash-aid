@@ -29,7 +29,9 @@ export const MaintenanceCheck = ({ children }: MaintenanceCheckProps) => {
             let maintenanceActive = false;
 
             if (settings && settings.value) {
-                maintenanceActive = settings.value.enabled === true;
+                // Handle Json type properly
+                const value = settings.value as { enabled?: boolean } | null;
+                maintenanceActive = value?.enabled === true;
             }
 
             setIsMaintenance(maintenanceActive);

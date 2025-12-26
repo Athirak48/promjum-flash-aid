@@ -35,32 +35,33 @@ export function usePublicDecks(filters?: PublicDecksFilters) {
         try {
             setLoading(true);
 
+            // Query user_flashcard_sets that could be shared (source = 'shared' or similar)
+            // Since public_decks_with_creator view doesn't exist, we'll query available data
             let query = supabase
-                .from('public_decks_with_creator')
-                .select('*');
+                .from('user_flashcard_sets')
+                .select(`
+                    id,
+                    title,
+                    source,
+                    card_count,
+                    created_at,
+                    updated_at,
+                    user_id
+                `)
+                .eq('source', 'shared');
 
             // Apply search filter
             if (filters?.search) {
-                query = query.or(`name.ilike.%${filters.search}%,creator_nickname.ilike.%${filters.search}%`);
-            }
-
-            // Apply category filter
-            if (filters?.category) {
-                query = query.eq('category', filters.category);
-            }
-
-            // Apply tags filter
-            if (filters?.tags && filters.tags.length > 0) {
-                query = query.contains('tags', filters.tags);
+                query = query.ilike('title', `%${filters.search}%`);
             }
 
             // Apply sorting
             switch (filters?.sortBy) {
                 case 'popular':
-                    query = query.order('total_flashcards', { ascending: false });
+                    query = query.order('card_count', { ascending: false });
                     break;
                 case 'clones':
-                    query = query.order('clone_count', { ascending: false });
+                    query = query.order('card_count', { ascending: false });
                     break;
                 case 'recent':
                 default:
@@ -72,7 +73,25 @@ export function usePublicDecks(filters?: PublicDecksFilters) {
 
             if (error) throw error;
 
-            setDecks(data || []);
+            // Transform to PublicDeck format
+            const transformedDecks: PublicDeck[] = (data || []).map(set => ({
+                id: set.id,
+                name: set.title,
+                description: '',
+                deck_id: set.id,
+                folder_id: '',
+                creator_user_id: set.user_id,
+                clone_count: 0,
+                tags: [],
+                category: null,
+                created_at: set.created_at,
+                updated_at: set.updated_at,
+                creator_nickname: 'ผู้ใช้',
+                creator_avatar: null,
+                total_flashcards: set.card_count || 0
+            }));
+
+            setDecks(transformedDecks);
         } catch (error: any) {
             console.error('Error fetching public decks:', error);
             toast({

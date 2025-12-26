@@ -9,7 +9,7 @@ export interface UserStats {
     wordsLearned: number;
     subdecksCompleted: number;
     totalSubdecks: number;
-    progressPercentage: number; // Rough estimate or calculation
+    progressPercentage: number;
     timeSpentToday: number; // seconds
     ranking: number;
 }
@@ -41,7 +41,7 @@ export function useUserStats() {
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('total_xp, current_streak')
-                    .eq('id', user.id)
+                    .eq('user_id', user.id)
                     .single();
 
                 // 1.1 Calculate Total Words Learned (Dynamic)
@@ -70,31 +70,16 @@ export function useUserStats() {
                 const learned = totalWordsCount || 0;
                 const progress = Math.min(100, Math.round((learned / totalWordsGoal) * 100));
 
-                setStats(prev => ({
-                    ...prev,
-                    streak: profile?.current_streak || 0,
-                    totalXP: profile?.total_xp || 0,
-                    wordsLearnedToday: todayCount || 0,
-                    wordsLearned: totalWordsCount || 0,
-                    subdecksCompleted: 0, // Placeholder logic for now
-                    totalSubdecks: totalSubdecks || 0,
-                    progressPercentage: progress
-                }));
-
-                // Fetch Time Spent Today from user_activity_logs
-                const { data: timeData } = await supabase
-                    .from('user_activity_logs')
-                    .select('event_value')
+                // Fetch Time Spent Today from practice_sessions
+                const { data: sessionsToday } = await supabase
+                    .from('practice_sessions')
+                    .select('duration_minutes')
                     .eq('user_id', user.id)
-                    .eq('event_type', 'feature_usage')
-                    .in('event_action', ['complete', 'stop'])
                     .gte('created_at', today.toISOString());
 
-                const timeSpent = timeData?.reduce((acc, curr) => acc + (curr.event_value || 0), 0) || 0;
+                const timeSpent = sessionsToday?.reduce((acc, curr) => acc + ((curr.duration_minutes || 0) * 60), 0) || 0;
 
                 // Fetch Daily Ranking from user_xp (based on games_xp_today)
-                // Rank = count of users with more games_xp_today + 1
-                // First get current user's games_xp_today
                 const { data: userXp } = await supabase
                     .from('user_xp')
                     .select('games_xp_today')
@@ -110,11 +95,17 @@ export function useUserStats() {
 
                 const rank = (higherRankCount || 0) + 1;
 
-                setStats(prev => ({
-                    ...prev,
+                setStats({
+                    streak: profile?.current_streak || 0,
+                    totalXP: profile?.total_xp || 0,
+                    wordsLearnedToday: todayCount || 0,
+                    wordsLearned: totalWordsCount || 0,
+                    subdecksCompleted: 0,
+                    totalSubdecks: totalSubdecks || 0,
+                    progressPercentage: progress,
                     timeSpentToday: timeSpent,
                     ranking: rank
-                }));
+                });
             } catch (error) {
                 console.error('Error fetching user stats:', error);
             } finally {
