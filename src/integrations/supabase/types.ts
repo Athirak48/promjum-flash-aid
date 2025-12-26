@@ -567,6 +567,21 @@ export type Database = {
         }
         Relationships: []
       }
+      lobby_activities: {
+        Row: {
+          clicked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          clicked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          clicked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -1940,6 +1955,13 @@ export type Database = {
           total_xp: number
         }[]
       }
+      get_lobby_stats: {
+        Args: { p_user_id: string }
+        Returns: {
+          has_joined: boolean
+          total_count: number
+        }[]
+      }
       get_pending_friend_requests: {
         Args: { p_user_id: string }
         Returns: {
@@ -1985,6 +2007,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      join_lobby_event: {
+        Args: { p_user_id: string }
+        Returns: {
+          message: string
+          new_count: number
+          success: boolean
+        }[]
+      }
       join_room_by_code: {
         Args: { p_room_code: string; p_user_id: string }
         Returns: {
@@ -2007,6 +2037,7 @@ export type Database = {
           success: boolean
         }[]
       }
+      reset_my_progress: { Args: never; Returns: undefined }
       search_users_by_nickname: {
         Args: { p_current_user_id: string; p_search_query: string }
         Returns: {
