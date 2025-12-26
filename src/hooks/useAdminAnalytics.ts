@@ -98,7 +98,7 @@ function getDateRangeFromTimeRange(timeRange: TimeRange, customRange?: DateRange
 }
 
 // ============================================================================
-// HOOK 1: Learning Now Statistics
+// HOOK 1: Learning Now Statistics (using direct table queries)
 // ============================================================================
 
 export function useLearningNowStats(timeRange: TimeRange = '30days', customRange?: DateRange) {
@@ -114,29 +114,26 @@ export function useLearningNowStats(timeRange: TimeRange = '30days', customRange
 
                 const { startDate, endDate } = getDateRangeFromTimeRange(timeRange, customRange);
 
-                const { data: result, error: rpcError } = await supabase.rpc('get_learning_now_stats', {
-                    start_date: startDate,
-                    end_date: endDate
+                // Query lobby_activities table directly
+                const { data: lobbyData, error: lobbyError } = await supabase
+                    .from('lobby_activities')
+                    .select('user_id, clicked_at')
+                    .gte('clicked_at', startDate)
+                    .lte('clicked_at', endDate);
+
+                if (lobbyError) throw lobbyError;
+
+                const totalClicks = lobbyData?.length || 0;
+                const uniqueUserIds = new Set(lobbyData?.map(d => d.user_id) || []);
+                const uniqueUsers = uniqueUserIds.size;
+                const avgClicksPerUser = uniqueUsers > 0 ? totalClicks / uniqueUsers : 0;
+
+                setData({
+                    totalClicks,
+                    uniqueUsers,
+                    avgClicksPerUser,
+                    dailyData: []
                 });
-
-                if (rpcError) throw rpcError;
-
-                if (result && result.length > 0) {
-                    const row = result[0];
-                    setData({
-                        totalClicks: Number(row.total_clicks || 0),
-                        uniqueUsers: Number(row.unique_users || 0),
-                        avgClicksPerUser: Number(row.avg_clicks_per_user || 0),
-                        dailyData: row.daily_data || []
-                    });
-                } else {
-                    setData({
-                        totalClicks: 0,
-                        uniqueUsers: 0,
-                        avgClicksPerUser: 0,
-                        dailyData: []
-                    });
-                }
             } catch (err) {
                 console.error('Error fetching Learning Now stats:', err);
                 setError(err as Error);
@@ -152,7 +149,7 @@ export function useLearningNowStats(timeRange: TimeRange = '30days', customRange
 }
 
 // ============================================================================
-// HOOK 2: Game Usage Statistics
+// HOOK 2: Game Usage Statistics (using practice_sessions table)
 // ============================================================================
 
 export function useGameUsageStats(timeRange: TimeRange = '30days', customRange?: DateRange) {
@@ -168,26 +165,58 @@ export function useGameUsageStats(timeRange: TimeRange = '30days', customRange?:
 
                 const { startDate, endDate } = getDateRangeFromTimeRange(timeRange, customRange);
 
-                const { data: result, error: rpcError } = await supabase.rpc('get_game_usage_stats', {
-                    start_date: startDate,
-                    end_date: endDate
+                // Query practice_sessions for game data
+                const { data: sessions, error: sessionError } = await supabase
+                    .from('practice_sessions')
+                    .select('*')
+                    .gte('created_at', startDate)
+                    .lte('created_at', endDate);
+
+                if (sessionError) throw sessionError;
+
+                // Group by session_type (game name)
+                const gameMap = new Map<string, {
+                    plays: number;
+                    players: Set<string>;
+                    completions: number;
+                    totalDuration: number;
+                    lastPlayed: string;
+                }>();
+
+                (sessions || []).forEach(session => {
+                    const gameId = session.session_type || 'unknown';
+                    const existing = gameMap.get(gameId) || {
+                        plays: 0,
+                        players: new Set<string>(),
+                        completions: 0,
+                        totalDuration: 0,
+                        lastPlayed: ''
+                    };
+
+                    existing.plays += 1;
+                    existing.players.add(session.user_id);
+                    if (session.completed) existing.completions += 1;
+                    existing.totalDuration += session.duration_minutes || 0;
+                    if (session.created_at > existing.lastPlayed) {
+                        existing.lastPlayed = session.created_at;
+                    }
+
+                    gameMap.set(gameId, existing);
                 });
 
-                if (rpcError) throw rpcError;
+                const stats: GameUsageStats[] = Array.from(gameMap.entries()).map(([gameId, stat]) => ({
+                    gameName: gameId,
+                    gameId: gameId,
+                    totalPlays: stat.plays,
+                    uniquePlayers: stat.players.size,
+                    totalCompletions: stat.completions,
+                    completionRate: stat.plays > 0 ? (stat.completions / stat.plays) * 100 : 0,
+                    avgScore: 0,
+                    avgDuration: stat.plays > 0 ? (stat.totalDuration / stat.plays) * 60 : 0, // convert to seconds
+                    lastPlayed: stat.lastPlayed || null
+                }));
 
-                setData(
-                    (result || []).map((row: any) => ({
-                        gameName: row.game_name,
-                        gameId: row.game_id,
-                        totalPlays: Number(row.total_plays || 0),
-                        uniquePlayers: Number(row.unique_players || 0),
-                        totalCompletions: Number(row.total_completions || 0),
-                        completionRate: Number(row.completion_rate || 0),
-                        avgScore: Number(row.avg_score || 0),
-                        avgDuration: Number(row.avg_duration || 0),
-                        lastPlayed: row.last_played
-                    }))
-                );
+                setData(stats.sort((a, b) => b.totalPlays - a.totalPlays));
             } catch (err) {
                 console.error('Error fetching game usage stats:', err);
                 setError(err as Error);
@@ -223,23 +252,33 @@ export function useTopGamesRanking(
 
                 const { startDate, endDate } = getDateRangeFromTimeRange(timeRange, customRange);
 
-                const { data: result, error: rpcError } = await supabase.rpc('get_top_games_ranking', {
-                    start_date: startDate,
-                    end_date: endDate,
-                    limit_count: limit
+                const { data: sessions, error: sessionError } = await supabase
+                    .from('practice_sessions')
+                    .select('session_type')
+                    .gte('created_at', startDate)
+                    .lte('created_at', endDate);
+
+                if (sessionError) throw sessionError;
+
+                // Count by session_type
+                const countMap = new Map<string, number>();
+                (sessions || []).forEach(s => {
+                    const type = s.session_type || 'unknown';
+                    countMap.set(type, (countMap.get(type) || 0) + 1);
                 });
 
-                if (rpcError) throw rpcError;
+                const rankings: TopGameRanking[] = Array.from(countMap.entries())
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, limit)
+                    .map(([gameId, plays], idx) => ({
+                        rank: idx + 1,
+                        gameName: gameId,
+                        gameId: gameId,
+                        totalPlays: plays,
+                        growthPercentage: 0
+                    }));
 
-                setData(
-                    (result || []).map((row: any) => ({
-                        rank: Number(row.rank),
-                        gameName: row.game_name,
-                        gameId: row.game_id,
-                        totalPlays: Number(row.total_plays || 0),
-                        growthPercentage: Number(row.growth_percentage || 0)
-                    }))
-                );
+                setData(rankings);
             } catch (err) {
                 console.error('Error fetching top games ranking:', err);
                 setError(err as Error);
@@ -271,25 +310,53 @@ export function useAnalyticsOverview(timeRange: TimeRange = '30days', customRang
 
                 const { startDate, endDate } = getDateRangeFromTimeRange(timeRange, customRange);
 
-                const { data: result, error: rpcError } = await supabase.rpc('get_analytics_overview', {
-                    start_date: startDate,
-                    end_date: endDate
+                // Fetch practice sessions
+                const { data: sessions, error: sessionError } = await supabase
+                    .from('practice_sessions')
+                    .select('*')
+                    .gte('created_at', startDate)
+                    .lte('created_at', endDate);
+
+                if (sessionError) throw sessionError;
+
+                // Fetch lobby clicks
+                const { count: lobbyCount } = await supabase
+                    .from('lobby_activities')
+                    .select('*', { count: 'exact', head: true })
+                    .gte('clicked_at', startDate)
+                    .lte('clicked_at', endDate);
+
+                const totalSessions = sessions?.length || 0;
+                const uniqueUserIds = new Set(sessions?.map(s => s.user_id) || []);
+                const completedSessions = sessions?.filter(s => s.completed) || [];
+                
+                // Find most popular game
+                const gameCount = new Map<string, number>();
+                sessions?.forEach(s => {
+                    const type = s.session_type || 'unknown';
+                    gameCount.set(type, (gameCount.get(type) || 0) + 1);
+                });
+                
+                let mostPopular = 'N/A';
+                let maxCount = 0;
+                gameCount.forEach((count, game) => {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        mostPopular = game;
+                    }
                 });
 
-                if (rpcError) throw rpcError;
+                const totalDuration = sessions?.reduce((acc, s) => acc + (s.duration_minutes || 0), 0) || 0;
 
-                if (result && result.length > 0) {
-                    const row = result[0];
-                    setData({
-                        totalSessions: Number(row.total_sessions || 0),
-                        uniqueUsers: Number(row.unique_users || 0),
-                        totalGamesPlayed: Number(row.total_games_played || 0),
-                        totalLearningNowClicks: Number(row.total_learning_now_clicks || 0),
-                        avgSessionDuration: Number(row.avg_session_duration || 0),
-                        mostPopularGame: row.most_popular_game || 'N/A',
-                        totalGameCompletions: Number(row.total_game_completions || 0)
-                    });
-                }
+                setData({
+                    totalSessions,
+                    uniqueUsers: uniqueUserIds.size,
+                    totalGamesPlayed: totalSessions,
+                    totalLearningNowClicks: lobbyCount || 0,
+                    avgSessionDuration: totalSessions > 0 ? totalDuration / totalSessions : 0,
+                    mostPopularGame: mostPopular,
+                    totalGameCompletions: completedSessions.length
+                });
             } catch (err) {
                 console.error('Error fetching analytics overview:', err);
                 setError(err as Error);
@@ -325,22 +392,37 @@ export function useGameTimeline(
 
                 const { startDate, endDate } = getDateRangeFromTimeRange(timeRange, customRange);
 
-                const { data: result, error: rpcError } = await supabase.rpc('get_game_usage_timeline', {
-                    game_id: gameId,
-                    start_date: startDate,
-                    end_date: endDate
+                const { data: sessions, error: sessionError } = await supabase
+                    .from('practice_sessions')
+                    .select('*')
+                    .eq('session_type', gameId)
+                    .gte('created_at', startDate)
+                    .lte('created_at', endDate);
+
+                if (sessionError) throw sessionError;
+
+                // Group by date
+                const dateMap = new Map<string, { plays: number; players: Set<string>; completions: number }>();
+
+                (sessions || []).forEach(s => {
+                    const date = s.created_at?.split('T')[0] || '';
+                    const existing = dateMap.get(date) || { plays: 0, players: new Set<string>(), completions: 0 };
+                    existing.plays += 1;
+                    existing.players.add(s.user_id);
+                    if (s.completed) existing.completions += 1;
+                    dateMap.set(date, existing);
                 });
 
-                if (rpcError) throw rpcError;
-
-                setData(
-                    (result || []).map((row: any) => ({
-                        date: row.date,
-                        plays: Number(row.plays || 0),
-                        uniquePlayers: Number(row.unique_players || 0),
-                        completions: Number(row.completions || 0)
+                const timeline: GameTimeline[] = Array.from(dateMap.entries())
+                    .map(([date, stat]) => ({
+                        date,
+                        plays: stat.plays,
+                        uniquePlayers: stat.players.size,
+                        completions: stat.completions
                     }))
-                );
+                    .sort((a, b) => a.date.localeCompare(b.date));
+
+                setData(timeline);
             } catch (err) {
                 console.error('Error fetching game timeline:', err);
                 setError(err as Error);

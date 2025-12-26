@@ -66,10 +66,18 @@ export default function AdminSettings() {
 
                 if (data) {
                     data.forEach(setting => {
-                        if (setting.key === 'general') setGeneralSettings(setting.value);
-                        if (setting.key === 'features') setFeatureFlags(setting.value);
-                        if (setting.key === 'notifications') setNotificationSettings(setting.value);
-                        if (setting.key === 'maintenance') setMaintenanceMode(setting.value);
+                        if (setting.key === 'general' && setting.value && typeof setting.value === 'object') {
+                            setGeneralSettings(setting.value as typeof generalSettings);
+                        }
+                        if (setting.key === 'features' && setting.value && typeof setting.value === 'object') {
+                            setFeatureFlags(setting.value as typeof featureFlags);
+                        }
+                        if (setting.key === 'notifications' && setting.value && typeof setting.value === 'object') {
+                            setNotificationSettings(setting.value as typeof notificationSettings);
+                        }
+                        if (setting.key === 'maintenance' && setting.value && typeof setting.value === 'object') {
+                            setMaintenanceMode(setting.value as typeof maintenanceMode);
+                        }
                     });
                 }
             } catch (err) {

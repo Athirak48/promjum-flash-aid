@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 interface TrackEventParams {
@@ -13,9 +12,8 @@ interface TrackEventParams {
 
 /**
  * Custom hook for tracking user analytics
- * Usage:
- *   const { trackEvent, trackPageView, trackButtonClick } = useAnalytics();
- *   trackButtonClick('Learning Now', 'dashboard');
+ * Note: This is a lightweight client-side tracking implementation.
+ * Events are logged to console in development; can be extended to send to analytics service.
  */
 export function useAnalytics() {
     const { user } = useAuth();
@@ -29,22 +27,21 @@ export function useAnalytics() {
         metadata
     }: TrackEventParams) => {
         try {
-            // Don't track if user hasn't consented (future enhancement)
-            // if (!hasTrackingConsent()) return;
-
-            const { error } = await supabase.from('user_activity_logs').insert({
-                user_id: user?.id || null,
-                event_type: eventType,
-                event_category: eventCategory,
-                event_action: eventAction,
-                event_label: eventLabel,
-                event_value: eventValue,
-                metadata: metadata
-            });
-
-            if (error) {
-                console.error('Analytics tracking error:', error);
+            // Log analytics event (can be extended to send to analytics service)
+            if (process.env.NODE_ENV === 'development') {
+                console.log('[Analytics]', {
+                    userId: user?.id,
+                    eventType,
+                    eventCategory,
+                    eventAction,
+                    eventLabel,
+                    eventValue,
+                    metadata,
+                    timestamp: new Date().toISOString()
+                });
             }
+            
+            // Future: Send to analytics endpoint or third-party service
         } catch (error) {
             // Silently fail - don't disrupt user experience
             console.error('Analytics tracking error:', error);

@@ -472,7 +472,7 @@ export function FolderDetail() {
             part_of_speech: row.partOfSpeech || 'Noun'
           };
 
-          await supabase.from('user_flashcards').update(updatePayload).eq('id', row.id);
+          await supabase.from('user_flashcards').update(updatePayload).eq('id', String(row.id));
         }
 
         // Handle Inserts
@@ -590,7 +590,7 @@ export function FolderDetail() {
 
     // Add empty rows if less than 5
     while (rows.length < 5) {
-      rows.push({ id: String(Date.now() + Math.random()), front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null });
+      rows.push({ id: String(Date.now() + Math.random()), front: '', back: '', partOfSpeech: 'Noun' });
     }
 
     setFlashcardRows(rows as any); // Cast to any because ID type mismatch (number vs string) - verify FlashcardRow interface?
