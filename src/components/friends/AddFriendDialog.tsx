@@ -19,18 +19,17 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
     const { searchResults, searching, searchUsers, sendFriendRequest, clearSearch } = useFriends();
     const { toast } = useToast();
 
-    // Debounced search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (searchQuery.trim().length >= 2) {
-                searchUsers(searchQuery);
-            } else {
-                clearSearch();
-            }
-        }, 300);
+    const handleSearch = () => {
+        if (searchQuery.trim().length >= 2) {
+            searchUsers(searchQuery);
+        }
+    };
 
-        return () => clearTimeout(timer);
-    }, [searchQuery, searchUsers, clearSearch]);
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
 
     // Clear on close
     useEffect(() => {
@@ -110,24 +109,31 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
 
                 <div className="space-y-4">
                     {/* Search Input */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <Input
-                            placeholder="พิมพ์ชื่อเพื่อค้นหา..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-slate-400 focus:ring-purple-500"
-                        />
-                        {searching && (
-                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400 animate-spin" />
-                        )}
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <Input
+                                placeholder="พิมพ์ชื่อเพื่อค้นหา..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-slate-400 focus:ring-purple-500"
+                            />
+                        </div>
+                        <Button
+                            onClick={handleSearch}
+                            disabled={searching || searchQuery.trim().length < 2}
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                        >
+                            {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'ค้นหา'}
+                        </Button>
                     </div>
 
                     {/* Search Results */}
                     <div className="min-h-[200px] max-h-[300px] overflow-y-auto space-y-2">
-                        <AnimatePresence mode="popLayout">
-                            {searchResults.length > 0 ? (
-                                searchResults.map((user, index) => (
+                        {searchResults.length > 0 ? (
+                            <AnimatePresence mode="popLayout">
+                                {searchResults.map((user, index) => (
                                     <motion.div
                                         key={user.userId}
                                         initial={{ opacity: 0, y: 10 }}
@@ -152,21 +158,21 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
                                         </div>
                                         {getStatusButton(user)}
                                     </motion.div>
-                                ))
-                            ) : searchQuery.length >= 2 && !searching ? (
-                                <div className="flex flex-col items-center justify-center h-[150px] text-slate-400">
-                                    <Search className="w-12 h-12 mb-2 opacity-30" />
-                                    <p>ไม่พบผู้ใช้</p>
-                                    <p className="text-xs">ลองค้นหาด้วยชื่ออื่น</p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-[150px] text-slate-400">
-                                    <UserPlus className="w-12 h-12 mb-2 opacity-30" />
-                                    <p>พิมพ์ชื่อเพื่อค้นหาเพื่อน</p>
-                                    <p className="text-xs">อย่างน้อย 2 ตัวอักษร</p>
-                                </div>
-                            )}
-                        </AnimatePresence>
+                                ))}
+                            </AnimatePresence>
+                        ) : searchQuery.length >= 2 && !searching ? (
+                            <div className="flex flex-col items-center justify-center h-[150px] text-slate-400">
+                                <Search className="w-12 h-12 mb-2 opacity-30" />
+                                <p>ไม่พบผู้ใช้</p>
+                                <p className="text-xs">ลองค้นหาด้วยชื่ออื่น</p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-[150px] text-slate-400">
+                                <UserPlus className="w-12 h-12 mb-2 opacity-30" />
+                                <p>พิมพ์ชื่อและกดค้นหา</p>
+                                <p className="text-xs">เพื่อเพิ่มเพื่อน</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </DialogContent>

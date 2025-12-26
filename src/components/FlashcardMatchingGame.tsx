@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 import { useXP } from '@/hooks/useXP';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface Flashcard {
   id: string;
@@ -40,6 +41,7 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext, onSelectNew
   const navigate = useNavigate();
   const { updateFromMatching } = useSRSProgress();
   const { addGameXP } = useXP();
+  const { trackGame } = useAnalytics();
   const [cards, setCards] = useState<MatchingCard[]>([]);
   const [selectedCards, setSelectedCards] = useState<MatchingCard[]>([]);
   const [matchedPairs, setMatchedPairs] = useState<string[]>([]);
@@ -66,6 +68,10 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext, onSelectNew
 
   useEffect(() => {
     initializeGame();
+    // Track game start
+    trackGame('matching', 'start', undefined, {
+      totalCards: flashcards.length
+    });
   }, [flashcards]);
 
   const initializeGame = () => {
@@ -158,7 +164,15 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext, onSelectNew
           }, 50);
         } else {
           // Game Over (All rounds done)
-          setEndTime(Date.now());
+          const endTimeNow = Date.now();
+          setEndTime(endTimeNow);
+          // Track game completion
+          const gameDuration = Math.round((endTimeNow - startTime) / 1000);
+          trackGame('matching', 'complete', score + 10, {
+            totalCards: flashcards.length,
+            totalRounds: MAX_ROUNDS,
+            duration: gameDuration
+          });
         }
       }
     } else {

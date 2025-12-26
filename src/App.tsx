@@ -27,6 +27,7 @@ import SubDecksPage from "./pages/SubDecksPage";
 import LearningSessionPage from "./pages/LearningSessionPage";
 import LearningResultsPage from "./pages/LearningResultsPage";
 import MultiplayerPage from "./pages/MultiplayerPage";
+import LobbyPage from "./pages/LobbyPage";
 import VocabChallengePage from "./pages/VocabChallengePage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -41,6 +42,7 @@ import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import BackgroundDecorations from "./components/BackgroundDecorations";
+import FolderBundlePreviewDemo from "./pages/FolderBundlePreviewDemo";
 
 const queryClient = new QueryClient();
 
@@ -161,6 +163,22 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     />
+                    <Route
+                      path="/classroom"
+                      element={
+                        <ProtectedRoute>
+                          <><Navbar /><LobbyPage /></>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/lobby"
+                      element={
+                        <ProtectedRoute>
+                          <><Navbar /><LobbyPage /></>
+                        </ProtectedRoute>
+                      }
+                    />
                     {/* Learning Now Routes */}
                     <Route
                       path="/learning-session"
@@ -185,6 +203,16 @@ const App = () => {
                         <ProtectedRoute>
                           <MultiplayerPage />
                         </ProtectedRoute>
+                      }
+                    />
+                    {/* Demo/Preview Routes */}
+                    <Route
+                      path="/folder-bundle-preview-demo"
+                      element={
+                        <>
+                          <Navbar />
+                          <FolderBundlePreviewDemo />
+                        </>
                       }
                     />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

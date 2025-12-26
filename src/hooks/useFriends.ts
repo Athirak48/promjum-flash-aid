@@ -46,17 +46,22 @@ export function useFriends() {
             return;
         }
 
+        console.log('🔄 Loading friends for user:', user.id);
+
         try {
             const { data, error } = await supabase.rpc('get_friends_leaderboard', {
                 p_user_id: user.id
             });
 
+            console.log('📊 Friends data:', { data, error });
+
             if (error) {
-                console.error('Error loading friends:', error);
+                console.error('❌ Error loading friends:', error);
                 return;
             }
 
             if (data) {
+                console.log('✅ Friends loaded:', data.length);
                 setFriends(data.map((f: any) => ({
                     friendId: f.friend_id,
                     nickname: f.nickname || 'Unknown',
@@ -65,9 +70,11 @@ export function useFriends() {
                     level: f.level || 1,
                     rank: f.rank
                 })));
+            } else {
+                console.log('⚠️ No friends data returned');
             }
         } catch (err) {
-            console.error('Error in loadFriends:', err);
+            console.error('💥 Error in loadFriends:', err);
         } finally {
             setLoading(false);
         }
@@ -80,17 +87,22 @@ export function useFriends() {
             return;
         }
 
+        console.log('📨 Loading pending requests for:', user.id);
+
         try {
             const { data, error } = await supabase.rpc('get_pending_friend_requests', {
                 p_user_id: user.id
             });
 
+            console.log('📬 Pending requests data:', { data, error });
+
             if (error) {
-                console.error('Error loading pending requests:', error);
+                console.error('❌ Error loading pending requests:', error);
                 return;
             }
 
-            if (data) {
+            if (data && data.length > 0) {
+                console.log('✅ Found pending requests:', data.length);
                 setPendingRequests(data.map((r: any) => ({
                     requestId: r.request_id,
                     requesterId: r.requester_id,
@@ -100,49 +112,72 @@ export function useFriends() {
                     level: r.level || 1,
                     requestedAt: r.requested_at
                 })));
+            } else {
+                console.log('⚠️ No pending requests found');
+                setPendingRequests([]);
             }
         } catch (err) {
-            console.error('Error in loadPendingRequests:', err);
+            console.error('💥 Error in loadPendingRequests:', err);
         }
     }, [user]);
 
-    // Search users by nickname
+
+
+    // Search users by nickname using database function
     const searchUsers = useCallback(async (query: string) => {
         if (!user || !query.trim()) {
             setSearchResults([]);
             return;
         }
 
+        const searchQuery = query.trim();
+        console.log('🔍 Searching users with query:', searchQuery);
+
         setSearching(true);
         try {
+            // Use RPC function for proper search
             const { data, error } = await supabase.rpc('search_users_by_nickname', {
-                p_search_query: query.trim(),
+                p_search_query: searchQuery,
                 p_current_user_id: user.id
             });
 
+            console.log('📋 Search results:', { data, error });
+
             if (error) {
-                console.error('Error searching users:', error);
+                console.error('❌ Search error:', error);
+                throw error;
+            }
+
+            if (!data || data.length === 0) {
+                console.log('⚠️ No users found');
                 setSearchResults([]);
                 return;
             }
 
-            if (data) {
-                setSearchResults(data.map((u: any) => ({
-                    userId: u.user_id,
-                    nickname: u.nickname || 'Unknown',
-                    avatarUrl: u.avatar_url,
-                    totalXP: u.total_xp || 0,
-                    level: u.level || 1,
-                    friendshipStatus: u.friendship_status
-                })));
-            }
+            console.log('✅ Found users:', data.length);
+
+            // Map results to FriendProfile type
+            const results: FriendProfile[] = data.map((u: any) => ({
+                userId: u.user_id,
+                nickname: u.nickname || 'Unknown',
+                avatarUrl: u.avatar_url,
+                totalXP: u.total_xp || 0,
+                level: u.level || 1,
+                friendshipStatus: u.friendship_status || null
+            }));
+
+            console.log('✅ Final results:', results);
+            setSearchResults(results);
+
         } catch (err) {
-            console.error('Error in searchUsers:', err);
+            console.error('💥 Error in searchUsers:', err);
             setSearchResults([]);
         } finally {
             setSearching(false);
         }
     }, [user]);
+
+
 
     // Send friend request
     const sendFriendRequest = useCallback(async (addresseeId: string): Promise<{ success: boolean; message: string }> => {
@@ -151,26 +186,45 @@ export function useFriends() {
         }
 
         try {
-            const { data, error } = await supabase.rpc('send_friend_request', {
-                p_requester_id: user.id,
-                p_addressee_id: addresseeId
-            });
+            // Check if already friends or pending
+            const { data: existing, error: checkError } = await supabase
+                .from('friendships')
+                .select('id, status')
+                .or(`and(requester_id.eq.${user.id},addressee_id.eq.${addresseeId}),and(requester_id.eq.${addresseeId},addressee_id.eq.${user.id})`)
+                .maybeSingle();
+
+            if (existing) {
+                if (existing.status === 'accepted') return { success: false, message: 'เป็นเพื่อนกันอยู่แล้ว' };
+                if (existing.status === 'pending') return { success: false, message: 'รอการตอบกลับ' };
+                if (existing.status === 'blocked') return { success: false, message: 'ไม่สามารถส่งคำขอได้' };
+            }
+
+            // Direct Insert
+            console.log('📤 Inserting friendship:', { requester_id: user.id, addressee_id: addresseeId });
+
+            const { error } = await supabase
+                .from('friendships')
+                .insert({
+                    requester_id: user.id,
+                    addressee_id: addresseeId,
+                    status: 'pending'
+                });
 
             if (error) {
-                console.error('Error sending friend request:', error);
-                return { success: false, message: error.message };
+                console.error('❌ Error sending friend request:', error);
+                // Handle specific error codes
+                if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('409')) {
+                    return { success: false, message: 'ได้ส่งคำขอไปแล้ว' };
+                }
+                return { success: false, message: error.message || 'ไม่สามารถส่งคำขอได้' };
             }
 
-            const result = data?.[0];
-            if (result) {
-                // Refresh search results to update status
-                return { success: result.success, message: result.message };
-            }
+            console.log('✅ Friend request sent successfully!');
+            return { success: true, message: 'Friend request sent' };
 
-            return { success: false, message: 'Unknown error' };
-        } catch (err) {
-            console.error('Error in sendFriendRequest:', err);
-            return { success: false, message: 'Failed to send request' };
+        } catch (err: any) {
+            console.error('💥 Error in sendFriendRequest:', err);
+            return { success: false, message: err?.message || 'Failed to send request' };
         }
     }, [user]);
 

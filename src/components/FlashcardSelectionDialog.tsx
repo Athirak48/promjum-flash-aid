@@ -54,10 +54,81 @@ export function FlashcardSelectionDialog({
         }
     };
 
+    const [cardProgress, setCardProgress] = useState<Record<string, number>>({});
+
+    useEffect(() => {
+        const fetchCardProgress = async () => {
+            const { data: { user } } = await import('@/integrations/supabase/client').then(m => m.supabase.auth.getUser());
+            if (!user) return;
+
+            // Fetch progress for ALL cards in this list
+            const { data } = await import('@/integrations/supabase/client').then(m => m.supabase
+                .from('user_flashcard_progress')
+                .select('flashcard_id, srs_level')
+                .eq('user_id', user.id)
+                .in('flashcard_id', flashcards.map(f => f.id))
+            );
+
+            if (data) {
+                const progressMap: Record<string, number> = {};
+                data.forEach(item => {
+                    progressMap[item.flashcard_id] = item.srs_level;
+                });
+                setCardProgress(progressMap);
+            }
+        };
+
+        if (open && flashcards.length > 0) {
+            fetchCardProgress();
+        }
+    }, [open, flashcards]);
+
     const handleRandomSelect = (count: number) => {
         if (count <= 0) return;
-        const shuffled = [...flashcards].sort(() => Math.random() - 0.5);
-        const selected = shuffled.slice(0, Math.min(count, flashcards.length)).map(f => f.id);
+
+        // Smart Random Logic
+        const diffCards = flashcards.filter(f => f.id); // Valid check
+
+        // 1. Separate into pools
+        const poolNew: string[] = [];
+        const poolHard: string[] = []; // SRS < 3
+        const poolMastered: string[] = []; // SRS >= 3
+
+        diffCards.forEach(card => {
+            const level = cardProgress[card.id];
+            if (level === undefined) {
+                poolNew.push(card.id);
+            } else if (level < 3) {
+                poolHard.push(card.id);
+            } else {
+                poolMastered.push(card.id);
+            }
+        });
+
+        // Shuffle each pool internally
+        const shuffle = (arr: string[]) => [...arr].sort(() => Math.random() - 0.5);
+        const shuffledNew = shuffle(poolNew);
+        const shuffledHard = shuffle(poolHard);
+        const shuffledMastered = shuffle(poolMastered);
+
+        // 2. Select in order: New -> Hard -> Mastered
+        let selected: string[] = [];
+
+        // Take from New
+        if (selected.length < count) {
+            selected = [...selected, ...shuffledNew.slice(0, count - selected.length)];
+        }
+
+        // Take from Hard (if needed)
+        if (selected.length < count) {
+            selected = [...selected, ...shuffledHard.slice(0, count - selected.length)];
+        }
+
+        // Take from Mastered (if needed)
+        if (selected.length < count) {
+            selected = [...selected, ...shuffledMastered.slice(0, count - selected.length)];
+        }
+
         setSelectedIds(selected);
     };
 

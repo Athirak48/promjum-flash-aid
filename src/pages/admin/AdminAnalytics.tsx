@@ -16,7 +16,9 @@ import {
     Target,
     BarChart3,
     FileText,
-    Database
+    Database,
+    Gamepad2,
+    Trophy
 } from 'lucide-react';
 import {
     LineChart,
@@ -83,20 +85,20 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend }: any) => (
     <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardContent className="p-6">
             <div className="flex items-center justify-between space-y-0 pb-2">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
+                <p className="text-sm font-medium text-slate-700">{title}</p>
                 <div className="p-2 bg-primary/10 rounded-full">
                     <Icon className="h-4 w-4 text-primary" />
                 </div>
             </div>
             <div className="flex items-baseline justify-between mt-2">
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{value}</h3>
+                <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
                 {trend && (
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${trend > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
                         {trend > 0 ? '+' : ''}{trend}%
                     </span>
                 )}
             </div>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{subtext}</p>
+            <p className="text-xs text-slate-500 mt-1">{subtext}</p>
         </CardContent>
     </Card>
 );
@@ -105,12 +107,29 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
+import { useAdminAnalytics } from '@/hooks/useAdminAnalytics';
+
+// Game names mapping
+const GAME_NAMES: Record<string, string> = {
+    'quiz': 'Quiz Game',
+    'matching': 'Matching Game',
+    'honeycomb': 'Honey Hive',
+    'ninja': 'Ninja Slice',
+    'hangman': 'Hangman Master',
+    'listen': 'Listen & Choose',
+    'vocabBlinder': 'Vocab Blinder',
+    'wordSearch': 'Word Search',
+    'scramble': 'Word Scramble'
+};
 
 export default function AdminAnalytics() {
-    const [timeRange, setTimeRange] = useState('Dec 2024');
+    const [timeRange, setTimeRange] = useState<'today' | '7days' | '30days' | '90days'>('7days');
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [previewData, setPreviewData] = useState<{ name: string; columns: string[]; data: any[] } | null>(null);
     const [isSystemHealthOpen, setIsSystemHealthOpen] = useState(false);
+
+    // Fetch real analytics data
+    const { overview, gameStats, topGames, isLoading, error } = useAdminAnalytics(timeRange);
 
     // Mock Preview Data
     const mockPreviews: Record<string, { columns: string[]; data: any[] }> = {
@@ -202,11 +221,11 @@ export default function AdminAnalytics() {
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
                         <Database className="h-8 w-8 text-primary" />
                         Master Analytics
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-slate-500 mt-1">
                         ศุนย์กลางข้อมูลและสถิติทั้งหมดของระบบ (Data Warehouse View)
                     </p>
                 </div>
@@ -219,10 +238,10 @@ export default function AdminAnalytics() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setTimeRange('Dec 2024')}>Dec 2024</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setTimeRange('Nov 2024')}>Nov 2024</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setTimeRange('Oct 2024')}>Oct 2024</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setTimeRange('Year 2024')}>Year 2024</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTimeRange('today')}>Today</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTimeRange('7days')}>Last 7 Days</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTimeRange('30days')}>Last 30 Days</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTimeRange('90days')}>Last 90 Days</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
 
@@ -278,6 +297,7 @@ export default function AdminAnalytics() {
             <Tabs defaultValue="overview" className="space-y-4">
                 <TabsList className="bg-background border">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="minigames">🎮 Minigames</TabsTrigger>
                     <TabsTrigger value="engagement">Engagement</TabsTrigger>
                     <TabsTrigger value="vocab">Vocab Challenge</TabsTrigger>
                     <TabsTrigger value="financial">Financials</TabsTrigger>
@@ -289,7 +309,7 @@ export default function AdminAnalytics() {
                     <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
                         <Card className="col-span-1 lg:col-span-4">
                             <CardHeader>
-                                <CardTitle>User Growth & Traffic</CardTitle>
+                                <CardTitle className="text-slate-900">User Growth & Traffic</CardTitle>
                                 <CardDescription>จำนวนผู้ใช้งานและ Sessions ในช่วง 14 วันที่ผ่านมา</CardDescription>
                             </CardHeader>
                             <CardContent className="h-[300px]">
@@ -319,7 +339,7 @@ export default function AdminAnalytics() {
 
                         <Card className="col-span-1 lg:col-span-3">
                             <CardHeader>
-                                <CardTitle>Feature Usage Distribution</CardTitle>
+                                <CardTitle className="text-slate-900">Feature Usage Distribution</CardTitle>
                                 <CardDescription>สัดส่วนการใช้งานแต่ละฟีเจอร์</CardDescription>
                             </CardHeader>
                             <CardContent className="h-[300px] flex items-center justify-center">
@@ -345,6 +365,153 @@ export default function AdminAnalytics() {
                             </CardContent>
                         </Card>
                     </div>
+                </TabsContent>
+
+                {/* MINIGAMES ANALYTICS TAB */}
+                <TabsContent value="minigames" className="space-y-4">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Activity className="h-8 w-8 animate-spin text-primary" />
+                            <span className="ml-3 text-slate-600">Loading analytics...</span>
+                        </div>
+                    ) : error ? (
+                        <Card>
+                            <CardContent className="py-12">
+                                <div className="text-center text-red-600">
+                                    <p className="font-semibold">Error loading analytics</p>
+                                    <p className="text-sm">{error?.message || 'Unknown error'}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <>
+                            {/* Stats Overview */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <StatCard
+                                    title="Total Game Sessions"
+                                    value={overview?.total_game_sessions?.toLocaleString() || '0'}
+                                    subtext="All games combined"
+                                    icon={Gamepad2}
+                                />
+                                <StatCard
+                                    title="Unique Players"
+                                    value={overview?.unique_game_players?.toLocaleString() || '0'}
+                                    subtext="Players who tried games"
+                                    icon={Users}
+                                />
+                                <StatCard
+                                    title="Avg Completion"
+                                    value={`${Math.round(overview?.avg_game_completion_rate || 0)}%`}
+                                    subtext="Average completion rate"
+                                    icon={Trophy}
+                                />
+                                <StatCard
+                                    title="Success Rate"
+                                    value={`${Math.round(overview?.avg_game_success_rate || 0)}%`}
+                                    subtext="Average success rate"
+                                    icon={Target}
+                                />
+                            </div>
+
+                            {/* Top Games & Details */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {/* Bar Chart */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-slate-900">Game Popularity</CardTitle>
+                                        <CardDescription>Total sessions per game</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="h-[400px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart
+                                                data={topGames?.map(game => ({
+                                                    name: GAME_NAMES[game.game_name] || game.game_name,
+                                                    sessions: game.total_sessions
+                                                })) || []}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Bar dataKey="sessions" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Detailed Stats */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-slate-900">Game Statistics</CardTitle>
+                                        <CardDescription>Performance by game</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                            {gameStats?.map((stat, index) => (
+                                                <div key={stat.game_name} className="rounded-lg border p-3 hover:bg-slate-50 transition">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <div>
+                                                            <p className="font-semibold text-slate-900">{GAME_NAMES[stat.game_name] || stat.game_name}</p>
+                                                            <p className="text-xs text-slate-500">ID: {stat.game_name}</p>
+                                                        </div>
+                                                        <Badge variant={stat.total_sessions > 50 ? "default" : "secondary"}>
+                                                            #{index + 1}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                                        <div>
+                                                            <p className="text-slate-500">Sessions</p>
+                                                            <p className="font-bold text-slate-900">{stat.total_sessions}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-slate-500">Players</p>
+                                                            <p className="font-bold text-slate-900">{stat.unique_players}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-slate-500">Completion</p>
+                                                            <p className="font-bold text-green-600">{Math.round(stat.completion_rate)}%</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-slate-500">Avg Time</p>
+                                                            <p className="font-bold text-blue-600">{Math.round(stat.avg_duration)}s</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Distribution Pie Chart */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-slate-900">Session Distribution</CardTitle>
+                                    <CardDescription>How sessions are distributed across all 9 games</CardDescription>
+                                </CardHeader>
+                                <CardContent className="h-[350px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={gameStats?.map((stat, idx) => ({
+                                                    name: GAME_NAMES[stat.game_name] || stat.game_name,
+                                                    value: stat.total_sessions,
+                                                    fill: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316'][idx % 9]
+                                                })) || []}
+                                                cx="50%"
+                                                cy="50%"
+                                                labelLine={true}
+                                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                                outerRadius={100}
+                                                dataKey="value"
+                                            />
+                                            <Tooltip />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+                        </>
+                    )}
                 </TabsContent>
 
                 {/* ENGAGEMENT TAB */}

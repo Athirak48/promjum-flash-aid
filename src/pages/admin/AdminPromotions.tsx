@@ -172,11 +172,11 @@ export default function AdminPromotions() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
             <Tag className="h-8 w-8 text-primary" />
             Promotions
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">จัดการโค้ดส่วนลดและโปรโมชั่น</p>
+          <p className="text-slate-500 mt-1">จัดการโค้ดส่วนลดและโปรโมชั่น</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
@@ -268,8 +268,8 @@ export default function AdminPromotions() {
                 <ToggleRight className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{activePromos}</p>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Active Codes</p>
+                <p className="text-2xl font-bold text-slate-900">{activePromos}</p>
+                <p className="text-xs font-medium text-slate-500">Active Codes</p>
               </div>
             </div>
           </CardContent>
@@ -282,8 +282,8 @@ export default function AdminPromotions() {
                 <Users className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalUsage}</p>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Usage</p>
+                <p className="text-2xl font-bold text-slate-900">{totalUsage}</p>
+                <p className="text-xs font-medium text-slate-500">Total Usage</p>
               </div>
             </div>
           </CardContent>
@@ -296,8 +296,8 @@ export default function AdminPromotions() {
                 <Tag className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{promotions.length}</p>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Codes</p>
+                <p className="text-2xl font-bold text-slate-900">{promotions.length}</p>
+                <p className="text-xs font-medium text-slate-500">Total Codes</p>
               </div>
             </div>
           </CardContent>
@@ -310,8 +310,8 @@ export default function AdminPromotions() {
                 <Calendar className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{expiredPromos}</p>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Expired</p>
+                <p className="text-2xl font-bold text-slate-900">{expiredPromos}</p>
+                <p className="text-xs font-medium text-slate-500">Expired</p>
               </div>
             </div>
           </CardContent>
@@ -321,8 +321,8 @@ export default function AdminPromotions() {
       {/* Table Card */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/50">
-          <CardTitle className="text-slate-800 dark:text-slate-100">โค้ดโปรโมชั่นทั้งหมด</CardTitle>
-          <CardDescription className="text-slate-500 dark:text-slate-400">จัดการและติดตามโค้ดส่วนลด</CardDescription>
+          <CardTitle className="text-slate-800">โค้ดโปรโมชั่นทั้งหมด</CardTitle>
+          <CardDescription className="text-slate-500">จัดการและติดตามโค้ดส่วนลด</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
           <Input
@@ -336,13 +336,13 @@ export default function AdminPromotions() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">โค้ด</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ประเภท</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">มูลค่า</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ใช้แล้ว/ทั้งหมด</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">วันหมดอายุ</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">สถานะ</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">การกระทำ</TableHead>
+                  <TableHead className="font-semibold text-slate-700">โค้ด</TableHead>
+                  <TableHead className="font-semibold text-slate-700">ประเภท</TableHead>
+                  <TableHead className="font-semibold text-slate-700">มูลค่า</TableHead>
+                  <TableHead className="font-semibold text-slate-700">ใช้แล้ว/ทั้งหมด</TableHead>
+                  <TableHead className="font-semibold text-slate-700">วันหมดอายุ</TableHead>
+                  <TableHead className="font-semibold text-slate-700">สถานะ</TableHead>
+                  <TableHead className="font-semibold text-slate-700">การกระทำ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -357,26 +357,26 @@ export default function AdminPromotions() {
                     <TableRow key={promo.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-slate-900 dark:text-white">{promo.code}</span>
+                          <span className="font-mono font-bold text-slate-900">{promo.code}</span>
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-slate-400 hover:text-slate-600" onClick={() => handleCopyCode(promo.code)}>
                             <Copy className="h-3 w-3" />
                           </Button>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="gap-1 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                        <Badge variant="outline" className="gap-1 border-slate-200 dark:border-slate-700 text-slate-600">
                           {promo.discount_type === 'percentage' ? <Percent className="h-3 w-3" /> : <DollarSign className="h-3 w-3" />}
                           {promo.discount_type === 'percentage' ? '%' : '฿'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium text-slate-900 dark:text-white">
+                      <TableCell className="font-medium text-slate-900">
                         {promo.discount_value}
                         {promo.discount_type === 'percentage' ? '%' : ' ฿'}
                       </TableCell>
-                      <TableCell className="text-slate-600 dark:text-slate-300">
+                      <TableCell className="text-slate-600">
                         {promo.current_uses || 0}/{promo.max_uses || '∞'}
                       </TableCell>
-                      <TableCell className="text-slate-600 dark:text-slate-300">
+                      <TableCell className="text-slate-600">
                         {new Date(promo.valid_until).toLocaleDateString('th-TH')}
                       </TableCell>
                       <TableCell>

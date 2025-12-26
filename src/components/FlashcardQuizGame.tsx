@@ -9,6 +9,7 @@ import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 import { useXP } from '@/hooks/useXP';
 import { XPGainAnimation } from '@/components/xp/XPGainAnimation';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface Flashcard {
   id: string;
@@ -36,6 +37,7 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
   const navigate = useNavigate();
   const { updateFromQuiz } = useSRSProgress();
   const { addGameXP, lastGain, clearLastGain } = useXP();
+  const { trackGame } = useAnalytics();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -46,11 +48,13 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
   const [totalXPEarned, setTotalXPEarned] = useState(0);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [timeTakenForCurrent, setTimeTakenForCurrent] = useState(0);
+  const [gameStartTime] = useState(Date.now());
 
   // Stats
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
   const [wrongWords, setWrongWords] = useState<{ word: string; meaning: string }[]>([]);
+
 
   const handleRestart = () => {
     setCurrentIndex(0);
@@ -75,7 +79,12 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
 
   useEffect(() => {
     generateQuestions();
+    // Track game start
+    trackGame('quiz', 'start', undefined, {
+      totalCards: flashcards.length
+    });
   }, [flashcards]);
+
 
   const generateQuestions = () => {
     const newQuestions = flashcards.map(card => {
@@ -136,8 +145,17 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
       setIsAnswered(false);
     } else {
       setIsGameComplete(true);
+      // Track game completion
+      const gameDuration = Math.round((Date.now() - gameStartTime) / 1000);
+      trackGame('quiz', 'complete', score, {
+        totalCards: flashcards.length,
+        correctAnswers: correctCount + (isCorrect ? 1 : 0),
+        wrongAnswers: wrongCount + (!isCorrect ? 1 : 0),
+        duration: gameDuration
+      });
     }
   };
+
 
   if (questions.length === 0) return null;
 

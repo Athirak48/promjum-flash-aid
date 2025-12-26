@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, MoreVertical, Edit, Trash, Move, Type, Upload, ImagePlus, X } from 'lucide-react';
+import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, MoreVertical, Edit, Trash, Move, Type, Upload, X } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
@@ -294,7 +294,7 @@ function DroppableFolder({
     onClick={handleFolderClick}
   >
     <div className={`
-      relative overflow-hidden rounded-[2rem] p-5 h-full
+      relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-4 h-full
       ${isOver ? 'border-primary/50 shadow-[0_0_50px_rgba(var(--primary),0.3)] bg-white/20' : 'border-white/20 hover:border-white/40 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)]'}
       bg-white/10 backdrop-blur-md border shadow-lg
     `}>
@@ -302,18 +302,18 @@ function DroppableFolder({
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
 
       {/* Decorative Gradient Blob - Lighter */}
-      <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/10 blur-3xl rounded-full pointer-events-none group-hover:bg-white/20 transition-colors" />
+      <div className="absolute -right-10 -top-10 w-24 h-24 bg-white/10 blur-3xl rounded-full pointer-events-none group-hover:bg-white/20 transition-colors" />
 
-      <div className="flex items-center gap-4 relative z-10">
+      <div className="flex items-center gap-3 relative z-10">
         {/* Cute Folder Icon - Glass Style */}
-        <div className="w-16 h-16 rounded-[1.2rem] bg-gradient-to-br from-purple-500/20 to-blue-500/10 border border-white/10 flex items-center justify-center shadow-lg backdrop-blur-md group-hover:scale-110 transition-transform duration-500">
-          <Folder className="h-8 w-8 text-purple-300 drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]" />
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/10 border border-white/10 flex items-center justify-center shadow-lg backdrop-blur-md group-hover:scale-110 transition-transform duration-500">
+          <Folder className="h-5 w-5 sm:h-6 sm:w-6 text-purple-300 drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]" />
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-xl text-white mb-1 truncate group-hover:text-primary transition-colors">{folder.title}</h3>
-          <p className="text-sm text-white/50 flex items-center gap-2">
-            <span className="flex items-center justify-center bg-white/10 min-w-[24px] h-6 px-2 rounded-full text-xs font-bold text-white/90">
+          <h3 className="font-bold text-base sm:text-lg text-white mb-0.5 truncate group-hover:text-primary transition-colors">{folder.title}</h3>
+          <p className="text-xs sm:text-sm text-white/50 flex items-center gap-1.5">
+            <span className="flex items-center justify-center bg-white/10 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] sm:text-xs font-bold text-white/90">
               {folder.cardSetsCount}
             </span>
             <span>{t('common.sets')}</span>
@@ -648,6 +648,8 @@ export default function FlashcardsPage() {
     };
     input.click();
   };
+
+
   const handleCreateFlashcards = async () => {
     if (!newFlashcardSetTitle.trim()) {
       toast({
@@ -658,12 +660,14 @@ export default function FlashcardsPage() {
       return;
     }
 
-    const validFlashcards = flashcardRows.filter(row => row.front.trim() && row.back.trim());
+    const validFlashcards = flashcardRows.filter(row =>
+      row.front.trim() && row.back.trim()
+    );
 
     if (validFlashcards.length === 0) {
       toast({
         title: "กรุณาเพิ่มแฟลชการ์ด",
-        description: "ต้องมีแฟลชการ์ดอย่างน้อย 1 ใบที่มีข้อมูลครบ",
+        description: "ต้องมีแฟลชการ์ดอย่างน้อย 1 ใบและต้องมีข้อมูลครบถ้วน",
         variant: "destructive"
       });
       return;
@@ -697,12 +701,62 @@ export default function FlashcardsPage() {
       if (setError) throw setError;
 
       // Create individual flashcards
-      const flashcardsToInsert = validFlashcards.map(row => ({
-        user_id: user.id,
-        flashcard_set_id: flashcardSet.id,
-        front_text: row.front.trim(),
-        back_text: row.back.trim(),
-        part_of_speech: row.partOfSpeech || 'Noun'
+      // Upload images in parallel and check for errors
+      const flashcardsToInsert = await Promise.all(validFlashcards.map(async (row) => {
+        let frontImageUrl = null;
+        let backImageUrl = null;
+
+        // Upload Front Image
+        if (row.frontImage) {
+          try {
+            const fileName = `${user.id}/${Date.now()}_front_${row.id}`;
+            const { data, error } = await supabase.storage
+              .from('flashcard-images')
+              .upload(fileName, row.frontImage);
+
+            if (error) {
+              console.error('Error uploading front image:', error);
+            } else if (data) {
+              const { data: { publicUrl } } = supabase.storage
+                .from('flashcard-images')
+                .getPublicUrl(fileName);
+              frontImageUrl = publicUrl;
+            }
+          } catch (err) {
+            console.error('Exception uploading front image:', err);
+          }
+        }
+
+        // Upload Back Image
+        if (row.backImage) {
+          try {
+            const fileName = `${user.id}/${Date.now()}_back_${row.id}`;
+            const { data, error } = await supabase.storage
+              .from('flashcard-images')
+              .upload(fileName, row.backImage);
+
+            if (error) {
+              console.error('Error uploading back image:', error);
+            } else if (data) {
+              const { data: { publicUrl } } = supabase.storage
+                .from('flashcard-images')
+                .getPublicUrl(fileName);
+              backImageUrl = publicUrl;
+            }
+          } catch (err) {
+            console.error('Exception uploading back image:', err);
+          }
+        }
+
+        return {
+          user_id: user.id,
+          flashcard_set_id: flashcardSet.id,
+          front_text: row.front.trim() || ' ', // Placeholder
+          back_text: row.back.trim() || ' ',   // Placeholder
+          part_of_speech: row.partOfSpeech || 'Noun',
+          front_image_url: frontImageUrl,
+          back_image_url: backImageUrl
+        };
       }));
 
       const { error: flashcardsError } = await supabase
@@ -752,7 +806,7 @@ export default function FlashcardsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-white">
                   {t('flashcards.title')}
                 </h1>
                 <p className="text-muted-foreground mt-1">
@@ -832,25 +886,25 @@ export default function FlashcardsPage() {
                       </div>
 
                       {/* Section Header */}
-                      <div className="flex items-center justify-between border-t pt-3">
-                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200">รายการคำศัพท์</Label>
-                        <Badge variant="secondary" className="text-xs">{flashcardRows.length} ใบ</Badge>
+                      <div className="flex items-center justify-between border-t border-white/10 pt-3">
+                        <Label className="text-sm font-semibold text-white/80">รายการคำศัพท์</Label>
+                        <span className="text-xs font-bold text-white bg-white/10 border border-white/10 px-3 py-1 rounded-full">{flashcardRows.length} ใบ</span>
                       </div>
 
                       {/* Flashcard Rows - Expanded Area - With Custom Scrollbar */}
                       <div ref={flashcardScrollRef} className="space-y-3 flex-1 overflow-y-auto pr-2 min-h-[250px] max-h-[40vh] custom-scrollbar">
                         {flashcardRows.map((row, index) => (
-                          <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border-0 rounded-2xl bg-white text-slate-900 shadow-sm relative animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <div className="flex items-center justify-between w-full sm:w-auto sm:justify-center">
-                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 sm:bg-transparent">
-                                <span className="text-sm sm:text-lg font-bold text-slate-400">
-                                  {index + 1}
-                                </span>
+                          <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border border-white/20 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-300 relative overflow-hidden">
+                            {/* Decorative gradient blob */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                            <div className="flex items-center justify-between w-full sm:w-auto sm:justify-center relative z-10">
+                              <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-purple-500/30 text-white font-bold text-sm sm:text-base">
+                                {index + 1}
                               </div>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="sm:hidden text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-8 w-8 rounded-full"
+                                className="sm:hidden text-white/40 hover:text-red-400 hover:bg-red-400/10 h-8 w-8 rounded-full"
                                 onClick={() => handleRemoveFlashcardRow(row.id)}
                                 disabled={flashcardRows.length === 1}
                               >
@@ -859,87 +913,41 @@ export default function FlashcardsPage() {
                             </div>
 
                             <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-4 w-full items-center">
-                              {/* Front Side */}
-                              <div className="relative group/input">
-                                <Input
-                                  value={row.front}
-                                  onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
-                                  placeholder="คำศัพท์ (ด้านหน้า)"
-                                  className="pr-10 h-10 sm:h-11 rounded-xl bg-slate-100 border-transparent text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all font-medium text-sm sm:text-base"
-                                />
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                                  {row.frontImage && (
-                                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden border border-border">
-                                      <img
-                                        src={URL.createObjectURL(row.frontImage)}
-                                        alt="Front"
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                  )}
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${row.frontImage ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
-                                    onClick={() => handleImageUpload(row.id, 'front')}
-                                    title={row.frontImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
-                                  >
-                                    <ImagePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                  </Button>
-                                </div>
-                              </div>
+                              <Input
+                                value={row.front}
+                                onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
+                                placeholder="คำศัพท์ (ด้านหน้า)"
+                                className="bg-white/10 border-white/10 text-white placeholder:text-white/40 focus:bg-white/20 focus:border-purple-400/50 focus:ring-2 focus:ring-purple-500/20 h-11 rounded-xl transition-all"
+                              />
 
                               {/* Part of Speech Dropdown */}
                               <Select
                                 value={row.partOfSpeech}
                                 onValueChange={(value) => handleFlashcardTextChange(row.id, 'partOfSpeech', value)}
                               >
-                                <SelectTrigger className="w-full md:w-[160px] h-11 sm:h-12 rounded-full bg-purple-100 border-2 border-purple-200 text-purple-700 hover:bg-purple-200 focus:ring-purple-500 font-medium px-4 shadow-sm">
-                                  <SelectValue placeholder="Part of Speech" />
+                                <SelectTrigger className="w-full md:w-[140px] h-11 rounded-xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/20 text-pink-100 focus:ring-pink-500/30 hover:bg-pink-500/20 transition-all">
+                                  <SelectValue placeholder="Type" />
                                 </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Noun">Noun</SelectItem>
-                                  <SelectItem value="Verb">Verb</SelectItem>
-                                  <SelectItem value="Adjective">Adjective</SelectItem>
-                                  <SelectItem value="Adverb">Adverb</SelectItem>
-                                  <SelectItem value="Preposition">Preposition</SelectItem>
-                                  <SelectItem value="Conjunction">Conjunction</SelectItem>
-                                  <SelectItem value="Pronoun">Pronoun</SelectItem>
-                                  <SelectItem value="Interjection">Interjection</SelectItem>
-                                  <SelectItem value="Article">Article</SelectItem>
-                                  <SelectItem value="Phrase">Phrase</SelectItem>
+                                <SelectContent className="bg-slate-900 border-white/10 text-white">
+                                  <SelectItem value="Noun" className="focus:bg-white/10">Noun</SelectItem>
+                                  <SelectItem value="Verb" className="focus:bg-white/10">Verb</SelectItem>
+                                  <SelectItem value="Adjective" className="focus:bg-white/10">Adjective</SelectItem>
+                                  <SelectItem value="Adverb" className="focus:bg-white/10">Adverb</SelectItem>
+                                  <SelectItem value="Preposition" className="focus:bg-white/10">Preposition</SelectItem>
+                                  <SelectItem value="Conjunction" className="focus:bg-white/10">Conjunction</SelectItem>
+                                  <SelectItem value="Pronoun" className="focus:bg-white/10">Pronoun</SelectItem>
+                                  <SelectItem value="Interjection" className="focus:bg-white/10">Interjection</SelectItem>
+                                  <SelectItem value="Article" className="focus:bg-white/10">Article</SelectItem>
+                                  <SelectItem value="Phrase" className="focus:bg-white/10">Phrase</SelectItem>
                                 </SelectContent>
                               </Select>
 
-                              {/* Back Side */}
-                              <div className="relative group/input">
-                                <Input
-                                  value={row.back}
-                                  onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
-                                  placeholder="ความหมาย (ด้านหลัง)"
-                                  className="pr-10 h-10 sm:h-11 rounded-xl bg-slate-100 border-transparent text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all font-medium text-sm sm:text-base"
-                                />
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                                  {row.backImage && (
-                                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden border border-border">
-                                      <img
-                                        src={URL.createObjectURL(row.backImage)}
-                                        alt="Back"
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                  )}
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${row.backImage ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
-                                    onClick={() => handleImageUpload(row.id, 'back')}
-                                    title={row.backImage ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
-                                  >
-                                    <ImagePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                  </Button>
-                                </div>
-                              </div>
+                              <Input
+                                value={row.back}
+                                onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
+                                placeholder="ความหมาย (ด้านหลัง)"
+                                className="bg-white/10 border-white/10 text-white placeholder:text-white/40 focus:bg-white/20 focus:border-pink-400/50 focus:ring-2 focus:ring-pink-500/20 h-11 rounded-xl transition-all"
+                              />
                             </div>
 
                             <Button

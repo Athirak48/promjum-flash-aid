@@ -130,7 +130,7 @@ export function GameSessionContainer({ availableDecks, selectedGame, onExit }: G
                 .from('flashcards') as any)
                 .select('*')
                 .in('subdeck_id', subdeckIds)
-                .limit(50);
+                .limit(50); // Limit for performance in preview
 
             if (cardsError) throw cardsError;
 

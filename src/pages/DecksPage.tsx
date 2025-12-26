@@ -1,102 +1,114 @@
-import { useDecks } from '@/hooks/useDecks';
-import { DeckCard } from '@/components/DeckCard';
+import { usePublicDecks, PublicDeck } from '@/hooks/usePublicDecks';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, BookOpen, MessageSquare, Sparkles, TrendingUp, Star, Zap, GraduationCap, Users, PlayCircle, Clock, Rocket, Crown } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Users, TrendingUp, Clock, Copy, BookOpen, Eye, Folder, Globe } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useCloneDeck } from '@/hooks/useCloneDeck';
+import { useToast } from '@/hooks/use-toast';
+import { FolderBundlePreview } from '@/components/FolderBundlePreview';
 
 export default function DecksPage() {
-  const { decks, loading } = useDecks();
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [sortBy, setSortBy] = useState<'popular' | 'recent' | 'clones'>('recent');
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const { decks, loading } = usePublicDecks({ search: searchTerm, sortBy, category: selectedCategory });
+  const { cloneDeck, loading: cloning } = useCloneDeck();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  // "view" param now controls "vocab" vs "course" tab
-  // Default to 'vocab'
-  const activeTab = searchParams.get('type') || 'vocab';
+  // Preview dialog states
+  const [showPreview, setShowPreview] = useState(false);
+  const [selectedBundle, setSelectedBundle] = useState<any | null>(null);
 
-  const handleTabChange = (value: string) => {
-    setSearchParams({ type: value });
-  };
+  const categories = [
+    { id: undefined, label: 'ทั้งหมด', emoji: '🌍' },
+    { id: 'English', label: 'อังกฤษ', emoji: '🇬🇧' },
+    { id: 'Chinese', label: 'จีน', emoji: '🇨🇳' },
+    { id: 'Japanese', label: 'ญี่ปุ่น', emoji: '🇯🇵' },
+    { id: 'Korean', label: 'เกาหลี', emoji: '🇰🇷' },
+    { id: 'French', label: 'ฝรั่งเศส', emoji: '🇫🇷' },
+    { id: 'German', label: 'เยอรมัน', emoji: '🇩🇪' },
+    { id: 'Spanish', label: 'สเปน', emoji: '🇪🇸' },
+    { id: 'Other', label: 'อื่นๆ', emoji: '🗣️' },
+  ];
 
-  // Mock Data for Courses - Enhanced Colors
-  const mockCourses = [
+  // Mock folder bundle data - TEMPORARY FOR DEMO
+  const mockFolderBundles = [
     {
-      id: 1,
-      title: "IELTS 7.0+ Intensive",
-      instructor: "Kru Whan",
-      rating: 4.9,
-      students: 12500,
-      price: "฿3,990",
-      image: "👩‍🏫",
-      color: "from-blue-600 to-cyan-400",
-      glow: "shadow-cyan-500/50",
-      duration: "20 Hrs",
-      level: "Advanced",
-      tags: ["Exam", "Speaking"]
-    },
-    {
-      id: 2,
-      title: "Business English Pro",
-      instructor: "Teacher Greg",
-      rating: 4.8,
-      students: 8400,
-      price: "฿2,590",
-      image: "👨‍💼",
-      color: "from-slate-600 to-indigo-400",
-      glow: "shadow-indigo-500/50",
-      duration: "15 Hrs",
-      level: "Intermediate",
-      tags: ["Work", "Email"]
-    },
-    {
-      id: 3,
-      title: "Korean for Beginners",
-      instructor: "Oppa Kim",
-      rating: 5.0,
-      students: 5600,
-      price: "฿1,990",
-      image: "🇰🇷",
-      color: "from-rose-500 to-pink-400",
-      glow: "shadow-pink-500/50",
-      duration: "10 Hrs",
-      level: "Beginner",
-      tags: ["Lifestyle", "Travel"]
-    },
-    {
-      id: 4,
-      title: "TOEIC 990 Speedrun",
-      instructor: "Dr. English",
-      rating: 4.7,
-      students: 22000,
-      price: "฿1,290",
-      image: "⚡",
-      color: "from-amber-400 to-orange-500",
-      glow: "shadow-orange-500/50",
-      duration: "8 Hrs",
-      level: "All Levels",
-      tags: ["Trick", "Fast"]
+      id: 'mock-1',
+      name: 'Daily Life English 🌅',
+      description: 'คำศัพท์ภาษาอังกฤษใช้ในชีวิตประจำวัน - ครบทุกสถานการณ์',
+      creator_nickname: 'Teacher Som',
+      creator_avatar: null,
+      category: 'English',
+      tags: ['daily-life', 'basic', 'conversation'],
+      clone_count: 234,
+      total_sets: 3,
+      total_cards: 45,
+      created_at: '2025-01-15',
+      flashcards: [
+        // Morning Routine - 15 cards
+        { id: '1', front: 'wake up', back: 'ตื่นนอน', setName: '🌅 Morning Routine' },
+        { id: '2', front: 'brush teeth', back: 'แปรงฟัน', setName: '🌅 Morning Routine' },
+        { id: '3', front: 'take a shower', back: 'อาบน้ำ', setName: '🌅 Morning Routine' },
+        { id: '4', front: 'get dressed', back: 'แต่งตัว', setName: '🌅 Morning Routine' },
+        { id: '5', front: 'eat breakfast', back: 'กินอาหารเช้า', setName: '🌅 Morning Routine' },
+        { id: '6', front: 'make coffee', back: 'ชงกาแฟ', setName: '🌅 Morning Routine' },
+        { id: '7', front: 'check phone', back: 'เช็คโทรศัพท์', setName: '🌅 Morning Routine' },
+        { id: '8', front: 'read news', back: 'อ่านข่าว', setName: '🌅 Morning Routine' },
+        { id: '9', front: 'pack bag', back: 'จัดกระเป๋า', setName: '🌅 Morning Routine' },
+        { id: '10', front: 'leave home', back: 'ออกจากบ้าน', setName: '🌅 Morning Routine' },
+        { id: '11', front: 'lock door', back: 'ล็อคประตู', setName: '🌅 Morning Routine' },
+        { id: '12', front: 'catch bus', back: 'จับรถบัส', setName: '🌅 Morning Routine' },
+        { id: '13', front: 'arrive at work', back: 'ถึงที่ทำงาน', setName: '🌅 Morning Routine' },
+        { id: '14', front: 'greet colleagues', back: 'ทักทายเพื่อนร่วมงาน', setName: '🌅 Morning Routine' },
+        { id: '15', front: 'start working', back: 'เริ่มทำงาน', setName: '🌅 Morning Routine' },
+
+        // At Work - 15 cards
+        { id: '16', front: 'attend meeting', back: 'เข้าประชุม', setName: '💼 At Work' },
+        { id: '17', front: 'send email', back: 'ส่งอีเมล', setName: '💼 At Work' },
+        { id: '18', front: 'make phone call', back: 'โทรศัพท์', setName: '💼 At Work' },
+        { id: '19', front: 'take notes', back: 'จดบันทึก', setName: '💼 At Work' },
+        { id: '20', front: 'use computer', back: 'ใช้คอมพิวเตอร์', setName: '💼 At Work' },
+        { id: '21', front: 'print document', back: 'ปริ้นเอกสาร', setName: '💼 At Work' },
+        { id: '22', front: 'have lunch', back: 'กินข้าวเที่ยง', setName: '💼 At Work' },
+        { id: '23', front: 'take break', back: 'พักผ่อน', setName: '💼 At Work' },
+        { id: '24', front: 'drink water', back: 'ดื่มน้ำ', setName: '💼 At Work' },
+        { id: '25', front: 'work overtime', back: 'ทำงานล่วงเวลา', setName: '💼 At Work' },
+        { id: '26', front: 'finish task', back: 'ทำงานเสร็จ', setName: '💼 At Work' },
+        { id: '27', front: 'submit report', back: 'ส่งรายงาน', setName: '💼 At Work' },
+        { id: '28', front: 'ask question', back: 'ถามคำถาม', setName: '💼 At Work' },
+        { id: '29', front: 'give presentation', back: 'นำเสนอ', setName: '💼 At Work' },
+        { id: '30', front: 'leave office', back: 'ออกจากออฟฟิศ', setName: '💼 At Work' },
+
+        // Evening & Night - 15 cards
+        { id: '31', front: 'go home', back: 'กลับบ้าน', setName: '🌙 Evening & Night' },
+        { id: '32', front: 'cook dinner', back: 'ทำอาหารเย็น', setName: '🌙 Evening & Night' },
+        { id: '33', front: 'eat dinner', back: 'กินอาหารเย็น', setName: '🌙 Evening & Night' },
+        { id: '34', front: 'wash dishes', back: 'ล้างจาน', setName: '🌙 Evening & Night' },
+        { id: '35', front: 'watch TV', back: 'ดูทีวี', setName: '🌙 Evening & Night' },
+        { id: '36', front: 'play games', back: 'เล่นเกม', setName: '🌙 Evening & Night' },
+        { id: '37', front: 'read book', back: 'อ่านหนังสือ', setName: '🌙 Evening & Night' },
+        { id: '38', front: 'listen to music', back: 'ฟังเพลง', setName: '🌙 Evening & Night' },
+        { id: '39', front: 'take a bath', back: 'อาบน้ำ', setName: '🌙 Evening & Night' },
+        { id: '40', front: 'brush teeth', back: 'แปรงฟัน', setName: '🌙 Evening & Night' },
+        { id: '41', front: 'set alarm', back: 'ตั้งนาฬิกาปลุก', setName: '🌙 Evening & Night' },
+        { id: '42', front: 'go to bed', back: 'เข้านอน', setName: '🌙 Evening & Night' },
+        { id: '43', front: 'turn off lights', back: 'ปิดไฟ', setName: '🌙 Evening & Night' },
+        { id: '44', front: 'sleep', back: 'นอนหลับ', setName: '🌙 Evening & Night' },
+        { id: '45', front: 'good night', back: 'ราตรีสวัสดิ์', setName: '🌙 Evening & Night' },
+      ]
     }
   ];
 
-  const filteredDecks = useMemo(() => {
-    let result = decks;
-
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      result = result.filter(deck =>
-        deck.name.toLowerCase().includes(search) ||
-        deck.name_en.toLowerCase().includes(search) ||
-        deck.description.toLowerCase().includes(search)
-      );
-    }
-
-    return result;
-  }, [decks, searchTerm]);
+  const handleSort = (newSort: 'popular' | 'recent' | 'clones') => {
+    setSortBy(newSort);
+  };
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-hidden font-prompt">
@@ -104,226 +116,339 @@ export default function DecksPage() {
       <main className="container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-7xl mx-auto">
 
-          {/* Header Section - Space Glass Style */}
+          {/* Header Section */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative mb-16 text-center"
+            className="relative mb-12 text-center"
           >
             <div className="inline-block relative">
               <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full pointer-events-none" />
               <h1 className="relative text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/50 drop-shadow-[0_0_30px_rgba(255,255,255,0.5)] mb-4 font-cute">
-                Shop
-                <span className="absolute -top-4 -right-12 text-4xl animate-bounce delay-700">🛒</span>
+                Community Decks
+                <span className="absolute -top-4 -right-12 text-4xl animate-bounce delay-700">🌍</span>
               </h1>
             </div>
             <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto font-light leading-relaxed">
-              อัพเกรดสกิลภาษาของคุณด้วย <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 font-bold">คอร์สระดับเทพ</span> และ <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-bold">คลังศัพท์คุณภาพ</span>
+              ค้นพบและโคลน <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 font-bold">Deck คุณภาพ</span> จากชุมชน
             </p>
           </motion.div>
 
-          {/* Tabs Control - Holographic Pill */}
-          <div className="flex justify-center mb-16 sticky top-20 z-40">
-            <div className="glass-card p-1.5 rounded-full flex gap-1 shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/20 backdrop-blur-xl bg-black/40">
-              <button
-                onClick={() => handleTabChange('vocab')}
-                className={`relative px-8 py-3 rounded-full text-lg font-bold transition-all duration-300 flex items-center gap-2 overflow-hidden ${activeTab === 'vocab'
-                  ? 'text-white shadow-[0_0_20px_rgba(168,85,247,0.5)]'
-                  : 'text-white/40 hover:text-white/80 hover:bg-white/5'
-                  }`}
-              >
-                {activeTab === 'vocab' && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full -z-10"
-                  />
-                )}
-                <BookOpen className="w-5 h-5 relative z-10" />
-                <span className="relative z-10">Vocab Deck</span>
-              </button>
+          {/* Search and Filters */}
+          <div className="flex flex-col md:flex-row gap-3 mb-8 items-stretch md:items-center">
+            {/* Search Bar */}
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <input
+                type="text"
+                placeholder="ค้นหา Deck หรือชื่อผู้สร้าง..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 h-10 rounded-full bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 backdrop-blur-xl transition-all"
+              />
+            </div>
 
-              <button
-                onClick={() => handleTabChange('course')}
-                className={`relative px-8 py-3 rounded-full text-lg font-bold transition-all duration-300 flex items-center gap-2 overflow-hidden ${activeTab === 'course'
-                  ? 'text-white shadow-[0_0_20px_rgba(236,72,153,0.5)]'
-                  : 'text-white/40 hover:text-white/80 hover:bg-white/5'
+            {/* Sort Buttons + Dropdown */}
+            <div className="flex gap-1.5 md:gap-2 items-center justify-between md:justify-end flex-shrink-0">
+              <Button
+                variant={sortBy === 'recent' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleSort('recent')}
+                className={`rounded-full flex-1 md:flex-none px-2 md:px-3 h-9 md:h-10 text-[11px] md:text-xs ${sortBy === 'recent'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                  : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'
                   }`}
               >
-                {activeTab === 'course' && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-gradient-to-r from-pink-600 to-rose-600 rounded-full -z-10"
-                  />
-                )}
-                <GraduationCap className="w-5 h-5 relative z-10" />
-                <span className="relative z-10">Tutor Course</span>
-              </button>
+                <Clock className="w-3 h-3 md:w-3.5 md:h-3.5 mr-0.5 md:mr-1" />
+                ล่าสุด
+              </Button>
+              <Button
+                variant={sortBy === 'popular' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleSort('popular')}
+                className={`rounded-full flex-1 md:flex-none px-2 md:px-3 h-9 md:h-10 text-[11px] md:text-xs ${sortBy === 'popular'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                  : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'
+                  }`}
+              >
+                <TrendingUp className="w-3 h-3 md:w-3.5 md:h-3.5 mr-0.5 md:mr-1" />
+                ยอดนิยม
+              </Button>
+
+              {/* Language Dropdown */}
+              <Select value={selectedCategory || 'all'} onValueChange={(value) => setSelectedCategory(value === 'all' ? undefined : value)}>
+                <SelectTrigger className="w-[80px] md:w-[120px] h-9 md:h-10 rounded-full bg-white/5 border-white/20 text-white text-[11px] md:text-xs focus:ring-purple-500/50 px-2">
+                  <Globe className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1 text-purple-400" />
+                  <SelectValue placeholder="ภาษา" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-white/10 text-white">
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id || 'all'} value={cat.id || 'all'} className="focus:bg-white/10">
+                      <span className="flex items-center gap-2">
+                        <span>{cat.emoji}</span>
+                        <span>{cat.label}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Content Area */}
-          <AnimatePresence mode="wait">
-            {activeTab === 'vocab' ? (
-              <motion.div
-                key="vocab"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-              >
-                {/* Vocab Section Header */}
-                <div className="flex items-center justify-between mb-8 px-2">
-                  <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">📚</span>
-                    คลังคำศัพท์ยอดฮิต
-                  </h2>
-                  <div className="flex gap-2">
-                    {/* Add filters if needed */}
-                  </div>
+          {/* Content */}
+          {loading ? (
+            // Loading skeleton
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-[400px] rounded-[2rem] bg-white/5" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-20">
+              {/* Mock Folder Bundles - Show when category matches */}
+              {mockFolderBundles
+                .filter(bundle => !selectedCategory || bundle.category === selectedCategory)
+                .map((bundle, index) => (
+                  <FolderBundleCard
+                    key={bundle.id}
+                    bundle={bundle}
+                    index={index}
+                    onPreview={() => {
+                      setSelectedBundle(bundle);
+                      setShowPreview(true);
+                    }}
+                    onClone={() => {
+                      setSelectedBundle(bundle);
+                      setShowPreview(true);
+                    }}
+                  />
+                ))}
+
+              {/* Real Public Decks */}
+              {decks.map((deck, index) => (
+                <PublicDeckCard
+                  key={deck.id}
+                  deck={deck}
+                  index={index + mockFolderBundles.length}
+                  onClone={() => {
+                    toast({
+                      title: "คุณสมบัตินี้กำลังมา! 🚀",
+                      description: "เร็วๆ นี้คุณจะสามารถโคลน Deck ได้"
+                    });
+                  }}
+                />
+              ))}
+
+              {/* Empty state - only show when no mock and no real decks */}
+              {mockFolderBundles.filter(b => !selectedCategory || b.category === selectedCategory).length === 0 && decks.length === 0 && (
+                <div className="col-span-full glass-card rounded-[2rem] p-16 text-center text-white/50 border border-white/10">
+                  <p className="text-2xl font-bold mb-2">ไม่พบ Deck</p>
+                  <p>ลองค้นหาด้วยคีย์เวิร์ดอื่น หรือเปลี่ยนการเรียงลำดับดูนะ 🔍</p>
                 </div>
+              )}
+            </div>
+          )}
 
-                {loading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <Skeleton key={i} className="h-[450px] rounded-[2rem] bg-white/5" />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
-                    {filteredDecks.map((deck, index) => (
-                      <motion.div
-                        key={deck.id}
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <DeckCard deck={deck} />
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-                {!loading && filteredDecks.length === 0 && (
-                  <div className="glass-card rounded-[2rem] p-16 text-center text-white/50 border border-white/10">
-                    <p className="text-2xl font-bold mb-2">ยังไม่มี Deck ในตอนนี้</p>
-                    <p>ลองค้นหาคำใหม่ หรือเปลี่ยนหมวดหมู่ดูนะ Check back later! 🚀</p>
-                  </div>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="course"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-              >
-                {/* Course Section Header */}
-                <div className="flex items-center justify-between mb-8 px-2">
-                  <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-pink-500/20 text-pink-300 border border-pink-500/30">🎓</span>
-                    คอร์สเรียนแนะนำ
-                  </h2>
-                  <div className="bg-white/5 px-4 py-1 rounded-full text-xs font-medium text-white/50 border border-white/10">
-                    คัดมาแล้วเน้นๆ 🔥
-                  </div>
-                </div>
-
-                {/* Course Grid - Premium Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-20">
-                  {mockCourses.map((course, index) => (
-                    <motion.div
-                      key={course.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="group relative"
-                    >
-                      {/* Glow Behind */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${course.color} blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-[2.5rem]`} />
-
-                      <div className="glass-card h-full rounded-[2.5rem] p-5 hover:translate-y-[-5px] transition-all duration-500 border border-white/10 hover:border-white/30 bg-black/40 group-hover:bg-black/60 overflow-visible relative flex flex-col">
-
-                        {/* Featured Image Area */}
-                        <div className={`h-44 w-full rounded-[2rem] bg-gradient-to-br ${course.color} flex flex-col items-center justify-center relative overflow-hidden shadow-lg group-hover:shadow-[0_10px_30px_rgba(0,0,0,0.3)] transition-all mb-5`}>
-                          {/* Pattern overlay */}
-                          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-
-                          <span className="text-7xl drop-shadow-2xl transform group-hover:scale-110 grooup-hover:rotate-3 transition-transform duration-500 ease-out z-10">
-                            {course.image}
-                          </span>
-
-                          {/* Level Badge */}
-                          <div className="absolute top-3 left-3 bg-black/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white border border-white/20 flex items-center gap-1">
-                            <Crown className="w-3 h-3 text-yellow-400" />
-                            {course.level}
-                          </div>
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 flex flex-col">
-                          {/* Tags */}
-                          <div className="flex gap-2 mb-3">
-                            {course.tags.map(tag => (
-                              <span key={tag} className="text-[10px] uppercase tracking-wider font-bold px-2 py-1 bg-white/5 rounded-md text-white/60 border border-white/5">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-
-                          <h3 className="text-xl font-bold text-white leading-snug mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/70 transition-colors">
-                            {course.title}
-                          </h3>
-
-                          <div className="flex items-center gap-2 mb-4">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border border-white/20 flex items-center justify-center text-xs">
-                              {course.instructor.charAt(0)}
-                            </div>
-                            <span className="text-sm text-white/60 font-medium">{course.instructor}</span>
-                          </div>
-
-                          {/* Stats Grid */}
-                          <div className="grid grid-cols-3 gap-2 py-3 border-t border-white/5 border-b mb-4">
-                            <div className="text-center">
-                              <div className="text-yellow-400 font-bold text-sm flex items-center justify-center gap-0.5">
-                                <Star className="w-3 h-3 fill-yellow-400" /> {course.rating}
-                              </div>
-                              <div className="text-[10px] text-white/30 lowercase">Rating</div>
-                            </div>
-                            <div className="text-center border-l border-white/5">
-                              <div className="text-cyan-400 font-bold text-sm">
-                                {(course.students / 1000).toFixed(1)}k
-                              </div>
-                              <div className="text-[10px] text-white/30 lowercase">Students</div>
-                            </div>
-                            <div className="text-center border-l border-white/5">
-                              <div className="text-pink-400 font-bold text-sm">
-                                {course.duration}
-                              </div>
-                              <div className="text-[10px] text-white/30 lowercase">Duration</div>
-                            </div>
-                          </div>
-
-                          <div className="mt-auto flex items-center justify-between gap-3">
-                            <div className="text-2xl font-black text-white tracking-tight">
-                              {course.price}
-                            </div>
-                            <Button className="rounded-xl bg-white/10 hover:bg-white text-white hover:text-black border border-white/10 transition-all flex-1 font-bold group/btn">
-                              ตัวอย่าง
-                              <PlayCircle className="w-4 h-4 ml-2 group-hover/btn:scale-110 transition-transform" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Preview Dialog */}
+          {selectedBundle && (
+            <FolderBundlePreview
+              open={showPreview}
+              onOpenChange={setShowPreview}
+              folderName={selectedBundle.name}
+              flashcards={selectedBundle.flashcards}
+            />
+          )}
 
         </div>
       </main>
     </div>
+  );
+}
+
+// Folder Bundle Card Component
+function FolderBundleCard({
+  bundle,
+  index,
+  onPreview,
+  onClone
+}: {
+  bundle: any;
+  index: number;
+  onPreview: () => void;
+  onClone: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className="glass-card group rounded-xl sm:rounded-[2rem] border border-white/10 hover:border-white/30 hover:shadow-[0_0_40px_rgba(168,85,247,0.3)] transition-all duration-300 relative overflow-visible bg-black/40 p-3 sm:p-6"
+    >
+      {/* Glow Effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl sm:rounded-[2rem] pointer-events-none" />
+
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-2 sm:mb-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/20 flex-shrink-0">
+              <Folder className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm sm:text-lg font-bold text-white group-hover:text-primary transition-colors truncate">
+                {bundle.name}
+              </h3>
+              <div className="flex items-center gap-1">
+                <Avatar className="w-3 h-3 sm:w-4 sm:h-4 border border-white/20">
+                  <AvatarImage src={bundle.creator_avatar || undefined} />
+                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-[8px] sm:text-[10px]">
+                    {bundle.creator_nickname?.charAt(0)?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-[10px] sm:text-xs text-white/60 truncate">{bundle.creator_nickname}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Description */}
+        <p className="text-[11px] sm:text-sm text-white/70 line-clamp-2 mb-2 sm:mb-4">
+          {bundle.description}
+        </p>
+
+        {/* Stats - Compact */}
+        <div className="grid grid-cols-3 gap-1 sm:gap-2 mb-2 sm:mb-4">
+          <div className="bg-white/5 rounded-lg p-1.5 sm:p-2 border border-white/10 text-center">
+            <p className="text-[8px] sm:text-[10px] text-white/50">ชุด</p>
+            <p className="text-xs sm:text-base font-bold text-white">{bundle.total_sets}</p>
+          </div>
+          <div className="bg-white/5 rounded-lg p-1.5 sm:p-2 border border-white/10 text-center">
+            <p className="text-[8px] sm:text-[10px] text-white/50">คำศัพท์</p>
+            <p className="text-xs sm:text-base font-bold text-white">{bundle.total_cards}</p>
+          </div>
+          <div className="bg-white/5 rounded-lg p-1.5 sm:p-2 border border-white/10 text-center">
+            <p className="text-[8px] sm:text-[10px] text-white/50">โคลน</p>
+            <p className="text-xs sm:text-base font-bold text-pink-400">{bundle.clone_count}</p>
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div className="flex flex-wrap gap-1 mb-2 sm:mb-4">
+          <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[8px] sm:text-[10px] px-1.5 py-0">
+            {bundle.category}
+          </Badge>
+          {bundle.tags.slice(0, 1).map((tag: string) => (
+            <Badge key={tag} className="bg-white/5 text-white/50 border-white/10 text-[8px] sm:text-[10px] px-1.5 py-0">
+              #{tag}
+            </Badge>
+          ))}
+        </div>
+
+        {/* Action Button */}
+        <Button
+          onClick={onPreview}
+          size="sm"
+          className="w-full gap-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-[10px] sm:text-xs h-7 sm:h-9 px-2"
+        >
+          <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          ดูคำศัพท์
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
+// Public Deck Card Component
+function PublicDeckCard({
+  deck,
+  index,
+  onClone
+}: {
+  deck: PublicDeck;
+  index: number;
+  onClone: () => void;
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className="glass-card group h-full flex flex-col rounded-[2.5rem] border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] transition-all duration-300 relative overflow-visible bg-black/40"
+    >
+      {/* Glow Effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2.5rem] pointer-events-none" />
+
+      <div className="p-6 relative z-10">
+        {/* Creator Info */}
+        <div className="flex items-center gap-3 mb-4">
+          <Avatar className="w-8 h-8 border border-white/20">
+            <AvatarImage src={deck.creator_avatar || undefined} />
+            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-xs">
+              {deck.creator_nickname?.charAt(0)?.toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-white/80 font-medium truncate">
+              {deck.creator_nickname || 'Anonymous'}
+            </p>
+          </div>
+          <Badge className="bg-white/10 text-white/60 border-white/20 text-xs">
+            🌍 Public
+          </Badge>
+        </div>
+
+        {/* Deck Name */}
+        <h3 className="text-xl font-black text-white mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
+          {deck.name}
+        </h3>
+
+        {/* Description */}
+        <p className="text-sm text-white/60 line-clamp-2 mb-4 leading-relaxed">
+          {deck.description || 'No description'}
+        </p>
+
+        {/* Stats */}
+        <div className="flex items-center gap-3 text-sm mb-4">
+          <div className="flex items-center gap-1.5 text-white/60 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+            <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="font-medium">{deck.total_flashcards} cards</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-white/60 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+            <Users className="w-3.5 h-3.5 text-pink-400" />
+            <span className="font-medium">{deck.clone_count} clones</span>
+          </div>
+        </div>
+
+        {/* Category & Tags */}
+        {(deck.category || (deck.tags && deck.tags.length > 0)) && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {deck.category && (
+              <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-xs">
+                {deck.category}
+              </Badge>
+            )}
+            {deck.tags?.slice(0, 2).map(tag => (
+              <Badge key={tag} className="bg-white/5 text-white/50 border-white/10 text-xs">
+                #{tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Clone Button */}
+        <Button
+          onClick={onClone}
+          className="w-full gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold shadow-[0_4px_15px_rgba(168,85,247,0.4)] border-none h-11 relative overflow-hidden group/btn"
+        >
+          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+          <span className="relative z-10 flex items-center gap-2">
+            <Copy className="w-4 h-4" />
+            โคลน Deck นี้
+          </span>
+        </Button>
+      </div>
+    </motion.div>
   );
 }

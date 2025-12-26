@@ -259,7 +259,7 @@ export default function AdminDashboard() {
       {/* Quick Actions */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/50">
-          <CardTitle className="text-lg flex items-center gap-2 text-slate-800 dark:text-slate-100">
+          <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
             <Zap className="h-5 w-5 text-amber-500" />
             Quick Actions
           </CardTitle>
@@ -276,7 +276,7 @@ export default function AdminDashboard() {
                 <div className={`p-3 rounded-full ${action.color} text-white shadow-sm`}>
                   <action.icon className="h-5 w-5" />
                 </div>
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{action.label}</span>
+                <span className="text-sm font-semibold text-slate-700">{action.label}</span>
               </Button>
             ))}
           </div>
@@ -292,8 +292,8 @@ export default function AdminDashboard() {
                 <Users className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalUsers.toLocaleString()}</p>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">ผู้ใช้ทั้งหมด</p>
+                <p className="text-3xl font-bold text-slate-900">{stats.totalUsers.toLocaleString()}</p>
+                <p className="text-sm font-medium text-slate-500">ผู้ใช้ทั้งหมด</p>
               </div>
             </div>
           </CardContent>
@@ -306,9 +306,9 @@ export default function AdminDashboard() {
                 <ArrowUpRight className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">+{stats.newUsersToday}</p>
+                <p className="text-3xl font-bold text-slate-900">+{stats.newUsersToday}</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">ใหม่วันนี้</p>
+                  <p className="text-sm font-medium text-slate-500">ใหม่วันนี้</p>
                   {userGrowthPercent !== 0 && (
                     <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${userGrowthPercent > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'}`}>
                       {userGrowthPercent > 0 ? '↑' : '↓'}{Math.abs(userGrowthPercent)}%
@@ -327,8 +327,8 @@ export default function AdminDashboard() {
                 <Crown className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.premiumUsers}</p>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Premium</p>
+                <p className="text-3xl font-bold text-slate-900">{stats.premiumUsers}</p>
+                <p className="text-sm font-medium text-slate-500">Premium</p>
               </div>
             </div>
           </CardContent>
@@ -341,8 +341,8 @@ export default function AdminDashboard() {
                 <DollarSign className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">฿{stats.totalRevenue.toLocaleString()}</p>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">รายได้รวม</p>
+                <p className="text-3xl font-bold text-slate-900">฿{stats.totalRevenue.toLocaleString()}</p>
+                <p className="text-sm font-medium text-slate-500">รายได้รวม</p>
               </div>
             </div>
           </CardContent>
@@ -355,8 +355,8 @@ export default function AdminDashboard() {
                 <MessageSquare className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.pendingFeedback}</p>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Feedback รอตอบ</p>
+                <p className="text-3xl font-bold text-slate-900">{stats.pendingFeedback}</p>
+                <p className="text-sm font-medium text-slate-500">Feedback รอตอบ</p>
               </div>
             </div>
           </CardContent>
@@ -370,13 +370,13 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.activeUsersNow}</p>
+                  <p className="text-3xl font-bold text-slate-900">{stats.activeUsersNow}</p>
                   <span className="relative flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-white dark:border-slate-950"></span>
                   </span>
                 </div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Online ตอนนี้</p>
+                <p className="text-sm font-medium text-slate-500">Online ตอนนี้</p>
               </div>
             </div>
           </CardContent>
@@ -388,7 +388,7 @@ export default function AdminDashboard() {
         {/* User Growth Chart */}
         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2 text-slate-800 dark:text-slate-100">
+            <CardTitle className="text-base flex items-center gap-2 text-slate-800">
               <TrendingUp className="h-4 w-4 text-blue-600" />
               ผู้ใช้ใหม่ 7 วันล่าสุด
             </CardTitle>
@@ -415,7 +415,7 @@ export default function AdminDashboard() {
         {/* Revenue Chart */}
         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2 text-slate-800 dark:text-slate-100">
+            <CardTitle className="text-base flex items-center gap-2 text-slate-800">
               <DollarSign className="h-4 w-4 text-emerald-600" />
               รายได้ 7 วันล่าสุด
             </CardTitle>
@@ -445,11 +445,11 @@ export default function AdminDashboard() {
         {/* Recent Activity */}
         <Card className="lg:col-span-2 border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/50">
-            <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100">
+            <CardTitle className="flex items-center gap-2 text-slate-800">
               <Clock className="h-5 w-5 text-slate-500" />
               กิจกรรมล่าสุด
             </CardTitle>
-            <CardDescription className="text-slate-500 dark:text-slate-400">ผู้ใช้ใหม่, Feedback และการสมัคร Premium</CardDescription>
+            <CardDescription className="text-slate-500">ผู้ใช้ใหม่, Feedback และการสมัคร Premium</CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <div className="space-y-4">
@@ -462,8 +462,8 @@ export default function AdminDashboard() {
                       <activity.icon className={`h-4 w-4 ${activity.color}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{activity.title}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{activity.description}</p>
+                      <p className="font-semibold text-sm text-slate-900 truncate">{activity.title}</p>
+                      <p className="text-xs text-slate-500 truncate">{activity.description}</p>
                     </div>
                     <Badge variant="secondary" className="shrink-0 text-[10px] bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                       {formatTimeAgo(activity.time)}
@@ -480,7 +480,7 @@ export default function AdminDashboard() {
           {/* Revenue Today */}
           <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">รายได้วันนี้</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">รายได้วันนี้</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
@@ -499,19 +499,19 @@ export default function AdminDashboard() {
           {/* Vocab Challenge Stats */}
           <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">
                 <Gamepad2 className="h-4 w-4" />
                 Vocab Challenge
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-700 dark:text-slate-300">เล่นวันนี้</span>
-                <span className="font-bold text-slate-900 dark:text-white">24 คน</span>
+                <span className="text-sm text-slate-700">เล่นวันนี้</span>
+                <span className="font-bold text-slate-900">24 คน</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-700 dark:text-slate-300">เวลาเฉลี่ย</span>
-                <span className="font-bold text-slate-900 dark:text-white">12.5 วินาที</span>
+                <span className="text-sm text-slate-700">เวลาเฉลี่ย</span>
+                <span className="font-bold text-slate-900">12.5 วินาที</span>
               </div>
               <Button variant="outline" size="sm" className="w-full text-slate-700 dark:text-slate-300" onClick={() => navigate('/admin/vocab-challenge')}>
                 ดูรายละเอียด
@@ -522,7 +522,7 @@ export default function AdminDashboard() {
           {/* Top Decks */}
           <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-slate-500 flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-amber-500" />
                 Top Decks
               </CardTitle>
@@ -536,7 +536,7 @@ export default function AdminDashboard() {
                     <span className={`text-xs font-bold w-5 text-center ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-slate-400' : i === 2 ? 'text-amber-700' : 'text-slate-300'}`}>
                       #{i + 1}
                     </span>
-                    <span className="text-sm flex-1 truncate text-slate-700 dark:text-slate-200">{deck.name}</span>
+                    <span className="text-sm flex-1 truncate text-slate-700">{deck.name}</span>
                     <Badge variant="secondary" className="text-[10px] bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">{deck.total_flashcards || 0}</Badge>
                   </div>
                 ))
@@ -550,7 +550,9 @@ export default function AdminDashboard() {
           {/* Device Stats */}
           <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">อุปกรณ์ที่ใช้</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-slate-500">อุปกรณ์ที่ใช้</CardTitle>
+              </CardHeader>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
@@ -559,8 +561,8 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">Mobile</span>
-                    <span className="font-bold text-slate-900 dark:text-white">68%</span>
+                    <span className="text-slate-700 font-medium">Mobile</span>
+                    <span className="font-bold text-slate-900">68%</span>
                   </div>
                   <Progress value={68} className="h-2 bg-slate-100 dark:bg-slate-800" indicatorClassName="bg-slate-900 dark:bg-slate-400" />
                 </div>
@@ -571,8 +573,8 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">Desktop</span>
-                    <span className="font-bold text-slate-900 dark:text-white">32%</span>
+                    <span className="text-slate-700 font-medium">Desktop</span>
+                    <span className="font-bold text-slate-900">32%</span>
                   </div>
                   <Progress value={32} className="h-2 bg-slate-100 dark:bg-slate-800" indicatorClassName="bg-slate-900 dark:bg-slate-400" />
                 </div>

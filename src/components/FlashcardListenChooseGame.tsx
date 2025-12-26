@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 import { useXP } from '@/hooks/useXP';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface Flashcard {
   id: string;
@@ -38,6 +39,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
   const { t } = useLanguage();
   const { updateFromListenChoose } = useSRSProgress();
   const { addGameXP } = useXP();
+  const { trackGame } = useAnalytics();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
   const [playCount, setPlayCount] = useState(0);
   const maxPlayCount = 3;
   const [totalXPEarned, setTotalXPEarned] = useState(0);
+  const [gameStartTime] = useState(Date.now());
 
   useEffect(() => {
     // Generate questions from flashcards
@@ -74,6 +77,9 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
     });
 
     setQuestions(generatedQuestions);
+    trackGame('listen', 'start', undefined, {
+      totalCards: generatedQuestions.length
+    });
   }, [flashcards]);
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -124,6 +130,13 @@ export const FlashcardListenChooseGame = ({ flashcards, onClose, onNext, onSelec
       setPlayCount(0);
     } else {
       setIsGameComplete(true);
+      const duration = Math.round((Date.now() - gameStartTime) / 1000);
+      trackGame('listen', 'complete', score, {
+        totalCards: questions.length,
+        correctAnswers: score,
+        wrongAnswers: wrongAnswers.length,
+        duration: duration
+      });
     }
   };
 

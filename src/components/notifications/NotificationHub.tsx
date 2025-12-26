@@ -63,15 +63,7 @@ export const NotificationHub = () => {
             if (error) throw error;
 
             if (data) {
-                // Map database fields to our interface
-                setNotifications(data.map(n => ({
-                    id: n.id,
-                    title: n.title,
-                    message: n.message,
-                    type: 'in_app' as const,
-                    status: 'sent' as const,
-                    created_at: n.created_at || ''
-                })));
+                setNotifications(data as unknown as Notification[]);
 
                 // Calculate unread
                 const readIds = getReadIds();

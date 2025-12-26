@@ -200,8 +200,8 @@ export default function AdminDecks() {
                   <BookOpen className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{totalDecks}</p>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Decks ทั้งหมด</p>
+                  <p className="text-3xl font-bold text-slate-900">{totalDecks}</p>
+                  <p className="text-sm font-medium text-slate-500">Decks ทั้งหมด</p>
                 </div>
               </div>
             </CardContent>
@@ -214,8 +214,8 @@ export default function AdminDecks() {
                   <CheckCircle className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{publishedDecks}</p>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Published</p>
+                  <p className="text-3xl font-bold text-slate-900">{publishedDecks}</p>
+                  <p className="text-sm font-medium text-slate-500">Published</p>
                 </div>
               </div>
             </CardContent>
@@ -228,8 +228,8 @@ export default function AdminDecks() {
                   <FileText className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{draftDecks}</p>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Draft</p>
+                  <p className="text-3xl font-bold text-slate-900">{draftDecks}</p>
+                  <p className="text-sm font-medium text-slate-500">Draft</p>
                 </div>
               </div>
             </CardContent>
@@ -242,8 +242,8 @@ export default function AdminDecks() {
                   <Layers className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{totalFlashcards}</p>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Flashcards</p>
+                  <p className="text-3xl font-bold text-slate-900">{totalFlashcards}</p>
+                  <p className="text-sm font-medium text-slate-500">Flashcards</p>
                 </div>
               </div>
             </CardContent>

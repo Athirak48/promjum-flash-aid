@@ -8,6 +8,7 @@ import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useXP } from '@/hooks/useXP';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface Flashcard {
   id: string;
@@ -30,6 +31,7 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext, onSelectNewG
   const navigate = useNavigate();
   const { updateFromHangman } = useSRSProgress();
   const { addGameXP } = useXP();
+  const { trackGame } = useAnalytics();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [guessedLetters, setGuessedLetters] = useState<string[]>([]);
   const [wrongGuesses, setWrongGuesses] = useState(0);
@@ -42,6 +44,7 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext, onSelectNewG
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [hintPositions, setHintPositions] = useState<number[]>([]);
   const [totalXPEarned, setTotalXPEarned] = useState(0);
+  const [gameStartTime] = useState(Date.now());
 
   const maxWrongGuesses = 7;
   const currentCard = flashcards[currentIndex];
@@ -66,6 +69,11 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext, onSelectNewG
 
   useEffect(() => {
     setHintPositions(getHintPositions(targetWord));
+    if (currentIndex === 0) {
+      trackGame('hangman', 'start', undefined, {
+        totalCards: flashcards.length
+      });
+    }
   }, [currentIndex, flashcards]);
 
   const handleRestart = () => {
@@ -153,6 +161,13 @@ export function FlashcardHangmanGame({ flashcards, onClose, onNext, onSelectNewG
     } else {
       // Game finished - show summary
       setIsGameComplete(true);
+      const duration = Math.round((Date.now() - gameStartTime) / 1000);
+      trackGame('hangman', 'complete', score, {
+        totalCards: flashcards.length,
+        correctAnswers: wonCount + (gameStatus === 'won' ? 1 : 0),
+        wrongAnswers: lostCount + (gameStatus === 'lost' ? 1 : 0),
+        duration: duration
+      });
     }
   };
 

@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useXP } from '@/hooks/useXP';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 import { XPGainAnimation } from '@/components/xp/XPGainAnimation';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface VocabItem {
     id: string;
@@ -84,6 +85,7 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
     const containerRef = useRef<HTMLDivElement>(null);
     const { addGameXP, lastGain, clearLastGain } = useXP();
     const { updateFromNinjaSlice } = useSRSProgress();
+    const { trackGame } = useAnalytics();
 
     // Game State
     const [gameStateStatus, setGameStateStatus] = useState<'IDLE' | 'PLAYING' | 'WON' | 'GAME_OVER_BOMB' | 'GAME_OVER_LIVES'>('IDLE');
@@ -93,7 +95,8 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
     const [currentTarget, setCurrentTarget] = useState<VocabItem | null>(null);
     const [wordResults, setWordResults] = useState<Record<string, WordStatus>>({});
     const [totalXPEarned, setTotalXPEarned] = useState(0);
-    const [hadMistakeForCurrentWord, setHadMistakeForCurrentWord] = useState(false); // Track if user made mistake on current word
+    const [hadMistakeForCurrentWord, setHadMistakeForCurrentWord] = useState(false);
+    const [gameStartTime] = useState(Date.now());
 
     // Mutable Game State (Physics/Logic)
     const gameState = useRef({
@@ -125,6 +128,11 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
         if (shuffled.length > 0) {
             setCurrentTarget(shuffled[0]);
         }
+
+        // Track game start
+        trackGame('ninja', 'start', undefined, {
+            totalCards: shuffled.length
+        });
 
         startGame();
 
@@ -179,6 +187,15 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
                 }
             });
             return next;
+        });
+
+        // Track game completion
+        const duration = Math.round((Date.now() - gameStartTime) / 1000);
+        const correctCount = Object.values(wordResults).filter(r => r === 'CORRECT').length;
+        trackGame('ninja', 'complete', gameState.current.score, {
+            totalCards: gameState.current.shuffledVocab.length,
+            correctAnswers: correctCount,
+            duration: duration
         });
     };
 

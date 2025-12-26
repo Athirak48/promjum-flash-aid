@@ -63,8 +63,8 @@ const Navbar = () => {
 
   const userNavItems = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/classroom", label: "Classroom" },
-    { href: "/decks", label: "Shop" },
+    { href: "/classroom", label: "Lobby" },
+    { href: "/decks", label: "Community" },
     { href: "/flashcards", label: "Deck" },
     { href: "/vocab-challenge", label: "Vocab Challenge" },
     { href: "/feedback", label: "Opinion" },

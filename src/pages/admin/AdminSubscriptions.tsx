@@ -209,11 +209,11 @@ export default function AdminSubscriptions() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
                         <CreditCard className="h-8 w-8 text-primary" />
                         Subscription Management
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">จัดการ Subscription และแผนราคา</p>
+                    <p className="text-slate-500 mt-1">จัดการ Subscription และแผนราคา</p>
                 </div>
                 <Dialog open={isManualUpgradeOpen} onOpenChange={setIsManualUpgradeOpen}>
                     <DialogTrigger asChild>
@@ -283,8 +283,8 @@ export default function AdminSubscriptions() {
                                 <Users className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-3xl font-bold text-slate-900 dark:text-white">{totalActive}</p>
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Premium Users</p>
+                                <p className="text-3xl font-bold text-slate-900">{totalActive}</p>
+                                <p className="text-sm font-medium text-slate-500">Premium Users</p>
                             </div>
                         </div>
                     </CardContent>
@@ -296,8 +296,8 @@ export default function AdminSubscriptions() {
                                 <DollarSign className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-3xl font-bold text-slate-900 dark:text-white">฿{totalRevenue.toLocaleString()}</p>
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">รายได้ทั้งหมด</p>
+                                <p className="text-3xl font-bold text-slate-900">฿{totalRevenue.toLocaleString()}</p>
+                                <p className="text-sm font-medium text-slate-500">รายได้ทั้งหมด</p>
                             </div>
                         </div>
                     </CardContent>
@@ -309,8 +309,8 @@ export default function AdminSubscriptions() {
                                 <ArrowUpRight className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-3xl font-bold text-slate-900 dark:text-white">฿{monthlyRevenue.toLocaleString()}</p>
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">เดือนนี้</p>
+                                <p className="text-3xl font-bold text-slate-900">฿{monthlyRevenue.toLocaleString()}</p>
+                                <p className="text-sm font-medium text-slate-500">เดือนนี้</p>
                             </div>
                         </div>
                     </CardContent>
@@ -322,8 +322,8 @@ export default function AdminSubscriptions() {
                                 <Crown className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-3xl font-bold text-slate-900 dark:text-white">{plans.filter(p => p.is_active).length}</p>
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Active Plans</p>
+                                <p className="text-3xl font-bold text-slate-900">{plans.filter(p => p.is_active).length}</p>
+                                <p className="text-sm font-medium text-slate-500">Active Plans</p>
                             </div>
                         </div>
                     </CardContent>
@@ -369,20 +369,20 @@ export default function AdminSubscriptions() {
                     {/* Table */}
                     <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                         <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/50">
-                            <CardTitle className="text-slate-800 dark:text-slate-100">รายการ Subscription ({filteredSubscriptions.length})</CardTitle>
+                            <CardTitle className="text-slate-800">รายการ Subscription ({filteredSubscriptions.length})</CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4">
                             <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ผู้ใช้</TableHead>
-                                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">แผน</TableHead>
-                                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">สถานะ</TableHead>
-                                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ราคา</TableHead>
-                                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">วันเริ่ม</TableHead>
-                                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">วันหมดอายุ</TableHead>
-                                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">การกระทำ</TableHead>
+                                            <TableHead className="font-semibold text-slate-700">ผู้ใช้</TableHead>
+                                            <TableHead className="font-semibold text-slate-700">แผน</TableHead>
+                                            <TableHead className="font-semibold text-slate-700">สถานะ</TableHead>
+                                            <TableHead className="font-semibold text-slate-700">ราคา</TableHead>
+                                            <TableHead className="font-semibold text-slate-700">วันเริ่ม</TableHead>
+                                            <TableHead className="font-semibold text-slate-700">วันหมดอายุ</TableHead>
+                                            <TableHead className="font-semibold text-slate-700">การกระทำ</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -390,24 +390,24 @@ export default function AdminSubscriptions() {
                                             <TableRow key={sub.id}>
                                                 <TableCell>
                                                     <div>
-                                                        <p className="font-medium text-slate-900 dark:text-white">{sub.user_name}</p>
-                                                        <p className="text-xs text-slate-500 dark:text-slate-400">{sub.user_email}</p>
+                                                        <p className="font-medium text-slate-900">{sub.user_name}</p>
+                                                        <p className="text-xs text-slate-500">{sub.user_email}</p>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>{getPlanBadge(sub.plan)}</TableCell>
                                                 <TableCell>{getStatusBadge(sub.status)}</TableCell>
-                                                <TableCell className="text-slate-900 dark:text-white">฿{sub.price_paid.toLocaleString()}</TableCell>
-                                                <TableCell className="text-slate-500 dark:text-slate-400">
+                                                <TableCell className="text-slate-900">฿{sub.price_paid.toLocaleString()}</TableCell>
+                                                <TableCell className="text-slate-500">
                                                     {new Date(sub.start_date).toLocaleDateString('th-TH')}
                                                 </TableCell>
-                                                <TableCell className="text-slate-500 dark:text-slate-400">
+                                                <TableCell className="text-slate-500">
                                                     {sub.end_date
                                                         ? new Date(sub.end_date).toLocaleDateString('th-TH')
                                                         : 'ตลอดชีพ'}
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex gap-2">
-                                                        <Button variant="ghost" size="sm" title="Renew" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                                                        <Button variant="ghost" size="sm" title="Renew" className="text-slate-600 hover:text-slate-900">
                                                             <RefreshCcw className="h-4 w-4" />
                                                         </Button>
                                                         {sub.status === 'active' && (
@@ -451,7 +451,7 @@ export default function AdminSubscriptions() {
                                 <CardContent>
                                     <div className="mb-4">
                                         <span className="text-3xl font-bold">฿{plan.price.toLocaleString()}</span>
-                                        {plan.price > 0 && <span className="text-slate-500 dark:text-slate-400">/{plan.duration}</span>}
+                                        {plan.price > 0 && <span className="text-slate-500">/{plan.duration}</span>}
                                     </div>
                                     <ul className="space-y-2 text-sm">
                                         {plan.features.map((feature, idx) => (

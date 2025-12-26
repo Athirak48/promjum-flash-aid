@@ -123,7 +123,7 @@ export function DailyDeckQuickStart({
         // 2a. Try fetching from 'flashcards' (System)
         const { data: systemCards } = await supabase
           .from('flashcards')
-          .select('id, front_text, back_text, upload_id')
+          .select('id, front_text, back_text, upload_id, part_of_speech')
           .in('id', textIds);
 
         if (systemCards) {
@@ -137,7 +137,7 @@ export function DailyDeckQuickStart({
         if (textIds.length > 0) {
           const { data: userCards } = await supabase
             .from('user_flashcards')
-            .select('id, front_text, back_text')
+            .select('id, front_text, back_text, part_of_speech')
             .in('id', textIds);
 
           if (userCards) {
@@ -153,6 +153,7 @@ export function DailyDeckQuickStart({
             id: c.id,
             front: c.front_text,
             back: c.back_text,
+            partOfSpeech: c.part_of_speech,
             upload_id: c.upload_id
           }));
         }
@@ -304,7 +305,7 @@ export function DailyDeckQuickStart({
             </motion.div>
             {/* Content */}
             <div className="text-center">
-              <div className="text-4xl font-black text-white drop-shadow-lg">{streak}</div>
+              <div className="text-3xl font-black text-white drop-shadow-lg">{streak}</div>
               <div className="text-sm text-white font-semibold">Day Streak</div>
             </div>
           </motion.div>
@@ -333,7 +334,7 @@ export function DailyDeckQuickStart({
             </motion.div>
             {/* Content */}
             <div className="text-center">
-              <div className="text-4xl font-black text-white drop-shadow-lg">{realTotalXP.toLocaleString()}</div>
+              <div className="text-3xl font-black text-white drop-shadow-lg">{realTotalXP.toLocaleString()}</div>
               <div className="text-sm text-white font-semibold">XP Points</div>
             </div>
           </motion.div>
@@ -360,7 +361,7 @@ export function DailyDeckQuickStart({
             </motion.div>
             {/* Content */}
             <div className="text-center">
-              <div className="text-4xl font-black text-white drop-shadow-lg">{wordsLearned}</div>
+              <div className="text-3xl font-black text-white drop-shadow-lg">{wordsLearned}</div>
               <div className="text-sm text-white font-semibold">Vocab Learned</div>
             </div>
           </motion.div>
@@ -382,18 +383,16 @@ export function DailyDeckQuickStart({
           </div>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-xs text-white/90 mb-1 font-medium">Words Learned</div>
-              <div className="text-2xl font-black text-white drop-shadow-lg">{wordsLearnedToday}</div>
+              <div className="text-xs text-white/90 mb-1 font-medium">Score</div>
+              <div className="text-2xl font-black text-white drop-shadow-lg">-</div>
             </div>
             <div className="border-x border-white/20">
               <div className="text-xs text-white/90 mb-1 font-medium">Time Spent</div>
-              <div className="text-2xl font-black text-white drop-shadow-lg">
-                {formatTime(timeSpentToday)}
-              </div>
+              <div className="text-2xl font-black text-white drop-shadow-lg">-</div>
             </div>
             <div>
               <div className="text-xs text-white/90 mb-1 font-medium">Ranking</div>
-              <div className="text-2xl font-black text-emerald-400 drop-shadow-md">#{ranking}</div>
+              <div className="text-2xl font-black text-emerald-400 drop-shadow-md">-</div>
             </div>
           </div>
         </motion.div>
@@ -439,7 +438,7 @@ export function DailyDeckQuickStart({
               className="w-full rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold transition-all border-2 border-teal-400/50 bg-white/10 hover:bg-white/20 text-white neon-rim-teal"
             >
               <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-teal-300" />
-              <span className="sm:hidden">แข่ง</span>
+              <span className="sm:hidden">แข่งกับเพื่อน</span>
               <span className="hidden sm:inline">แข่งกับเพื่อน</span>
             </Button>
           </motion.div>
@@ -462,7 +461,7 @@ export function DailyDeckQuickStart({
               className="w-full rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold transition-all border-2 border-purple-400/50 bg-white/10 hover:bg-white/20 text-white neon-rim-purple"
             >
               <Trophy className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-purple-300" />
-              <span className="sm:hidden">ท้าทาย</span>
+              <span className="sm:hidden">Vocab Challenge</span>
               <span className="hidden sm:inline">Vocab Challenge</span>
             </Button>
           </motion.div>

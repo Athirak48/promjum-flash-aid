@@ -9,6 +9,7 @@ import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useXP } from '@/hooks/useXP';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface Flashcard {
     id: string;
@@ -56,6 +57,7 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext, onSelectN
     const { t } = useLanguage();
     const { addGameXP } = useXP();
     const { updateFromWordSearch } = useSRSProgress();
+    const { trackGame } = useAnalytics();
     const [grid, setGrid] = useState<GridCell[][]>([]);
     const [wordsToFind, setWordsToFind] = useState<Flashcard[]>([]);
     const [foundWords, setFoundWords] = useState<string[]>([]); // IDs of found flashcards
@@ -96,6 +98,11 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext, onSelectN
         setRevealedHintIds([]);
         setStartTime(Date.now());
         setElapsedTime('');
+
+        // Track game start
+        trackGame('wordSearch', 'start', undefined, {
+            totalCards: words.length
+        });
 
         // 2. Determine grid size
         // Formula: Base 7x7. If longest word > 7, increase size.
@@ -329,6 +336,14 @@ export function FlashcardWordSearchGame({ flashcards, onClose, onNext, onSelectN
             const minutes = Math.floor(diff / 60);
             const seconds = diff % 60;
             setElapsedTime(`${minutes > 0 ? `${minutes} นาที ` : ''}${seconds} วินาที`);
+
+            // Track game completion
+            trackGame('wordSearch', 'complete', foundWords.length * 100, {
+                totalCards: wordsToFind.length,
+                correctAnswers: foundWords.length,
+                hintsUsed: hintsUsed,
+                duration: diff
+            });
         }
 
         confetti({

@@ -41,6 +41,7 @@ interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  nickname: string | null;
   challenge_nickname: string | null;
   created_at: string;
   updated_at: string;
@@ -200,8 +201,10 @@ export default function Profile() {
         setProfile(data);
         setFullName(data.full_name || '');
         setBio(data.bio || '');
-        setNickname(data.challenge_nickname || '');
-        setNicknameInput(data.challenge_nickname || '');
+        // Prefer nickname, fallback to challenge_nickname
+        const displayNick = data.nickname || data.challenge_nickname || '';
+        setNickname(displayNick);
+        setNicknameInput(displayNick);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
