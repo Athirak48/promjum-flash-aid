@@ -1,0 +1,45 @@
+/**
+ * BATCH TRACKING ADDITIONS FOR REMAINING 6 GAMES
+ * 
+ * This file contains tracking code patterns that should be added to each remaining game.
+ * Apply the same pattern to:
+ * - FlashcardNinjaSliceGame.tsx
+ * - FlashcardHangmanGame.tsx
+ * - FlashcardListenChooseGame.tsx
+ * - FlashcardVocabBlinderGame.tsx
+ * - FlashcardWordSearchGame.tsx
+ * - FlashcardWordScrambleGame.tsx
+ */
+
+// STEP 1: Add import
+import { useAnalytics } from '@/hooks/useAnalytics';
+
+// STEP 2: Initialize hook in component
+const { trackGame } = useAnalytics();
+const [gameStartTime] = useState(Date.now());
+
+// STEP 3: Track game start (in useEffect or startGame function)
+useEffect(() => {
+    trackGame(GAME_ID, 'start', undefined, {
+        totalCards: vocabList.length
+    });
+}, []);
+
+// STEP 4: Track game completion (in finishGame or equivalent function)
+const duration = Math.round((Date.now() - gameStartTime) / 1000);
+trackGame(GAME_ID, 'complete', finalScore, {
+    totalCards: vocabList.length,
+    correctAnswers: correctCount,
+    wrongAnswers: wrongCount,
+    duration: duration
+});
+
+// GAME IDs:
+// - ninja
+// - hangman
+// - listen
+// - vocabBlinder
+// - wordSearch
+// - scramble
+
+export default "See implementation_plan.md for full details";

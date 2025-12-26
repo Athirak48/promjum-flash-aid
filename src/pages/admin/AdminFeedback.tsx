@@ -97,8 +97,8 @@ export default function AdminFeedback() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Feedback</h1>
-                <p className="text-slate-500 dark:text-slate-400">จัดการและตอบกลับ Feedback จากผู้ใช้</p>
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">Feedback</h1>
+                <p className="text-slate-500">จัดการและตอบกลับ Feedback จากผู้ใช้</p>
             </div>
 
             {/* View Mode Toggle */}
@@ -125,24 +125,24 @@ export default function AdminFeedback() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                                <CardTitle className="text-sm font-medium text-slate-500">
                                     Total Feedback
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.total}</div>
+                                <div className="text-3xl font-bold text-slate-900">{stats.total}</div>
                             </CardContent>
                         </Card>
 
                         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                                <CardTitle className="text-sm font-medium text-slate-500">
                                     ดีมาก
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold text-green-600">{stats.excellent}</div>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                <p className="text-xs text-slate-500">
                                     {((stats.excellent / stats.total) * 100).toFixed(1)}%
                                 </p>
                             </CardContent>
@@ -150,13 +150,13 @@ export default function AdminFeedback() {
 
                         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                                <CardTitle className="text-sm font-medium text-slate-500">
                                     ดี
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold text-blue-600">{stats.good}</div>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                <p className="text-xs text-slate-500">
                                     {((stats.good / stats.total) * 100).toFixed(1)}%
                                 </p>
                             </CardContent>
@@ -164,13 +164,13 @@ export default function AdminFeedback() {
 
                         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                                <CardTitle className="text-sm font-medium text-slate-500">
                                     พอใช้
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold text-yellow-600">{stats.fair}</div>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                <p className="text-xs text-slate-500">
                                     {((stats.fair / stats.total) * 100).toFixed(1)}%
                                 </p>
                             </CardContent>
@@ -178,13 +178,13 @@ export default function AdminFeedback() {
 
                         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                                <CardTitle className="text-sm font-medium text-slate-500">
                                     แย่
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold text-red-600">{stats.poor}</div>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                <p className="text-xs text-slate-500">
                                     {((stats.poor / stats.total) * 100).toFixed(1)}%
                                 </p>
                             </CardContent>
@@ -195,8 +195,8 @@ export default function AdminFeedback() {
                     {/* Satisfaction Trend */}
                     <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                         <CardHeader className="border-b border-slate-100 dark:border-slate-800/50 pb-3">
-                            <CardTitle className="text-slate-800 dark:text-slate-100">แนวโน้มความพึงพอใจ</CardTitle>
-                            <CardDescription className="text-slate-500 dark:text-slate-400">ความพึงพอใจเฉลี่ยในแต่ละเดือน</CardDescription>
+                            <CardTitle className="text-slate-800">แนวโน้มความพึงพอใจ</CardTitle>
+                            <CardDescription className="text-slate-500">ความพึงพอใจเฉลี่ยในแต่ละเดือน</CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6">
                             <div className="space-y-4">
@@ -244,8 +244,8 @@ export default function AdminFeedback() {
                         {/* Top Topics */}
                         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                             <CardHeader className="border-b border-slate-100 dark:border-slate-800/50 pb-3">
-                                <CardTitle className="text-slate-800 dark:text-slate-100">หัวข้อที่ถูกแจ้งบ่อยที่สุด</CardTitle>
-                                <CardDescription className="text-slate-500 dark:text-slate-400">5 อันดับแรก</CardDescription>
+                                <CardTitle className="text-slate-800">หัวข้อที่ถูกแจ้งบ่อยที่สุด</CardTitle>
+                                <CardDescription className="text-slate-500">5 อันดับแรก</CardDescription>
                             </CardHeader>
                             <CardContent className="pt-6">
                                 <div className="space-y-4">
@@ -291,8 +291,8 @@ export default function AdminFeedback() {
                         {/* Monthly Summary */}
                         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                             <CardHeader className="border-b border-slate-100 dark:border-slate-800/50 pb-3">
-                                <CardTitle className="text-slate-800 dark:text-slate-100">สรุปรายเดือน</CardTitle>
-                                <CardDescription className="text-slate-500 dark:text-slate-400">เดือนปัจจุบัน</CardDescription>
+                                <CardTitle className="text-slate-800">สรุปรายเดือน</CardTitle>
+                                <CardDescription className="text-slate-500">เดือนปัจจุบัน</CardDescription>
                             </CardHeader>
                             <CardContent className="pt-6">
                                 <div className="space-y-4">
@@ -333,26 +333,26 @@ export default function AdminFeedback() {
                 // Individual View - Table
                 <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                     <CardHeader className="border-b border-slate-100 dark:border-slate-800/50 pb-3">
-                        <CardTitle className="text-slate-800 dark:text-slate-100">User Feedback</CardTitle>
-                        <CardDescription className="text-slate-500 dark:text-slate-400">รายการ Feedback จากผู้ใช้</CardDescription>
+                        <CardTitle className="text-slate-800">User Feedback</CardTitle>
+                        <CardDescription className="text-slate-500">รายการ Feedback จากผู้ใช้</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-4">
                         <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                                        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">User ID</TableHead>
-                                        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Name</TableHead>
-                                        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Email</TableHead>
-                                        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ข้อความ</TableHead>
+                                        <TableHead className="font-semibold text-slate-700">User ID</TableHead>
+                                        <TableHead className="font-semibold text-slate-700">Name</TableHead>
+                                        <TableHead className="font-semibold text-slate-700">Email</TableHead>
+                                        <TableHead className="font-semibold text-slate-700">ข้อความ</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {feedbacks.map((feedback) => (
                                         <TableRow key={feedback.id}>
-                                            <TableCell className="font-medium text-slate-900 dark:text-white">{feedback.userId}</TableCell>
-                                            <TableCell className="text-slate-600 dark:text-slate-300">{feedback.name}</TableCell>
-                                            <TableCell className="text-slate-600 dark:text-slate-300">{feedback.email}</TableCell>
+                                            <TableCell className="font-medium text-slate-900">{feedback.userId}</TableCell>
+                                            <TableCell className="text-slate-600">{feedback.name}</TableCell>
+                                            <TableCell className="text-slate-600">{feedback.email}</TableCell>
                                             <TableCell>
                                                 <Button
                                                     variant="outline"

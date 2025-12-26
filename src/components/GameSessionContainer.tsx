@@ -113,7 +113,7 @@ export function GameSessionContainer({ availableDecks, selectedGame, onExit }: G
 
             // Fetch subdecks for the deck
             const { data: subdecks, error: subdeckError } = await supabase
-                .from('flashcard_sets') // Assuming this is the table for subdecks based on DeckCard logic (useSubDecks)
+                .from('sub_decks')
                 .select('id')
                 .eq('deck_id', deckId);
 
@@ -129,7 +129,7 @@ export function GameSessionContainer({ availableDecks, selectedGame, onExit }: G
             const { data: cards, error: cardsError } = await supabase
                 .from('flashcards')
                 .select('*')
-                .in('set_id', subdeckIds) // Assuming 'set_id' links to 'flashcard_sets'
+                .in('subdeck_id', subdeckIds)
                 .limit(50); // Limit for performance in preview
 
             if (cardsError) throw cardsError;

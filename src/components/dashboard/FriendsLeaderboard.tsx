@@ -27,16 +27,9 @@ export function FriendsLeaderboard({ isWidget = false }: FriendsLeaderboardProps
   const { friends, pendingRequests, loading: friendsLoading } = useFriends();
   const { xpData } = useXP();
 
-  // Challenge mock data (to be replaced later with real data)
-  const challengersWorld = [
-    { id: 1, name: "Somchai_TH", avatar: "🐰", time: "01:12.45", score: "30/30", rank: 1, isMe: false },
-    { id: 2, name: "EmmaW", avatar: "🐱", time: "01:15.20", score: "30/30", rank: 2, isMe: false },
-    { id: 3, name: "Kenji_JP", avatar: "🐻", time: "01:16.88", score: "30/30", rank: 3, isMe: false },
-    { id: 4, name: "Lisa_KR", avatar: "🐼", time: "01:22.33", score: "29/30", rank: 4, isMe: false },
-    { id: 5, name: "Alex_US", avatar: "🦊", time: "01:25.11", score: "29/30", rank: 5, isMe: false },
-  ];
-
-  const myChallengeRank = { id: 99, name: "You", avatar: "🐰", time: "01:45.30", score: "27/30", rank: 15, isMe: true };
+  // Challenge data - will be populated from real database later
+  const challengersWorld: any[] = [];
+  const myChallengeRank = null;
 
   const getRankBadge = (rank: number) => {
     if (rank === 1) return <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-300 to-amber-400 flex items-center justify-center shadow-md"><Crown className="w-4 h-4 text-white" /></div>;
@@ -235,7 +228,11 @@ export function FriendsLeaderboard({ isWidget = false }: FriendsLeaderboardProps
                   </div>
                 )
               ) : (
-                challengersWorld.map((player, i) => renderChallengeItem(player, i))
+                <div className="flex flex-col items-center justify-center h-32 text-white/50">
+                  <Trophy className="w-12 h-12 mb-2 opacity-30" />
+                  <p className="text-sm font-medium">Coming Soon!</p>
+                  <p className="text-xs text-white/40 mt-1">Challenge leaderboard กำลังพัฒนา</p>
+                </div>
               )}
             </div>
           </ScrollArea>
@@ -243,7 +240,11 @@ export function FriendsLeaderboard({ isWidget = false }: FriendsLeaderboardProps
           {/* Your Position */}
           <div className="pt-3 mt-3 border-t border-dashed border-white/20">
             <p className="text-[10px] text-white/60 font-black text-center mb-2 uppercase tracking-widest">Your Rank 🌟</p>
-            {activeTab === 'xp' ? renderMyPosition() : renderChallengeItem(myChallengeRank, 0)}
+            {activeTab === 'xp' ? renderMyPosition() : (
+              <div className="text-center text-white/40 text-xs py-2">
+                เร็วๆ นี้
+              </div>
+            )}
 
             {activeTab === 'challenge' && (
               <Button

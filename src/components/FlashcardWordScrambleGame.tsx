@@ -8,6 +8,7 @@ import confetti from 'canvas-confetti';
 import { useXP } from '@/hooks/useXP';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 import { XPGainAnimation } from '@/components/xp/XPGainAnimation';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 // --- Types ---
 export interface ScrambleWord {
@@ -33,6 +34,7 @@ interface LetterTile {
 export function FlashcardWordScrambleGame({ vocabList, onGameFinish, onExit, onNewGame }: FlashcardWordScrambleGameProps) {
     const { addGameXP, lastGain, clearLastGain } = useXP();
     const { updateFromWordScramble } = useSRSProgress();
+    const { trackGame } = useAnalytics();
 
     // Game State
     const [gameWords, setGameWords] = useState<ScrambleWord[]>([]);
@@ -69,6 +71,10 @@ export function FlashcardWordScrambleGame({ vocabList, onGameFinish, onExit, onN
             const selected = shuffled.slice(0, 10);
             setGameWords(selected);
             initializedRef.current = true;
+            // Track game start
+            trackGame('scramble', 'start', undefined, {
+                totalCards: selected.length
+            });
         }
     }, [vocabList]);
 
@@ -410,6 +416,14 @@ export function FlashcardWordScrambleGame({ vocabList, onGameFinish, onExit, onN
         setWordAttempts(finalAttemptsMap); // Ensure UI sees the final map
         setGameResults(results);
         setGameFinished(true);
+
+        // Track game completion
+        trackGame('scramble', 'complete', score, {
+            totalCards: gameWords.length,
+            correctAnswers: perfectCount,
+            wrongAnswers: imperfectCount,
+            duration: timeSpent
+        });
     };
 
     const speakWord = () => {

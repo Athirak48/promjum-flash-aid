@@ -272,7 +272,7 @@ export default function VocabChallengePage() {
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                    <div className="relative h-6 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
                         <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
@@ -282,6 +282,12 @@ export default function VocabChallengePage() {
                                 : 'bg-gradient-to-r from-amber-500 to-orange-500'
                                 }`}
                         />
+                        {/* Percentage Text */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className="text-xs font-bold text-white drop-shadow-md">
+                                {progress.toFixed(3)}%
+                            </span>
+                        </div>
                     </div>
 
                     {/* Status Text */}

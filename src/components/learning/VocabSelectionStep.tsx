@@ -641,6 +641,11 @@ function VocabCard({
                     <p className={`text-xs truncate ${isSelected ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
                         {vocab.back_text}
                     </p>
+                    {vocab.part_of_speech && (
+                        <span className={`text-[10px] italic opacity-70 ${isSelected ? 'text-white' : 'text-slate-400'}`}>
+                            ({vocab.part_of_speech})
+                        </span>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">

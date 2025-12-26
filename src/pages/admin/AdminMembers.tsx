@@ -180,8 +180,8 @@ export default function AdminMembers() {
                 <Users className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">{totalMembers}</p>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">สมาชิกทั้งหมด</p>
+                <p className="text-3xl font-bold text-slate-900">{totalMembers}</p>
+                <p className="text-sm font-medium text-slate-500">สมาชิกทั้งหมด</p>
               </div>
             </div>
           </CardContent>
@@ -194,8 +194,8 @@ export default function AdminMembers() {
                 <UserPlus className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">+{todayMembers}</p>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">ใหม่วันนี้</p>
+                <p className="text-3xl font-bold text-slate-900">+{todayMembers}</p>
+                <p className="text-sm font-medium text-slate-500">ใหม่วันนี้</p>
               </div>
             </div>
           </CardContent>
@@ -208,8 +208,8 @@ export default function AdminMembers() {
                 <Crown className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">{premiumMembers}</p>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Premium</p>
+                <p className="text-3xl font-bold text-slate-900">{premiumMembers}</p>
+                <p className="text-sm font-medium text-slate-500">Premium</p>
               </div>
             </div>
           </CardContent>
@@ -222,8 +222,8 @@ export default function AdminMembers() {
                 <Shield className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">{adminCount}</p>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Admin</p>
+                <p className="text-3xl font-bold text-slate-900">{adminCount}</p>
+                <p className="text-sm font-medium text-slate-500">Admin</p>
               </div>
             </div>
           </CardContent>
@@ -269,8 +269,8 @@ export default function AdminMembers() {
         <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/50">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-slate-800 dark:text-slate-100">จัดการผู้ใช้</CardTitle>
-              <CardDescription className="text-slate-500 dark:text-slate-400">ดู แก้ไข และจัดการผู้ใช้ทั้งหมด</CardDescription>
+              <CardTitle className="text-slate-800">จัดการผู้ใช้</CardTitle>
+              <CardDescription className="text-slate-500">ดู แก้ไข และจัดการผู้ใช้ทั้งหมด</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -279,16 +279,16 @@ export default function AdminMembers() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900">
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">User ID</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Name / Email</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Role</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Plan Type</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Gender</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Total XP</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Deck</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Last Active</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Joined Date</TableHead>
-                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Action</TableHead>
+                  <TableHead className="font-semibold text-slate-700">User ID</TableHead>
+                  <TableHead className="font-semibold text-slate-700">Name / Email</TableHead>
+                  <TableHead className="font-semibold text-slate-700">Role</TableHead>
+                  <TableHead className="font-semibold text-slate-700">Plan Type</TableHead>
+                  <TableHead className="font-semibold text-slate-700">Gender</TableHead>
+                  <TableHead className="font-semibold text-slate-700">Total XP</TableHead>
+                  <TableHead className="font-semibold text-slate-700">Deck</TableHead>
+                  <TableHead className="font-semibold text-slate-700">Last Active</TableHead>
+                  <TableHead className="font-semibold text-slate-700">Joined Date</TableHead>
+                  <TableHead className="font-semibold text-slate-700">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -301,15 +301,15 @@ export default function AdminMembers() {
                 ) : (
                   filteredMembers.map((member) => (
                     <TableRow key={member.id} className={member.is_blocked ? 'bg-red-50/50' : ''}>
-                      <TableCell className="font-mono text-xs text-slate-500 dark:text-slate-400">
+                      <TableCell className="font-mono text-xs text-slate-500">
                         {member.user_id?.substring(0, 8)}...
                         <br />
                         <span className="text-[10px] opacity-70">{member.user_id?.substring(8, 20)}</span>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-slate-900 dark:text-white">{member.full_name || '-'}</p>
-                          <p className="text-sm text-blue-600 dark:text-blue-400">{member.email || '-'}</p>
+                          <p className="font-medium text-slate-900">{member.full_name || '-'}</p>
+                          <p className="text-sm text-blue-600">{member.email || '-'}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -320,17 +320,17 @@ export default function AdminMembers() {
                       <TableCell>
                         {getPlanBadge(getUserPlan(member.user_id))}
                       </TableCell>
-                      <TableCell className="text-slate-600 dark:text-slate-300">
+                      <TableCell className="text-slate-600">
                         {member.gender || '-'}
                       </TableCell>
-                      <TableCell className="text-slate-600 dark:text-slate-300">
+                      <TableCell className="text-slate-600">
                         {member.total_xp || '-'}
                       </TableCell>
                       <TableCell>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-xs text-slate-600 dark:text-slate-300"
+                          className="text-xs text-slate-600"
                           onClick={() => {
                             setSelectedUser({ userId: member.user_id, email: member.email || '' });
                             setShowFlashcardsDialog(true);
@@ -339,10 +339,10 @@ export default function AdminMembers() {
                           View Decks
                         </Button>
                       </TableCell>
-                      <TableCell className="text-slate-600 dark:text-slate-300 text-sm">
+                      <TableCell className="text-slate-600 text-sm">
                         {member.last_active || '-'}
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600 dark:text-slate-300">
+                      <TableCell className="text-sm text-slate-600">
                         {new Date(member.created_at).toLocaleDateString('th-TH', {
                           day: 'numeric',
                           month: 'short',

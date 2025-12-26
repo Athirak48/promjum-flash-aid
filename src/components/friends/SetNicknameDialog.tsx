@@ -42,7 +42,7 @@ export function SetNicknameDialog({
         const { data } = await supabase
             .from('profiles')
             .select('nickname')
-            .eq('id', user.id)
+            .eq('user_id', user.id)
             .single();
 
         if (data?.nickname) {
@@ -67,16 +67,24 @@ export function SetNicknameDialog({
         const timer = setTimeout(async () => {
             setChecking(true);
             try {
-                const { data, error } = await supabase.rpc('check_nickname_available', {
-                    p_nickname: nickname.trim(),
-                    p_current_user_id: user?.id || null
-                });
+                // Direct check against profiles table
+                // Check if any profile exists with this nickname case-insensitive
+                // And is NOT the current user
+                const { count, error } = await supabase
+                    .from('profiles')
+                    .select('id', { count: 'exact', head: true })
+                    .ilike('nickname', nickname.trim())
+                    .neq('user_id', user?.id || '00000000-0000-0000-0000-000000000000');
 
                 if (error) {
                     console.error('Error checking nickname:', error);
-                    setStatus({ available: false, message: 'เกิดข้อผิดพลาด กรุณาลองใหม่' });
-                } else if (data && data.length > 0) {
-                    setStatus({ available: data[0].available, message: data[0].message });
+                    setStatus({ available: false, message: 'เกิดข้อผิดพลาดในการตรวจสอบ' });
+                } else {
+                    const isAvailable = count === 0;
+                    setStatus({
+                        available: isAvailable,
+                        message: isAvailable ? 'ชื่อนี้ใช้ได้!' : 'ชื่อนี้ถูกใช้แล้ว'
+                    });
                 }
             } catch (err) {
                 console.error('Error:', err);
@@ -94,39 +102,49 @@ export function SetNicknameDialog({
 
         setSaving(true);
         try {
-            const { data, error } = await supabase.rpc('set_nickname', {
-                p_user_id: user.id,
-                p_nickname: nickname.trim()
-            });
+            // Direct UPSERT to profiles table using user_id as the key
+            const { error } = await supabase
+                .from('profiles')
+                .upsert({
+                    user_id: user.id,
+                    nickname: nickname.trim(),
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'user_id'
+                });
 
             if (error) {
-                toast({
-                    title: "❌ ไม่สำเร็จ",
-                    description: error.message,
-                    variant: "destructive"
-                });
-            } else if (data && data.length > 0) {
-                if (data[0].success) {
+                console.error('Error saving nickname:', error);
+
+                // Check specifically for unique violation which might happen if race condition
+                if (error.code === '23505') { // unique_violation
                     toast({
-                        title: "✅ สำเร็จ!",
-                        description: `ตั้งชื่อเป็น "${nickname}" เรียบร้อย`,
-                    });
-                    setCurrentNickname(nickname);
-                    onSuccess?.();
-                    onOpenChange(false);
-                } else {
-                    toast({
-                        title: "❌ ไม่สำเร็จ",
-                        description: data[0].message,
+                        title: "❌ ชื่อซ้ำ",
+                        description: "ชื่อนี้เพิ่งถูกใช้งานไป กรุณาเปลี่ยนชื่อใหม่",
                         variant: "destructive"
                     });
+                    return;
                 }
+
+                toast({
+                    title: "❌ ไม่สำเร็จ",
+                    description: "เกิดข้อผิดพลาดในการบันทึก: " + error.message,
+                    variant: "destructive"
+                });
+            } else {
+                toast({
+                    title: "✅ สำเร็จ!",
+                    description: `ตั้งชื่อเป็น "${nickname}" เรียบร้อย`,
+                });
+                setCurrentNickname(nickname);
+                onSuccess?.();
+                onOpenChange(false);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error saving nickname:', err);
             toast({
                 title: "❌ ไม่สำเร็จ",
-                description: "เกิดข้อผิดพลาด กรุณาลองใหม่",
+                description: "เกิดข้อผิดพลาดไม่ทราบสาเหตุ",
                 variant: "destructive"
             });
         } finally {
@@ -172,10 +190,10 @@ export function SetNicknameDialog({
                                 onChange={(e) => setNickname(e.target.value)}
                                 maxLength={20}
                                 className={`pr-10 bg-white/10 border-2 text-white placeholder:text-slate-400 focus:ring-0 transition-all ${status === null
-                                        ? 'border-white/20'
-                                        : status.available
-                                            ? 'border-green-500/50 focus:border-green-500'
-                                            : 'border-red-500/50 focus:border-red-500'
+                                    ? 'border-white/20'
+                                    : status.available
+                                        ? 'border-green-500/50 focus:border-green-500'
+                                        : 'border-red-500/50 focus:border-red-500'
                                     }`}
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">

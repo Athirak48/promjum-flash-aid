@@ -8,6 +8,7 @@ import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useXP } from '@/hooks/useXP';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface Flashcard {
   id: string;
@@ -36,6 +37,7 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext, onSelec
   const navigate = useNavigate();
   const { updateFromVocabBlinder } = useSRSProgress();
   const { addGameXP } = useXP();
+  const { trackGame } = useAnalytics();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [blindedWord, setBlindedWord] = useState<BlindedWord | null>(null);
@@ -48,6 +50,7 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext, onSelec
   const [totalXPEarned, setTotalXPEarned] = useState(0);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [timeTakenForCurrent, setTimeTakenForCurrent] = useState(0);
+  const [gameStartTime] = useState(Date.now());
 
   // Stats
   const [correctCount, setCorrectCount] = useState(0);
@@ -113,6 +116,12 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext, onSelec
   useEffect(() => {
     if (!currentCard) return;
 
+    if (currentIndex === 0) {
+      trackGame('vocabBlinder', 'start', undefined, {
+        totalCards: flashcards.length
+      });
+    }
+
     // Clean the word: remove part-of-speech notation like (v.), (n.), (adv.), (adj.) etc.
     let word = currentCard.front_text.trim();
     // Remove content in parentheses and any surrounding whitespace
@@ -173,6 +182,13 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext, onSelec
       setCurrentIndex(currentIndex + 1);
     } else {
       setIsGameComplete(true);
+      const duration = Math.round((Date.now() - gameStartTime) / 1000);
+      trackGame('vocabBlinder', 'complete', score, {
+        totalCards: flashcards.length,
+        correctAnswers: correctCount + (isCorrect ? 1 : 0),
+        wrongAnswers: wrongCount + (!isCorrect ? 1 : 0),
+        duration: duration
+      });
     }
   };
 

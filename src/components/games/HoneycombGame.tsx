@@ -124,7 +124,7 @@ export function HoneycombComponent({ flashcards, onComplete, isMultiplayer }: Ho
     }
 
     return (
-        <div className="max-w-xl mx-auto py-4">
+        <div className="max-w-sm mx-auto px-4 py-4">
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2 text-slate-400">
@@ -136,24 +136,24 @@ export function HoneycombComponent({ flashcards, onComplete, isMultiplayer }: Ho
             </div>
 
             {/* Question */}
-            <div className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-4 mb-6 text-center">
-                <p className="text-slate-400 text-sm mb-1">หาคำศัพท์</p>
-                <p className="text-xl font-bold text-white">{currentCard.front_text}</p>
+            <div className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-xl p-3 mb-4 text-center">
+                <p className="text-slate-400 text-xs mb-1">หาคำศัพท์</p>
+                <p className="text-lg font-bold text-white">{currentCard.front_text}</p>
             </div>
 
             {/* Selected word preview */}
-            <div className="text-center mb-4 min-h-[40px]">
-                <span className="text-2xl font-bold text-purple-400 tracking-widest">
+            <div className="text-center mb-3 min-h-[32px]">
+                <span className="text-xl font-bold text-purple-400 tracking-widest">
                     {selectedCells.map(id => cells.find(c => c.id === id)?.letter || '').join('')}
                 </span>
             </div>
 
             {/* Honeycomb Grid */}
-            <div className="flex flex-col items-center gap-1 mb-6">
+            <div className="flex flex-col items-center gap-1 mb-4">
                 {[0, 1, 2].map(row => (
                     <div
                         key={row}
-                        className={`flex gap-1 ${row === 1 ? 'ml-6' : ''}`}
+                        className={`flex gap-1 ${row === 1 ? 'ml-8' : ''}`}
                     >
                         {cells.filter(c => c.row === row).map(cell => (
                             <motion.button
@@ -162,13 +162,13 @@ export function HoneycombComponent({ flashcards, onComplete, isMultiplayer }: Ho
                                 disabled={showResult}
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
-                                className={`w-12 h-14 rounded-lg flex items-center justify-center text-xl font-bold transition-all ${cell.isCorrect === true
-                                        ? 'bg-green-500 text-white'
-                                        : cell.isCorrect === false
-                                            ? 'bg-red-500 text-white'
-                                            : cell.isSelected
-                                                ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white'
-                                                : 'bg-amber-400/80 text-amber-900 hover:bg-amber-300'
+                                className={`w-10 h-12 sm:w-12 sm:h-14 rounded-lg flex items-center justify-center text-lg sm:text-xl font-bold transition-all ${cell.isCorrect === true
+                                    ? 'bg-green-500 text-white'
+                                    : cell.isCorrect === false
+                                        ? 'bg-red-500 text-white'
+                                        : cell.isSelected
+                                            ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg'
+                                            : 'bg-amber-400/90 text-amber-900 hover:bg-amber-300 shadow-md'
                                     }`}
                                 style={{
                                     clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'
@@ -187,7 +187,7 @@ export function HoneycombComponent({ flashcards, onComplete, isMultiplayer }: Ho
                     onClick={handleSubmit}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold"
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-sm"
                 >
                     ตรวจคำตอบ
                 </motion.button>

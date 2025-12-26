@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import confetti from 'canvas-confetti';
 import { useXP } from '@/hooks/useXP';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 // --- Types ---
 export interface HoneyCombWord {
@@ -37,6 +38,7 @@ interface HexTile {
 export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewGame }: FlashcardHoneyCombGameProps) {
     const { addGameXP } = useXP();
     const { updateFromHoneyComb } = useSRSProgress();
+    const { trackGame } = useAnalytics();
 
     // Game State
     const [gameWords, setGameWords] = useState<HoneyCombWord[]>([]);
@@ -75,6 +77,10 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
             const selected = shuffled.slice(0, 10); // Play 10 words
             setGameWords(selected);
             initializedRef.current = true;
+            // Track game start
+            trackGame('honeycomb', 'start', undefined, {
+                totalCards: selected.length
+            });
         }
     }, [vocabList]);
 
@@ -214,18 +220,31 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
         // Convert path to HexTile format with pixel positions
         const SPACING = 1.0;
 
-        return path.map((pos, i) => {
+        // First pass: Calculate positions without centering
+        const tempTiles = path.map((pos, i) => {
             const x = HEX_SIZE * Math.sqrt(3) * (pos.q + pos.r / 2) * SPACING;
             const y = HEX_SIZE * 1.5 * pos.r * SPACING;
+            return { pos, x, y };
+        });
 
+        // Calculate bounding box center
+        const minX = Math.min(...tempTiles.map(t => t.x));
+        const maxX = Math.max(...tempTiles.map(t => t.x));
+        const minY = Math.min(...tempTiles.map(t => t.y));
+        const maxY = Math.max(...tempTiles.map(t => t.y));
+
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+
+        return tempTiles.map(({ pos, x, y }, i) => {
             return {
                 id: `hex-${i}-${Date.now()}-${Math.random()}`,
                 char: pos.char,
                 q: pos.q,
                 r: pos.r,
                 s: -pos.q - pos.r,
-                x,
-                y
+                x: x - centerX, // Center around 0,0
+                y: y - centerY // Center around 0,0
             };
         });
     };
@@ -455,6 +474,14 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
             timeSpent
         });
         setGameFinished(true);
+
+        // Track game completion
+        trackGame('honeycomb', 'complete', score, {
+            totalCards: gameWords.length,
+            correctWords: correctCount,
+            wrongWords: wrongCount,
+            duration: timeSpent
+        });
     };
 
     // --- Audio ---
@@ -473,71 +500,81 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
 
     if (gameFinished && gameResults) {
         return (
-            <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-500">
-                <Card className="w-full max-w-2xl bg-slate-900 border border-yellow-500/30 shadow-2xl rounded-3xl overflow-hidden relative">
+            <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 animate-in fade-in duration-500">
+                <Card className="w-full max-w-sm bg-slate-900 border border-yellow-500/30 shadow-2xl rounded-2xl overflow-hidden relative">
                     {/* Background Effects */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-[100px]" />
                     <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-600/10 rounded-full blur-[100px]" />
 
-                    <div className="relative z-10 p-8 flex flex-col items-center text-center space-y-8">
-                        <div className="space-y-4">
-                            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-xl">
+                    <div className="relative z-10 p-4 sm:p-6 flex flex-col items-center text-center space-y-4">
+                        <div className="space-y-2">
+                            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-xl">
                                 Hive Completed!
                             </h2>
-                            <p className="text-yellow-400 font-bold uppercase tracking-widest text-sm">Incredible performance, Queen Bee!</p>
+                            <p className="text-yellow-400 font-bold uppercase tracking-widest text-xs">Incredible performance, Queen Bee!</p>
                         </div>
 
-                        {/* Score Heagon */}
-                        <div className="relative w-40 h-40 flex items-center justify-center group">
+                        {/* Score Hexagon */}
+                        <div className="relative w-28 h-28 flex items-center justify-center group">
                             <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-xl rotate-45 opacity-20 blur-xl group-hover:opacity-40 transition-opacity" />
-                            <div className="relative w-32 h-36 bg-gradient-to-b from-yellow-400 to-amber-600 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] flex flex-col items-center justify-center text-black shadow-2xl transform transition-transform hover:scale-110 duration-500">
-                                <span className="text-xs font-bold uppercase opacity-80 mb-1">Total Score</span>
-                                <span className="text-4xl font-black">{gameResults.score}</span>
+                            <div className="relative w-24 h-28 bg-gradient-to-b from-yellow-400 to-amber-600 [clip-path:polygon(50%_0%,_100%_25%,_100%_75%,_50%_100%,_0%_75%,_0%_25%)] flex flex-col items-center justify-center text-black shadow-2xl transform transition-transform hover:scale-110 duration-500">
+                                <span className="text-[10px] font-bold uppercase opacity-80">Total Score</span>
+                                <span className="text-3xl font-black">{gameResults.score}</span>
                             </div>
                         </div>
 
                         {/* Stats Grid */}
-                        <div className="grid grid-cols-3 gap-4 w-full">
-                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center">
-                                <span className="text-3xl font-bold text-white">{gameResults.correctWords}/{gameWords.length}</span>
-                                <span className="text-xs text-slate-400 uppercase font-bold mt-1">Words</span>
+                        <div className="grid grid-cols-3 gap-2 w-full">
+                            <div className="p-2 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center">
+                                <span className="text-xl font-bold text-white">{gameResults.correctWords}/{gameWords.length}</span>
+                                <span className="text-[10px] text-slate-400 uppercase font-bold">Words</span>
                             </div>
-                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center">
-                                <span className="text-3xl font-bold text-yellow-400">{hintsRevealed ? 'Used' : '0'}</span>
-                                <span className="text-xs text-slate-400 uppercase font-bold mt-1">Hints</span>
+                            <div className="p-2 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center">
+                                <span className="text-xl font-bold text-yellow-400">{hintsRevealed ? 'Used' : '0'}</span>
+                                <span className="text-[10px] text-slate-400 uppercase font-bold">Hints</span>
                             </div>
-                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center">
-                                <span className="text-3xl font-bold text-blue-400">{gameResults.timeSpent}s</span>
-                                <span className="text-xs text-slate-400 uppercase font-bold mt-1">Time</span>
+                            <div className="p-2 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center">
+                                <span className="text-xl font-bold text-blue-400">{gameResults.timeSpent}s</span>
+                                <span className="text-[10px] text-slate-400 uppercase font-bold">Time</span>
                             </div>
                         </div>
 
                         {/* Buttons */}
-                        <div className="flex w-full gap-4">
-                            <Button
-                                onClick={() => {
-                                    setScore(0);
-                                    setCorrectCount(0);
-                                    setWrongCount(0);
-                                    setCurrentIndex(0);
-                                    setGameFinished(false);
-                                    setGameResults(null);
-                                    setWordAttempts({});
-                                    const shuffled = [...vocabList].sort(() => 0.5 - Math.random());
-                                    const selected = shuffled.slice(0, 10);
-                                    setGameWords(selected);
-                                }}
-                                className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black font-bold h-14 rounded-xl text-lg shadow-lg shadow-yellow-900/20"
-                            >
-                                <RotateCcw className="w-5 h-5 mr-2" /> Play Again
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={onExit}
-                                className="flex-1 border-white/20 text-white hover:bg-white/10 font-bold h-14 rounded-xl text-lg"
-                            >
-                                <Hexagon className="w-5 h-5 mr-2" /> Menu
-                            </Button>
+                        <div className="flex flex-col w-full gap-2">
+                            <div className="flex gap-2">
+                                <Button
+                                    onClick={() => {
+                                        setScore(0);
+                                        setCorrectCount(0);
+                                        setWrongCount(0);
+                                        setCurrentIndex(0);
+                                        setGameFinished(false);
+                                        setGameResults(null);
+                                        setWordAttempts({});
+                                        const shuffled = [...vocabList].sort(() => 0.5 - Math.random());
+                                        const selected = shuffled.slice(0, 10);
+                                        setGameWords(selected);
+                                    }}
+                                    className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black font-bold h-10 rounded-xl text-xs shadow-lg shadow-yellow-900/20"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5 mr-1" /> เล่นอีก
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={onExit}
+                                    className="flex-1 border-white/20 text-white hover:bg-white/10 font-bold h-10 rounded-xl text-xs"
+                                >
+                                    <Hexagon className="w-3.5 h-3.5 mr-1" /> เมนู
+                                </Button>
+                            </div>
+                            {onNewGame && (
+                                <Button
+                                    onClick={onNewGame}
+                                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold h-10 rounded-xl text-xs shadow-lg shadow-purple-900/20"
+                                >
+                                    <ArrowRight className="w-3.5 h-3.5 mr-1" /> เลือกเกมใหม่
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </Card>
@@ -644,19 +681,21 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
                     ref={gridContainerRef}
                     onPointerMove={handleContainerPointerMove}
                     onPointerUp={handlePointerUp}
-                    className="relative w-full flex-1 flex items-center justify-center"
+                    className="relative w-full flex-1 flex items-center justify-center overflow-hidden min-h-[300px]"
                     style={{
                         touchAction: 'none',
                         userSelect: 'none',
-                        WebkitUserSelect: 'none',
-                        minHeight: '200px',
-                        maxHeight: 'calc(100vh - 300px)'
+                        WebkitUserSelect: 'none'
                     }}
                 >
                     <motion.div
                         animate={controls}
                         className="relative"
-                        style={{ perspective: 1000 }}
+                        style={{
+                            perspective: 1000,
+                            transform: 'scale(0.95)',
+                            transformOrigin: 'center center'
+                        }}
                     >
                         {hexGrid.map((hex) => {
                             const isSelected = selectedPath.includes(hex.id);

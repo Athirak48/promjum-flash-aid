@@ -190,8 +190,8 @@ export function LearningSessionReadingPhase({
 
         if (index === question.correctAnswer) {
             setCorrectCount(prev => prev + 1);
-            // Add XP for correct answer (+2 XP)
-            addXP('learning_reading', 1, false);
+            // Add XP for correct answer
+            addXP('learning_reading', 'correct_answer');
             setXpGained(prev => prev + 2);
         }
     };

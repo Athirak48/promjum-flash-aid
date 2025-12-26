@@ -64,7 +64,7 @@ export const NotificationHub = () => {
             if (error) throw error;
 
             if (data) {
-                setNotifications(data as Notification[]);
+                setNotifications(data as unknown as Notification[]);
 
                 // Calculate unread
                 const readIds = getReadIds();
