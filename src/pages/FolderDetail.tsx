@@ -71,10 +71,12 @@ interface Folder {
 }
 
 interface FlashcardRow {
-  id: number;
+  id: number | string;
   front: string;
   back: string;
   partOfSpeech: string;
+  frontImage?: File | null;
+  backImage?: File | null;
 }
 
 export function FolderDetail() {
@@ -371,13 +373,13 @@ export function FolderDetail() {
     setFlashcardRows([...flashcardRows, newRow]);
   };
 
-  const handleRemoveFlashcardRow = (id: number) => {
+  const handleRemoveFlashcardRow = (id: number | string) => {
     if (flashcardRows.length > 1) {
       setFlashcardRows(flashcardRows.filter(row => row.id !== id));
     }
   };
 
-  const handleFlashcardTextChange = (id: number, field: 'front' | 'back' | 'partOfSpeech', value: string) => {
+  const handleFlashcardTextChange = (id: number | string, field: 'front' | 'back' | 'partOfSpeech', value: string) => {
     setFlashcardRows(rows =>
       rows.map(row =>
         row.id === id ? { ...row, [field]: value } : row
@@ -588,7 +590,7 @@ export function FolderDetail() {
 
     // Add empty rows if less than 5
     while (rows.length < 5) {
-      rows.push({ id: Date.now() + Math.random(), front: '', back: '', partOfSpeech: 'Noun' });
+      rows.push({ id: String(Date.now() + Math.random()), front: '', back: '', partOfSpeech: 'Noun', frontImage: null, backImage: null });
     }
 
     setFlashcardRows(rows as any); // Cast to any because ID type mismatch (number vs string) - verify FlashcardRow interface?
@@ -835,7 +837,7 @@ export function FolderDetail() {
           }))}
           onExit={handleGameClose}
           onGameFinish={(results) => handleReviewComplete()}
-          onSelectNewGame={handleSelectNewGame}
+          onNewGame={handleSelectNewGame}
         />
       );
     }

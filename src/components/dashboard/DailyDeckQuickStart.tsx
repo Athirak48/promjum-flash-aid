@@ -55,18 +55,18 @@ export function DailyDeckQuickStart({
 
   // Mock flashcards data for fallback
   const getMockFlashcards = (): Array<{ id: string; front: string; back: string; upload_id?: string }> => [
-    { id: 'mock-1', front: 'Hello', back: 'สวัสดี', partOfSpeech: 'Interjection' },
-    { id: 'mock-2', front: 'Thank you', back: 'ขอบคุณ', partOfSpeech: 'Phrase' },
-    { id: 'mock-3', front: 'Goodbye', back: 'ลาก่อน', partOfSpeech: 'Phrase' },
-    { id: 'mock-4', front: 'Good morning', back: 'สวัสดีตอนเช้า', partOfSpeech: 'Phrase' },
-    { id: 'mock-5', front: 'How are you?', back: 'สบายดีไหม', partOfSpeech: 'Phrase' },
-    { id: 'mock-6', front: 'I am fine', back: 'ฉันสบายดี', partOfSpeech: 'Phrase' },
-    { id: 'mock-7', front: 'Please', back: 'กรุณา', partOfSpeech: 'Adverb' },
-    { id: 'mock-8', front: 'Excuse me', back: 'ขอโทษ', partOfSpeech: 'Phrase' },
-    { id: 'mock-9', front: 'Yes', back: 'ใช่', partOfSpeech: 'Adverb' },
-    { id: 'mock-10', front: 'No', back: 'ไม่', partOfSpeech: 'Adverb' },
-    { id: 'mock-11', front: 'Water', back: 'น้ำ', partOfSpeech: 'Noun' },
-    { id: 'mock-12', front: 'Food', back: 'อาหาร', partOfSpeech: 'Noun' },
+    { id: 'mock-1', front: 'Hello', back: 'สวัสดี' },
+    { id: 'mock-2', front: 'Thank you', back: 'ขอบคุณ' },
+    { id: 'mock-3', front: 'Goodbye', back: 'ลาก่อน' },
+    { id: 'mock-4', front: 'Good morning', back: 'สวัสดีตอนเช้า' },
+    { id: 'mock-5', front: 'How are you?', back: 'สบายดีไหม' },
+    { id: 'mock-6', front: 'I am fine', back: 'ฉันสบายดี' },
+    { id: 'mock-7', front: 'Please', back: 'กรุณา' },
+    { id: 'mock-8', front: 'Excuse me', back: 'ขอโทษ' },
+    { id: 'mock-9', front: 'Yes', back: 'ใช่' },
+    { id: 'mock-10', front: 'No', back: 'ไม่' },
+    { id: 'mock-11', front: 'Water', back: 'น้ำ' },
+    { id: 'mock-12', front: 'Food', back: 'อาหาร' },
   ];
 
   // Get cards: prioritize scheduled review near now, then fallback to smart selection

@@ -168,7 +168,7 @@ export function useGameRoom() {
                 id: roomData.id,
                 roomCode: roomData.room_code,
                 hostId: roomData.host_id,
-                status: roomData.status,
+                status: (roomData.status as GameRoom['status']) || 'waiting',
                 maxPlayers: roomData.max_players,
                 selectedGames: roomData.selected_games || [],
                 currentGameIndex: roomData.current_game_index || 0,

@@ -51,7 +51,6 @@ export function useUserStats() {
                     .eq('user_id', user.id);
 
                 // 2. Calculate Words Learned Today
-                // Logic: Count user_flashcard_progress updated today with srs_level > 0 (meaning learned/remembered)
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
@@ -61,15 +60,12 @@ export function useUserStats() {
                     .eq('user_id', user.id)
                     .gte('created_at', today.toISOString());
 
-                // 3. Subdecks Completed (Optional: requires logic to define "completed")
-                // For now, we can count distinct subdecks the user has interacted with or completed all cards in.
-                // Simplified: Fetch total subdecks count
+                // 3. Subdecks count
                 const { count: totalSubdecks } = await supabase
                     .from('sub_decks')
                     .select('*', { count: 'exact', head: true });
 
-                // Calculate progress percentage (Example: words learned / 5000)
-                // Adjust goal as needed
+                // Calculate progress percentage
                 const totalWordsGoal = 5000;
                 const learned = totalWordsCount || 0;
                 const progress = Math.min(100, Math.round((learned / totalWordsGoal) * 100));
@@ -119,7 +115,6 @@ export function useUserStats() {
                     timeSpentToday: timeSpent,
                     ranking: rank
                 }));
-
             } catch (error) {
                 console.error('Error fetching user stats:', error);
             } finally {

@@ -23,22 +23,30 @@ import { useXP } from '@/hooks/useXP';
 // Mock Data for Fallback
 const MOCK_QUESTIONS: GeneratedQuestion[] = [
     {
-        id: 'mock-1',
+        id: 1,
         story: "Last Sunday, Tom went to the park. He saw a big dog playing with a ball. It was a sunny day, and he ate vanilla ice cream.",
+        storyTh: "วันอาทิตย์ที่แล้ว ทอมไปสวนสาธารณะ เขาเห็นสุนัขตัวใหญ่เล่นกับลูกบอล วันนั้นแดดจัด เขากินไอศกรีมวานิลลา",
         question: "What did Tom see in the park?",
+        questionTh: "ทอมเห็นอะไรในสวนสาธารณะ?",
         options: ["A big cat", "A big dog", "A small bird", "A red car"],
+        optionsTh: ["แมวตัวใหญ่", "สุนัขตัวใหญ่", "นกตัวเล็ก", "รถสีแดง"],
         correctAnswer: 1,
-        explanationTh: "Tom saw a big dog playing with a ball.",
-        difficulty: "A1"
+        explanation: "Tom saw a big dog playing with a ball.",
+        explanationTh: "ทอมเห็นสุนัขตัวใหญ่เล่นกับลูกบอล",
+        vocabUsed: ["park", "dog", "ice cream"]
     },
     {
-        id: 'mock-2',
+        id: 2,
         story: "Last Sunday, Tom went to the park. He saw a big dog playing with a ball. It was a sunny day, and he ate vanilla ice cream.",
+        storyTh: "วันอาทิตย์ที่แล้ว ทอมไปสวนสาธารณะ เขาเห็นสุนัขตัวใหญ่เล่นกับลูกบอล วันนั้นแดดจัด เขากินไอศกรีมวานิลลา",
         question: "What did Tom eat?",
+        questionTh: "ทอมกินอะไร?",
         options: ["Pizza", "Burger", "Vanilla ice cream", "Sandwich"],
+        optionsTh: ["พิซซ่า", "เบอร์เกอร์", "ไอศกรีมวานิลลา", "แซนวิช"],
         correctAnswer: 2,
-        explanationTh: "The story says he ate vanilla ice cream.",
-        difficulty: "A1"
+        explanation: "The story says he ate vanilla ice cream.",
+        explanationTh: "เรื่องบอกว่าเขากินไอศกรีมวานิลลา",
+        vocabUsed: ["park", "dog", "ice cream"]
     }
 ];
 
@@ -243,13 +251,20 @@ export function LearningSessionListeningPhase({
             setShowConfetti(true);
             setTimeout(() => setShowConfetti(false), 1200);
 
+<<<<<<< HEAD
             // Add XP for correct answer
             let xpToAdd = 2; // Estimated for local display, actual logic in hook
             addXP('learning_listening', 'correct_answer');
+=======
+            // Add XP for correct answer (+2 XP)
+            let xpToAdd = 2;
+            addXP('learning_listening');
+>>>>>>> origin/main
 
             // Check streak bonuses
             if (newStreak === 3) {
                 xpToAdd += 3;
+<<<<<<< HEAD
                 addXP('learning_listening_streak3', 'streak_bonus');
             } else if (newStreak === 5) {
                 xpToAdd += 5;
@@ -257,6 +272,15 @@ export function LearningSessionListeningPhase({
             } else if (newStreak === 10) {
                 xpToAdd += 10;
                 addXP('learning_listening_streak10', 'streak_bonus');
+=======
+                addXP('learning_listening_streak3');
+            } else if (newStreak === 5) {
+                xpToAdd += 5;
+                addXP('learning_listening_streak5');
+            } else if (newStreak === 10) {
+                xpToAdd += 10;
+                addXP('learning_listening_streak10');
+>>>>>>> origin/main
             }
 
             setXpGained(prev => prev + xpToAdd);

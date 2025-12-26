@@ -57,7 +57,6 @@ export const NotificationHub = () => {
             const { data, error } = await supabase
                 .from('notifications')
                 .select('*')
-                .eq('status', 'sent') // Only show sent notifications
                 .order('created_at', { ascending: false })
                 .limit(10);
 

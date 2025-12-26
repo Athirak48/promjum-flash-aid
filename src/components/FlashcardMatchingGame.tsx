@@ -227,7 +227,7 @@ export function FlashcardMatchingGame({ flashcards, onClose, onNext, onSelectNew
 
           <h2 className="text-lg sm:text-xl font-black text-slate-800 mb-1 tracking-tight">{t('games.great')}</h2>
           <p className="text-slate-500 mb-3 sm:mb-4 font-medium text-xs sm:text-sm">
-            {t('games.completedAllRounds', { rounds: MAX_ROUNDS })}
+            {t('games.completedAllRounds')}
           </p>
 
           <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-2 sm:p-3 mb-3 sm:mb-6 border border-slate-100">
