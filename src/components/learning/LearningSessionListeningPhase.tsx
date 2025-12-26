@@ -251,20 +251,13 @@ export function LearningSessionListeningPhase({
             setShowConfetti(true);
             setTimeout(() => setShowConfetti(false), 1200);
 
-<<<<<<< HEAD
             // Add XP for correct answer
             let xpToAdd = 2; // Estimated for local display, actual logic in hook
             addXP('learning_listening', 'correct_answer');
-=======
-            // Add XP for correct answer (+2 XP)
-            let xpToAdd = 2;
-            addXP('learning_listening');
->>>>>>> origin/main
 
             // Check streak bonuses
             if (newStreak === 3) {
                 xpToAdd += 3;
-<<<<<<< HEAD
                 addXP('learning_listening_streak3', 'streak_bonus');
             } else if (newStreak === 5) {
                 xpToAdd += 5;
@@ -272,15 +265,6 @@ export function LearningSessionListeningPhase({
             } else if (newStreak === 10) {
                 xpToAdd += 10;
                 addXP('learning_listening_streak10', 'streak_bonus');
-=======
-                addXP('learning_listening_streak3');
-            } else if (newStreak === 5) {
-                xpToAdd += 5;
-                addXP('learning_listening_streak5');
-            } else if (newStreak === 10) {
-                xpToAdd += 10;
-                addXP('learning_listening_streak10');
->>>>>>> origin/main
             }
 
             setXpGained(prev => prev + xpToAdd);
