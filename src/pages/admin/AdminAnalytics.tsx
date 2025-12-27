@@ -389,26 +389,26 @@ export default function AdminAnalytics() {
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <StatCard
                                     title="Total Game Sessions"
-                                    value={overview?.total_game_sessions?.toLocaleString() || '0'}
+                                    value={overview?.totalSessions?.toLocaleString() || '0'}
                                     subtext="All games combined"
                                     icon={Gamepad2}
                                 />
                                 <StatCard
                                     title="Unique Players"
-                                    value={overview?.unique_game_players?.toLocaleString() || '0'}
+                                    value={overview?.uniqueUsers?.toLocaleString() || '0'}
                                     subtext="Players who tried games"
                                     icon={Users}
                                 />
                                 <StatCard
-                                    title="Avg Completion"
-                                    value={`${Math.round(overview?.avg_game_completion_rate || 0)}%`}
-                                    subtext="Average completion rate"
+                                    title="Total Completions"
+                                    value={overview?.totalGameCompletions?.toLocaleString() || '0'}
+                                    subtext="Games completed"
                                     icon={Trophy}
                                 />
                                 <StatCard
-                                    title="Success Rate"
-                                    value={`${Math.round(overview?.avg_game_success_rate || 0)}%`}
-                                    subtext="Average success rate"
+                                    title="Avg Duration"
+                                    value={`${Math.round(overview?.avgSessionDuration || 0)}m`}
+                                    subtext="Average session duration"
                                     icon={Target}
                                 />
                             </div>
@@ -425,8 +425,8 @@ export default function AdminAnalytics() {
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart
                                                 data={topGames?.map(game => ({
-                                                    name: GAME_NAMES[game.game_name] || game.game_name,
-                                                    sessions: game.total_sessions
+                                                    name: GAME_NAMES[game.gameName] || game.gameName,
+                                                    sessions: game.totalPlays
                                                 })) || []}
                                             >
                                                 <CartesianGrid strokeDasharray="3 3" />
@@ -448,32 +448,32 @@ export default function AdminAnalytics() {
                                     <CardContent>
                                         <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                                             {gameStats?.map((stat, index) => (
-                                                <div key={stat.game_name} className="rounded-lg border p-3 hover:bg-slate-50 transition">
+                                                <div key={stat.gameName} className="rounded-lg border p-3 hover:bg-slate-50 transition">
                                                     <div className="flex items-start justify-between mb-2">
                                                         <div>
-                                                            <p className="font-semibold text-slate-900">{GAME_NAMES[stat.game_name] || stat.game_name}</p>
-                                                            <p className="text-xs text-slate-500">ID: {stat.game_name}</p>
+                                                            <p className="font-semibold text-slate-900">{GAME_NAMES[stat.gameName] || stat.gameName}</p>
+                                                            <p className="text-xs text-slate-500">ID: {stat.gameName}</p>
                                                         </div>
-                                                        <Badge variant={stat.total_sessions > 50 ? "default" : "secondary"}>
+                                                        <Badge variant={stat.totalPlays > 50 ? "default" : "secondary"}>
                                                             #{index + 1}
                                                         </Badge>
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-2 text-sm">
                                                         <div>
                                                             <p className="text-slate-500">Sessions</p>
-                                                            <p className="font-bold text-slate-900">{stat.total_sessions}</p>
+                                                            <p className="font-bold text-slate-900">{stat.totalPlays}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-slate-500">Players</p>
-                                                            <p className="font-bold text-slate-900">{stat.unique_players}</p>
+                                                            <p className="font-bold text-slate-900">{stat.uniquePlayers}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-slate-500">Completion</p>
-                                                            <p className="font-bold text-green-600">{Math.round(stat.completion_rate)}%</p>
+                                                            <p className="font-bold text-green-600">{Math.round(stat.completionRate)}%</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-slate-500">Avg Time</p>
-                                                            <p className="font-bold text-blue-600">{Math.round(stat.avg_duration)}s</p>
+                                                            <p className="font-bold text-blue-600">{Math.round(stat.avgDuration)}s</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -494,8 +494,8 @@ export default function AdminAnalytics() {
                                         <PieChart>
                                             <Pie
                                                 data={gameStats?.map((stat, idx) => ({
-                                                    name: GAME_NAMES[stat.game_name] || stat.game_name,
-                                                    value: stat.total_sessions,
+                                                    name: GAME_NAMES[stat.gameName] || stat.gameName,
+                                                    value: stat.totalPlays,
                                                     fill: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316'][idx % 9]
                                                 })) || []}
                                                 cx="50%"

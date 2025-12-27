@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `${window.location.origin}/auth`;
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -88,53 +88,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    // 1. Try to sign in normally
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    // 2. If valid login, check if blocked
-    if (!error && data.user) {
+    if (error) {
+      // Map common errors to Thai messages
+      if (error.message?.includes('Invalid login credentials')) {
+        return { error: { message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' } };
+      }
+      if (error.message?.includes('Email not confirmed')) {
+        return { error: { message: 'กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ' } };
+      }
+      return { error };
+    }
+
+    if (data.user) {
       return checkUserBlocked(data.user);
     }
 
-    // 3. If login failed, it might be a new user. Try to auto-register.
-    // We only try this if the error implies strictly "invalid credentials" (meaning user might not exist or wrong password)
-    // However, Supabase often gives generic "Invalid login credentials" for both "user not found" and "wrong password".
-    // So we try SignUp.
-    if (error) {
-      console.log("Login failed, attempting Auto-SignUp for:", email);
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: email.split('@')[0], // Default name from email
-          },
-        },
-      });
-
-      if (signUpError) {
-        // If SignUp also fails (e.g. User already registered but password was wrong), return the original login error
-        // forcing them to use the correct password for existing accounts.
-        return { error: error };
-      }
-
-      if (signUpData.user) {
-        // Auto-signup successful!
-        // We need to check if they are now logged in (session exists)
-        // If email confirmation is ON, session might be null.
-        if (!signUpData.session) {
-          return { error: { message: "Account created! Please check your email to confirm." } };
-        }
-
-        // If we have a session, they are in!
-        return checkUserBlocked(signUpData.user);
-      }
-    }
-
-    return { error };
+    return { error: null };
   };
 
   const checkUserBlocked = async (user: User) => {
@@ -176,12 +150,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const redirectUrl = `${window.location.origin}/dashboard`;
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
     });
+    
+    if (error) {
+      console.error('Google OAuth error:', error);
+    }
+    
     return { error };
   };
 

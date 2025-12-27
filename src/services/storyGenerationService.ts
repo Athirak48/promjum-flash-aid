@@ -1,7 +1,4 @@
-// import { GoogleGenerativeAI } from '@google/generative-ai';
-
-// Initialize Gemini
-// const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
+import { supabase } from '@/integrations/supabase/client';
 
 export interface GeneratedQuestion {
     id: number;
@@ -22,16 +19,6 @@ export interface VocabWord {
     meaning: string;
 }
 
-/**
- * Clean vocabulary word - remove part of speech tags like (n.), (v.), (adv.), (adj.), (phr.), etc.
- * Example: "phone (n.)" → "phone", "silently (adv.)" → "silently"
- */
-function cleanWord(word: string): string {
-    // Remove part of speech tags in parentheses: (n.), (v.), (adv.), (adj.), (phr.), (prep.), etc.
-    // Pattern matches: ( optional-space, letters, optional dots, optional letters, optional dot, optional-space )
-    return word.replace(/\s*\([a-zA-Z]+\.?\)?\.?\s*/gi, '').trim();
-}
-
 interface AIStoryResponse {
     story: string;
     storyTh: string;
@@ -43,41 +30,131 @@ interface AIStoryResponse {
         correctAnswer: number;
         explanation: string;
         explanationTh: string;
-        vocabUsed: string[];
         type: string;
     }[];
     vocabUsed: string[];
 }
 
 /**
- * Generate listening stories with MCQ questions
- * @param vocabList - List of vocabulary words to include (Must be 12 ideally)
- * @param count - Ignored in this version as prompt enforces 4 stories
+ * Generate listening stories with MCQ questions using secure Edge Function
+ * @param vocabList - List of vocabulary words to include
+ * @param level - CEFR level (default B1)
+ * @param count - Number of stories (ignored, API returns 4)
  */
 export async function generateListeningStories(
     vocabList: VocabWord[],
     level: string = 'B1',
     count: number = 4
 ): Promise<GeneratedQuestion[]> {
-    // Force Fallback (Mock Mode)
-    // Simulate network delay for realism
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    return generateFallbackListeningStories(vocabList, count);
+    try {
+        const { data, error } = await supabase.functions.invoke('gemini-ai', {
+            body: {
+                action: 'generateListeningStories',
+                vocabList,
+                level,
+                count
+            }
+        });
+
+        if (error) {
+            console.error('Edge function error:', error);
+            return generateFallbackListeningStories(vocabList, count * 2);
+        }
+
+        if (!data?.stories || !Array.isArray(data.stories)) {
+            console.error('Invalid response from edge function');
+            return generateFallbackListeningStories(vocabList, count * 2);
+        }
+
+        const rawStories: AIStoryResponse[] = data.stories;
+
+        // Flatten: Story -> Questions -> GeneratedQuestion[]
+        const flattenedQuestions: GeneratedQuestion[] = [];
+        let idCounter = 1;
+
+        rawStories.forEach(s => {
+            s.questions.forEach(q => {
+                flattenedQuestions.push({
+                    id: idCounter++,
+                    story: s.story.replace(/\*\*/g, ''),
+                    storyTh: s.storyTh.replace(/\*\*/g, ''),
+                    question: q.question,
+                    questionTh: q.questionTh,
+                    options: q.options,
+                    optionsTh: q.optionsTh,
+                    correctAnswer: q.correctAnswer,
+                    explanation: q.explanation,
+                    explanationTh: q.explanationTh,
+                    vocabUsed: s.vocabUsed
+                });
+            });
+        });
+
+        return flattenedQuestions;
+
+    } catch (error) {
+        console.error('Error generating listening stories:', error);
+        return generateFallbackListeningStories(vocabList, count * 2);
+    }
 }
 
 /**
- * Generate reading passages with MCQ questions
+ * Generate reading passages with MCQ questions using secure Edge Function
  * @param vocabList - List of vocabulary words
- * @param count - Ignored, strictly 2 passages
+ * @param count - Number of passages (ignored, API returns 2)
  */
 export async function generateReadingStories(
     vocabList: VocabWord[],
     count: number = 2
 ): Promise<GeneratedQuestion[]> {
-    // Force Fallback (Mock Mode)
-    // Simulate network delay for realism
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    return generateFallbackReadingStories(vocabList, count);
+    try {
+        const { data, error } = await supabase.functions.invoke('gemini-ai', {
+            body: {
+                action: 'generateReadingStories',
+                vocabList,
+                count
+            }
+        });
+
+        if (error) {
+            console.error('Edge function error:', error);
+            return generateFallbackReadingStories(vocabList, count * 2);
+        }
+
+        if (!data?.stories || !Array.isArray(data.stories)) {
+            console.error('Invalid response from edge function');
+            return generateFallbackReadingStories(vocabList, count * 2);
+        }
+
+        const rawStories: AIStoryResponse[] = data.stories;
+
+        const flattenedQuestions: GeneratedQuestion[] = [];
+        let idCounter = 1;
+
+        rawStories.forEach(s => {
+            s.questions.forEach(q => {
+                flattenedQuestions.push({
+                    id: idCounter++,
+                    story: s.story.replace(/\*\*/g, ''),
+                    storyTh: s.storyTh.replace(/\*\*/g, ''),
+                    question: q.question,
+                    questionTh: q.questionTh,
+                    options: q.options,
+                    optionsTh: q.optionsTh,
+                    correctAnswer: q.correctAnswer,
+                    explanation: q.explanation,
+                    explanationTh: q.explanationTh,
+                    vocabUsed: s.vocabUsed
+                });
+            });
+        });
+
+        return flattenedQuestions;
+
+    } catch (error) {
+        console.error('Error generating reading stories:', error);
+        return generateFallbackReadingStories(vocabList, count * 2);
+    }
 }
 
 /**
