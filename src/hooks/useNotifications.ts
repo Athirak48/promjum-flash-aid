@@ -112,14 +112,17 @@ export function useNotifications() {
 
             if (error) throw error;
 
-            // Also increment read_count on the broadcast
+            // Also increment read_count on the broadcast - silently ignore errors
             const notification = notifications.find(n => n.id === notificationId);
             if (notification?.broadcast_id) {
-                await supabase.rpc('increment_broadcast_read_count', {
-                    broadcast_id: notification.broadcast_id
-                }).catch(() => {
-                    // Ignore if RPC doesn't exist
-                });
+                try {
+                    await supabase
+                        .from('notification_broadcasts')
+                        .update({ read_count: 1 })
+                        .eq('id', notification.broadcast_id);
+                } catch {
+                    // Ignore if update fails
+                }
             }
 
             setNotifications(prev =>

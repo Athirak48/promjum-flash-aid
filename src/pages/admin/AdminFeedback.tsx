@@ -77,7 +77,7 @@ export default function AdminFeedback() {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            setFeedbacks(data || []);
+            setFeedbacks((data || []) as Feedback[]);
         } catch (error: any) {
             console.error('Error fetching feedbacks:', error);
             toast({

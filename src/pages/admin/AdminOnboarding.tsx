@@ -153,20 +153,19 @@ export default function AdminOnboarding() {
         try {
             const { data, error } = await supabase
                 .from('user_onboarding')
-                .select(`
-                    *,
-                    profiles:user_id (
-                        email,
-                        display_name,
-                        username
-                    )
-                `)
+                .select('*')
                 .order('completed_at', { ascending: false });
 
             if (error) throw error;
 
-            setOnboardingList(data || []);
-            calculateStats(data || []);
+            // Map data to match interface
+            const mappedData = (data || []).map(item => ({
+                ...item,
+                profiles: { email: '', display_name: '', username: '' }
+            }));
+
+            setOnboardingList(mappedData as OnboardingData[]);
+            calculateStats(mappedData as OnboardingData[]);
         } catch (error) {
             console.error('Error fetching onboarding:', error);
             toast.error('ไม่สามารถโหลดข้อมูลได้');
