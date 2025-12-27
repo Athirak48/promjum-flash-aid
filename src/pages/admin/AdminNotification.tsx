@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,10 +31,11 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Bell, Send, Users, Clock, Mail, Smartphone, MessageSquare, Plus, Eye, Trash2, Calendar } from 'lucide-react';
+import { Bell, Send, Users, Clock, Mail, Smartphone, MessageSquare, Plus, Eye, Trash2, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
-interface Notification {
+interface NotificationBroadcast {
     id: string;
     title: string;
     message: string;
@@ -45,54 +46,18 @@ interface Notification {
     sent_at: string | null;
     read_count: number;
     created_at: string;
+    created_by: string | null;
 }
 
-// Mock data for notifications
-const mockNotifications: Notification[] = [
-    {
-        id: '1',
-        title: 'ยินดีต้อนรับสมาชิกใหม่!',
-        message: 'ขอบคุณที่เข้าร่วม Promjum Flash Aid เริ่มเรียนคำศัพท์วันนี้!',
-        type: 'in_app',
-        target_audience: 'all',
-        status: 'sent',
-        scheduled_at: null,
-        sent_at: '2024-12-14T10:00:00',
-        read_count: 1250,
-        created_at: '2024-12-14T10:00:00',
-    },
-    {
-        id: '2',
-        title: 'โปรโมชั่น Premium 50% OFF',
-        message: 'อัปเกรดเป็น Premium วันนี้ ลด 50% ถึงสิ้นเดือนนี้เท่านั้น!',
-        type: 'email',
-        target_audience: 'free',
-        status: 'sent',
-        scheduled_at: null,
-        sent_at: '2024-12-13T09:00:00',
-        read_count: 542,
-        created_at: '2024-12-13T09:00:00',
-    },
-    {
-        id: '3',
-        title: 'อัปเดตใหม่! Deck คำศัพท์ TOEIC',
-        message: 'เพิ่ม Deck ใหม่ 500 คำศัพท์ TOEIC พร้อมให้เรียนแล้ว',
-        type: 'push',
-        target_audience: 'premium',
-        status: 'scheduled',
-        scheduled_at: '2024-12-20T08:00:00',
-        sent_at: null,
-        read_count: 0,
-        created_at: '2024-12-14T11:00:00',
-    },
-];
-
 export default function AdminNotification() {
-    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const { user } = useAuth();
+    const [broadcasts, setBroadcasts] = useState<NotificationBroadcast[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+    const [selectedBroadcast, setSelectedBroadcast] = useState<NotificationBroadcast | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('all');
+    const [sending, setSending] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -105,53 +70,61 @@ export default function AdminNotification() {
     });
 
     useEffect(() => {
-        fetchNotifications();
+        fetchBroadcasts();
     }, []);
 
-    const fetchNotifications = async () => {
+    const fetchBroadcasts = async () => {
+        setLoading(true);
         try {
             const { data, error } = await supabase
-                .from('notifications')
+                .from('notification_broadcasts')
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            if (error) {
-                // Return mock data if table doesn't exist
-                console.warn('Notifications table not found, using mock data.');
-                setNotifications(mockNotifications);
-                return;
-            }
-            // Cast to any because local Notification interface might be more extensive than current DB schema
-            setNotifications((data as any) || []);
-        } catch (error) {
-            console.error('Error fetching notifications:', error);
-            setNotifications(mockNotifications);
+            if (error) throw error;
+            setBroadcasts(data || []);
+        } catch (error: any) {
+            console.error('Error fetching broadcasts:', error);
+            toast.error('ไม่สามารถโหลดข้อมูลได้');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleCreateNotification = async () => {
+    const handleCreateBroadcast = async () => {
+        if (!formData.title.trim() || !formData.message.trim()) {
+            toast.error('กรุณากรอกหัวข้อและข้อความ');
+            return;
+        }
+
+        setSending(true);
         try {
-            const newNotif = {
-                title: formData.title,
-                message: formData.message,
+            const newBroadcast = {
+                title: formData.title.trim(),
+                message: formData.message.trim(),
                 type: formData.type,
                 target_audience: formData.target_audience,
                 status: formData.is_scheduled ? 'scheduled' : 'sent',
                 scheduled_at: formData.is_scheduled ? formData.scheduled_at : null,
                 sent_at: formData.is_scheduled ? null : new Date().toISOString(),
+                created_by: user?.id || null,
                 read_count: 0
             };
 
-            // Cast to any to bypass strict type check on insert if columns are missing in types
-            const { data, error } = await supabase
-                .from('notifications')
-                .insert(newNotif as any)
+            const { data: broadcast, error } = await supabase
+                .from('notification_broadcasts')
+                .insert(newBroadcast)
                 .select()
                 .single();
 
             if (error) throw error;
 
-            setNotifications([data as any, ...notifications]);
+            // If sending immediately, also create recipient records for target users
+            if (!formData.is_scheduled) {
+                await sendToRecipients(broadcast.id, formData.target_audience);
+            }
+
+            setBroadcasts([broadcast, ...broadcasts]);
             setIsCreateDialogOpen(false);
             setFormData({
                 title: '',
@@ -163,25 +136,64 @@ export default function AdminNotification() {
             });
 
             toast.success(formData.is_scheduled ? 'ตั้งเวลาส่งสำเร็จ' : 'ส่งการแจ้งเตือนสำเร็จ');
-        } catch (error) {
-            console.error('Error creating notification:', error);
-            toast.error('ไม่สามารถส่งการแจ้งเตือนได้ (Table missing?)');
+        } catch (error: any) {
+            console.error('Error creating broadcast:', error);
+            toast.error('ไม่สามารถส่งการแจ้งเตือนได้: ' + (error.message || 'Unknown error'));
+        } finally {
+            setSending(false);
         }
     };
 
-    const handleDeleteNotification = async (id: string) => {
+    const sendToRecipients = async (broadcastId: string, targetAudience: string) => {
         try {
-            const { error } = await supabase.from('notifications').delete().eq('id', id);
+            // Get target users based on audience
+            let query = supabase.from('profiles').select('user_id');
+
+            if (targetAudience === 'premium') {
+                query = query.eq('subscription_tier', 'premium');
+            } else if (targetAudience === 'free') {
+                query = query.or('subscription_tier.is.null,subscription_tier.eq.free');
+            }
+            // 'all' = everyone
+
+            const { data: users, error } = await query;
+            if (error) throw error;
+
+            if (users && users.length > 0) {
+                // Create recipient records in batches
+                const recipients = users.map(u => ({
+                    broadcast_id: broadcastId,
+                    user_id: u.user_id,
+                    is_read: false
+                }));
+
+                const { error: insertError } = await supabase
+                    .from('notification_broadcast_recipients')
+                    .insert(recipients);
+
+                if (insertError) {
+                    console.error('Error creating recipients:', insertError);
+                }
+            }
+        } catch (error) {
+            console.error('Error sending to recipients:', error);
+        }
+    };
+
+    const handleDeleteBroadcast = async (id: string) => {
+        try {
+            const { error } = await supabase
+                .from('notification_broadcasts')
+                .delete()
+                .eq('id', id);
 
             if (error) throw error;
 
-            setNotifications(notifications.filter(n => n.id !== id));
+            setBroadcasts(broadcasts.filter(b => b.id !== id));
             toast.success('ลบการแจ้งเตือนสำเร็จ');
-        } catch (error) {
-            console.error('Error deleting notification:', error);
-            toast.error('ไม่สามารถลบการแจ้งเตือนได้');
-            // Optimistic delete for mock
-            setNotifications(notifications.filter(n => n.id !== id));
+        } catch (error: any) {
+            console.error('Error deleting broadcast:', error);
+            toast.error('ไม่สามารถลบได้: ' + error.message);
         }
     };
 
@@ -214,24 +226,46 @@ export default function AdminNotification() {
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'sent': return <Badge className="bg-green-500">ส่งแล้ว</Badge>;
-            case 'scheduled': return <Badge className="bg-blue-500">ตั้งเวลาไว้</Badge>;
-            case 'draft': return <Badge variant="secondary">ฉบับร่าง</Badge>;
+            case 'sent': return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">ส่งแล้ว</Badge>;
+            case 'scheduled': return <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0">ตั้งเวลาไว้</Badge>;
+            case 'draft': return <Badge className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border-0">ฉบับร่าง</Badge>;
             default: return <Badge>{status}</Badge>;
         }
     };
 
-    const filteredNotifications = notifications.filter(n => {
-        if (activeTab === 'all') return true;
-        if (activeTab === 'sent') return n.status === 'sent';
-        if (activeTab === 'scheduled') return n.status === 'scheduled';
-        return true;
-    });
+    const filteredBroadcasts = useMemo(() => {
+        return broadcasts.filter(b => {
+            if (activeTab === 'all') return true;
+            return b.status === activeTab;
+        });
+    }, [broadcasts, activeTab]);
 
     // Stats
-    const totalSent = notifications.filter(n => n.status === 'sent').length;
-    const totalScheduled = notifications.filter(n => n.status === 'scheduled').length;
-    const totalReads = notifications.reduce((acc, n) => acc + n.read_count, 0);
+    const stats = useMemo(() => ({
+        total: broadcasts.length,
+        sent: broadcasts.filter(b => b.status === 'sent').length,
+        scheduled: broadcasts.filter(b => b.status === 'scheduled').length,
+        totalReads: broadcasts.reduce((acc, b) => acc + (b.read_count || 0), 0)
+    }), [broadcasts]);
+
+    const formatDate = (dateStr: string | null) => {
+        if (!dateStr) return '-';
+        return new Date(dateStr).toLocaleDateString('th-TH', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8">
@@ -242,240 +276,245 @@ export default function AdminNotification() {
                         <Bell className="h-8 w-8 text-primary" />
                         Notification Center
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">ส่งการแจ้งเตือนและจัดการข้อความถึงผู้ใช้</p>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">ส่งการแจ้งเตือนถึงผู้ใช้ทั้งหมด</p>
                 </div>
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            สร้างการแจ้งเตือน
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-lg">
-                        <DialogHeader>
-                            <DialogTitle>สร้างการแจ้งเตือนใหม่</DialogTitle>
-                            <DialogDescription>กรอกข้อมูลเพื่อส่งการแจ้งเตือนถึงผู้ใช้</DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label>หัวข้อ</Label>
-                                <Input
-                                    placeholder="หัวข้อการแจ้งเตือน..."
-                                    value={formData.title}
-                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>ข้อความ</Label>
-                                <Textarea
-                                    placeholder="เนื้อหาการแจ้งเตือน..."
-                                    rows={4}
-                                    value={formData.message}
-                                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>ประเภท</Label>
-                                    <Select
-                                        value={formData.type}
-                                        onValueChange={(value: 'push' | 'email' | 'in_app') => setFormData({ ...formData, type: value })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="in_app">
-                                                <div className="flex items-center gap-2">
-                                                    <MessageSquare className="h-4 w-4" /> In-App
-                                                </div>
-                                            </SelectItem>
-                                            <SelectItem value="push">
-                                                <div className="flex items-center gap-2">
-                                                    <Smartphone className="h-4 w-4" /> Push
-                                                </div>
-                                            </SelectItem>
-                                            <SelectItem value="email">
-                                                <div className="flex items-center gap-2">
-                                                    <Mail className="h-4 w-4" /> Email
-                                                </div>
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>กลุ่มเป้าหมาย</Label>
-                                    <Select
-                                        value={formData.target_audience}
-                                        onValueChange={(value: 'all' | 'premium' | 'free') => setFormData({ ...formData, target_audience: value })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">ทุกคน</SelectItem>
-                                            <SelectItem value="premium">Premium เท่านั้น</SelectItem>
-                                            <SelectItem value="free">Free เท่านั้น</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="checkbox"
-                                        id="schedule"
-                                        checked={formData.is_scheduled}
-                                        onChange={(e) => setFormData({ ...formData, is_scheduled: e.target.checked })}
-                                        className="rounded"
-                                    />
-                                    <Label htmlFor="schedule" className="cursor-pointer">ตั้งเวลาส่ง</Label>
-                                </div>
-                                {formData.is_scheduled && (
-                                    <Input
-                                        type="datetime-local"
-                                        value={formData.scheduled_at}
-                                        onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>ยกเลิก</Button>
-                            <Button onClick={handleCreateNotification} disabled={!formData.title || !formData.message}>
-                                <Send className="h-4 w-4 mr-2" />
-                                {formData.is_scheduled ? 'ตั้งเวลาส่ง' : 'ส่งเลย'}
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={fetchBroadcasts} className="gap-2">
+                        <RefreshCw className="h-4 w-4" />
+                        รีเฟรช
+                    </Button>
+                    <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="gap-2">
+                                <Plus className="h-4 w-4" />
+                                สร้างการแจ้งเตือน
                             </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-lg">
+                            <DialogHeader>
+                                <DialogTitle>สร้างการแจ้งเตือนใหม่</DialogTitle>
+                                <DialogDescription>กรอกข้อมูลเพื่อส่งการแจ้งเตือนถึงผู้ใช้</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>หัวข้อ</Label>
+                                    <Input
+                                        placeholder="หัวข้อการแจ้งเตือน..."
+                                        value={formData.title}
+                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>ข้อความ</Label>
+                                    <Textarea
+                                        placeholder="เนื้อหาการแจ้งเตือน..."
+                                        rows={4}
+                                        value={formData.message}
+                                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>ประเภท</Label>
+                                        <Select
+                                            value={formData.type}
+                                            onValueChange={(value: 'push' | 'email' | 'in_app') => setFormData({ ...formData, type: value })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="in_app">
+                                                    <div className="flex items-center gap-2">
+                                                        <MessageSquare className="h-4 w-4" /> In-App
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="push">
+                                                    <div className="flex items-center gap-2">
+                                                        <Smartphone className="h-4 w-4" /> Push
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="email">
+                                                    <div className="flex items-center gap-2">
+                                                        <Mail className="h-4 w-4" /> Email
+                                                    </div>
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>กลุ่มเป้าหมาย</Label>
+                                        <Select
+                                            value={formData.target_audience}
+                                            onValueChange={(value: 'all' | 'premium' | 'free') => setFormData({ ...formData, target_audience: value })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">ทุกคน</SelectItem>
+                                                <SelectItem value="premium">Premium เท่านั้น</SelectItem>
+                                                <SelectItem value="free">Free เท่านั้น</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="schedule"
+                                            checked={formData.is_scheduled}
+                                            onChange={(e) => setFormData({ ...formData, is_scheduled: e.target.checked })}
+                                            className="rounded"
+                                        />
+                                        <Label htmlFor="schedule" className="cursor-pointer">ตั้งเวลาส่ง</Label>
+                                    </div>
+                                    {formData.is_scheduled && (
+                                        <Input
+                                            type="datetime-local"
+                                            value={formData.scheduled_at}
+                                            onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>ยกเลิก</Button>
+                                <Button onClick={handleCreateBroadcast} disabled={!formData.title || !formData.message || sending}>
+                                    {sending ? (
+                                        <>
+                                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                            กำลังส่ง...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send className="h-4 w-4 mr-2" />
+                                            {formData.is_scheduled ? 'ตั้งเวลาส่ง' : 'ส่งเลย'}
+                                        </>
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
                     <CardContent className="pt-6 pb-4">
-                        <div className="flex flex-col items-center text-center gap-2">
-                            <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
-                                <Send className="h-6 w-6" />
-                            </div>
+                        <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalSent}</p>
-                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">ส่งแล้ว</p>
+                                <p className="text-green-100 text-sm">ส่งแล้ว</p>
+                                <p className="text-3xl font-bold mt-1">{stats.sent}</p>
                             </div>
+                            <Send className="h-10 w-10 text-green-200" />
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
                     <CardContent className="pt-6 pb-4">
-                        <div className="flex flex-col items-center text-center gap-2">
-                            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
-                                <Clock className="h-6 w-6" />
-                            </div>
+                        <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalScheduled}</p>
-                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">ตั้งเวลาไว้</p>
+                                <p className="text-blue-100 text-sm">ตั้งเวลาไว้</p>
+                                <p className="text-3xl font-bold mt-1">{stats.scheduled}</p>
                             </div>
+                            <Clock className="h-10 w-10 text-blue-200" />
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
                     <CardContent className="pt-6 pb-4">
-                        <div className="flex flex-col items-center text-center gap-2">
-                            <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
-                                <Eye className="h-6 w-6" />
-                            </div>
+                        <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalReads.toLocaleString()}</p>
-                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">ยอดอ่าน</p>
+                                <p className="text-purple-100 text-sm">ยอดอ่าน</p>
+                                <p className="text-3xl font-bold mt-1">{stats.totalReads.toLocaleString()}</p>
                             </div>
+                            <Eye className="h-10 w-10 text-purple-200" />
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white border-0">
                     <CardContent className="pt-6 pb-4">
-                        <div className="flex flex-col items-center text-center gap-2">
-                            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
-                                <Users className="h-6 w-6" />
-                            </div>
+                        <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{notifications.length}</p>
-                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">ทั้งหมด</p>
+                                <p className="text-amber-100 text-sm">ทั้งหมด</p>
+                                <p className="text-3xl font-bold mt-1">{stats.total}</p>
                             </div>
+                            <Bell className="h-10 w-10 text-amber-200" />
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Notifications Table */}
-            <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
-                <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/50">
-                    <CardTitle className="text-slate-800 dark:text-slate-100">รายการการแจ้งเตือน</CardTitle>
-                    <CardDescription className="text-slate-500 dark:text-slate-400">ประวัติและสถานะการแจ้งเตือนทั้งหมด</CardDescription>
+            <Card>
+                <CardHeader className="border-b">
+                    <CardTitle className="text-slate-800 dark:text-white">รายการการแจ้งเตือน</CardTitle>
+                    <CardDescription>ประวัติและสถานะการแจ้งเตือนทั้งหมด</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-                        <TabsList className="bg-slate-100 dark:bg-slate-800 p-1">
-                            <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">ทั้งหมด</TabsTrigger>
-                            <TabsTrigger value="sent" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">ส่งแล้ว</TabsTrigger>
-                            <TabsTrigger value="scheduled" className="data-[state=active]:bg-white data-[state=active]:text-slate-900">ตั้งเวลาไว้</TabsTrigger>
+                        <TabsList>
+                            <TabsTrigger value="all">ทั้งหมด ({stats.total})</TabsTrigger>
+                            <TabsTrigger value="sent">ส่งแล้ว ({stats.sent})</TabsTrigger>
+                            <TabsTrigger value="scheduled">ตั้งเวลาไว้ ({stats.scheduled})</TabsTrigger>
                         </TabsList>
                     </Tabs>
 
-                    <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">หัวข้อ</TableHead>
-                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ประเภท</TableHead>
-                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">กลุ่มเป้าหมาย</TableHead>
-                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">สถานะ</TableHead>
-                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">ยอดอ่าน</TableHead>
-                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">วันที่</TableHead>
-                                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300">การกระทำ</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredNotifications.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center text-slate-400 py-8">
-                                            ไม่พบการแจ้งเตือน
-                                        </TableCell>
+                    {filteredBroadcasts.length === 0 ? (
+                        <div className="text-center py-12 text-slate-500">
+                            <Bell className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                            <p>ยังไม่มีการแจ้งเตือน</p>
+                            <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                สร้างการแจ้งเตือนแรก
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="border rounded-lg overflow-hidden">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-slate-50 dark:bg-slate-900">
+                                        <TableHead className="font-semibold">หัวข้อ</TableHead>
+                                        <TableHead className="font-semibold">ประเภท</TableHead>
+                                        <TableHead className="font-semibold">กลุ่มเป้าหมาย</TableHead>
+                                        <TableHead className="font-semibold">สถานะ</TableHead>
+                                        <TableHead className="font-semibold">ยอดอ่าน</TableHead>
+                                        <TableHead className="font-semibold">วันที่</TableHead>
+                                        <TableHead className="font-semibold">การกระทำ</TableHead>
                                     </TableRow>
-                                ) : (
-                                    filteredNotifications.map((notification) => (
-                                        <TableRow key={notification.id}>
-                                            <TableCell className="font-medium max-w-[200px] truncate text-slate-900 dark:text-white">
-                                                {notification.title}
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredBroadcasts.map((broadcast) => (
+                                        <TableRow key={broadcast.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                            <TableCell className="font-medium max-w-[200px] truncate">
+                                                {broadcast.title}
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                                                    {getTypeIcon(notification.type)}
-                                                    {getTypeLabel(notification.type)}
+                                                    {getTypeIcon(broadcast.type)}
+                                                    {getTypeLabel(broadcast.type)}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant="outline" className="border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">{getAudienceLabel(notification.target_audience)}</Badge>
+                                                <Badge variant="outline">{getAudienceLabel(broadcast.target_audience)}</Badge>
                                             </TableCell>
-                                            <TableCell>{getStatusBadge(notification.status)}</TableCell>
-                                            <TableCell className="text-slate-600 dark:text-slate-300">{notification.read_count.toLocaleString()}</TableCell>
+                                            <TableCell>{getStatusBadge(broadcast.status)}</TableCell>
                                             <TableCell className="text-slate-600 dark:text-slate-300">
-                                                {new Date(notification.sent_at || notification.scheduled_at || notification.created_at).toLocaleDateString('th-TH', {
-                                                    day: 'numeric',
-                                                    month: 'short',
-                                                    year: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                })}
+                                                {(broadcast.read_count || 0).toLocaleString()}
+                                            </TableCell>
+                                            <TableCell className="text-slate-600 dark:text-slate-300">
+                                                {formatDate(broadcast.sent_at || broadcast.scheduled_at || broadcast.created_at)}
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex gap-2">
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                                                         onClick={() => {
-                                                            setSelectedNotification(notification);
+                                                            setSelectedBroadcast(broadcast);
                                                             setIsViewDialogOpen(true);
                                                         }}
                                                     >
@@ -484,19 +523,19 @@ export default function AdminNotification() {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                        onClick={() => handleDeleteNotification(notification.id)}
+                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                        onClick={() => handleDeleteBroadcast(broadcast.id)}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
@@ -504,33 +543,43 @@ export default function AdminNotification() {
             <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{selectedNotification?.title}</DialogTitle>
+                        <DialogTitle>{selectedBroadcast?.title}</DialogTitle>
                         <DialogDescription>รายละเอียดการแจ้งเตือน</DialogDescription>
                     </DialogHeader>
-                    {selectedNotification && (
+                    {selectedBroadcast && (
                         <div className="space-y-4">
-                            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800">
-                                <p className="whitespace-pre-wrap text-slate-700 dark:text-slate-300">{selectedNotification.message}</p>
+                            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                                <p className="whitespace-pre-wrap text-slate-700 dark:text-slate-300">
+                                    {selectedBroadcast.message}
+                                </p>
                             </div>
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <p className="text-slate-500 dark:text-slate-400">ประเภท</p>
-                                    <p className="font-medium flex items-center gap-2 text-slate-900 dark:text-white">
-                                        {getTypeIcon(selectedNotification.type)}
-                                        {getTypeLabel(selectedNotification.type)}
+                                    <p className="text-slate-500">ประเภท</p>
+                                    <p className="font-medium flex items-center gap-2">
+                                        {getTypeIcon(selectedBroadcast.type)}
+                                        {getTypeLabel(selectedBroadcast.type)}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-slate-500 dark:text-slate-400">กลุ่มเป้าหมาย</p>
-                                    <p className="font-medium text-slate-900 dark:text-white">{getAudienceLabel(selectedNotification.target_audience)}</p>
+                                    <p className="text-slate-500">กลุ่มเป้าหมาย</p>
+                                    <p className="font-medium">{getAudienceLabel(selectedBroadcast.target_audience)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-slate-500 dark:text-slate-400">สถานะ</p>
-                                    <div>{getStatusBadge(selectedNotification.status)}</div>
+                                    <p className="text-slate-500">สถานะ</p>
+                                    <div>{getStatusBadge(selectedBroadcast.status)}</div>
                                 </div>
                                 <div>
-                                    <p className="text-slate-500 dark:text-slate-400">ยอดอ่าน</p>
-                                    <p className="font-medium text-slate-900 dark:text-white">{selectedNotification.read_count.toLocaleString()} คน</p>
+                                    <p className="text-slate-500">ยอดอ่าน</p>
+                                    <p className="font-medium">{(selectedBroadcast.read_count || 0).toLocaleString()} คน</p>
+                                </div>
+                                <div>
+                                    <p className="text-slate-500">วันที่สร้าง</p>
+                                    <p className="font-medium">{formatDate(selectedBroadcast.created_at)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-slate-500">วันที่ส่ง</p>
+                                    <p className="font-medium">{formatDate(selectedBroadcast.sent_at)}</p>
                                 </div>
                             </div>
                         </div>

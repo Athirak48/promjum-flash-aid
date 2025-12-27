@@ -12,8 +12,11 @@ import {
   Settings,
   Trophy,
   TrendingUp,
-  LogOut
+  LogOut,
+  MousePointerClick,
+  ClipboardList
 } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -24,7 +27,10 @@ import { toast } from 'sonner';
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: TrendingUp, label: 'Analytics', path: '/admin/analytics' },
-  { icon: BookOpen, label: 'Decks & Content', path: '/admin/decks' },
+  { icon: MousePointerClick, label: 'Click Analytics', path: '/admin/click-analytics' },
+  { icon: ClipboardList, label: 'Onboarding', path: '/admin/onboarding' },
+  { icon: BookOpen, label: 'Community', path: '/admin/community' },
+
   { icon: Users, label: 'Members', path: '/admin/members' },
   { icon: CreditCard, label: 'Subscriptions', path: '/admin/subscriptions' },
   { icon: Tag, label: 'Promotions', path: '/admin/promotions' },

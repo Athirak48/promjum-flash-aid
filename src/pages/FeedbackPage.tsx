@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Send, Star, Lightbulb, Bug, MessageSquare, CheckCircle2, Gamepad2, Heart, BookOpen, HelpCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Send, Star, Lightbulb, Bug, MessageSquare, CheckCircle2, Gamepad2, BookOpen, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -22,12 +22,12 @@ export default function FeedbackPage() {
   });
 
   const feedbackTypes = [
-    { id: 'general', label: 'ทั่วไป', icon: MessageSquare, color: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-200' },
-    { id: 'feature', label: 'ฟีเจอร์ใหม่', icon: Lightbulb, color: 'text-yellow-500', bg: 'bg-yellow-50', border: 'border-yellow-200' },
-    { id: 'bug', label: 'แจ้งปัญหา', icon: Bug, color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200' },
-    { id: 'game_idea', label: 'ไอเดียเกม', icon: Gamepad2, color: 'text-purple-500', bg: 'bg-purple-50', border: 'border-purple-200' },
-    { id: 'content', label: 'คำศัพท์/เนื้อหา', icon: BookOpen, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' },
-    { id: 'question', label: 'สอบถาม', icon: HelpCircle, color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-200' },
+    { id: 'general', label: 'ทั่วไป', icon: MessageSquare, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/30' },
+    { id: 'feature', label: 'ฟีเจอร์ใหม่', icon: Lightbulb, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30' },
+    { id: 'bug', label: 'แจ้งปัญหา', icon: Bug, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' },
+    { id: 'game_idea', label: 'ไอเดียเกม', icon: Gamepad2, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
+    { id: 'content', label: 'คำศัพท์/เนื้อหา', icon: BookOpen, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' },
+    { id: 'question', label: 'สอบถาม', icon: HelpCircle, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/30' },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,13 +52,23 @@ export default function FeedbackPage() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { error } = await supabase.from('user_feedbacks').insert({
+        user_id: user?.id || null,
+        type: formData.type,
+        message: formData.message.trim(),
+        rating: formData.rating,
+        email: formData.email.trim() || null,
+        status: 'pending'
+      });
+
+      if (error) throw error;
+
       setIsSuccess(true);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error submitting feedback:', error);
       toast({
         title: "ส่งไม่สำเร็จ",
-        description: "ลองใหม่อีกครั้งนะ",
+        description: error.message || "ลองใหม่อีกครั้งนะ",
         variant: "destructive",
       });
     } finally {
@@ -72,21 +82,21 @@ export default function FeedbackPage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl text-center relative z-10 border border-slate-100 dark:border-slate-800"
+          className="max-w-md w-full glass-card rounded-[2.5rem] p-10 text-center relative z-10"
         >
-          <div className="w-24 h-24 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border-4 border-white dark:border-slate-800">
-            <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />
+          <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(34,197,94,0.4)] border-4 border-white/20">
+            <CheckCircle2 className="w-12 h-12 text-white" />
           </div>
-          <h2 className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-2">ขอบคุณนะ!</h2>
-          <p className="text-slate-500 dark:text-slate-400 mb-8 text-lg">
-            เราได้รับความคิดเห็นของคุณแล้ว <br /> ทีมงานจะอ่านทุกข้อความแน่นอน
+          <h2 className="text-3xl font-black text-white mb-2 font-cute">ขอบคุณนะ!</h2>
+          <p className="text-slate-300 mb-8 text-lg font-medium">
+            เราได้รับความคิดเห็นของคุณแล้ว <br /> ทีมงานจะอ่านทุกข้อความแน่นอน 💖
           </p>
           <Button
             onClick={() => {
               setIsSuccess(false);
               setFormData({ type: 'general', message: '', rating: 0, email: user?.email || '' });
             }}
-            className="w-full h-12 rounded-xl text-base font-medium shadow-lg hover:shadow-xl transition-all"
+            className="w-full h-12 rounded-xl text-base font-bold shadow-lg hover:shadow-xl transition-all bg-white/10 hover:bg-white/20 text-white border border-white/20"
             variant="outline"
           >
             ส่งข้อเสนอแนะเพิ่มเติม
@@ -98,39 +108,50 @@ export default function FeedbackPage() {
 
   return (
     <div className="min-h-screen bg-transparent py-8 px-4 relative overflow-auto font-sans">
-
       <div className="max-w-xl mx-auto relative z-10 h-full flex flex-col justify-center min-h-[85vh]">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent mb-3 drop-shadow-sm">Opinion</h1>
-          <p className="text-slate-500 font-medium text-lg">เสียงของคุณช่วยให้เราเติบโต</p>
-        </div>
+
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-5xl font-black text-white mb-2 font-cute drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">
+            Open Space 🚀
+          </h1>
+          <p className="text-purple-200 font-medium text-lg">เสียงของคุณคือพลังขับเคลื่อนยานของเรา</p>
+        </motion.div>
 
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/60 dark:border-slate-800 p-6 sm:p-10"
+          transition={{ delay: 0.1 }}
+          className="glass-card rounded-[2.5rem] p-6 sm:p-10 relative overflow-hidden"
         >
-          <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Background Glow */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 blur-[100px] rounded-full -z-10" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/20 blur-[100px] rounded-full -z-10" />
+
+          <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
 
             {/* 1. Rating */}
             <div className="text-center space-y-4">
-              <div className="inline-block bg-slate-100 dark:bg-slate-800 px-4 py-1.5 rounded-full text-sm font-bold text-slate-500 uppercase tracking-widest">
-                ความพึงพอใจ
+              <div className="inline-block bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold text-cyan-200 uppercase tracking-widest border border-white/10">
+                ความพึงพอใจ 🌟
               </div>
-              <div className="flex justify-center gap-3">
+              <div className="flex justify-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     type="button"
                     onClick={() => setFormData({ ...formData, rating: star })}
-                    className="transition-all hover:scale-110 active:scale-95 focus:outline-none"
+                    className="transition-all hover:scale-110 active:scale-95 focus:outline-none group"
                   >
                     <Star
                       className={cn(
-                        "h-10 w-10 sm:h-12 sm:w-12 transition-all duration-300 filter drop-shadow-sm",
+                        "h-10 w-10 sm:h-12 sm:w-12 transition-all duration-300 filter drop-shadow-lg",
                         star <= formData.rating
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-slate-200 dark:text-slate-700 hover:text-amber-200"
+                          ? "fill-yellow-400 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.6)]"
+                          : "text-slate-600 group-hover:text-yellow-200/50"
                       )}
                     />
                   </button>
@@ -153,24 +174,29 @@ export default function FeedbackPage() {
                       type="button"
                       onClick={() => setFormData({ ...formData, type: type.id })}
                       className={cn(
-                        "flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all duration-200 h-24 sm:h-28 group relative overflow-hidden",
+                        "flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all duration-300 h-24 sm:h-28 group relative overflow-hidden",
                         isSelected
-                          ? `bg-white dark:bg-slate-800 ${type.border} ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 ${type.color.replace('text', 'ring')}/20 shadow-md`
-                          : "bg-slate-50 dark:bg-slate-800/50 border-transparent hover:bg-white dark:hover:bg-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm"
+                          ? `bg-white/10 ${type.border} shadow-[0_0_15px_rgba(255,255,255,0.1)] scale-105`
+                          : "bg-black/20 border-white/5 hover:bg-white/5 hover:border-white/10"
                       )}
                     >
                       <div className={cn(
                         "p-2 rounded-xl transition-all duration-300",
-                        isSelected ? type.bg : "bg-white dark:bg-slate-900 group-hover:scale-110"
+                        isSelected ? "bg-white/20 shadow-inner" : "bg-white/5 group-hover:scale-110"
                       )}>
-                        <Icon className={cn("w-5 h-5 sm:w-6 sm:h-6", isSelected ? type.color : "text-slate-400 group-hover:text-slate-600")} />
+                        <Icon className={cn("w-5 h-5 sm:w-6 sm:h-6", isSelected ? type.color : "text-slate-500 group-hover:text-white")} />
                       </div>
                       <span className={cn(
                         "font-bold text-xs sm:text-sm transition-colors",
-                        isSelected ? "text-slate-800 dark:text-slate-200" : "text-slate-500"
+                        isSelected ? "text-white" : "text-slate-500 group-hover:text-slate-300"
                       )}>
                         {type.label}
                       </span>
+
+                      {/* Active Indicator */}
+                      {isSelected && (
+                        <motion.div layoutId="active-indicator" className="absolute inset-0 border-2 border-white/20 rounded-2xl pointer-events-none" />
+                      )}
                     </button>
                   );
                 })}
@@ -179,22 +205,27 @@ export default function FeedbackPage() {
 
             {/* 3. Message */}
             <div className="space-y-4">
-              <Textarea
-                placeholder="เล่ารายละเอียดให้เราฟังหน่อย..."
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                rows={4}
-                className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 border-0 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-violet-500/20 transition-all resize-none p-5 text-base shadow-inner placeholder:text-slate-400"
-              />
+              <div className="relative">
+                <Textarea
+                  placeholder="เล่ารายละเอียดให้เราฟังหน่อย..."
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  rows={4}
+                  className="rounded-2xl bg-black/20 border-white/10 focus:border-purple-500/50 focus:bg-black/40 focus:ring-2 focus:ring-purple-500/20 transition-all resize-none p-5 text-base text-white placeholder:text-slate-500 shadow-inner"
+                />
+                <div className="absolute top-3 right-3">
+                  <MessageSquare className="w-5 h-5 text-white/10" />
+                </div>
+              </div>
 
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-2 pl-4 rounded-2xl">
+              <div className="flex items-center gap-3 bg-black/20 border border-white/5 p-2 pl-4 rounded-2xl focus-within:border-purple-500/30 transition-all">
                 <span className="text-sm font-bold text-slate-400 whitespace-nowrap">ติดต่อกลับ:</span>
                 <Input
                   type="email"
                   placeholder="อีเมลของคุณ (ไม่บังคับ)"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="border-0 bg-transparent shadow-none focus-visible:ring-0 px-2 h-9 text-slate-600 dark:text-slate-300 placeholder:text-slate-300"
+                  className="border-0 bg-transparent shadow-none focus-visible:ring-0 px-2 h-9 text-white placeholder:text-slate-600"
                 />
               </div>
             </div>
@@ -202,11 +233,17 @@ export default function FeedbackPage() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-violet-200/50 dark:shadow-none bg-gradient-to-r from-violet-600 to-indigo-600 hover:scale-[1.02] active:scale-95 transition-all text-white"
+              className="w-full h-14 rounded-2xl text-lg font-bold btn-space-glass mt-4"
             >
               <div className="flex items-center gap-2">
-                <Send className="w-5 h-5" />
-                <span>{isSubmitting ? "กำลังส่ง..." : "ส่งความคิดเห็น"}</span>
+                {isSubmitting ? (
+                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full" />
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    <span>ส่งความคิดเห็น</span>
+                  </>
+                )}
               </div>
             </Button>
 

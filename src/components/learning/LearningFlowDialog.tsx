@@ -10,6 +10,8 @@ import { WordCountStep, WordCountSettings } from './WordCountStep';
 import { VocabSelectionStep, VocabItem } from './VocabSelectionStep';
 import { AudioSetupStep, AudioSettings } from './AudioSetupStep';
 import { ReadyToStartStep } from './ReadyToStartStep';
+import { useAnalytics } from '@/hooks/useAnalytics';
+
 
 type FlowStep = 'mode' | 'wordcount' | 'vocab' | 'audio' | 'ready';
 
@@ -20,6 +22,8 @@ interface LearningFlowDialogProps {
 
 export function LearningFlowDialog({ open, onOpenChange }: LearningFlowDialogProps) {
     const navigate = useNavigate();
+    const { trackFeatureUsage } = useAnalytics();
+
 
     // Flow state
     const [currentStep, setCurrentStep] = useState<FlowStep>('mode');
@@ -115,6 +119,11 @@ export function LearningFlowDialog({ open, onOpenChange }: LearningFlowDialogPro
         if (selectedModes.game) phases.push('game');
         if (selectedModes.listening) phases.push('listening');
         if (selectedModes.reading) phases.push('reading');
+
+        // Track selected modes
+        phases.forEach(phase => {
+            trackFeatureUsage(`Learning Mode: ${phase}`, 'learning_session');
+        });
 
         // Close dialog
         onOpenChange(false);

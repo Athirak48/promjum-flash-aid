@@ -32,6 +32,7 @@ import VocabChallengePage from "./pages/VocabChallengePage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
+import AdminCommunity from "./pages/admin/AdminCommunity";
 import AdminDeckDetail from "./pages/admin/AdminDeckDetail";
 import AdminSubDeckDetail from "./pages/admin/AdminSubDeckDetail";
 import AdminMembers from "./pages/admin/AdminMembers";
@@ -41,10 +42,75 @@ import AdminNotification from "./pages/admin/AdminNotification";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminClickAnalyticsPage from "./pages/admin/AdminClickAnalyticsPage";
+import AdminOnboarding from "./pages/admin/AdminOnboarding";
 import BackgroundDecorations from "./components/BackgroundDecorations";
+
 import FolderBundlePreviewDemo from "./pages/FolderBundlePreviewDemo";
+import OnboardingFlow from "./pages/OnboardingFlow";
+
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const queryClient = new QueryClient();
+import { useAnalytics } from "./hooks/useAnalytics";
+
+
+const FeedbackMascot = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { trackButtonClick } = useAnalytics();
+
+  // Hide on auth, landing, feedback, games, learning flows, and onboarding
+  const hiddenPaths = ['/auth', '/landing', '/', '/feedback', '/onboarding'];
+  const hiddenPathPrefixes = [
+    '/flashcards/',  // Flashcard games and reviews
+    '/learning/',    // Learning flow after "Learning Now"
+    '/game/',        // Any game routes
+    '/vocab-challenge', // Vocab challenge
+    '/lobby/',       // Lobby games
+    '/admin',        // All admin pages
+  ];
+
+  // Check if current path should hide mascot
+  const shouldHide = hiddenPaths.includes(location.pathname) ||
+    hiddenPathPrefixes.some(prefix => location.pathname.startsWith(prefix));
+
+  if (shouldHide) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
+      {/* Speech Bubble */}
+      <motion.div
+        initial={{ opacity: 0, y: 10, scale: 0.8 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 2, duration: 0.5 }}
+        className="mr-4 mb-2 bg-white text-slate-900 px-4 py-2 rounded-2xl rounded-br-none shadow-xl border-2 border-slate-100 relative max-w-[150px] text-center"
+      >
+        <p className="text-xs font-bold font-cute">มีอะไรบอกผมไหม? 💬</p>
+      </motion.div>
+
+      {/* Mascot Image */}
+      <motion.button
+        whileHover={{ scale: 1.1, rotate: 5 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => {
+          trackButtonClick('Feedback Mascot', 'global');
+          navigate('/feedback');
+        }}
+        className="w-20 h-20 md:w-24 md:h-24 relative hover:drop-shadow-2xl transition-all"
+      >
+        <img
+          src="/feedback-mascot.png"
+          alt="Feedback Mascot"
+          className="w-full h-full object-contain drop-shadow-lg"
+        />
+        {/* Notification Dot */}
+        <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 border-2 border-white rounded-full animate-bounce" />
+      </motion.button>
+    </div>
+  );
+};
 
 const App = () => {
   return (
@@ -61,6 +127,7 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={<><Navbar /><LandingPage /></>} />
                     <Route path="/auth" element={<><Navbar /><AuthPage /></>} />
+                    <Route path="/onboarding" element={<ProtectedRoute skipOnboarding><OnboardingFlow /></ProtectedRoute>} />
                     <Route
                       path="/dashboard"
                       element={
@@ -119,7 +186,8 @@ const App = () => {
                       }
                     >
                       <Route index element={<AdminDashboard />} />
-                      <Route path="decks" element={<AdminDecks />} />
+                      <Route path="community" element={<AdminCommunity />} />
+                      <Route path="decks" element={<AdminCommunity />} />
                       <Route path="members" element={<AdminMembers />} />
                       <Route path="promotions" element={<AdminPromotions />} />
                       <Route path="notification" element={<AdminNotification />} />
@@ -127,7 +195,10 @@ const App = () => {
                       <Route path="subscriptions" element={<AdminSubscriptions />} />
                       <Route path="settings" element={<AdminSettings />} />
                       <Route path="analytics" element={<AdminAnalytics />} />
+                      <Route path="click-analytics" element={<AdminClickAnalyticsPage />} />
+                      <Route path="onboarding" element={<AdminOnboarding />} />
                     </Route>
+
                     <Route
                       path="/admin/decks/:deckId/subdecks/:subdeckId"
                       element={
@@ -218,6 +289,7 @@ const App = () => {
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<><Navbar /><NotFoundPage /></>} />
                   </Routes>
+                  <FeedbackMascot />
                 </BrowserRouter>
               </MaintenanceCheck>
             </AuthProvider>

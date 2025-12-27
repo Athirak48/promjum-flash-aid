@@ -203,8 +203,13 @@ export function ReadyToStartStep({
                                         <span className="drop-shadow-sm filter">{emoji}</span>
                                     </motion.div>
 
-                                    <div className="text-[10px] font-bold text-slate-600 bg-white/80 px-2 py-0.5 rounded-full shadow-sm border border-slate-100 backdrop-blur-sm group-hover:text-pink-500 transition-colors">
+                                    <div className="text-[10px] font-bold text-slate-600 bg-white/80 px-2 py-0.5 rounded-full shadow-sm border border-slate-100 backdrop-blur-sm group-hover:text-pink-500 transition-colors flex items-center gap-1">
                                         {modeInfo.label}
+                                        {(mode === 'listening' || mode === 'reading') && (
+                                            <span className="bg-red-100 text-red-600 text-[8px] px-1 rounded-sm border border-red-200 font-bold">
+                                                MOCK
+                                            </span>
+                                        )}
                                     </div>
                                 </motion.div>
 

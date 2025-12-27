@@ -63,20 +63,25 @@ export function GameSelectorDialog({ open, onOpenChange, selectedGames, onConfir
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-lg bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 border-white/10 text-white">
-                <DialogHeader>
-                    <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                        <Gamepad2 className="w-6 h-6 text-teal-400" />
-                        เลือกเกม (สูงสุด 3 เกม)
+            <DialogContent className="sm:max-w-2xl bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 border-white/10 text-white p-4">
+                <DialogHeader className="pb-2">
+                    <DialogTitle className="text-lg font-bold flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Gamepad2 className="w-5 h-5 text-teal-400" />
+                            <span>เลือกเกม (สูงสุด 3 เกม)</span>
+                        </div>
+                        <span className="text-sm font-normal text-slate-400">
+                            เลือกแล้ว {selected.length}/3
+                        </span>
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
                     {/* Time-based games */}
                     <div>
-                        <div className="flex items-center gap-2 mb-3">
-                            <Clock className="w-4 h-4 text-orange-400" />
-                            <span className="text-sm font-medium text-orange-400">แข่งด้วยเวลา</span>
+                        <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-white/10">
+                            <Clock className="w-3.5 h-3.5 text-orange-400" />
+                            <span className="text-xs font-semibold text-orange-400">แข่งด้วยเวลา</span>
                         </div>
                         <div className="grid grid-cols-1 gap-2">
                             {GAME_TYPES.TIME_BASED.map((game) => (
@@ -96,9 +101,9 @@ export function GameSelectorDialog({ open, onOpenChange, selectedGames, onConfir
 
                     {/* Score-based games */}
                     <div>
-                        <div className="flex items-center gap-2 mb-3">
-                            <Target className="w-4 h-4 text-teal-400" />
-                            <span className="text-sm font-medium text-teal-400">แข่งด้วยคะแนน (เสมอดูเวลา)</span>
+                        <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-white/10">
+                            <Target className="w-3.5 h-3.5 text-teal-400" />
+                            <span className="text-xs font-semibold text-teal-400">แข่งด้วยคะแนน (เสมอดูเวลา)</span>
                         </div>
                         <div className="grid grid-cols-1 gap-2">
                             {GAME_TYPES.SCORE_BASED.map((game) => (
@@ -117,14 +122,14 @@ export function GameSelectorDialog({ open, onOpenChange, selectedGames, onConfir
                     </div>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="mt-4 pt-2 border-t border-white/10">
                     <Button
                         onClick={handleConfirm}
                         disabled={selected.length === 0}
-                        className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-bold rounded-xl h-12"
+                        className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-bold rounded-lg h-10 text-sm shadow-lg shadow-teal-500/20"
                     >
-                        <Check className="w-5 h-5 mr-2" />
-                        ยืนยัน ({selected.length} เกม)
+                        <Check className="w-4 h-4 mr-2" />
+                        ยืนยันการเลือก ({selected.length})
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -147,30 +152,40 @@ function GameCard({ game, icon, isSelected, isTimeBased, disabled, onClick, orde
         <motion.button
             onClick={onClick}
             disabled={disabled}
-            whileHover={!disabled ? { scale: 1.02 } : undefined}
-            whileTap={!disabled ? { scale: 0.98 } : undefined}
-            className={`flex items-center gap-3 p-3 rounded-xl border transition-all w-full text-left ${isSelected
-                    ? isTimeBased
-                        ? 'bg-orange-500/20 border-orange-500/50'
-                        : 'bg-teal-500/20 border-teal-500/50'
-                    : disabled
-                        ? 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
-                        : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+            whileHover={!disabled ? { scale: 1.01, x: 2 } : undefined}
+            whileTap={!disabled ? { scale: 0.99 } : undefined}
+            className={`flex items-center gap-2 p-2 rounded-lg border transition-all w-full text-left relative overflow-hidden h-12 ${isSelected
+                ? isTimeBased
+                    ? 'bg-orange-500/20 border-orange-500/50'
+                    : 'bg-teal-500/20 border-teal-500/50'
+                : disabled
+                    ? 'bg-white/5 border-white/5 opacity-40 cursor-not-allowed'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                 }`}
         >
             {isSelected && (
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isTimeBased ? 'bg-orange-500 text-white' : 'bg-teal-500 text-white'
-                    }`}>
-                    {order}
-                </span>
+                <div className={`absolute inset-y-0 left-0 w-1 ${isTimeBased ? 'bg-orange-500' : 'bg-teal-500'}`} />
             )}
-            <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${isTimeBased ? 'bg-orange-500/20 text-orange-400' : 'bg-teal-500/20 text-teal-400'
-                }`}>
-                {icon}
+
+            <div className="ml-1 relative">
+                <span className={`w-8 h-8 rounded-md flex items-center justify-center ${isTimeBased ? 'bg-orange-500/10 text-orange-400' : 'bg-teal-500/10 text-teal-400'
+                    }`}>
+                    {icon}
+                </span>
+                {isSelected && (
+                    <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold border border-slate-900 ${isTimeBased ? 'bg-orange-500 text-white' : 'bg-teal-500 text-white'
+                        }`}>
+                        {order}
+                    </span>
+                )}
+            </div>
+
+            <span className={`text-sm font-medium truncate flex-1 ${isSelected ? 'text-white' : 'text-slate-300'}`}>
+                {GAME_NAMES[game]}
             </span>
-            <span className="font-medium text-white flex-1">{GAME_NAMES[game]}</span>
+
             {isSelected && (
-                <Check className={`w-5 h-5 ${isTimeBased ? 'text-orange-400' : 'text-teal-400'}`} />
+                <Check className={`w-4 h-4 mr-1 ${isTimeBased ? 'text-orange-400' : 'text-teal-400'}`} />
             )}
         </motion.button>
     );

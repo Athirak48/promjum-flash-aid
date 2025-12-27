@@ -7,10 +7,18 @@ import { GoalsMotivation } from "@/components/dashboard/GoalsMotivation";
 import { AITips } from "@/components/dashboard/AITips";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserStats } from "@/hooks/useUserStats";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { useEffect } from "react";
 
 export default function Dashboard() {
     const { user } = useAuth();
     const { stats } = useUserStats();
+    const { trackPageView } = useAnalytics();
+
+    useEffect(() => {
+        trackPageView('Dashboard', 'dashboard');
+    }, [trackPageView]);
+
 
     return (
         <div className="min-h-screen bg-transparent relative overflow-hidden font-prompt">

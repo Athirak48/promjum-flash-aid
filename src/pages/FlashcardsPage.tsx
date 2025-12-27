@@ -21,6 +21,9 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalytics } from '@/hooks/useAnalytics';
+
+
 interface FlashcardSet {
   id: string;
   title: string;
@@ -368,6 +371,11 @@ export default function FlashcardsPage() {
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { flashcards, loading } = useFlashcards();
+  const { trackPageView, trackButtonClick } = useAnalytics();
+
+  useEffect(() => {
+    trackPageView('Deck', 'flashcards');
+  }, [trackPageView]);
 
   // Fetch folders from Supabase
   useEffect(() => {
@@ -828,7 +836,10 @@ export default function FlashcardsPage() {
                 {/* Create Flashcard Button */}
                 <Dialog open={showCreateFlashcardDialog} onOpenChange={setShowCreateFlashcardDialog}>
                   <DialogTrigger asChild>
-                    <Button className="w-full md:w-auto bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-semibold shadow-lg hover:shadow-cyan-500/25">
+                    <Button
+                      className="w-full md:w-auto bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-semibold shadow-lg hover:shadow-cyan-500/25"
+                      onClick={() => trackButtonClick('Create Flashcard', 'flashcards')}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       {t('flashcards.createFlashcard')}
                     </Button>

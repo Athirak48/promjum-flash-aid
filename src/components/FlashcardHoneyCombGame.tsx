@@ -595,7 +595,7 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
         : "Need a hint?";
 
     return (
-        <div className="flex flex-col items-center min-h-screen w-full bg-[#1a1a1a] relative overflow-hidden font-sans text-white">
+        <div className="fixed inset-0 z-40 flex flex-col items-center bg-[#1a1a1a] text-white font-sans overflow-hidden">
 
             {/* Ambient Background */}
             <div className="absolute inset-0 pointer-events-none">
@@ -603,8 +603,8 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
                 <div className="absolute bottom-[20%] right-[20%] w-96 h-96 bg-amber-600/5 rounded-full blur-[128px]" />
             </div>
 
-            {/* Header */}
-            <div className="w-full max-w-4xl p-6 flex justify-between items-center relative z-20">
+            {/* Header - Compact */}
+            <div className="w-full max-w-4xl px-4 py-2 flex justify-between items-center relative z-20 flex-shrink-0">
                 <Button variant="ghost" className="text-slate-400 hover:text-white" onClick={onExit}>
                     <X className="w-6 h-6" />
                 </Button>
@@ -626,26 +626,26 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
                 </div>
             </div>
 
-            {/* Game Content - Responsive */}
-            <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl relative z-20 space-y-2 sm:space-y-4 md:space-y-6 pb-4 sm:pb-8">\
+            {/* Game Content - Fixed Height */}
+            <div className="flex-1 flex flex-col items-center justify-between w-full max-w-4xl relative z-20 py-2 overflow-hidden">
 
                 {/* Hint Card */}
                 <motion.div
                     initial={{ y: -20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     key={currentIndex}
-                    className="w-full max-w-2xl px-4"
+                    className="w-full max-w-xl px-4 flex-shrink-0"
                 >
                     <div className="relative group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-yellow-500/20 to-amber-600/20 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition duration-1000" />
-                        <div className="relative bg-[#252525] border border-white/10 p-4 rounded-2xl text-center shadow-2xl">
+                        <div className="relative bg-[#252525] border border-white/10 p-3 rounded-xl text-center shadow-xl">
                             <div className="flex items-center justify-center gap-3 mb-2">
                                 <span className="text-yellow-500 text-xs font-bold tracking-[0.2em] uppercase">Meaning Hint</span>
                                 <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-yellow-500/20 text-yellow-500" onClick={useHint}>
                                     <Lightbulb className="w-3 h-3" />
                                 </Button>
                             </div>
-                            <h2 className="text-xl md:text-2xl font-black text-white leading-tight">
+                            <h2 className="text-lg md:text-xl font-bold text-white leading-tight">
                                 {currentWord.meaning}
                             </h2>
                             {hintsRevealed && (
@@ -657,8 +657,8 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
                     </div>
                 </motion.div>
 
-                {/* Current Attempt Display - Responsive */}
-                <div className="h-8 sm:h-10 md:h-12 flex items-end justify-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                {/* Current Attempt Display - Compact */}
+                <div className="h-6 sm:h-8 flex items-center justify-center gap-1 flex-shrink-0">
                     {Array.from({ length: currentWord.word.length }).map((_, i) => (
                         <div key={i} className="flex flex-col items-center gap-0.5 sm:gap-1">
                             <span className={`text-base sm:text-xl md:text-2xl font-bold transition-all duration-300 ${i < currentAttemptString.length ? 'text-white translate-y-0' : 'text-white/20 translate-y-2'}`}>
@@ -669,19 +669,19 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
                     ))}
                 </div>
 
-                {/* Tip Text - Responsive */}
-                <div className="text-center mb-1 sm:mb-2">
-                    <p className="text-yellow-500/60 text-[9px] sm:text-xs font-medium">
+                {/* Tip Text - Smaller */}
+                <div className="text-center flex-shrink-0">
+                    <p className="text-yellow-500/60 text-[8px] sm:text-[10px] font-medium">
                         💡 เคล็ดลับ: พยายามลากไปบนยอดหกเหลี่ยมเพื่อเลือก
                     </p>
                 </div>
 
-                {/* Grid Container - Responsive Height */}
+                {/* Grid Container - Flex grow to fill remaining space */}
                 <div
                     ref={gridContainerRef}
                     onPointerMove={handleContainerPointerMove}
                     onPointerUp={handlePointerUp}
-                    className="relative w-full flex-1 flex items-center justify-center overflow-hidden min-h-[300px]"
+                    className="relative w-full flex-1 flex items-center justify-center min-h-[200px] max-h-[50vh]"
                     style={{
                         touchAction: 'none',
                         userSelect: 'none',

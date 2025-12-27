@@ -1,7 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize Gemini
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
+// const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
 
 export interface GeneratedQuestion {
     id: number;
@@ -43,6 +43,7 @@ interface AIStoryResponse {
         correctAnswer: number;
         explanation: string;
         explanationTh: string;
+        vocabUsed: string[];
         type: string;
     }[];
     vocabUsed: string[];
@@ -58,134 +59,10 @@ export async function generateListeningStories(
     level: string = 'B1',
     count: number = 4
 ): Promise<GeneratedQuestion[]> {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    // Clean words
-    const vocabString = vocabList.map(v => `${cleanWord(v.word)} (${cleanWord(v.meaning)})`).join(', ');
-
-    const prompt = `You are an English exam content generator.
-
-The user provides exactly ${vocabList.length} English vocabulary words:
-User Words: ${vocabString}
-
-INSTRUCTIONS:
-1.  **Target Level:** ${level} (CEFR Standard).
-2.  **Vocabulary:** 
-    *   MUST use the User Words (${vocabList.length} words).
-    *   Select additional high-frequency words appropriate for ${level} level to complete the stories.
-3.  **Structure:** Create 4 short stories.
-4.  Each story must use specific user words (distribute them).
-
-DETAILS per Story:
-- Length: 5-7 sentences.
-- Grammar/Complexity: strictly matching ${level} level.
-- Context: Daily life, work, or general topics suitable for ${level}.
-
-Questions per story:
-- 2 multiple-choice questions (A–D).
-- Q1: Detail.
-- Q2: Main idea.
-- Only one correct answer.
-
-Questions per story:
-- 2 multiple-choice questions (A–D).
-- Q1: Detail from the story.
-- Q2: Main idea.
-- Only one correct answer.
-
-OUTPUT FORMAT (JSON array of objects):
-[
-  {
-    "story": "Story text...",
-    "storyTh": "Story translation...",
-    "questions": [
-       {
-         "question": "Question 1 text",
-         "questionTh": "Question 1 translation",
-         "options": ["A", "B", "C", "D"],
-         "optionsTh": ["A_th", "B_th", "C_th", "D_th"],
-         "correctAnswer": 0,
-         "explanation": "Why correct...",
-         "explanationTh": "Thai explanation...",
-         "type": "Detail"
-       },
-       {
-         "question": "Question 2 text (Main Idea)",
-         "questionTh": "Question 2 translation",
-         "options": ["...", "...", "...", "..."],
-         "optionsTh": ["...", "...", "...", "..."],
-         "correctAnswer": 0,
-         "explanation": "...",
-         "explanationTh": "...",
-         "type": "Main Idea"
-       }
-    ],
-    "vocabUsed": ["word1", "word2", "word3"]
-  }
-]
-`;
-
-    // Retry logic: Try up to 2 times
-    let attempts = 0;
-    while (attempts < 2) {
-        try {
-            attempts++;
-            const timeoutPromise = new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error('API Timeout')), 15000)
-            );
-
-            const result = await Promise.race([
-                model.generateContent(prompt),
-                timeoutPromise
-            ]);
-
-            const response = await result.response;
-            const text = response.text();
-
-            const jsonMatch = text.match(/\[[\s\S]*\]/);
-            if (!jsonMatch) {
-                throw new Error('No JSON array found in response');
-            }
-
-            const rawStories: AIStoryResponse[] = JSON.parse(jsonMatch[0]);
-
-            // Flatten: Story -> Questions -> GeneratedQuestion[]
-            // We repeat the story for each question so the UI can handle it simply
-            const flattenedQuestions: GeneratedQuestion[] = [];
-            let idCounter = 1;
-
-            rawStories.forEach(s => {
-                s.questions.forEach(q => {
-                    flattenedQuestions.push({
-                        id: idCounter++,
-                        story: s.story.replace(/\*\*/g, ''),
-                        storyTh: s.storyTh.replace(/\*\*/g, ''),
-                        question: q.question,
-                        questionTh: q.questionTh,
-                        options: q.options,
-                        optionsTh: q.optionsTh,
-                        correctAnswer: q.correctAnswer,
-                        explanation: q.explanation,
-                        explanationTh: q.explanationTh,
-                        vocabUsed: s.vocabUsed
-                    });
-                });
-            });
-
-            return flattenedQuestions;
-
-        } catch (error) {
-            console.warn(`Attempt ${attempts} failed:`, error);
-            if (attempts >= 2) {
-                console.error('All attempts failed. Switching to fallback.');
-                // Return fallback instead of throwing, so the UI receives data
-                return generateFallbackListeningStories(vocabList, count * 2);
-            }
-            // If not last attempt, loop continues
-        }
-    }
-
-    return generateFallbackListeningStories(vocabList, count * 2);
+    // Force Fallback (Mock Mode)
+    // Simulate network delay for realism
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    return generateFallbackListeningStories(vocabList, count);
 }
 
 /**
@@ -197,104 +74,10 @@ export async function generateReadingStories(
     vocabList: VocabWord[],
     count: number = 2
 ): Promise<GeneratedQuestion[]> {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    const vocabString = vocabList.map(v => `${cleanWord(v.word)} (${cleanWord(v.meaning)})`).join(', ');
-
-    const prompt = `You are an English exam content generator.
-
-The user provides exactly ${vocabList.length} English vocabulary words.
-You MUST use all given words exactly as provided.
-Each vocabulary word can be used ONLY ONCE.
-Do NOT reuse any word if it has already appeared in a previous story or passage.
-
-VOCABULARY LIST: ${vocabString}
-
-READING MODE:
-- Create 2 reading passages.
-- Use 6 UNIQUE vocabulary words per passage (no repetition across passages).
-- Each passage has 2 paragraphs.
-- Each paragraph has exactly 7 sentences.
-- English level: B1–B2.
-- Grammar must be correct.
-
-Questions per passage:
-- 2 multiple-choice questions (A–D).
-- Q1: Detail from the passage.
-- Q2: Main idea.
-- Only one correct answer.
-
-OUTPUT FORMAT (JSON array of objects):
-[
-  {
-    "story": "Passage text (2 paragraphs)...",
-    "storyTh": "Passage translation...",
-    "questions": [
-       {
-         "question": "Detail question...",
-         "questionTh": "Translation...",
-         "options": ["...", "...", "...", "..."],
-         "optionsTh": ["...", "...", "...", "..."],
-         "correctAnswer": 0,
-         "explanation": "...",
-         "explanationTh": "...",
-         "type": "Detail"
-       },
-       {
-         "question": "Main Idea question...",
-         "questionTh": "Translation...",
-         "options": ["...", "...", "...", "..."],
-         "optionsTh": ["...", "...", "...", "..."],
-         "correctAnswer": 0,
-         "explanation": "...",
-         "explanationTh": "...",
-         "type": "Main Idea"
-       }
-    ],
-    "vocabUsed": ["word1", "word2", "word3", "word4", "word5", "word6"]
-  }
-]
-`;
-
-    try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-
-        const jsonMatch = text.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) {
-            throw new Error('No JSON array found in response');
-        }
-
-        const rawStories: AIStoryResponse[] = JSON.parse(jsonMatch[0]);
-
-        const flattenedQuestions: GeneratedQuestion[] = [];
-        let idCounter = 1;
-
-        rawStories.forEach(s => {
-            s.questions.forEach(q => {
-                flattenedQuestions.push({
-                    id: idCounter++,
-                    story: s.story.replace(/\*\*/g, ''),
-                    storyTh: s.storyTh.replace(/\*\*/g, ''),
-                    question: q.question,
-                    questionTh: q.questionTh,
-                    options: q.options,
-                    optionsTh: q.optionsTh,
-                    correctAnswer: q.correctAnswer,
-                    explanation: q.explanation,
-                    explanationTh: q.explanationTh,
-                    vocabUsed: s.vocabUsed
-                });
-            });
-        });
-
-        return flattenedQuestions;
-
-    } catch (error) {
-        console.error('Error generating reading stories:', error);
-        return generateFallbackReadingStories(vocabList, count * 2);
-    }
+    // Force Fallback (Mock Mode)
+    // Simulate network delay for realism
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    return generateFallbackReadingStories(vocabList, count);
 }
 
 /**
