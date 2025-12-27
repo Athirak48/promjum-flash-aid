@@ -47,8 +47,8 @@ interface RecentFeedback {
 
 interface RecentUser {
   id: string;
-  display_name: string;
-  username: string;
+  full_name: string | null;
+  nickname: string | null;
   created_at: string;
 }
 
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
         // Recent feedbacks
         supabase.from('user_feedbacks').select('id, type, message, rating, status, created_at').order('created_at', { ascending: false }).limit(5),
         // Recent users
-        supabase.from('profiles').select('id, display_name, username, created_at').order('created_at', { ascending: false }).limit(5)
+        supabase.from('profiles').select('id, full_name, nickname, created_at').order('created_at', { ascending: false }).limit(5)
       ]);
 
       setStats({
@@ -411,11 +411,11 @@ export default function AdminDashboard() {
                 {recentUsers.map((user) => (
                   <div key={user.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium">
-                      {(user.display_name || user.username || 'U').charAt(0).toUpperCase()}
+                      {(user.full_name || user.nickname || 'U').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-slate-900 dark:text-white truncate">
-                        {user.display_name || user.username || 'Unknown'}
+                        {user.full_name || user.nickname || 'Unknown'}
                       </p>
                       <p className="text-xs text-slate-400 flex items-center gap-1">
                         <Clock className="h-3 w-3" />

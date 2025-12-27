@@ -270,10 +270,24 @@ export function useGameRoom() {
     const toggleReady = useCallback(async () => {
         if (!user || !currentRoom) return;
 
-        const { error } = await supabase.rpc('toggle_player_ready', {
-            p_room_id: currentRoom.id,
-            p_user_id: user.id
-        });
+        // Toggle ready status directly in room_players table
+        const { data: currentPlayer, error: fetchError } = await supabase
+            .from('room_players')
+            .select('is_ready')
+            .eq('room_id', currentRoom.id)
+            .eq('user_id', user.id)
+            .single();
+
+        if (fetchError) {
+            console.error('Error fetching player ready status:', fetchError);
+            return;
+        }
+
+        const { error } = await supabase
+            .from('room_players')
+            .update({ is_ready: !currentPlayer?.is_ready })
+            .eq('room_id', currentRoom.id)
+            .eq('user_id', user.id);
 
         if (error) {
             console.error('Error toggling ready:', error);

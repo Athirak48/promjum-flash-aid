@@ -766,7 +766,7 @@ export default function VocabChallengePage() {
                         <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            type="spring"
+                            transition={{ type: "spring" }}
                             className="w-24 h-24 mx-auto mb-6 bg-pink-500/20 rounded-full flex items-center justify-center"
                         >
                             <span className="text-5xl">🙈</span>
