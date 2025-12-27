@@ -4,13 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Users, TrendingUp, Clock, Copy, BookOpen, Eye, Folder, Globe } from 'lucide-react';
+import { Search, Users, TrendingUp, Clock, Copy, BookOpen, Eye, Folder, Globe, Trash2, Check } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCloneDeck } from '@/hooks/useCloneDeck';
 import { useToast } from '@/hooks/use-toast';
 import { FolderBundlePreview } from '@/components/FolderBundlePreview';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+
+
+import { CreateCommunityDeckDialog } from '@/components/CreateCommunityDeckDialog';
+import { Plus } from 'lucide-react';
 
 export default function DecksPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,9 +28,35 @@ export default function DecksPage() {
   const { cloneDeck, loading: cloning } = useCloneDeck();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { trackPageView } = useAnalytics();
+  const { user } = useAuth(); // Get current user
+
+  useEffect(() => {
+    trackPageView('Community', 'decks');
+  }, [trackPageView]);
+
+  const handleDeleteDeck = async (id: string) => {
+    try {
+      const { error } = await supabase.from('sub_decks').delete().eq('id', id);
+      if (error) throw error;
+      toast({
+        title: "ลบ Deck สำเร็จ",
+        description: "Deck ของคุณถูกลบออกจากระบบแล้ว",
+        variant: "default"
+      });
+      window.location.reload(); // Simple refresh
+    } catch (error: any) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
 
   // Preview dialog states
   const [showPreview, setShowPreview] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false); // Create Dialog State
   const [selectedBundle, setSelectedBundle] = useState<any | null>(null);
 
   const categories = [
@@ -122,6 +156,15 @@ export default function DecksPage() {
             animate={{ opacity: 1, y: 0 }}
             className="relative mb-12 text-center"
           >
+            <div className="absolute top-0 right-0 hidden md:block">
+              <Button
+                onClick={() => setShowCreateDialog(true)}
+                className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] border-none gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                สร้าง Deck
+              </Button>
+            </div>
             <div className="inline-block relative">
               <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full pointer-events-none" />
               <h1 className="relative text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/50 drop-shadow-[0_0_30px_rgba(255,255,255,0.5)] mb-4 font-cute">
@@ -236,6 +279,8 @@ export default function DecksPage() {
                       description: "เร็วๆ นี้คุณจะสามารถโคลน Deck ได้"
                     });
                   }}
+                  currentUserId={user?.id}
+                  onDelete={handleDeleteDeck}
                 />
               ))}
 
@@ -258,6 +303,15 @@ export default function DecksPage() {
               flashcards={selectedBundle.flashcards}
             />
           )}
+
+          <CreateCommunityDeckDialog
+            open={showCreateDialog}
+            onOpenChange={setShowCreateDialog}
+            onSuccess={() => {
+              // Refresh decks logic if needed (e.g. invalidate query)
+              window.location.reload(); // Simple refresh for now
+            }}
+          />
 
         </div>
       </main>
@@ -362,13 +416,18 @@ function FolderBundleCard({
 function PublicDeckCard({
   deck,
   index,
-  onClone
+  onClone,
+  currentUserId,
+  onDelete
 }: {
   deck: PublicDeck;
   index: number;
   onClone: () => void;
+  currentUserId?: string;
+  onDelete: (id: string) => void;
 }) {
   const navigate = useNavigate();
+  const isOwner = currentUserId && deck.creator_user_id === currentUserId;
 
   return (
     <motion.div
@@ -380,7 +439,27 @@ function PublicDeckCard({
       {/* Glow Effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2.5rem] pointer-events-none" />
 
-      <div className="p-6 relative z-10">
+      {/* Owner Badge & Controls */}
+      {isOwner && (
+        <div className="absolute top-4 right-4 z-20 flex gap-2">
+          <Badge className="bg-purple-600 text-white border-purple-400">Owner</Badge>
+          <Button
+            variant="destructive"
+            size="icon"
+            className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.confirm('คุณต้องการลบ Deck นี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+                onDelete(deck.id);
+              }
+            }}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
+
+      <div className="p-6 relative z-10 flex flex-col h-full">
         {/* Creator Info */}
         <div className="flex items-center gap-3 mb-4">
           <Avatar className="w-8 h-8 border border-white/20">
@@ -394,9 +473,11 @@ function PublicDeckCard({
               {deck.creator_nickname || 'Anonymous'}
             </p>
           </div>
-          <Badge className="bg-white/10 text-white/60 border-white/20 text-xs">
-            🌍 Public
-          </Badge>
+          {!isOwner && (
+            <Badge className="bg-white/10 text-white/60 border-white/20 text-xs">
+              🌍 Public
+            </Badge>
+          )}
         </div>
 
         {/* Deck Name */}
@@ -409,44 +490,60 @@ function PublicDeckCard({
           {deck.description || 'No description'}
         </p>
 
+        {/* Categories & Tags */}
+        <div className="flex-1">
+          {(deck.category || (deck.tags && deck.tags.length > 0)) && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {deck.category && (
+                <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-xs">
+                  {deck.category}
+                </Badge>
+              )}
+              {deck.tags?.slice(0, 2).map(tag => (
+                <Badge key={tag} className="bg-white/5 text-white/50 border-white/10 text-xs">
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Stats */}
-        <div className="flex items-center gap-3 text-sm mb-4">
+        <div className="flex items-center gap-3 text-sm mb-4 mt-auto">
           <div className="flex items-center gap-1.5 text-white/60 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
             <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="font-medium">{deck.total_flashcards} cards</span>
+            <span className="font-medium">{deck.total_flashcards}</span>
           </div>
           <div className="flex items-center gap-1.5 text-white/60 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
             <Users className="w-3.5 h-3.5 text-pink-400" />
-            <span className="font-medium">{deck.clone_count} clones</span>
+            <span className="font-medium">{deck.clone_count}</span>
           </div>
         </div>
 
-        {/* Category & Tags */}
-        {(deck.category || (deck.tags && deck.tags.length > 0)) && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {deck.category && (
-              <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-xs">
-                {deck.category}
-              </Badge>
-            )}
-            {deck.tags?.slice(0, 2).map(tag => (
-              <Badge key={tag} className="bg-white/5 text-white/50 border-white/10 text-xs">
-                #{tag}
-              </Badge>
-            ))}
-          </div>
-        )}
 
-        {/* Clone Button */}
+        {/* Clone Button (Disable for owner?) -> Normally owner might want to clone too, but maybe edit is better. For now keep Clone. 
+            User req: "delete or edit". I provided Delete. Edit is implied as Metadata edit or Manage. 
+            Let's keep Clone for everyone.
+        */}
         <Button
           onClick={onClone}
-          className="w-full gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold shadow-[0_4px_15px_rgba(168,85,247,0.4)] border-none h-11 relative overflow-hidden group/btn"
+          disabled={isOwner} // Disable clone for owner? Or maybe allow. User didn't specify. I'll disable to avoid confusion.
+          className={`w-full gap-2 rounded-xl font-bold shadow-[0_4px_15px_rgba(168,85,247,0.4)] border-none h-11 relative overflow-hidden group/btn ${isOwner ? 'bg-slate-700 text-slate-400 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white'}`}
         >
-          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
-          <span className="relative z-10 flex items-center gap-2">
-            <Copy className="w-4 h-4" />
-            โคลน Deck นี้
-          </span>
+          {isOwner ? (
+            <span className="relative z-10 flex items-center gap-2">
+              <Check className="w-4 h-4" />
+              คุณเป็นเจ้าของ
+            </span>
+          ) : (
+            <>
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+              <span className="relative z-10 flex items-center gap-2">
+                <Copy className="w-4 h-4" />
+                โคลน Deck นี้
+              </span>
+            </>
+          )}
         </Button>
       </div>
     </motion.div>

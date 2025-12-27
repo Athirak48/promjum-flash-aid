@@ -431,7 +431,7 @@ export function DailyDeckQuickStart({
           >
             <Button
               onClick={() => {
-                trackButtonClick('Multiplayer', 'dashboard');
+                trackButtonClick('Compete with friends', 'dashboard');
                 navigate('/multiplayer');
               }}
               variant="outline"

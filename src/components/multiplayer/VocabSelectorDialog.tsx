@@ -5,6 +5,13 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     BookOpen,
     Search,
     Check,
@@ -34,6 +41,7 @@ interface Flashcard {
 interface Upload {
     id: string;
     name: string;
+    folder_id?: string;
 }
 
 export function VocabSelectorDialog({
@@ -46,15 +54,17 @@ export function VocabSelectorDialog({
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [uploads, setUploads] = useState<Upload[]>([]);
+    const [folders, setFolders] = useState<{ id: string; title: string }[]>([]);
     const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+    const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
     const [selectedUpload, setSelectedUpload] = useState<string | null>(null);
     const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Load user's uploads
+    // Load initial data
     useEffect(() => {
         if (open && user) {
-            loadUploads();
+            loadInitialData();
         }
     }, [open, user]);
 
@@ -62,28 +72,44 @@ export function VocabSelectorDialog({
     useEffect(() => {
         if (selectedUpload) {
             loadFlashcards(selectedUpload);
+        } else {
+            setFlashcards([]);
+            setSelectedCards(new Set());
         }
     }, [selectedUpload]);
 
-    const loadUploads = async () => {
+    const loadInitialData = async () => {
         if (!user) return;
         setLoading(true);
 
         try {
-            const { data } = await (supabase as any)
-                .from('user_flashcard_sets')
+            // Fetch Folders
+            const { data: foldersData } = await (supabase as any)
+                .from('user_folders')
                 .select('id, title')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
-            if (data) {
-                setUploads(data.map((u: any) => ({ id: u.id, name: u.title })));
-                if (data.length > 0) {
-                    setSelectedUpload(data[0].id);
-                }
+            if (foldersData) {
+                setFolders(foldersData);
+            }
+
+            // Fetch Sets with folder_id
+            const { data: setsData } = await (supabase as any)
+                .from('user_flashcard_sets')
+                .select('id, title, folder_id')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (setsData) {
+                setUploads(setsData.map((u: any) => ({
+                    id: u.id,
+                    name: u.title,
+                    folder_id: u.folder_id
+                })));
             }
         } catch (err) {
-            console.error('Error loading uploads:', err);
+            console.error('Error loading data:', err);
         } finally {
             setLoading(false);
         }
@@ -94,10 +120,9 @@ export function VocabSelectorDialog({
 
         try {
             const { data } = await supabase
-                .from('flashcards')
+                .from('user_flashcards')
                 .select('id, front_text, back_text')
-                .eq('upload_id', uploadId)
-                .limit(100);
+                .eq('flashcard_set_id', uploadId);
 
             if (data) {
                 setFlashcards(data.map(f => ({
@@ -112,6 +137,11 @@ export function VocabSelectorDialog({
             setLoading(false);
         }
     };
+
+    // Filter sets based on selected folder
+    const filteredUploads = uploads.filter(u => u.folder_id === selectedFolderId);
+
+    // ... (rest of logic)
 
     const toggleCard = (cardId: string) => {
         const newSelected = new Set(selectedCards);
@@ -157,23 +187,63 @@ export function VocabSelectorDialog({
                 </DialogHeader>
 
                 <div className="flex-1 overflow-hidden flex flex-col gap-4">
-                    {/* Upload Selector */}
-                    <div className="flex gap-2 overflow-x-auto pb-2">
-                        {uploads.map((upload) => (
-                            <Button
-                                key={upload.id}
-                                variant={selectedUpload === upload.id ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setSelectedUpload(upload.id)}
-                                className={`shrink-0 rounded-full ${selectedUpload === upload.id
-                                        ? 'bg-pink-500 hover:bg-pink-600 text-white'
-                                        : 'bg-white/5 border-white/20 text-white hover:bg-white/10'
-                                    }`}
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* 1. Folder Selection */}
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-slate-300">1. เลือก Folder</label>
+                            <Select
+                                value={selectedFolderId || undefined}
+                                onValueChange={(value) => {
+                                    setSelectedFolderId(value);
+                                    setSelectedUpload(null); // Reset set selection
+                                }}
                             >
-                                <Folder className="w-4 h-4 mr-1" />
-                                {upload.name}
-                            </Button>
-                        ))}
+                                <SelectTrigger className="w-full bg-white/5 border-white/20 text-white h-12 rounded-xl">
+                                    <div className="flex items-center gap-2">
+                                        <Folder className="w-4 h-4 text-sky-400" />
+                                        <SelectValue placeholder="เลือก Folder..." />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-800 border-white/10 text-white">
+                                    {folders.map((folder) => (
+                                        <SelectItem key={folder.id} value={folder.id} className="focus:bg-white/10 cursor-pointer">
+                                            {folder.title}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* 2. Set Selection */}
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-slate-300">2. เลือกชุดคำศัพท์</label>
+                            <Select
+                                value={selectedUpload || undefined}
+                                onValueChange={(value) => setSelectedUpload(value)}
+                                disabled={!selectedFolderId}
+                            >
+                                <SelectTrigger className={`w-full h-12 rounded-xl transition-all ${!selectedFolderId
+                                    ? 'bg-white/5 border-white/10 text-slate-500 cursor-not-allowed'
+                                    : 'bg-white/5 border-white/20 text-white'
+                                    }`}>
+                                    <div className="flex items-center gap-2">
+                                        <BookOpen className={`w-4 h-4 ${!selectedFolderId ? 'text-slate-600' : 'text-pink-400'}`} />
+                                        <SelectValue placeholder={!selectedFolderId ? "กรุณาเลือก Folder ก่อน" : "เลือกชุดคำศัพท์..."} />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-800 border-white/10 text-white">
+                                    {filteredUploads.length === 0 ? (
+                                        <div className="p-2 text-sm text-slate-400 text-center">ไม่มีชุดคำศัพท์ใน Folder นี้</div>
+                                    ) : (
+                                        filteredUploads.map((upload) => (
+                                            <SelectItem key={upload.id} value={upload.id} className="focus:bg-white/10 cursor-pointer">
+                                                {upload.name}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
                     {/* Search */}
@@ -215,7 +285,7 @@ export function VocabSelectorDialog({
                     </div>
 
                     {/* Flashcards list */}
-                    <ScrollArea className="flex-1 pr-4">
+                    <div className="flex-1 overflow-y-auto pr-4 min-h-0">
                         {loading ? (
                             <div className="flex items-center justify-center py-12">
                                 <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
@@ -230,8 +300,8 @@ export function VocabSelectorDialog({
                                         transition={{ delay: index * 0.02 }}
                                         onClick={() => toggleCard(card.id)}
                                         className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedCards.has(card.id)
-                                                ? 'bg-pink-500/20 border-pink-500/50'
-                                                : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                            ? 'bg-pink-500/20 border-pink-500/50'
+                                            : 'bg-white/5 border-white/10 hover:bg-white/10'
                                             }`}
                                     >
                                         <Checkbox
@@ -252,7 +322,7 @@ export function VocabSelectorDialog({
                                 <p>ไม่พบคำศัพท์</p>
                             </div>
                         )}
-                    </ScrollArea>
+                    </div>
                 </div>
 
                 <DialogFooter>

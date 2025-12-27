@@ -158,6 +158,31 @@ export function useGameRoom() {
                 .eq('room_id', roomData.id)
                 .order('joined_at', { ascending: true });
 
+            let playersWithProfile = [];
+
+            if (playersData && playersData.length > 0) {
+                const userIds = playersData.map(p => p.user_id);
+                const { data: profilesData } = await supabase
+                    .from('profiles')
+                    .select('id, nickname, avatar_url')
+                    .in('id', userIds);
+
+                playersWithProfile = playersData.map(p => {
+                    const profile = profilesData?.find(prof => prof.id === p.user_id);
+                    return {
+                        id: p.id,
+                        userId: p.user_id,
+                        nickname: profile?.nickname || p.nickname || 'Player',
+                        avatarUrl: profile?.avatar_url || p.avatar_url,
+                        isReady: p.is_ready,
+                        isHost: p.is_host,
+                        totalScore: p.total_score || 0,
+                        totalTimeMs: p.total_time_ms || 0,
+                        finalRank: p.final_rank
+                    };
+                });
+            }
+
             // Get vocabulary
             const { data: vocabData } = await supabase
                 .from('room_vocabulary')
@@ -172,17 +197,7 @@ export function useGameRoom() {
                 maxPlayers: roomData.max_players,
                 selectedGames: roomData.selected_games || [],
                 currentGameIndex: roomData.current_game_index || 0,
-                players: (playersData || []).map(p => ({
-                    id: p.id,
-                    userId: p.user_id,
-                    nickname: p.nickname || 'Player',
-                    avatarUrl: p.avatar_url,
-                    isReady: p.is_ready,
-                    isHost: p.is_host,
-                    totalScore: p.total_score || 0,
-                    totalTimeMs: p.total_time_ms || 0,
-                    finalRank: p.final_rank
-                })),
+                players: playersWithProfile,
                 vocabulary: (vocabData || []).map(v => ({
                     id: v.id,
                     flashcardId: v.flashcard_id,
@@ -192,11 +207,17 @@ export function useGameRoom() {
             };
 
             setCurrentRoom(room);
-            setupRealtime(room.id);
         } catch (err) {
             console.error('Error loading room:', err);
         }
     }, []);
+
+    // Setup realtime subscription when room changes
+    useEffect(() => {
+        if (currentRoom?.id) {
+            setupRealtime(currentRoom.id);
+        }
+    }, [currentRoom?.id]);
 
     // Setup realtime subscription
     const setupRealtime = useCallback((roomId: string) => {
@@ -249,15 +270,17 @@ export function useGameRoom() {
     const toggleReady = useCallback(async () => {
         if (!user || !currentRoom) return;
 
-        const player = currentRoom.players.find(p => p.userId === user.id);
-        if (!player) return;
+        const { error } = await supabase.rpc('toggle_player_ready', {
+            p_room_id: currentRoom.id,
+            p_user_id: user.id
+        });
 
-        await supabase
-            .from('room_players')
-            .update({ is_ready: !player.isReady })
-            .eq('room_id', currentRoom.id)
-            .eq('user_id', user.id);
-    }, [user, currentRoom]);
+        if (error) {
+            console.error('Error toggling ready:', error);
+        }
+
+        await loadRoom(currentRoom.roomCode);
+    }, [user, currentRoom, loadRoom]);
 
     // Update room games
     const updateGames = useCallback(async (games: string[]) => {
@@ -267,7 +290,9 @@ export function useGameRoom() {
             .from('game_rooms')
             .update({ selected_games: games })
             .eq('id', currentRoom.id);
-    }, [user, currentRoom]);
+
+        await loadRoom(currentRoom.roomCode);
+    }, [user, currentRoom, loadRoom]);
 
     // Add vocabulary to room
     const addVocabulary = useCallback(async (flashcards: Array<{ id: string; front: string; back: string }>) => {
@@ -284,7 +309,9 @@ export function useGameRoom() {
         await supabase
             .from('room_vocabulary')
             .insert(vocabItems);
-    }, [user, currentRoom]);
+
+        await loadRoom(currentRoom.roomCode);
+    }, [user, currentRoom, loadRoom]);
 
     // Clear vocabulary
     const clearVocabulary = useCallback(async () => {
@@ -294,7 +321,9 @@ export function useGameRoom() {
             .from('room_vocabulary')
             .delete()
             .eq('room_id', currentRoom.id);
-    }, [currentRoom]);
+
+        await loadRoom(currentRoom.roomCode);
+    }, [currentRoom, loadRoom]);
 
     // Start game
     const startGame = useCallback(async () => {
@@ -365,18 +394,17 @@ export function useGameRoom() {
     const leaveRoom = useCallback(async () => {
         if (!user || !currentRoom) return;
 
-        await supabase
-            .from('room_players')
-            .delete()
-            .eq('room_id', currentRoom.id)
-            .eq('user_id', user.id);
+        try {
+            const { error } = await supabase.rpc('leave_game_room', {
+                p_room_id: currentRoom.id,
+                p_user_id: user.id
+            });
 
-        // If host leaves, delete room
-        if (currentRoom.hostId === user.id) {
-            await supabase
-                .from('game_rooms')
-                .delete()
-                .eq('id', currentRoom.id);
+            if (error) {
+                console.error('Error leaving room:', error);
+            }
+        } catch (err) {
+            console.error('Error calling leave_game_room:', err);
         }
 
         // Clean up

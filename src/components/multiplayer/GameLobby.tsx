@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import {
     Users,
@@ -21,6 +20,14 @@ import {
     Settings,
     UserX
 } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { useGameRoom, GAME_NAMES, GAME_TYPES } from '@/hooks/useGameRoom';
 import { useToast } from '@/hooks/use-toast';
@@ -39,6 +46,7 @@ export function GameLobby({ roomCode, onLeave }: GameLobbyProps) {
     const [copied, setCopied] = useState(false);
     const [showGameSelector, setShowGameSelector] = useState(false);
     const [showVocabSelector, setShowVocabSelector] = useState(false);
+    const [showDevDialog, setShowDevDialog] = useState(false);
 
     const {
         currentRoom,
@@ -75,6 +83,9 @@ export function GameLobby({ roomCode, onLeave }: GameLobbyProps) {
     };
 
     const handleStartGame = async () => {
+        setShowDevDialog(true);
+        // Original logic commented out for now
+        /*
         const result = await startGame();
         if (!result?.success) {
             toast({
@@ -83,6 +94,7 @@ export function GameLobby({ roomCode, onLeave }: GameLobbyProps) {
                 variant: "destructive"
             });
         }
+        */
     };
 
     const handleGamesSelected = async (games: string[]) => {
@@ -340,10 +352,18 @@ export function GameLobby({ roomCode, onLeave }: GameLobbyProps) {
                             </CardHeader>
                             <CardContent className="p-4">
                                 {currentRoom.vocabulary.length >= 10 ? (
-                                    <div className="text-center py-4">
-                                        <Check className="w-10 h-10 mx-auto mb-2 text-green-400" />
-                                        <p className="text-white font-medium">{currentRoom.vocabulary.length} คำพร้อมแล้ว</p>
-                                        <p className="text-white/40 text-sm">({currentRoom.vocabulary.length >= 10 ? '✓' : '✗'} ขั้นต่ำ 10 คำ)</p>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                                        {currentRoom.vocabulary.map((vocab, i) => (
+                                            <div key={vocab.id} className="flex items-center gap-3 p-2 rounded-lg bg-white/5">
+                                                <span className="w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 text-xs font-bold flex items-center justify-center shrink-0">
+                                                    {i + 1}
+                                                </span>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-white font-medium truncate">{vocab.frontText}</p>
+                                                    <p className="text-xs text-white/50 truncate">{vocab.backText}</p>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 ) : (
                                     <div className="text-center py-6 text-white/40">
@@ -367,8 +387,7 @@ export function GameLobby({ roomCode, onLeave }: GameLobbyProps) {
                         {isHost && (
                             <Button
                                 onClick={handleStartGame}
-                                disabled={!canStart}
-                                className="w-full h-14 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-xl text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full h-14 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-xl text-lg hover:shadow-lg transition-all"
                             >
                                 <Play className="w-6 h-6 mr-2" />
                                 เริ่มเกม!
@@ -402,6 +421,37 @@ export function GameLobby({ roomCode, onLeave }: GameLobbyProps) {
                 minCount={10}
                 maxCount={50}
             />
+
+            {/* Dev Dialog */}
+            <Dialog open={showDevDialog} onOpenChange={setShowDevDialog}>
+                <DialogContent className="bg-slate-900/95 backdrop-blur-xl border-white/10 text-white sm:max-w-md text-center">
+                    <DialogHeader>
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            type="spring"
+                            className="w-24 h-24 mx-auto mb-6 bg-pink-500/20 rounded-full flex items-center justify-center"
+                        >
+                            <span className="text-5xl">🙈</span>
+                        </motion.div>
+                        <DialogTitle className="text-6xl font-black text-center bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent tracking-wider py-2">
+                            Oops.....
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-300 text-xl pt-6 leading-relaxed font-medium w-full flex flex-col items-center justify-center gap-2">
+                            <span>โหมดนี้กำลังก่อสร้างอยู่น้าาา 🏗️</span>
+                            <span>อดใจรออีกนิดนึงนะค้าบ ✨</span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-8">
+                        <Button
+                            onClick={() => navigate('/dashboard')}
+                            className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 font-bold rounded-xl text-lg shadow-lg hover:shadow-pink-500/25 transition-all"
+                        >
+                            กลับไปหน้าหลัก 🏠
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

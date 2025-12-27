@@ -67,7 +67,7 @@ const Navbar = () => {
     { href: "/decks", label: "Community" },
     { href: "/flashcards", label: "Deck" },
     { href: "/vocab-challenge", label: "Vocab Challenge" },
-    { href: "/feedback", label: "Opinion" },
+    { href: "/feedback", label: "Feedback" },
   ];
 
   const adminNavItems = [

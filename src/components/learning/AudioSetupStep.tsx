@@ -42,7 +42,7 @@ export function AudioSetupStep({
                 <motion.h2
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-xl font-bold text-slate-800 dark:text-slate-100"
+                    className="text-xl font-bold text-slate-900 dark:text-slate-100"
                 >
                     ตั้งค่าการเรียนรู้
                 </motion.h2>
@@ -50,7 +50,7 @@ export function AudioSetupStep({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="text-sm text-slate-500 dark:text-slate-400"
+                    className="text-sm text-slate-600 dark:text-slate-400"
                 >
                     เลือกสำเนียงและระดับความยาก
                 </motion.p>
@@ -62,7 +62,7 @@ export function AudioSetupStep({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
             >
-                <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-300 mb-2 flex items-center gap-2">
                     <Volume2 className="w-4 h-4 text-indigo-500" />
                     สำเนียง (Accent)
                 </h3>
@@ -90,7 +90,7 @@ export function AudioSetupStep({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
             >
-                <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-300 mb-2 flex items-center gap-2">
                     <span className="text-lg">📊</span>
                     ระดับภาษา (Level)
                 </h3>
@@ -195,10 +195,10 @@ function AccentCard({
                 >
                     {emoji}
                 </motion.div>
-                <h4 className={`font-bold text-sm ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>
+                <h4 className={`font-bold text-sm ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-black dark:text-slate-100'}`}>
                     {label}
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-black/80 dark:text-slate-400">
                     {subLabel}
                 </p>
             </CardContent>
@@ -228,7 +228,7 @@ function LevelCard({
       `}
         >
             <CardContent className="p-3 text-center">
-                <h4 className={`font-black text-xl mb-1 ${isSelected ? 'text-indigo-600' : 'text-slate-700'}`}>
+                <h4 className={`font-black text-xl mb-1 ${isSelected ? 'text-indigo-600' : 'text-black dark:text-slate-100'}`}>
                     {level}
                 </h4>
             </CardContent>
