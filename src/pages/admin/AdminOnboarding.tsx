@@ -26,6 +26,7 @@ import { th } from 'date-fns/locale';
 interface OnboardingData {
     id: string;
     user_id: string;
+    age_group: string;
     learning_goal: string;
     skill_level: string;
     target_languages: string[];
@@ -49,6 +50,7 @@ interface OnboardingData {
 
 interface OverviewStats {
     total: number;
+    byAgeGroup: Record<string, number>;
     byGoal: Record<string, number>;
     byLevel: Record<string, number>;
     byTime: Record<string, number>;
@@ -57,6 +59,15 @@ interface OverviewStats {
 }
 
 // Label mappings for display
+const ageGroupLabels: Record<string, { emoji: string; label: string }> = {
+    '<12': { emoji: '👶', label: 'ต่ำกว่า 12 ปี' },
+    '12-14': { emoji: '🧒', label: '12-14 ปี' },
+    '15-17': { emoji: '👦', label: '15-17 ปี' },
+    '18-22': { emoji: '🧑', label: '18-22 ปี' },
+    '22-26': { emoji: '👨', label: '22-26 ปี' },
+    '>26': { emoji: '👴', label: 'สูงกว่า 26 ปี' },
+};
+
 const goalLabels: Record<string, { emoji: string; label: string }> = {
     daily_life: { emoji: '🗣️', label: 'สื่อสารในชีวิตประจำวัน' },
     business: { emoji: '💼', label: 'อัพเงินเดือน/ย้ายงาน' },
@@ -137,6 +148,7 @@ export default function AdminOnboarding() {
     const [selectedUser, setSelectedUser] = useState<OnboardingData | null>(null);
     const [stats, setStats] = useState<OverviewStats>({
         total: 0,
+        byAgeGroup: {},
         byGoal: {},
         byLevel: {},
         byTime: {},
@@ -178,6 +190,7 @@ export default function AdminOnboarding() {
     const calculateStats = (data: OnboardingData[]) => {
         const newStats: OverviewStats = {
             total: data.length,
+            byAgeGroup: {},
             byGoal: {},
             byLevel: {},
             byTime: {},
@@ -186,6 +199,10 @@ export default function AdminOnboarding() {
         };
 
         data.forEach(item => {
+            // Count age groups
+            if (item.age_group) {
+                newStats.byAgeGroup[item.age_group] = (newStats.byAgeGroup[item.age_group] || 0) + 1;
+            }
             // Count goals
             if (item.learning_goal) {
                 newStats.byGoal[item.learning_goal] = (newStats.byGoal[item.learning_goal] || 0) + 1;
@@ -314,6 +331,12 @@ export default function AdminOnboarding() {
 
                             {/* Stats Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <StatCard
+                                    title="ช่วงอายุ"
+                                    data={stats.byAgeGroup}
+                                    labels={ageGroupLabels}
+                                    icon={Users}
+                                />
                                 <StatCard
                                     title="เป้าหมายการเรียน"
                                     data={stats.byGoal}
@@ -498,6 +521,15 @@ export default function AdminOnboarding() {
                                     <h3 className="font-semibold text-slate-700 dark:text-slate-200">คำตอบแบบสอบถาม</h3>
 
                                     <div className="grid gap-3">
+                                        {/* Age Group */}
+                                        <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                            <p className="text-xs text-slate-500 mb-1">0. ช่วงอายุ</p>
+                                            <Badge className="gap-1">
+                                                {getLabel(selectedUser.age_group, ageGroupLabels).emoji}
+                                                {getLabel(selectedUser.age_group, ageGroupLabels).label}
+                                            </Badge>
+                                        </div>
+
                                         {/* Q1 */}
                                         <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                                             <p className="text-xs text-slate-500 mb-1">1. เป้าหมายการเรียนภาษา</p>

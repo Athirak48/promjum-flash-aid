@@ -315,6 +315,17 @@ export default function DecksPage() {
 
         </div>
       </main>
+
+      {/* Mobile FAB - Fixed Bottom Right */}
+      <div className="md:hidden fixed bottom-20 right-4 z-50">
+        <Button
+          onClick={() => setShowCreateDialog(true)}
+          className="rounded-full w-14 h-14 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-[0_4px_20px_rgba(168,85,247,0.6)] border-none p-0 flex items-center justify-center"
+        >
+          <Plus className="w-6 h-6" />
+        </Button>
+      </div>
+
     </div>
   );
 }

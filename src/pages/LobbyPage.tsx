@@ -47,10 +47,35 @@ const MOCK_PETS_DEX = [
 // 1. Lobby View
 const LobbyHome = ({ onNavigate }: { onNavigate: (view: string) => void }) => {
     const { trackButtonClick } = useAnalytics();
+
+    // Countdown State for Gacha
+    const [timeLeft, setTimeLeft] = useState("02:59:00");
+
+    useEffect(() => {
+        // Mock countdown logic - resets every 3 hours
+        const target = new Date();
+        target.setHours(target.getHours() + 3);
+
+        const interval = setInterval(() => {
+            const now = new Date();
+            // Just a visual loop for demo purposes
+            // In real app, this would calculate diff to next free summon time
+            const date = new Date();
+            const h = 2 - (date.getHours() % 3);
+            const m = 59 - date.getMinutes();
+            const s = 59 - date.getSeconds();
+
+            setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <div className="relative h-full flex flex-col items-center justify-center p-4">
             {/* Header Stats */}
-            <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
+            {/* Header Stats & Gacha */}
+            <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-20">
+                {/* Left: Rank */}
                 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20">
                     <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center border-2 border-white/30">
                         <Users className="w-5 h-5 text-white" />
@@ -61,15 +86,63 @@ const LobbyHome = ({ onNavigate }: { onNavigate: (view: string) => void }) => {
                     </div>
                 </div>
 
-                <div className="flex gap-2">
-                    <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-                        <div className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center text-xs">💎</div>
-                        <span className="font-bold text-white">1,250</span>
+                {/* Right: Currency & Gacha Banner */}
+                <div className="flex flex-col items-end gap-3 scale-90 origin-top-right">
+                    {/* Currency Bar */}
+                    <div className="flex gap-2">
+                        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+                            <div className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center text-xs">💎</div>
+                            <span className="font-bold text-white">1,250</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+                            <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-xs">🪙</div>
+                            <span className="font-bold text-white">50,000</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-                        <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-xs">🪙</div>
-                        <span className="font-bold text-white">50,000</span>
-                    </div>
+
+                    {/* Gacha Capsule Button (Reference Style) */}
+                    <motion.button
+                        onClick={() => {
+                            trackButtonClick('Gacha Warp', 'lobby');
+                            onNavigate('gacha');
+                        }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="relative group flex flex-col items-center mt-1 mr-1"
+                    >
+                        {/* Capsule Orb */}
+                        <div className="relative w-14 h-14 rounded-full border-[3px] border-black/30 shadow-[0_0_20px_rgba(255,255,255,0.4)] overflow-hidden bg-white">
+                            {/* Top Half (White/Glass) */}
+                            <div className="absolute inset-x-0 top-0 h-[50%] bg-gradient-to-b from-white to-slate-200" />
+
+                            {/* Bottom Half (Pink/Magenta) */}
+                            <div className="absolute inset-x-0 bottom-0 h-[50%] bg-gradient-to-b from-pink-500 to-fuchsia-600" />
+
+                            {/* Divider Line */}
+                            <div className="absolute top-1/2 left-0 right-0 h-1 bg-black/10 -mt-0.5 z-10" />
+
+                            {/* Center Button */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-slate-200 shadow-sm z-20" />
+
+                            {/* Shine */}
+                            <div className="absolute top-2 left-2 w-3 h-2 bg-white rounded-full opacity-60 rotate-[-45deg] z-30" />
+                        </div>
+
+                        {/* Label Badge */}
+                        <div className="relative z-30 -mt-2">
+                            <span className="font-black text-xs text-yellow-400 tracking-wider drop-shadow-[0_2px_0_rgba(0,0,0,0.8)] stroke-black" style={{ textShadow: '2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>
+                                GACHA
+                            </span>
+                        </div>
+
+                        {/* Timer Pills */}
+                        <div className="mt-1 bg-black/60 rounded-full px-2 py-0.5 border border-white/20 backdrop-blur-md">
+                            <div className="text-[8px] font-mono text-white flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                {timeLeft}
+                            </div>
+                        </div>
+                    </motion.button>
                 </div>
             </div>
 
@@ -117,25 +190,7 @@ const LobbyHome = ({ onNavigate }: { onNavigate: (view: string) => void }) => {
                 </div>
             </div>
 
-            {/* FAB: Gacha Portal */}
-            <motion.button
-                onClick={() => {
-                    trackButtonClick('Gacha Warp', 'lobby');
-                    onNavigate('gacha');
-                }}
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.9 }}
-                className="absolute bottom-24 right-4 md:right-8 z-20 group"
-            >
-                <div className="relative flex flex-col items-center">
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-full border-4 border-white/20 shadow-[0_0_30px_rgba(236,72,153,0.6)] flex items-center justify-center animate-pulse">
-                        <Sparkles className="w-8 h-8 text-white animate-spin-slow" />
-                    </div>
-                    <span className="absolute -bottom-6 bg-black/80 text-white text-[10px] px-2 py-0.5 rounded-full border border-pink-500/50 font-bold uppercase tracking-wider backdrop-blur-sm whitespace-nowrap">
-                        Gacha Warp
-                    </span>
-                </div>
-            </motion.button>
+
         </div>
     );
 };

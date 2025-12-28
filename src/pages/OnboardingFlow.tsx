@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
 interface OnboardingData {
+    age_group: string;
     learning_goal: string;
     skill_level: string;
     target_languages: string[];
@@ -40,6 +41,20 @@ interface Question {
 }
 
 const questions: Question[] = [
+    {
+        id: 'age_group',
+        title: 'ช่วงอายุเท่าไหร่?',
+        subtitle: 'เพื่อปรับเนื้อหาให้เหมาะกับวัย',
+        type: 'single',
+        options: [
+            { value: '<12', emoji: '👶', label: 'ต่ำกว่า 12 ปี', description: '' },
+            { value: '12-14', emoji: '🧒', label: '12-14 ปี', description: 'มัธยมต้น' },
+            { value: '15-17', emoji: '👦', label: '15-17 ปี', description: 'มัธยมปลาย' },
+            { value: '18-22', emoji: '🧑', label: '18-22 ปี', description: 'มหาวิทยาลัย' },
+            { value: '22-26', emoji: '👨', label: '22-26 ปี', description: 'ทำงานแล้ว' },
+            { value: '>26', emoji: '👴', label: 'สูงกว่า 26 ปี', description: '' },
+        ]
+    },
     {
         id: 'learning_goal',
         title: 'เป้าหมายสูงสุดของการฝึกภาษาในรอบนี้คืออะไร?',
@@ -178,6 +193,7 @@ export default function OnboardingFlow() {
     const [currentStep, setCurrentStep] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [answers, setAnswers] = useState<OnboardingData>({
+        age_group: '',
         learning_goal: '',
         skill_level: '',
         target_languages: [],

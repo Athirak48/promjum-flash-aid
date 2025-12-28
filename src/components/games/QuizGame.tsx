@@ -117,9 +117,9 @@ export function QuizGameComponent({ flashcards, onComplete, isMultiplayer }: Qui
             </div>
 
             {/* Question Card */}
-            <Card className="bg-black/30 backdrop-blur-xl border-white/10 mb-6">
+            <Card className="bg-white/90 backdrop-blur-xl border-white/50 shadow-2xl mb-6">
                 <CardContent className="p-8">
-                    <p className="text-center text-2xl font-bold text-white">
+                    <p className="text-center text-2xl font-bold text-slate-900 break-words">
                         {currentCard.front_text}
                     </p>
                 </CardContent>
@@ -132,12 +132,12 @@ export function QuizGameComponent({ flashcards, onComplete, isMultiplayer }: Qui
                         const isCorrect = option === currentCard.back_text;
                         const isSelected = selectedAnswer === option;
 
-                        let bgClass = 'bg-white/10 border-white/20 hover:bg-white/20';
+                        let bgClass = 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300';
                         if (showResult) {
                             if (isCorrect) {
-                                bgClass = 'bg-green-500/30 border-green-500';
+                                bgClass = 'bg-green-100 border-green-500 text-green-800';
                             } else if (isSelected && !isCorrect) {
-                                bgClass = 'bg-red-500/30 border-red-500';
+                                bgClass = 'bg-red-100 border-red-500 text-red-800';
                             }
                         }
 
@@ -149,15 +149,15 @@ export function QuizGameComponent({ flashcards, onComplete, isMultiplayer }: Qui
                                 transition={{ delay: index * 0.1 }}
                                 onClick={() => handleAnswer(option)}
                                 disabled={showResult}
-                                className={`p-4 rounded-xl border-2 text-left font-medium text-white transition-all ${bgClass} disabled:cursor-not-allowed`}
+                                className={`p-4 rounded-xl border-2 text-left font-medium transition-all ${bgClass} disabled:cursor-not-allowed`}
                             >
                                 <div className="flex items-center justify-between">
                                     <span>{option}</span>
                                     {showResult && isCorrect && (
-                                        <Check className="w-5 h-5 text-green-400" />
+                                        <Check className="w-5 h-5 text-green-600" />
                                     )}
                                     {showResult && isSelected && !isCorrect && (
-                                        <X className="w-5 h-5 text-red-400" />
+                                        <X className="w-5 h-5 text-red-600" />
                                     )}
                                 </div>
                             </motion.button>

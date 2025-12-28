@@ -595,7 +595,7 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
         : "Need a hint?";
 
     return (
-        <div className="fixed inset-0 z-40 flex flex-col items-center bg-[#1a1a1a] text-white font-sans overflow-hidden">
+        <div className="fixed inset-0 h-[100dvh] z-40 flex flex-col items-center bg-[#1a1a1a] text-white font-sans overflow-hidden">
 
             {/* Ambient Background */}
             <div className="absolute inset-0 pointer-events-none">
@@ -627,7 +627,7 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
             </div>
 
             {/* Game Content - Fixed Height */}
-            <div className="flex-1 flex flex-col items-center justify-between w-full max-w-4xl relative z-20 py-2 overflow-hidden">
+            <div className="flex-1 flex flex-col items-center justify-start gap-2 sm:gap-4 w-full max-w-4xl relative z-20 py-2 overflow-hidden">
 
                 {/* Hint Card */}
                 <motion.div
@@ -659,7 +659,7 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
 
                 {/* Current Attempt Display - Compact */}
                 <div className="h-6 sm:h-8 flex items-center justify-center gap-1 flex-shrink-0">
-                    {Array.from({ length: currentWord.word.length }).map((_, i) => (
+                    {Array.from({ length: currentWord.word.replace(/[^a-zA-Z]/g, '').length }).map((_, i) => (
                         <div key={i} className="flex flex-col items-center gap-0.5 sm:gap-1">
                             <span className={`text-base sm:text-xl md:text-2xl font-bold transition-all duration-300 ${i < currentAttemptString.length ? 'text-white translate-y-0' : 'text-white/20 translate-y-2'}`}>
                                 {currentAttemptString[i] || '_'}
@@ -681,7 +681,7 @@ export function FlashcardHoneyCombGame({ vocabList, onGameFinish, onExit, onNewG
                     ref={gridContainerRef}
                     onPointerMove={handleContainerPointerMove}
                     onPointerUp={handlePointerUp}
-                    className="relative w-full flex-1 flex items-center justify-center min-h-[200px] max-h-[50vh]"
+                    className="relative w-full flex-1 flex items-center justify-center min-h-0"
                     style={{
                         touchAction: 'none',
                         userSelect: 'none',
