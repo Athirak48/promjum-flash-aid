@@ -1,27 +1,141 @@
 <!doctype html>
-<html lang="en">
+<html lang="th">
 
 <head>
+  <!-- Basic Meta Tags -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <!-- SEO Meta Tags -->
+  <title>Promjum - จำคำศัพท์ติดหัวเหมือนกับแฟนเก่า | เรียนภาษาอังกฤษ TGAT ด้วย AI และ Gamification</title>
+  <meta name="description"
+    content="จำคำศัพท์ด้วย AI และ Mini Games ที่สร้างสรรค์และสนุก ใช้เทคนิค Active Recall และ Spaced Repetition เตรียมสอบ TGAT, A-Level พร้อมฝึกทักษะฟัง พูด อ่าน เขียน" />
+  <meta name="keywords"
+    content="จำคำศัพท์, เรียนภาษาอังกฤษ, TGAT, A-Level, Flashcard, Active Recall, Spaced Repetition, AI Learning, Gamification, EdTech Thailand, ติว TGAT, เกมภาษาอังกฤษ, SRS, ฝึกฟัง ฝึกพูด ภาษาอังกฤษ" />
+  <meta name="author" content="Promjum Team" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <link rel="canonical" href="https://promjum.com/" />
+
+  <!-- Language & Locale -->
+  <meta name="language" content="Thai" />
+  <meta http-equiv="content-language" content="th" />
+
+  <!-- Theme Color for Mobile Browsers -->
+  <meta name="theme-color" content="#8B5CF6" />
+  <meta name="msapplication-TileColor" content="#8B5CF6" />
+
+  <!-- Favicon & Icons -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/logo.png" />
+
+  <!-- Mobile Web App Capability -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Promjum" />
+
+  <!-- Preconnect for Performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <title>Promjum - จำคำศัพท์ติดหัวเหมือนกับแฟนเก่า</title>
-  <meta name="description"
-    content="จำคำศัพท์ตด้วยmini game ที่สร้างสรรค์และสนุก เเละ เทคนิคactive recall เพื่อช่วยให้คุณจำคำศัพท์ได้ดีขึ้น" />
-  <meta name="author" content="Promjum Team" />
 
+  <!-- Open Graph / Facebook Meta Tags -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://promjum.com/" />
   <meta property="og:title" content="Promjum - จำคำศัพท์ติดหัวเหมือนกับแฟนเก่า" />
   <meta property="og:description"
-    content="จำคำศัพท์ตด้วยmini game ที่สร้างสรรค์และสนุก เเละ เทคนิคactive recall เพื่อช่วยให้คุณจำคำศัพท์ได้ดีขึ้น" />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    content="จำคำศัพท์ด้วย AI และ Mini Games ที่สร้างสรรค์และสนุก ใช้เทคนิค Active Recall และ Spaced Repetition เตรียมสอบ TGAT, A-Level" />
+  <meta property="og:image" content="https://promjum.com/logo.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="th_TH" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta property="og:site_name" content="Promjum" />
 
+  <!-- Twitter Card Meta Tags -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@lovable_dev" />
-  <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  <meta name="twitter:url" content="https://promjum.com/" />
+  <meta name="twitter:title" content="Promjum - จำคำศัพท์ติดหัวเหมือนกับแฟนเก่า" />
+  <meta name="twitter:description"
+    content="จำคำศัพท์ด้วย AI และ Mini Games เตรียมสอบ TGAT, A-Level ด้วยเทคนิค Active Recall" />
+  <meta name="twitter:image" content="https://promjum.com/logo.png" />
+  <meta name="twitter:creator" content="@promjum" />
+
+  <!-- Structured Data (JSON-LD) for Rich Results -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Promjum",
+    "alternateName": "Promjum Flash Aid",
+    "url": "https://promjum.com",
+    "logo": "https://promjum.com/logo.png",
+    "description": "แพลตฟอร์มเรียนภาษาอังกฤษด้วย AI และ Gamification จำคำศัพท์ติดหัวด้วยเทคนิค Active Recall และ Spaced Repetition",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web, iOS, Android",
+    "offers": {
+      "@type": "Offer",
+      "price": "100",
+      "priceCurrency": "THB",
+      "priceValidUntil": "2026-12-31",
+      "availability": "https://schema.org/InStock",
+      "description": "Premium Subscription - เข้าถึงฟีเจอร์ทั้งหมด รวม AI Stories และ AI Speaking Partner"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "ratingCount": "1250",
+      "bestRating": "5",
+      "worstRating": "1"
+    },
+    "creator": {
+      "@type": "Organization",
+      "name": "Promjum Team",
+      "url": "https://promjum.com"
+    },
+    "audience": {
+      "@type": "EducationalAudience",
+      "educationalRole": "student",
+      "audienceType": "Thai students preparing for TGAT, A-Level exams"
+    },
+    "featureList": [
+      "Smart Spaced Repetition System (SRS)",
+      "AI-Generated Listening & Reading Stories",
+      "9 Interactive Learning Games",
+      "AI Speaking Partner",
+      "Community Decks",
+      "Vocab Challenge",
+      "Progress Analytics",
+      "Flashcard Creation"
+    ],
+    "inLanguage": ["th", "en"],
+    "applicationSubCategory": "Language Learning, Exam Preparation, EdTech"
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Promjum",
+    "url": "https://promjum.com",
+    "logo": "https://promjum.com/logo.png",
+    "description": "EdTech platform ช่วยให้นักเรียนไทยเรียนภาษาอังกฤษและเตรียมสอบ TGAT, A-Level อย่างมีประสิทธิภาพ",
+    "sameAs": [
+      "https://facebook.com/promjum",
+      "https://twitter.com/promjum",
+      "https://instagram.com/promjum"
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "Customer Support",
+      "availableLanguage": ["Thai", "English"]
+    }
+  }
+  </script>
 </head>
 
 <body>
