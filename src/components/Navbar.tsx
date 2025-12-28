@@ -168,7 +168,7 @@ const Navbar = () => {
                   <Link to="/auth">{t('nav.login')}</Link>
                 </Button>
                 <Button variant="hero" asChild>
-                  <Link to="/auth">{t('nav.login')}</Link>
+                  <Link to="/auth">{t('nav.signup')}</Link>
                 </Button>
               </div>
             )}
@@ -247,7 +247,7 @@ const Navbar = () => {
                   </Button>
                   <Button variant="hero" asChild className="w-full">
                     <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                      {t('nav.login')}
+                      {t('nav.signup')}
                     </Link>
                   </Button>
                 </div>
