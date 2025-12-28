@@ -1,14 +1,40 @@
+# Promjum Flash Aid - Robots.txt
+# Updated: 2025-12-28
+
+# Sitemap
+Sitemap: https://promjum.com/sitemap.xml
+
+# Allow all major search engines
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 1
 
+User-agent: Slurp
+Allow: /
+
+# Social Media Crawlers
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: LinkedInBot
+Allow: /
+
+# Default for all other bots
 User-agent: *
 Allow: /
+Crawl-delay: 2
+
+# Disallow admin and API endpoints from indexing
+Disallow: /api/
+Disallow: /admin/settings
+Disallow: /admin/analytics
+
+# Allow specific admin pages for documentation
+Allow: /admin/$
