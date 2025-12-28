@@ -289,7 +289,7 @@ const App = () => {
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<><Navbar /><NotFoundPage /></>} />
                   </Routes>
-                  <FeedbackMascot />
+
                 </BrowserRouter>
               </MaintenanceCheck>
             </AuthProvider>

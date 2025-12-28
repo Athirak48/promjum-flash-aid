@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trophy, Home, Eye, Sparkles, RotateCcw, Gamepad2, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Trophy, Home, Eye, Sparkles, RotateCcw, Gamepad2, ArrowRight, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
@@ -197,111 +197,110 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext, onSelec
     const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100 dark:from-indigo-950 dark:via-purple-900 dark:to-indigo-950 overflow-auto flex items-center justify-center p-4">
-        <BackgroundDecorations />
-        <Card className="max-w-sm w-full shadow-2xl relative z-10 bg-white/90 backdrop-blur-xl border-white/50 rounded-2xl sm:rounded-3xl">
-          <CardHeader className="text-center pb-0 pt-4 sm:pt-6">
-            <div className="text-4xl sm:text-5xl mb-2 animate-bounce">👁️</div>
-            <CardTitle className="text-lg sm:text-xl font-bold text-foreground bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+        {/* Background Decorations handled by parent or global CSS usually, but we can add local flair if needed */}
+
+        <Card className="max-w-sm w-full shadow-2xl relative z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-white/20 dark:border-slate-800 rounded-3xl overflow-hidden ring-1 ring-white/50 dark:ring-slate-700">
+
+          {/* Header Gradient Stripe */}
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500" />
+
+          <CardHeader className="text-center pb-2 pt-8 relative">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl" />
+            <div className="relative inline-flex mb-2 animate-bounce">
+              <span className="text-5xl filter drop-shadow-md">👁️</span>
+            </div>
+            <CardTitle className="text-xl font-black bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
               {t('games.summary')} {t('games.vocabBlinder')}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
-              <div className="text-3xl sm:text-4xl font-bold mb-0.5">{score}</div>
-              <div className="text-xs sm:text-sm opacity-90 font-medium">{t('games.totalScore')}</div>
-            </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              <div className="text-center p-1.5 sm:p-2 bg-green-50 dark:bg-green-900/30 rounded-lg sm:rounded-xl border border-green-100">
-                <div className="text-lg sm:text-xl font-bold text-green-600 dark:text-green-400">
-                  {correctCount}
-                </div>
-                <div className="text-[10px] text-green-700 dark:text-green-300 mt-0.5 font-medium">
-                  {t('common.correct')}
-                </div>
-              </div>
-              <div className="text-center p-1.5 sm:p-2 bg-red-50 dark:bg-red-900/30 rounded-lg sm:rounded-xl border border-red-100">
-                <div className="text-lg sm:text-xl font-bold text-red-600 dark:text-red-400">
-                  {wrongCount}
-                </div>
-                <div className="text-[10px] text-red-700 dark:text-red-300 mt-0.5 font-medium">
-                  {t('common.incorrect')}
-                </div>
-              </div>
-              <div className="text-center p-1.5 sm:p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg sm:rounded-xl border border-blue-100">
-                <div className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400">
-                  {accuracy}%
-                </div>
-                <div className="text-[10px] text-blue-700 dark:text-blue-300 mt-0.5 font-medium">
-                  {t('common.accuracy')}
-                </div>
+          <CardContent className="space-y-5 p-6">
+
+            {/* Main Score Display */}
+            <div className="relative group perspective">
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-600 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity" />
+              <div className="relative bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 rounded-2xl p-5 text-white text-center shadow-xl transform transition-transform hover:scale-[1.02]">
+                <div className="text-5xl font-black tracking-tight drop-shadow-sm">{score}</div>
+                <div className="text-xs font-bold uppercase tracking-widest opacity-90 mt-1">{t('games.totalScore')}</div>
               </div>
             </div>
 
-            {/* Wrong Words Section */}
+            {/* Stats Grid - Clean Glass Style */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm">
+                <span className="text-2xl font-black text-green-500 drop-shadow-sm">{correctCount}</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">{t('common.correct')}</span>
+              </div>
+              <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm">
+                <span className="text-2xl font-black text-red-500 drop-shadow-sm">{wrongCount}</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">{t('common.incorrect')}</span>
+              </div>
+              <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm">
+                <span className={`text-2xl font-black drop-shadow-sm ${accuracy >= 80 ? 'text-purple-500' : 'text-blue-500'}`}>{accuracy}%</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">{t('common.accuracy')}</span>
+              </div>
+            </div>
+
+            {/* Wrong Words Section - Refined */}
             {wrongWords.length > 0 ? (
-              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-red-100">
-                <div className="flex items-center gap-1.5 mb-1.5 sm:mb-2">
-                  <span className="text-red-500 text-sm">❌</span>
-                  <span className="font-bold text-xs sm:text-sm text-red-700 dark:text-red-300">{t('games.wrongWords')} ({wrongWords.length})</span>
+              <div className="bg-red-50/50 dark:bg-red-900/10 rounded-2xl p-4 border border-red-100 dark:border-red-900/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
+                    <X className="w-3 h-3 text-red-500" />
+                  </div>
+                  <span className="font-bold text-xs text-red-800 dark:text-red-300 uppercase tracking-wide">{t('games.wrongWords')}</span>
                 </div>
-                <div className="space-y-1 sm:space-y-1.5 max-h-20 sm:max-h-24 overflow-y-auto custom-scrollbar">
+                <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
                   {wrongWords.map((w, idx) => (
-                    <div key={idx} className="flex justify-between items-center bg-white dark:bg-red-900/30 rounded-md px-2 py-1 text-[10px] sm:text-xs">
-                      <span className="font-medium text-red-800 dark:text-red-200 truncate mr-2">{w.word}</span>
-                      <span className="text-red-500 dark:text-red-400 truncate">{w.meaning}</span>
+                    <div key={idx} className="flex justify-between items-center bg-white dark:bg-white/5 rounded-lg px-3 py-2 shadow-sm border border-red-50 dark:border-white/5">
+                      <span className="font-bold text-xs text-slate-700 dark:text-slate-200">{w.word}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{w.meaning}</span>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-green-100 text-center">
-                <span className="text-2xl sm:text-3xl mb-1 block">🎉</span>
-                <span className="font-bold text-xs sm:text-sm text-green-700 dark:text-green-300">{t('games.noWrongWords')}</span>
+              <div className="bg-green-50/50 dark:bg-green-900/10 rounded-2xl p-6 border border-green-100 dark:border-green-900/30 text-center flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center animate-pulse">
+                  <Sparkles className="w-5 h-5 text-green-600" />
+                </div>
+                <span className="font-bold text-sm text-green-800 dark:text-green-300">{t('games.noWrongWords')}</span>
               </div>
             )}
 
-            <div className="flex flex-row gap-2 justify-center pt-1">
-              {/* ปุ่ม 1: เล่นใหม่ */}
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
               <Button
                 onClick={handleRestart}
-                className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg transition-all rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs px-1 sm:px-3"
+                className="col-span-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-xl h-12 shadow-sm hover:shadow-md transition-all active:scale-95"
               >
-                <RotateCcw className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 shrink-0" />
-                <span className="hidden sm:inline">{t('games.playAgain')}</span>
-                <span className="sm:hidden">{t('games.playAgainShort')}</span>
+                <RotateCcw className="w-4 h-4 mr-2 text-slate-400" />
+                {t('games.playAgain')}
               </Button>
-
-              {/* ปุ่ม 2: เกมใหม่ */}
-              <Button
-                onClick={() => {
-                  if (onSelectNewGame) {
-                    onSelectNewGame();
-                  }
-                }}
-                variant="outline"
-                className="flex-1 rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-1 sm:px-3"
-              >
-                <Gamepad2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 shrink-0" />
-                <span className="hidden sm:inline">{t('games.selectGame')}</span>
-                <span className="sm:hidden">{t('games.selectGameShort')}</span>
-              </Button>
-
-              {/* ปุ่ม 3: ถัดไป - กลับชุดคำศัพท์ */}
               <Button
                 onClick={onClose}
-                variant="outline"
-                className="flex-1 rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs border-gray-200 px-1 sm:px-3"
+                className="col-span-1 bg-gradient-to-r from-slate-900 to-slate-800 hover:from-black hover:to-slate-900 text-white font-bold rounded-xl h-12 shadow-lg hover:shadow-xl transition-all active:scale-95 border-0"
               >
-                {t('common.next')}
-                <ArrowRight className="h-3 w-3 sm:h-3.5 sm:w-3.5 ml-1 shrink-0" />
+                <span>{t('common.next')}</span>
+                <ArrowRight className="w-4 h-4 ml-2 opacity-80" />
+              </Button>
+              {/* Select Game Button - Full Width */}
+              <Button
+                onClick={() => onSelectNewGame && onSelectNewGame()}
+                variant="ghost"
+                className="col-span-2 text-xs font-semibold text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 h-auto py-2 rounded-lg"
+              >
+                <Gamepad2 className="w-3.5 h-3.5 mr-1.5" />
+                {t('games.selectGame')}
               </Button>
             </div>
+
           </CardContent>
         </Card>
       </div>
     );
+
   }
 
   return (
@@ -321,7 +320,7 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext, onSelec
               <Trophy className="h-3.5 w-3.5 text-yellow-500" />
               <span className="font-bold text-sm">{score}</span>
             </div>
-            <div className="bg-white/80 backdrop-blur-md px-2 py-1 rounded-lg shadow-sm border border-white/50">
+            <div className="bg-white/80 backdrop-blur-md px-2 py-1 rounded-lg shadow-sm border border-white/50 opacity-0 pointer-events-none hidden">
               <span className="font-bold text-sm text-primary">
                 {currentIndex + 1} / {flashcards.length}
               </span>
@@ -335,6 +334,9 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext, onSelec
             <CardTitle className="text-center text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
               <Eye className="w-6 h-6 text-indigo-600" /> Vocab Blinder
             </CardTitle>
+            <p className="text-xs text-center font-bold text-slate-400 mt-1 uppercase tracking-wider">
+              ข้อที่ {currentIndex + 1} จาก {flashcards.length}
+            </p>
           </CardHeader>
 
           <CardContent className="flex-1 flex flex-col p-4 min-h-0 overflow-y-auto">
@@ -344,31 +346,55 @@ export function FlashcardVocabBlinderGame({ flashcards, onClose, onNext, onSelec
                 {showResult ? 'เฉลยคำศัพท์' : 'เติมคำในช่องว่าง'}
               </div>
 
-              <div className="text-4xl sm:text-5xl font-mono font-bold tracking-widest text-indigo-900 dark:text-indigo-100 mb-3 break-words text-center relative">
-                {showResult ? (
-                  <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="flex items-center justify-center gap-1"
-                  >
-                    {blindedWord?.original.split('').map((char, i) => (
-                      <span key={i} className={`
-                                        inline-block
-                                        ${blindedWord.hiddenIndices.includes(i)
-                          ? (isCorrect ? 'text-green-600' : 'text-red-500')
-                          : 'text-indigo-900'}
-                                    `}>
-                        {char}
-                      </span>
-                    ))}
-                  </motion.div>
-                ) : (
-                  blindedWord?.display.split('').map((char, i) => (
-                    <span key={i} className={`inline-block transition-all duration-300 ${char === '_' ? 'text-indigo-500 animate-pulse' : ''}`}>
-                      {char}
-                    </span>
-                  ))
-                )}
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-6 px-2">
+                {(() => {
+                  const textToRender = showResult ? blindedWord?.original : blindedWord?.display;
+                  if (!textToRender) return null;
+
+                  const words = textToRender.split(' ');
+                  let globalCharIndex = 0;
+
+                  return words.map((word, wordIndex) => {
+                    const wordElement = (
+                      <div key={wordIndex} className="flex flex-wrap justify-center">
+                        {word.split('').map((char, charOffset) => {
+                          const currentIndex = globalCharIndex + charOffset;
+
+                          // Styling logic
+                          let className = "inline-block text-2xl sm:text-3xl md:text-4xl font-mono font-bold tracking-widest transition-all duration-300 ";
+
+                          if (showResult) {
+                            const isHidden = blindedWord?.hiddenIndices.includes(currentIndex);
+                            if (isHidden) {
+                              className += isCorrect ? 'text-green-600' : 'text-red-500';
+                            } else {
+                              className += 'text-slate-900';
+                            }
+                          } else {
+                            // Game Mode
+                            if (char === '_') {
+                              className += 'text-indigo-500 animate-pulse';
+                            } else if (char === '●') { // Fallback if using bullet
+                              className += 'text-slate-900';
+                            } else {
+                              className += 'text-slate-900';
+                            }
+                          }
+
+                          return (
+                            <span key={currentIndex} className={className}>
+                              {char}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    );
+
+                    // Advance index for word length + 1 for space (if not last)
+                    globalCharIndex += word.length + 1;
+                    return wordElement;
+                  });
+                })()}
               </div>
 
               <div className="mt-2 flex items-center justify-center gap-2 text-muted-foreground/80 bg-slate-100/50 dark:bg-slate-800/50 px-4 py-1.5 rounded-full border border-slate-200/50 dark:border-slate-700/50">

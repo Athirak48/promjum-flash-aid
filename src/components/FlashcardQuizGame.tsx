@@ -309,7 +309,7 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
               {/* Question Display */}
               <div className="text-center py-4 md:py-6">
                 <div className="mb-2 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-widest">คำศัพท์</div>
-                <h2 className="text-3xl md:text-5xl font-bold text-violet-900 dark:text-violet-100 mb-2 md:mb-4 break-words">
+                <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-2 md:mb-4 break-words">
                   {currentQuestion.card.back_text}
                 </h2>
                 <div className="h-1 w-16 md:w-24 bg-gradient-to-r from-violet-500 to-fuchsia-500 mx-auto rounded-full opacity-50"></div>

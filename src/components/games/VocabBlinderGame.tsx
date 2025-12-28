@@ -42,12 +42,14 @@ export function VocabBlinderComponent({ flashcards, onComplete, isMultiplayer }:
         const word = currentCard.back_text;
 
         if (showHint || showResult) {
-            return word.split('').map((char, i) =>
-                i < revealedChars || showResult ? char : '●'
-            ).join('');
+            return word.split('').map((char, i) => {
+                if (char === ' ') return ' ';
+                return i < revealedChars || showResult ? char : '●';
+            }).join('');
         }
 
-        return '●'.repeat(word.length);
+        // Return bullets but preserve spaces
+        return word.split('').map(char => char === ' ' ? ' ' : '●').join('');
     };
 
     const handleReveal = () => {
@@ -107,10 +109,21 @@ export function VocabBlinderComponent({ flashcards, onComplete, isMultiplayer }:
 
             {/* Blinded Word */}
             <div className="bg-white/5 rounded-2xl p-6 mb-4 text-center">
-                <p className="text-3xl font-mono tracking-widest text-purple-400">
-                    {getDisplayWord()}
-                </p>
-                <p className="text-sm text-slate-400 mt-2">
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+                    {getDisplayWord().split(' ').map((wordPart, wordIndex) => (
+                        <div key={wordIndex} className="flex whitespace-nowrap">
+                            {wordPart.split('').map((char, charIndex) => (
+                                <span
+                                    key={charIndex}
+                                    className="inline-block text-3xl sm:text-4xl md:text-5xl font-mono font-bold tracking-widest transition-all duration-300 text-purple-400"
+                                >
+                                    {char}
+                                </span>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+                <p className="text-sm text-slate-400 mt-4">
                     {currentCard.back_text.length} ตัวอักษร
                 </p>
             </div>

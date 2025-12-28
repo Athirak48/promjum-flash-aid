@@ -130,18 +130,58 @@ export function CreateCommunityDeckDialog({ open, onOpenChange, onSuccess }: Cre
 
         setLoading(true);
         try {
-            const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('No user found');
 
-            const { data, error } = await supabase.rpc('create_combined_community_deck', {
-                p_name: name,
-                p_description: description,
-                p_category: category,
-                p_tags: tagArray,
-                p_source_sub_deck_ids: Array.from(selectedSourceDeckIds),
-                p_emoji: emoji
-            });
+            // 1. Calculate total cards
+            const sourceDecks = folderDecks.filter(d => selectedSourceDeckIds.has(d.id));
+            const totalCards = sourceDecks.reduce((sum, d) => sum + d.total_cards, 0);
 
-            if (error) throw error;
+            // 2. Create Deck (Using user_flashcard_sets to bypass RLS on 'decks')
+            // 'usePublicDecks' queries this table for source='shared'
+            const { data: newSet, error: setError } = await supabase
+                .from('user_flashcard_sets')
+                .insert({
+                    user_id: user.id,
+                    title: `${emoji} ${name}`,
+                    source: 'shared',
+                    card_count: totalCards
+                })
+                .select()
+                .single();
+
+            if (setError) throw setError;
+            if (!newSet) throw new Error('Failed to create deck set');
+
+            // 3. Copy Flashcards
+            let allCardsToInsert: any[] = [];
+            for (const sourceId of selectedSourceDeckIds) {
+                const { data: sourceCards } = await supabase
+                    .from('user_flashcards')
+                    .select('*')
+                    .eq('flashcard_set_id', sourceId);
+
+                if (sourceCards) {
+                    const mappedCards = sourceCards.map(c => ({
+                        flashcard_set_id: newSet.id,
+                        user_id: user.id,
+                        front_text: c.front_text,
+                        back_text: c.back_text,
+                        front_image_url: c.front_image_url,
+                        back_image_url: c.back_image_url,
+                        part_of_speech: c.part_of_speech
+                    }));
+                    allCardsToInsert = [...allCardsToInsert, ...mappedCards];
+                }
+            }
+
+            if (allCardsToInsert.length > 0) {
+                const { error: cardsError } = await supabase
+                    .from('user_flashcards')
+                    .insert(allCardsToInsert);
+
+                if (cardsError) console.error('Error copying cards:', cardsError);
+            }
 
             toast.success('สร้าง Community Deck สำเร็จ! 🎉');
             onSuccess?.();

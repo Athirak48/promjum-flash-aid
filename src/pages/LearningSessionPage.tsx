@@ -27,6 +27,7 @@ import { FlashcardVocabBlinderGame } from '@/components/FlashcardVocabBlinderGam
 import { FlashcardWordSearchGame } from '@/components/FlashcardWordSearchGame';
 import { FlashcardWordScrambleGame } from '@/components/FlashcardWordScrambleGame';
 import { FlashcardNinjaSliceGame } from '@/components/FlashcardNinjaSliceGame';
+import { FlashcardHoneyCombGame } from '@/components/FlashcardHoneyCombGame';
 import { LearningModes, VocabItem, AudioSettings, ListeningMCQPhase, ReadingMCQPhase } from '@/components/learning';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { VocabWord } from '@/services/storyGenerationService';
@@ -365,6 +366,20 @@ export default function LearningSessionPage() {
                             onGameFinish={(results) => {
                                 gameProps.onNext();
                             }}
+                        />;
+                    case 'honeycomb':
+                        return <FlashcardHoneyCombGame
+                            vocabList={gameFlashcards.map(c => ({
+                                id: c.id,
+                                word: c.front_text,
+                                meaning: c.back_text,
+                                isUserFlashcard: c.isUserFlashcard
+                            }))}
+                            onExit={gameProps.onClose}
+                            onGameFinish={(results) => {
+                                gameProps.onNext();
+                            }}
+                            onNewGame={gameProps.onSelectNewGame}
                         />;
                     default:
                         return <FlashcardQuizGame {...gameProps} />;

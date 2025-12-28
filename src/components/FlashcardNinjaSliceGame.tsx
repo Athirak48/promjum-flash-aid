@@ -23,22 +23,21 @@ interface FlashcardNinjaSliceGameProps {
 }
 
 // -- Game Constants --
-const GRAVITY = 0.15;
-const SPAWN_RATE_INITIAL = 1200;
-const FRUIT_RADIUS = 90; // Increased size
-const BOMB_CHANCE = 0.08; // Reduced from 0.15
+const GRAVITY = 0.25; // Increased for snappier physics
+const SPAWN_RATE_INITIAL = 1000;
+const BOMB_CHANCE = 0.08;
 const BLADE_LIFETIME = 250;
 const MAX_LIVES = 3;
 
 // -- Assets --
 const FRUIT_TYPES = [
-    { char: '🍉', color: '#FF5252', lightColor: '#FFCDD2' }, // Watermelon - Red
-    { char: '🍎', color: '#FFF9C4', lightColor: '#FFFFFF' }, // Apple - Light Yellow/White Flesh
-    { char: '🍌', color: '#FFEB3B', lightColor: '#FFF59D' }, // Banana - Yellow
-    { char: '🍍', color: '#FDD835', lightColor: '#FFF176' }, // Pineapple - Gold
-    { char: '🍊', color: '#FF9800', lightColor: '#FFE0B2' }, // Orange - Orange
-    { char: '🥥', color: '#F5F5F5', lightColor: '#FFFFFF' }, // Coconut - White
-    { char: '🥝', color: '#C6FF00', lightColor: '#F4FF81' }, // Kiwi - Lime
+    { char: '🍉', color: '#FF5252', lightColor: '#FFCDD2' }, // Watermelon
+    { char: '🍎', color: '#FFF9C4', lightColor: '#FFFFFF' }, // Apple
+    { char: '🍌', color: '#FFEB3B', lightColor: '#FFF59D' }, // Banana
+    { char: '🍍', color: '#FDD835', lightColor: '#FFF176' }, // Pineapple
+    { char: '🍊', color: '#FF9800', lightColor: '#FFE0B2' }, // Orange
+    { char: '🥥', color: '#F5F5F5', lightColor: '#FFFFFF' }, // Coconut
+    { char: '🥝', color: '#C6FF00', lightColor: '#F4FF81' }, // Kiwi
     { char: '🍑', color: '#FFCC80', lightColor: '#FFE0B2' }, // Peach
 ];
 
@@ -60,6 +59,7 @@ interface Bubble {
     rotationSpeed: number;
     sliced: boolean;
     isBomb: boolean;
+    radius: number; // Responsive radius
 }
 
 interface Particle {
@@ -71,7 +71,7 @@ interface Particle {
     life: number;
     color: string;
     size: number;
-    type: 'circle' | 'splat'; // Splat for juice
+    type: 'circle' | 'splat';
 }
 
 interface BladePoint {
@@ -139,11 +139,6 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
         return () => stopGame();
     }, []);
 
-    // Effect to sync Current Target for UI
-    useEffect(() => {
-        // UI Sync updates
-    }, [gameStateStatus]);
-
     const startGame = () => {
         setGameStateStatus('PLAYING');
         setLives(MAX_LIVES);
@@ -207,6 +202,10 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
         const currentWordObj = shuffledVocab[vocabIndex];
         const isBomb = Math.random() < BOMB_CHANCE;
 
+        // Smart Radius Calculation for Mobile vs Desktop
+        const isMobile = width < 640;
+        const radius = isMobile ? 45 : 85;
+
         let wordText = "";
         let isCorrect = false;
         let vocabId: string | undefined = undefined;
@@ -215,7 +214,6 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
         if (isBomb) {
             wordText = "";
             isCorrect = false;
-            // Bomb distinct look
             fruitType = { char: '💣', color: '#4B5563', lightColor: '#9CA3AF' };
         } else {
             const targetOnScreen = gameState.current.bubbles.some(b => b.isCorrect && !b.sliced);
@@ -223,12 +221,10 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
             const distractors = shuffledVocab.filter(v => v.id !== currentWordObj.id);
 
             if (shouldSpawnTarget || distractors.length === 0) {
-                // Spawn the CORRECT answer - show English word
                 wordText = currentWordObj.word;
                 vocabId = currentWordObj.id;
                 isCorrect = true;
             } else {
-                // Spawn a distractor (wrong answer) - show different English word  
                 const randomDistractor = distractors[Math.floor(Math.random() * distractors.length)];
                 wordText = randomDistractor.word;
                 vocabId = randomDistractor.id;
@@ -236,16 +232,14 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
             }
         }
 
-        const margin = FRUIT_RADIUS * 2;
+        const margin = radius * 2;
         const x = Math.random() * (width - margin * 2) + margin;
-        // Start below screen
-        const y = height + FRUIT_RADIUS;
+        const y = height + radius;
 
         const centerX = width / 2;
-        // Throw towards center with variance
-        const directionX = (centerX - x) * 0.004 + (Math.random() - 0.5) * 1.5;
-        // High arc
-        const vy = -(Math.random() * 5 + 16);
+        const directionX = (centerX - x) * 0.005 + (Math.random() - 0.5) * 1.5;
+        // Faster upward throw for snappier feeling
+        const vy = -(Math.random() * 6 + 19);
 
         gameState.current.bubbles.push({
             id: Date.now() + Math.random(),
@@ -257,20 +251,12 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
             vx: directionX,
             vy,
             fruitType,
-            scale: 0.1, // Animate in
+            scale: 0.1,
             rotation: Math.random() * 360,
             rotationSpeed: (Math.random() - 0.5) * 0.2,
             sliced: false,
-            isBomb
-        });
-
-        // Debug logging
-        console.log('🍎 SPAWN:', {
-            word: wordText,
             isBomb,
-            isCorrect,
-            currentTarget: currentWordObj.word,
-            targetMeaning: currentWordObj.meaning
+            radius
         });
     };
 
@@ -298,7 +284,6 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
         setScore(gameState.current.score);
         setCombo(c => c + 1);
 
-        // Add XP for correct slice
         const xpResult = await addGameXP('ninja-slice', true, false);
         if (xpResult?.xpAdded) {
             setTotalXPEarned(prev => prev + xpResult.xpAdded);
@@ -306,15 +291,11 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
 
         if (vocabId) {
             setWordResults(prev => ({ ...prev, [vocabId]: 'CORRECT' }));
-
-            // Update SRS - Q=3 if first try, Q=1 if had mistakes
             const wasFirstTry = !hadMistakeForCurrentWord;
             const vocabItem = vocabList.find(v => v.id === vocabId);
             await updateFromNinjaSlice(vocabId, true, wasFirstTry, vocabItem?.isUserFlashcard);
-            console.log(`🗡️ SRS Updated: ${vocabId} Q=${wasFirstTry ? 3 : 1}`);
         }
 
-        // Reset mistake flag for next word
         setHadMistakeForCurrentWord(false);
 
         const nextIndex = gameState.current.vocabIndex + 1;
@@ -334,14 +315,11 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
             return;
         }
 
-        // Mark that user made a mistake for current word
         setHadMistakeForCurrentWord(true);
 
-        // Update SRS for wrong slice - Q=0
         if (vocabId) {
             const vocabItem = vocabList.find(v => v.id === vocabId);
             await updateFromNinjaSlice(vocabId, false, false, vocabItem?.isUserFlashcard);
-            console.log(`🗡️ SRS Updated: ${vocabId} Q=0 (wrong)`);
         }
 
         gameState.current.lives -= 1;
@@ -367,31 +345,19 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
         const width = canvas.width;
         const height = canvas.height;
 
-        // -- Update Spawner --
+        // Spawner
         if (timestamp - gameState.current.lastSpawnTime > gameState.current.spawnRate) {
-            // Accelerate spawn rate slightly as game progresses? 
-            // kept steady for now.
             spawnBubble(width, height);
             gameState.current.lastSpawnTime = timestamp;
         }
 
-        // -- Draw Background --
-        // (Handled by CSS for static wood, but we clear here)
         ctx.clearRect(0, 0, width, height);
 
-        // -- Update & Draw --
         const { bubbles, particles, bladeTrail } = gameState.current;
 
-        // 1. Splash Particles (Draw BEFORE fruits for "Juice on wall" effect, or AFTER for explosion? 
-        // Let's draw simple juice stains behind?)
-
-        // Actually, draw active particles ON TOP usually looks better for punchy combat.
-
-        // 2. Bubbles (Fruits)
+        // Bubbles
         for (let i = bubbles.length - 1; i >= 0; i--) {
             const b = bubbles[i];
-
-            // Physics
             b.x += b.vx;
             b.y += b.vy;
             b.vy += GRAVITY;
@@ -399,18 +365,18 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
 
             if (b.scale < 1) b.scale += 0.05;
 
-            // Simple Wall Bounce (Sides)
-            if (b.x - FRUIT_RADIUS < 0 || b.x + FRUIT_RADIUS > width) {
+            // Bounce Check
+            if (b.x - b.radius < 0 || b.x + b.radius > width) {
                 b.vx *= -0.6;
-                b.x = Math.max(FRUIT_RADIUS, Math.min(width - FRUIT_RADIUS, b.x));
+                b.x = Math.max(b.radius, Math.min(width - b.radius, b.x));
             }
-            // Remove if fallen
-            if (b.y - FRUIT_RADIUS > height + 200) {
+            // Fallen Check
+            if (b.y - b.radius > height + 200) {
                 bubbles.splice(i, 1);
                 continue;
             }
 
-            // Slice Check - only allow one slice per frame to prevent bugs
+            // Slice Check
             if (gameState.current.isMouseDown && !b.sliced && b.scale >= 0.8) {
                 const trail = gameState.current.bladeTrail;
                 if (trail.length >= 2) {
@@ -418,34 +384,21 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
                     const prevPoint = trail[trail.length - 2];
                     const dist = pointToLineDistance(b.x, b.y, prevPoint.x, prevPoint.y, lastPoint.x, lastPoint.y);
 
-                    if (dist < FRUIT_RADIUS * 0.9) {
+                    if (dist < b.radius * 0.9) {
                         b.sliced = true;
 
-                        // Debug logging
-                        console.log('🗡️ SLICED:', {
-                            word: b.word,
-                            isBomb: b.isBomb,
-                            isCorrect: b.isCorrect,
-                            vocabId: b.vocabId
-                        });
-
-                        // Effects and handling
                         if (b.isBomb) {
-                            console.log('💣 BOMB HIT!');
                             createExplosion(b.x, b.y, '#FFFFFF', false);
                             createExplosion(b.x, b.y, '#EF4444', false);
                             handleWrongSlice(true);
                         } else if (b.isCorrect) {
-                            console.log('✅ CORRECT!');
                             createExplosion(b.x, b.y, b.fruitType.color, true);
                             createExplosion(b.x, b.y, b.fruitType.lightColor, true);
                             handleCorrectSlice(b.vocabId);
                         } else {
-                            console.log('❌ WRONG! (distractor)');
-                            createExplosion(b.x, b.y, '#EF4444', true); // Red splash for wrong
+                            createExplosion(b.x, b.y, '#EF4444', true);
                             handleWrongSlice(false, b.vocabId);
                         }
-
                         bubbles.splice(i, 1);
                         continue;
                     }
@@ -460,44 +413,49 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
 
             // Shadow
             ctx.beginPath();
-            ctx.arc(10, 10, FRUIT_RADIUS * 0.8, 0, Math.PI * 2);
+            ctx.arc(10, 10, b.radius * 0.8, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(0,0,0,0.2)';
             ctx.fill();
 
             // Fruit Emoji
-            ctx.font = `${FRUIT_RADIUS * 1.8}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+            ctx.font = `${b.radius * 1.8}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            // Adjust emoji center slightly vertically usually needed
             ctx.fillText(b.fruitType.char, 0, 10);
-
             ctx.restore();
 
-            // Draw Word Label (Non-rotating, strictly horizontal for readability)
+            // Draw Label
             if (!b.isBomb) {
                 ctx.save();
                 ctx.translate(b.x, b.y);
-                // Background Pill for text readability
-                const textWidth = ctx.measureText(b.word).width * 2.5; // Bigger background
 
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; // Brighter
+                const fontSize = Math.max(16, b.radius * 0.4);
+                ctx.font = `bold ${fontSize}px "Mitr", sans-serif`;
+
+                const textMetrics = ctx.measureText(b.word);
+                const textWidth = textMetrics.width;
+                const pillPadding = fontSize;
+                const pillWidth = textWidth + pillPadding * 2;
+                const pillHeight = fontSize * 1.5;
+                const pillYOffset = b.radius * 0.8;
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                 ctx.beginPath();
-                ctx.roundRect(-80, 50, 160, 44, 16); // Larger pill
+                ctx.roundRect(-pillWidth / 2, pillYOffset, pillWidth, pillHeight, pillHeight / 2);
                 ctx.fill();
                 ctx.strokeStyle = b.fruitType.color;
                 ctx.lineWidth = 3;
                 ctx.stroke();
 
-                ctx.fillStyle = '#0F172A'; // Slate 900
-                ctx.font = 'bold 32px "Mitr", sans-serif'; // Bigger Font!
+                ctx.fillStyle = '#0F172A';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(b.word, 0, 74); // Below fruit
+                ctx.fillText(b.word, 0, pillYOffset + pillHeight / 2 + 2);
                 ctx.restore();
             }
         }
 
-        // 3. Particles
+        // Particles
         for (let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
             p.x += p.vx;
@@ -513,25 +471,17 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
             ctx.globalAlpha = p.life;
             ctx.fillStyle = p.color;
             ctx.beginPath();
-            if (p.type === 'splat') {
-                // Draw uneven blob
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            } else {
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            }
-
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
             ctx.fill();
             ctx.globalAlpha = 1.0;
         }
 
-        // 4. Blade Trail
-        // Trim old
+        // Blade Trail
         const now = Date.now();
         gameState.current.bladeTrail = bladeTrail.filter(p => now - p.time < BLADE_LIFETIME);
 
         if (gameState.current.bladeTrail.length > 1) {
             const trail = gameState.current.bladeTrail;
-
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#FFFFFF';
             ctx.lineCap = 'round';
@@ -542,12 +492,10 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
                 ctx.beginPath();
                 ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
                 ctx.lineTo(trail[i].x, trail[i].y);
-                // Blade visuals: Ice Blue / White core
                 ctx.lineWidth = (1 + progress * 8);
                 ctx.strokeStyle = `rgba(200, 240, 255, ${progress})`;
                 ctx.stroke();
 
-                // Inner core
                 ctx.lineWidth = (1 + progress * 4);
                 ctx.strokeStyle = '#FFFFFF';
                 ctx.stroke();
@@ -558,7 +506,7 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
         gameState.current.animationFrameId = requestAnimationFrame(gameLoop);
     };
 
-    // -- Controls --
+    // Controls
     const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
         if (!gameState.current.isPlaying) return;
 
@@ -599,19 +547,18 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
         const handleResize = () => {
             if (containerRef.current && canvasRef.current) {
                 const { width, height } = containerRef.current.getBoundingClientRect();
-                canvasRef.current.width = width * 1.5; // Scale up for sharpness, but 2x might be heavy
+                canvasRef.current.width = width * 1.5;
                 canvasRef.current.height = height * 1.5;
             }
         };
         window.addEventListener('resize', handleResize);
-        setTimeout(handleResize, 100); // init delay
+        setTimeout(handleResize, 100);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-
     return (
         <div className="relative w-full h-[100dvh] overflow-hidden font-sans select-none" ref={containerRef}>
-            {/* Background: Wood Texture */}
+            {/* Background */}
             <div className="absolute inset-0 bg-[#3E2723]"
                 style={{
                     backgroundImage: `
@@ -623,7 +570,7 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
                 }}>
             </div>
 
-            {/* Top Bar HUD */}
+            {/* Top Bar HUD - Lives & Close */}
             <div className="absolute top-0 left-0 w-full p-4 z-20 flex justify-between items-start pointer-events-none">
                 <div className="flex gap-4 pointer-events-auto">
                     <Button
@@ -635,7 +582,6 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
                         <XIcon className="w-6 h-6" />
                     </Button>
 
-                    {/* Lives as Hearts/Crosses */}
                     <div className="flex items-center gap-1">
                         {[...Array(MAX_LIVES)].map((_, i) => (
                             <div key={i} className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${i < lives ? 'scale-100' : 'opacity-30 grayscale scale-75'}`}>
@@ -645,38 +591,8 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
                     </div>
                 </div>
 
-                {/* TARGET DISPLAY - Wooden Sign Style */}
-                <AnimatePresence mode='wait'>
-                    {currentTarget && gameStateStatus === 'PLAYING' && (
-                        <motion.div
-                            key={currentTarget.id}
-                            initial={{ y: -100, rotate: -5 }}
-                            animate={{ y: 0, rotate: 0 }}
-                            exit={{ y: -100, rotate: 5 }}
-                            className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-sm pointer-events-auto z-30"
-                        >
-                            <div className="relative mx-auto w-64">
-                                {/* Wooden Board Image CSS/SVG */}
-                                <div className="absolute inset-0 bg-[#5D4037] rounded-lg shadow-lg border-2 border-[#8D6E63] transform skew-x-[-2deg]"></div>
-                                {/* Nails */}
-                                <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-[#A1887F] shadow-inner"></div>
-                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#A1887F] shadow-inner"></div>
-                                <div className="absolute bottom-2 left-2 w-2 h-2 rounded-full bg-[#A1887F] shadow-inner"></div>
-                                <div className="absolute bottom-2 right-2 w-2 h-2 rounded-full bg-[#A1887F] shadow-inner"></div>
-
-                                <div className="relative p-4 text-center">
-                                    <h3 className="text-[#FFECB3] font-bold text-xs uppercase tracking-[0.2em] mb-1 drop-shadow-sm opacity-80">หาคำนี้!</h3>
-                                    <h2 className="text-2xl font-black text-white drop-shadow-md tracking-tight leading-none break-words">
-                                        {currentTarget.meaning}
-                                    </h2>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Score */}
-                <div className="flex flex-col items-end">
+                {/* Score - Top Right */}
+                <div className="flex flex-col items-end pointer-events-auto">
                     <div className="bg-gradient-to-b from-amber-500 to-amber-700 px-4 py-2 rounded-lg border-2 border-amber-300 shadow-lg transform rotate-1">
                         <p className="text-[10px] text-amber-100 font-bold uppercase tracking-wider text-right mb-0">Score</p>
                         <p className="text-3xl font-black text-white leading-none drop-shadow-md tabular-nums">{score}</p>
@@ -695,6 +611,36 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
                 </div>
             </div>
 
+            {/* TARGET DISPLAY - Robust Centering with Flex Container */}
+            <div className="absolute top-24 md:top-4 left-0 w-full z-30 flex justify-center pointer-events-none">
+                <AnimatePresence mode='wait'>
+                    {currentTarget && gameStateStatus === 'PLAYING' && (
+                        <motion.div
+                            key={currentTarget.id}
+                            initial={{ y: -50, opacity: 0, rotate: -5 }}
+                            animate={{ y: 0, opacity: 1, rotate: 0 }}
+                            exit={{ y: -50, opacity: 0, scale: 0.8 }}
+                            className="pointer-events-auto origin-top transform scale-75 md:scale-100"
+                        >
+                            <div className="relative mx-auto w-64 md:w-80">
+                                <div className="absolute inset-0 bg-[#5D4037] rounded-lg shadow-lg border-2 border-[#8D6E63] transform skew-x-[-2deg]"></div>
+                                <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-[#A1887F] shadow-inner"></div>
+                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#A1887F] shadow-inner"></div>
+                                <div className="absolute bottom-2 left-2 w-2 h-2 rounded-full bg-[#A1887F] shadow-inner"></div>
+                                <div className="absolute bottom-2 right-2 w-2 h-2 rounded-full bg-[#A1887F] shadow-inner"></div>
+
+                                <div className="relative p-3 md:p-4 text-center">
+                                    <h3 className="text-[#FFECB3] font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] mb-1 drop-shadow-sm opacity-80">หาคำนี้!</h3>
+                                    <h2 className="text-xl md:text-2xl font-black text-white drop-shadow-md tracking-tight leading-none break-words">
+                                        {currentTarget.meaning}
+                                    </h2>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
             {/* RESULTS SCREEN */}
             <AnimatePresence>
                 {gameStateStatus !== 'PLAYING' && gameStateStatus !== 'IDLE' && (
@@ -704,10 +650,8 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
                             animate={{ scale: 1, opacity: 1, rotate: 0 }}
                             className="bg-[#2D1B15] bg-opacity-95 rounded-[2rem] shadow-2xl border-4 border-[#8D6E63] max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden relative"
                         >
-                            {/* Paper Texture Overlay */}
                             <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]"></div>
 
-                            {/* Header */}
                             <div className={`p-8 text-center relative z-10 ${gameStateStatus === 'WON' ? 'bg-gradient-to-b from-green-900/50 to-transparent' : 'bg-gradient-to-b from-red-900/50 to-transparent'}`}>
                                 {gameStateStatus === 'WON' ? (
                                     <>
@@ -724,7 +668,6 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
                                 )}
                             </div>
 
-                            {/* Stats */}
                             <div className="flex-1 overflow-y-auto p-6 relative z-10">
                                 <div className="space-y-3">
                                     {gameState.current.shuffledVocab.map((vocab) => {
@@ -748,7 +691,6 @@ export function FlashcardNinjaSliceGame({ vocabList, onExit, onGameFinish, onSel
                                 </div>
                             </div>
 
-                            {/* Footer Actions */}
                             <div className="p-6 border-t border-white/10 relative z-10 grid gap-3">
                                 <Button onClick={startGame} className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white h-14 rounded-xl font-black text-lg shadow-lg uppercase tracking-wider transform transition-transform active:scale-95">
                                     <RefreshCw className="w-5 h-5 mr-2" /> Play Again
