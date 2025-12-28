@@ -725,10 +725,13 @@ export default function FlashcardsPage() {
             if (error) {
               console.error('Error uploading front image:', error);
             } else if (data) {
-              const { data: { publicUrl } } = supabase.storage
+              // Use signed URLs for security instead of public URLs
+              const { data: signedUrlData, error: signedError } = await supabase.storage
                 .from('flashcard-images')
-                .getPublicUrl(fileName);
-              frontImageUrl = publicUrl;
+                .createSignedUrl(fileName, 86400); // 24 hour expiry
+              if (!signedError && signedUrlData) {
+                frontImageUrl = signedUrlData.signedUrl;
+              }
             }
           } catch (err) {
             console.error('Exception uploading front image:', err);
@@ -746,10 +749,13 @@ export default function FlashcardsPage() {
             if (error) {
               console.error('Error uploading back image:', error);
             } else if (data) {
-              const { data: { publicUrl } } = supabase.storage
+              // Use signed URLs for security instead of public URLs
+              const { data: signedUrlData, error: signedError } = await supabase.storage
                 .from('flashcard-images')
-                .getPublicUrl(fileName);
-              backImageUrl = publicUrl;
+                .createSignedUrl(fileName, 86400); // 24 hour expiry
+              if (!signedError && signedUrlData) {
+                backImageUrl = signedUrlData.signedUrl;
+              }
             }
           } catch (err) {
             console.error('Exception uploading back image:', err);
