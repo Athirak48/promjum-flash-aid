@@ -328,6 +328,9 @@ export default function OnboardingFlow() {
                     .eq('id', user.id);
             }
 
+            // Set flag to prevent redirect loop
+            localStorage.setItem('onboarding_just_completed', 'true');
+
             // Celebrate!
             confetti({
                 particleCount: 100,
@@ -337,8 +340,9 @@ export default function OnboardingFlow() {
 
             toast.success('ยินดีต้อนรับ! 🎉');
 
+            // Navigate immediately to dashboard
             setTimeout(() => {
-                navigate('/dashboard');
+                navigate('/dashboard', { replace: true });
             }, 1500);
 
         } catch (error) {

@@ -23,6 +23,9 @@ export const ProtectedRoute = ({ children, skipOnboarding = false }: ProtectedRo
       }
 
       try {
+        // Check if user just completed onboarding
+        const justCompletedOnboarding = localStorage.getItem('onboarding_just_completed');
+
         // Check admin role and onboarding status in parallel
         const [adminResult, onboardingResult] = await Promise.all([
           supabase
@@ -40,7 +43,14 @@ export const ProtectedRoute = ({ children, skipOnboarding = false }: ProtectedRo
 
         if (adminResult.error) throw adminResult.error;
         setIsAdmin(!!adminResult.data);
-        setHasCompletedOnboarding(!!onboardingResult.data);
+
+        // If user just completed onboarding, set to true immediately
+        if (justCompletedOnboarding === 'true') {
+          setHasCompletedOnboarding(true);
+          localStorage.removeItem('onboarding_just_completed'); // Clear flag
+        } else {
+          setHasCompletedOnboarding(!!onboardingResult.data);
+        }
       } catch (error) {
         console.error('Error checking user status:', error);
         setIsAdmin(false);

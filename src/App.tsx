@@ -48,6 +48,7 @@ import BackgroundDecorations from "./components/BackgroundDecorations";
 
 import FolderBundlePreviewDemo from "./pages/FolderBundlePreviewDemo";
 import OnboardingFlow from "./pages/OnboardingFlow";
+import OnboardingDebugPage from "./pages/OnboardingDebugPage";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -128,6 +129,7 @@ const App = () => {
                     <Route path="/" element={<><Navbar /><LandingPage /></>} />
                     <Route path="/auth" element={<><Navbar /><AuthPage /></>} />
                     <Route path="/onboarding" element={<ProtectedRoute skipOnboarding><OnboardingFlow /></ProtectedRoute>} />
+                    <Route path="/onboarding-debug" element={<ProtectedRoute skipOnboarding><OnboardingDebugPage /></ProtectedRoute>} />
                     <Route
                       path="/dashboard"
                       element={
