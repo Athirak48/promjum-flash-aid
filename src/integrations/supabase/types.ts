@@ -1786,6 +1786,7 @@ export type Database = {
       }
       user_onboarding: {
         Row: {
+          age_group: string | null
           best_time: string | null
           biggest_problem: string | null
           completed_at: string | null
@@ -1803,6 +1804,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          age_group?: string | null
           best_time?: string | null
           biggest_problem?: string | null
           completed_at?: string | null
@@ -1820,6 +1822,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          age_group?: string | null
           best_time?: string | null
           biggest_problem?: string | null
           completed_at?: string | null
