@@ -177,15 +177,21 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-12 px-4 md:pt-32 md:pb-20 md:px-6 min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Animated Background Elements */}
+        {/* Animated Background Elements - Enhanced */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary/30 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow" />
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-secondary/20 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow" style={{ animationDelay: "2s" }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/10 rounded-full blur-[100px] mix-blend-screen animate-float-random" />
+          {/* Main gradient orbs with richer colors */}
+          <div className="absolute top-20 left-10 w-96 h-96 rounded-full blur-[140px] mix-blend-screen animate-pulse-slow" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(168,85,247,0.1) 70%)' }} />
+          <div className="absolute bottom-20 right-10 w-[28rem] h-[28rem] rounded-full blur-[140px] mix-blend-screen animate-pulse-slow" style={{ animationDelay: "2s", background: 'radial-gradient(circle, rgba(236,72,153,0.3) 0%, rgba(59,130,246,0.15) 70%)' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[120px] mix-blend-screen animate-float-random" style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.15) 0%, transparent 70%)' }} />
 
-          {/* Floating Stars/Particles */}
+          {/* Additional accent orbs */}
+          <div className="absolute top-40 right-1/4 w-64 h-64 bg-cyan-400/10 rounded-full blur-[100px] mix-blend-screen animate-pulse-slow" style={{ animationDelay: "1.5s" }} />
+
+          {/* Enhanced Floating Stars/Particles */}
           <div className="absolute top-1/3 left-1/4 w-2 h-2 bg-white rounded-full blur-[1px] animate-float opacity-80" />
           <div className="absolute bottom-1/4 right-1/3 w-3 h-3 bg-indigo-400 rounded-full blur-[2px] animate-float" style={{ animationDelay: "1s" }} />
+          <div className="absolute top-1/4 right-1/3 w-2 h-2 bg-purple-300 rounded-full blur-[1px] animate-float opacity-60" style={{ animationDelay: "0.5s" }} />
+          <div className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-pink-300 rounded-full blur-[1px] animate-float opacity-70" style={{ animationDelay: "1.8s" }} />
         </div>
 
         <div className="container mx-auto max-w-5xl relative z-10 text-center">
@@ -220,41 +226,45 @@ const LandingPage = () => {
               className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center pt-4 md:pt-8 w-full px-4"
             >
               <div className="relative group w-full sm:w-auto">
-                <div className="absolute -inset-1 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 rounded-xl md:rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-500 animate-tilt"></div>
+                {/* Enhanced multi-layer glow effect */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 rounded-xl md:rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition duration-500 animate-tilt"></div>
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 rounded-xl md:rounded-2xl blur-sm opacity-50 group-hover:opacity-75 transition duration-500"></div>
                 <Button
                   size="lg"
-                  className="relative flex items-center justify-center gap-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white px-8 py-6 md:px-10 md:py-8 h-auto rounded-xl text-lg md:text-xl font-bold border border-white/20 shadow-[0_0_20px_rgba(167,139,250,0.5)] hover:shadow-[0_0_30px_rgba(167,139,250,0.7)] transition-all duration-300 w-full sm:w-auto transform hover:-translate-y-1"
+                  className="relative flex items-center justify-center gap-3 bg-gradient-to-r from-[#A855F7] via-[#EC4899] to-[#3B82F6] hover:from-[#9333EA] hover:via-[#DB2777] hover:to-[#2563EB] text-white px-8 py-6 md:px-10 md:py-8 h-auto rounded-xl text-lg md:text-xl font-bold border border-white/30 shadow-[0_0_25px_rgba(168,85,247,0.6),0_0_50px_rgba(236,72,153,0.3)] hover:shadow-[0_0_35px_rgba(168,85,247,0.8),0_0_70px_rgba(236,72,153,0.5)] transition-all duration-300 w-full sm:w-auto transform hover:-translate-y-1 hover:scale-[1.02] overflow-hidden"
                   asChild
                 >
                   <Link to="/auth">
-                    <span className="text-white drop-shadow-md">Start Learning Now</span>
-                    <Rocket className="w-5 h-5 md:w-6 md:h-6 text-white animate-bounce" />
+                    {/* Shimmer effect overlay */}
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                    <span className="text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] relative z-10">Start Learning Now</span>
+                    <Rocket className="w-5 h-5 md:w-6 md:h-6 text-white animate-bounce relative z-10" />
                   </Link>
                 </Button>
               </div>
 
               <Button
                 variant="ghost"
-                className="text-white/70 hover:text-white hover:bg-white/10 px-6 py-4 md:px-8 md:py-8 h-auto rounded-xl border border-transparent hover:border-white/20 transition-all w-full sm:w-auto text-base md:text-lg"
+                className="group/btn text-white/70 hover:text-white hover:bg-white/10 px-6 py-4 md:px-8 md:py-8 h-auto rounded-xl border border-white/10 hover:border-[#22D3EE]/40 transition-all w-full sm:w-auto text-base md:text-lg hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
                 asChild
               >
                 <Link to="/decks">
-                  <Gamepad2 className="w-5 h-5 md:w-6 md:h-6 mr-2 text-teal-400" />
-                  Explore Games
+                  <Gamepad2 className="w-5 h-5 md:w-6 md:h-6 mr-2 text-[#22D3EE] group-hover/btn:drop-shadow-[0_0_8px_rgba(34,211,238,0.6)] transition-all" />
+                  <span className="group-hover/btn:text-white transition-colors">Explore Games</span>
                 </Link>
               </Button>
             </motion.div>
 
-            {/* Trust Badges */}
-            <div className="pt-8 md:pt-12 flex flex-row flex-nowrap justify-center gap-1.5 md:gap-8 text-[10px] md:text-sm font-medium text-white/40 uppercase tracking-widest px-1 overflow-x-hidden">
-              <span className="flex items-center justify-center px-2 py-1.5 md:px-4 md:py-2 border border-white/5 rounded-full bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-colors cursor-default whitespace-nowrap">
-                🎉 Free
+            {/* Trust Badges - Enhanced Glassmorphism */}
+            <div className="pt-4 md:pt-6 flex flex-row flex-nowrap justify-center gap-1.5 md:gap-8 text-[10px] md:text-sm font-medium text-white/50 uppercase tracking-widest px-1 overflow-x-hidden">
+              <span className="flex items-center justify-center px-3 py-2 md:px-5 md:py-2.5 border border-purple-400/20 rounded-full bg-white/8 backdrop-blur-md hover:bg-white/12 hover:border-purple-400/40 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 cursor-default whitespace-nowrap group">
+                <span className="group-hover:text-white/70 transition-colors">🎉 Free</span>
               </span>
-              <span className="flex items-center justify-center px-2 py-1.5 md:px-4 md:py-2 border border-white/5 rounded-full bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-colors cursor-default whitespace-nowrap">
-                🏆 Leaderboard
+              <span className="flex items-center justify-center px-3 py-2 md:px-5 md:py-2.5 border border-yellow-400/20 rounded-full bg-white/8 backdrop-blur-md hover:bg-white/12 hover:border-yellow-400/40 hover:shadow-[0_0_15px_rgba(234,179,8,0.3)] transition-all duration-300 cursor-default whitespace-nowrap group">
+                <span className="group-hover:text-white/70 transition-colors">🏆 Leaderboard</span>
               </span>
-              <span className="flex items-center justify-center px-2 py-1.5 md:px-4 md:py-2 border border-white/5 rounded-full bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-colors cursor-default whitespace-nowrap">
-                📱 Apps
+              <span className="flex items-center justify-center px-3 py-2 md:px-5 md:py-2.5 border border-cyan-400/20 rounded-full bg-white/8 backdrop-blur-md hover:bg-white/12 hover:border-cyan-400/40 hover:shadow-[0_0_15px_rgba(34,211,238,0.3)] transition-all duration-300 cursor-default whitespace-nowrap group">
+                <span className="group-hover:text-white/70 transition-colors">📱 Web-App</span>
               </span>
             </div>
           </motion.div>

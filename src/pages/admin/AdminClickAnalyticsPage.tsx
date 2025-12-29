@@ -73,25 +73,18 @@ export default function AdminClickAnalyticsPage() {
         setLoading(true);
         setErrorMsg(null);
         try {
+            // Fetch all user activity logs without joining profiles
             const { data: logs, error } = await supabase
                 .from('user_activity_logs')
-                .select(`
-                    *,
-                    profiles:user_id (
-                        email
-                    )
-                `)
+                .select('*')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            // Filter out specific admin email (doing it in JS to preserve guest logs/left join behavior)
-            const filteredLogs = (logs || []).filter((log: any) =>
-                log.profiles?.email !== 'storybook2548@gmail.com'
-            );
-
-            setAllLogs(filteredLogs);
-            processData(filteredLogs);
+            // No need to filter by email since we're not joining profiles
+            // All user activity logs will be included
+            setAllLogs(logs || []);
+            processData(logs || []);
 
         } catch (error: any) {
             console.error('Error fetching analytics:', error);
@@ -385,8 +378,8 @@ export default function AdminClickAnalyticsPage() {
                             {topItems.map((item, idx) => (
                                 <div key={idx} className="space-y-1">
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
-                                        <span className="text-slate-500 dark:text-slate-400 font-bold">{item.total.toLocaleString()}</span>
+                                        <span className="font-medium text-slate-900 dark:text-slate-300">{item.label}</span>
+                                        <span className="text-slate-900 dark:text-slate-400 font-bold">{item.total.toLocaleString()}</span>
                                     </div>
                                     <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
                                         <div
@@ -409,15 +402,15 @@ export default function AdminClickAnalyticsPage() {
                         <Card key={idx}>
                             <CardHeader className="pb-3 border-b">
                                 <div className="flex items-center gap-2">
-                                    <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+                                    <div className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg">
                                         <Icon className="h-5 w-5" />
                                     </div>
-                                    <CardTitle className="text-lg">{section.title}</CardTitle>
+                                    <CardTitle className="text-lg text-slate-900 dark:text-white">{section.title}</CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-4">
                                 {/* Table Header */}
-                                <div className="flex items-center justify-between py-2 mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b">
+                                <div className="flex items-center justify-between py-2 mb-2 text-xs font-semibold text-slate-900 dark:text-slate-400 uppercase tracking-wider border-b">
                                     <span className="flex-1">Action</span>
                                     <div className="flex items-center gap-3 text-right">
                                         <span className="w-14">วันนี้</span>
@@ -429,17 +422,17 @@ export default function AdminClickAnalyticsPage() {
                                 <div className="space-y-1">
                                     {section.items.map((item, itemIdx) => (
                                         <div key={itemIdx} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 transition-colors">
-                                            <span className={`text-sm font-medium text-slate-700 dark:text-slate-300 ${item.label.startsWith('↳') ? 'pl-4 text-slate-500 dark:text-slate-400' : ''}`}>
+                                            <span className={`text-sm font-medium text-slate-900 dark:text-slate-300 ${item.label.startsWith('↳') ? 'pl-4 text-slate-700 dark:text-slate-400' : ''}`}>
                                                 {item.label}
                                             </span>
                                             <div className="flex items-center gap-3 text-right">
-                                                <span className={`w-14 px-2 py-0.5 rounded text-xs font-medium ${item.daily > 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}`}>
+                                                <span className={`w-14 px-2 py-0.5 rounded text-xs font-medium ${item.daily > 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-900'}`}>
                                                     {item.daily}
                                                 </span>
                                                 <span className="w-14 text-sm font-bold text-slate-900 dark:text-white">
                                                     {item.total.toLocaleString()}
                                                 </span>
-                                                <span className="w-12 text-xs text-purple-600 dark:text-purple-400 font-medium">
+                                                <span className="w-12 text-xs text-purple-900 dark:text-purple-400 font-medium">
                                                     {item.uniqueUsers > 0 ? item.uniqueUsers : '-'}
                                                 </span>
                                                 <span className="w-14">

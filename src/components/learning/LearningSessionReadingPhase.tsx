@@ -232,7 +232,10 @@ export function LearningSessionReadingPhase({
                             <BookOpen className="w-5 h-5" />
                         </div>
                         <div>
-                            <h2 className="text-base font-black text-slate-700">Reading Time</h2>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-base font-black text-slate-700">Reading Time</h2>
+                                <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow-lg animate-pulse">MOCK DATA</span>
+                            </div>
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="text-sm font-bold text-slate-500">
                                     Passage {Math.floor(currentQuestion / 2) + 1} of {Math.ceil(questions.length / 2)}

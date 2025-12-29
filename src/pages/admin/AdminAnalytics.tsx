@@ -1,765 +1,485 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
-    TrendingUp,
     Users,
-    CreditCard,
+    TrendingUp,
     Activity,
-    Download,
-    Calendar,
-    MousePointerClick,
-    Clock,
-    Target,
-    BarChart3,
-    FileText,
-    Database,
-    Gamepad2,
-    Trophy
+    UserPlus,
+    RefreshCw,
+    Download
 } from 'lucide-react';
 import {
     LineChart,
     Line,
     BarChart,
     Bar,
+    AreaChart,
+    Area,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
     Legend,
-    ResponsiveContainer,
-    AreaChart,
-    Area,
-    PieChart,
-    Pie,
-    Cell
+    ResponsiveContainer
 } from 'recharts';
+import { useMarketAnalytics } from '@/hooks/useMarketAnalytics';
+import { motion } from 'framer-motion';
 
-// Mock Data
-const trafficData = [
-    { date: '1 Dec', users: 120, sessions: 180 },
-    { date: '2 Dec', users: 132, sessions: 210 },
-    { date: '3 Dec', users: 145, sessions: 250 },
-    { date: '4 Dec', users: 160, sessions: 280 },
-    { date: '5 Dec', users: 155, sessions: 270 },
-    { date: '6 Dec', users: 190, sessions: 320 },
-    { date: '7 Dec', users: 210, sessions: 400 },
-    { date: '8 Dec', users: 200, sessions: 380 },
-    { date: '9 Dec', users: 230, sessions: 420 },
-    { date: '10 Dec', users: 250, sessions: 450 },
-    { date: '11 Dec', users: 280, sessions: 510 },
-    { date: '12 Dec', users: 310, sessions: 550 },
-    { date: '13 Dec', users: 342, sessions: 600 },
-    { date: '14 Dec', users: 380, sessions: 650 },
-];
+// Stat Card Component
+interface StatCardProps {
+    title: string;
+    value: number | string;
+    subtext?: string;
+    icon: React.ElementType;
+    trend?: 'up' | 'down' | 'neutral';
+    color: string;
+}
 
-const revenueData = [
-    { month: 'Jul', revenue: 12000 },
-    { month: 'Aug', revenue: 15000 },
-    { month: 'Sep', revenue: 18000 },
-    { month: 'Oct', revenue: 22000 },
-    { month: 'Nov', revenue: 25000 },
-    { month: 'Dec', revenue: 32000 },
-];
-
-const featureUsageData = [
-    { name: 'Vocab Challenge', value: 45, color: '#f59e0b' },
-    { name: 'Flashcards', value: 30, color: '#3b82f6' },
-    { name: 'AI Practice', value: 15, color: '#8b5cf6' },
-    { name: 'Reading', value: 10, color: '#10b981' },
-];
-
-const databaseTables = [
-    { name: 'users_master', rows: 2847, size: '2.4 MB', updated: 'Today, 13:00' },
-    { name: 'game_logs', rows: 15678, size: '12.8 MB', updated: 'Today, 13:05' },
-    { name: 'transactions', rows: 560, size: '0.8 MB', updated: 'Today, 10:00' },
-    { name: 'user_feedback', rows: 230, size: '0.2 MB', updated: 'Yesterday' },
-    { name: 'learning_progress', rows: 89000, size: '45.2 MB', updated: 'Today, 13:05' },
-];
-
-// Components
-const StatCard = ({ title, value, subtext, icon: Icon, trend }: any) => (
-    <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
-        <CardContent className="p-6">
-            <div className="flex items-center justify-between space-y-0 pb-2">
-                <p className="text-sm font-medium text-slate-700">{title}</p>
-                <div className="p-2 bg-primary/10 rounded-full">
-                    <Icon className="h-4 w-4 text-primary" />
-                </div>
-            </div>
-            <div className="flex items-baseline justify-between mt-2">
-                <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
-                {trend && (
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${trend > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-                        {trend > 0 ? '+' : ''}{trend}%
-                    </span>
-                )}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">{subtext}</p>
-        </CardContent>
-    </Card>
-);
-
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
-import { Progress } from '@/components/ui/progress';
-import { useAdminAnalytics } from '@/hooks/useAdminAnalytics';
-
-// Game names mapping
-const GAME_NAMES: Record<string, string> = {
-    'quiz': 'Quiz Game',
-    'matching': 'Matching Game',
-    'honeycomb': 'Honey Hive',
-    'ninja': 'Ninja Slice',
-    'hangman': 'Hangman Master',
-    'listen': 'Listen & Choose',
-    'vocabBlinder': 'Vocab Blinder',
-    'wordSearch': 'Word Search',
-    'scramble': 'Word Scramble'
-};
-
-export default function AdminAnalytics() {
-    const [timeRange, setTimeRange] = useState<'today' | '7days' | '30days' | '90days'>('7days');
-    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-    const [previewData, setPreviewData] = useState<{ name: string; columns: string[]; data: any[] } | null>(null);
-    const [isSystemHealthOpen, setIsSystemHealthOpen] = useState(false);
-
-    // Fetch real analytics data
-    const { overview, gameStats, topGames, isLoading, error } = useAdminAnalytics(timeRange);
-
-    // Mock Preview Data
-    const mockPreviews: Record<string, { columns: string[]; data: any[] }> = {
-        'users_master': {
-            columns: ['id', 'email', 'created_at', 'last_login', 'status'],
-            data: [
-                { id: 'u001', email: 'user1@example.com', created_at: '2024-01-15', last_login: '2024-12-14', status: 'active' },
-                { id: 'u002', email: 'user2@example.com', created_at: '2024-02-20', last_login: '2024-12-13', status: 'active' },
-                { id: 'u003', email: 'user3@example.com', created_at: '2024-03-10', last_login: '2024-11-30', status: 'inactive' },
-                { id: 'u004', email: 'user4@example.com', created_at: '2024-04-05', last_login: '2024-12-14', status: 'active' },
-                { id: 'u005', email: 'user5@example.com', created_at: '2024-05-12', last_login: '2024-12-10', status: 'active' },
-            ]
-        },
-        'game_logs': {
-            columns: ['log_id', 'user_id', 'game_mode', 'score', 'timestamp'],
-            data: [
-                { log_id: 'g1001', user_id: 'u001', game_mode: 'vocab_challenge', score: 28, timestamp: '2024-12-14 10:30:00' },
-                { log_id: 'g1002', user_id: 'u045', game_mode: 'flashcard_review', score: 15, timestamp: '2024-12-14 10:35:00' },
-                { log_id: 'g1003', user_id: 'u012', game_mode: 'vocab_challenge', score: 30, timestamp: '2024-12-14 10:42:00' },
-                { log_id: 'g1004', user_id: 'u099', game_mode: 'ai_practice', score: 85, timestamp: '2024-12-14 10:50:00' },
-                { log_id: 'g1005', user_id: 'u001', game_mode: 'vocab_challenge', score: 29, timestamp: '2024-12-14 11:15:00' },
-            ]
-        },
-        'transactions': {
-            columns: ['trans_id', 'user_id', 'amount', 'plan', 'date'],
-            data: [
-                { trans_id: 't5001', user_id: 'u023', amount: 199, plan: 'monthly', date: '2024-12-14' },
-                { trans_id: 't5002', user_id: 'u087', amount: 1990, plan: 'yearly', date: '2024-12-13' },
-                { trans_id: 't5003', user_id: 'u105', amount: 199, plan: 'monthly', date: '2024-12-13' },
-                { trans_id: 't5004', user_id: 'u056', amount: 199, plan: 'monthly', date: '2024-12-12' },
-                { trans_id: 't5005', user_id: 'u002', amount: 199, plan: 'monthly', date: '2024-12-12' },
-            ]
-        },
-        'user_feedback': {
-            columns: ['fb_id', 'user_id', 'type', 'message', 'date'],
-            data: [
-                { fb_id: 'f001', user_id: 'u001', type: 'bug', message: 'App crashes on launch', date: '2024-12-13' },
-                { fb_id: 'f002', user_id: 'u005', type: 'feature', message: 'Dark mode please', date: '2024-12-12' },
-            ]
-        },
-        'learning_progress': {
-            columns: ['prog_id', 'user_id', 'word_id', 'srs_stage', 'next_review'],
-            data: [
-                { prog_id: 'p001', user_id: 'u001', word_id: 'w101', srs_stage: 3, next_review: '2024-12-15' },
-                { prog_id: 'p002', user_id: 'u001', word_id: 'w102', srs_stage: 5, next_review: '2024-12-20' },
-            ]
-        }
-    };
-
-    const handleGenerateReport = () => {
-        setIsGeneratingReport(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsGeneratingReport(false);
-            toast.success("สร้างรายงานสำเร็จ", {
-                description: "Monthly_Report_Dec2024.pdf ถูกดาวน์โหลดแล้ว"
-            });
-        }, 2000);
-    };
-
-    const handleDownloadCSV = (tableName: string) => {
-        // Simulate CSV download
-        toast.info(`กำลังดาวน์โหลด ${tableName}.csv`, {
-            description: "ข้อมูลกำลังถูกเตรียมและดาวน์โหลด..."
-        });
-
-        setTimeout(() => {
-            // In a real app, this would trigger a blob download
-            toast.success("ดาวน์โหลดสำเร็จ", {
-                description: `ไฟล์ ${tableName}.csv ถูกบันทึกแล้ว`
-            });
-        }, 1000);
-    };
-
-    const handlePreview = (tableName: string) => {
-        const data = mockPreviews[tableName];
-        if (data) {
-            setPreviewData({ name: tableName, ...data });
-        } else {
-            setPreviewData({
-                name: tableName,
-                columns: ['id', 'data'],
-                data: [{ id: 1, data: 'Sample Data 1' }, { id: 2, data: 'Sample Data 2' }]
-            });
-        }
+function StatCard({ title, value, subtext, icon: Icon, trend, color }: StatCardProps) {
+    const trendColors = {
+        up: 'text-green-500',
+        down: 'text-red-500',
+        neutral: 'text-slate-400'
     };
 
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
-                        <Database className="h-8 w-8 text-primary" />
-                        Master Analytics
-                    </h1>
-                    <p className="text-slate-500 mt-1">
-                        ศุนย์กลางข้อมูลและสถิติทั้งหมดของระบบ (Data Warehouse View)
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                                <Calendar className="mr-2 h-4 w-4" />
-                                {timeRange}
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setTimeRange('today')}>Today</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setTimeRange('7days')}>Last 7 Days</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setTimeRange('30days')}>Last 30 Days</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setTimeRange('90days')}>Last 90 Days</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <Button onClick={handleGenerateReport} disabled={isGeneratingReport}>
-                        {isGeneratingReport ? (
-                            <>
-                                <Activity className="mr-2 h-4 w-4 animate-spin" />
-                                Generating...
-                            </>
-                        ) : (
-                            <>
-                                <Download className="mr-2 h-4 w-4" />
-                                Generate Report
-                            </>
-                        )}
-                    </Button>
-                </div>
-            </div>
-
-            {/* Top Level Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    title="Total Traffic"
-                    value="12,345"
-                    subtext="Sessions this month"
-                    icon={MousePointerClick}
-                    trend={12.5}
-                />
-                <StatCard
-                    title="Active Users"
-                    value="2,847"
-                    subtext="Unique users this month"
-                    icon={Users}
-                    trend={8.2}
-                />
-                <StatCard
-                    title="Total Revenue"
-                    value="฿124,500"
-                    subtext={`Showing ${timeRange}`}
-                    icon={CreditCard}
-                    trend={15.3}
-                />
-                <StatCard
-                    title="Avg. Session"
-                    value="14m 32s"
-                    subtext="Time spent per user"
-                    icon={Clock}
-                    trend={-2.1}
-                />
-            </div>
-
-            {/* Main Content Tabs */}
-            <Tabs defaultValue="overview" className="space-y-4">
-                <TabsList className="bg-background border">
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="minigames">🎮 Minigames</TabsTrigger>
-                    <TabsTrigger value="engagement">Engagement</TabsTrigger>
-                    <TabsTrigger value="vocab">Vocab Challenge</TabsTrigger>
-                    <TabsTrigger value="financial">Financials</TabsTrigger>
-                    <TabsTrigger value="warehouse">Data Warehouse</TabsTrigger>
-                </TabsList>
-
-                {/* OVERVIEW TAB */}
-                <TabsContent value="overview" className="space-y-4">
-                    <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
-                        <Card className="col-span-1 lg:col-span-4">
-                            <CardHeader>
-                                <CardTitle className="text-slate-900">User Growth & Traffic</CardTitle>
-                                <CardDescription>จำนวนผู้ใช้งานและ Sessions ในช่วง 14 วันที่ผ่านมา</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-[300px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={trafficData}>
-                                        <defs>
-                                            <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                                                <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-                                            </linearGradient>
-                                            <linearGradient id="colorSessions" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
-                                                <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
-                                        <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Area type="monotone" dataKey="users" stroke="#8884d8" fillOpacity={1} fill="url(#colorUsers)" name="Active Users" />
-                                        <Area type="monotone" dataKey="sessions" stroke="#82ca9d" fillOpacity={1} fill="url(#colorSessions)" name="Total Sessions" />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="col-span-1 lg:col-span-3">
-                            <CardHeader>
-                                <CardTitle className="text-slate-900">Feature Usage Distribution</CardTitle>
-                                <CardDescription>สัดส่วนการใช้งานแต่ละฟีเจอร์</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-[300px] flex items-center justify-center">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={featureUsageData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                        >
-                                            {featureUsageData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip />
-                                        <Legend verticalAlign="bottom" height={36} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
+        <Card className="bg-slate-900 border-slate-700 hover:border-slate-600 transition-all">
+            <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div className={`p-3 rounded-xl bg-${color}-500/10`}>
+                        <Icon className={`w-6 h-6 text-${color}-400`} />
                     </div>
-                </TabsContent>
-
-                {/* MINIGAMES ANALYTICS TAB */}
-                <TabsContent value="minigames" className="space-y-4">
-                    {isLoading ? (
-                        <div className="flex items-center justify-center py-12">
-                            <Activity className="h-8 w-8 animate-spin text-primary" />
-                            <span className="ml-3 text-slate-600">Loading analytics...</span>
-                        </div>
-                    ) : error ? (
-                        <Card>
-                            <CardContent className="py-12">
-                                <div className="text-center text-red-600">
-                                    <p className="font-semibold">Error loading analytics</p>
-                                    <p className="text-sm">{error?.message || 'Unknown error'}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <>
-                            {/* Stats Overview */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <StatCard
-                                    title="Total Game Sessions"
-                                    value={overview?.totalSessions?.toLocaleString() || '0'}
-                                    subtext="All games combined"
-                                    icon={Gamepad2}
-                                />
-                                <StatCard
-                                    title="Unique Players"
-                                    value={overview?.uniqueUsers?.toLocaleString() || '0'}
-                                    subtext="Players who tried games"
-                                    icon={Users}
-                                />
-                                <StatCard
-                                    title="Total Completions"
-                                    value={overview?.totalGameCompletions?.toLocaleString() || '0'}
-                                    subtext="Games completed"
-                                    icon={Trophy}
-                                />
-                                <StatCard
-                                    title="Avg Duration"
-                                    value={`${Math.round(overview?.avgSessionDuration || 0)}m`}
-                                    subtext="Average session duration"
-                                    icon={Target}
-                                />
-                            </div>
-
-                            {/* Top Games & Details */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                {/* Bar Chart */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-slate-900">Game Popularity</CardTitle>
-                                        <CardDescription>Total sessions per game</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="h-[400px]">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart
-                                                data={topGames?.map(game => ({
-                                                    name: GAME_NAMES[game.gameName] || game.gameName,
-                                                    sessions: game.totalPlays
-                                                })) || []}
-                                            >
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={11} />
-                                                <YAxis />
-                                                <Tooltip />
-                                                <Bar dataKey="sessions" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </CardContent>
-                                </Card>
-
-                                {/* Detailed Stats */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-slate-900">Game Statistics</CardTitle>
-                                        <CardDescription>Performance by game</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                                            {gameStats?.map((stat, index) => (
-                                                <div key={stat.gameName} className="rounded-lg border p-3 hover:bg-slate-50 transition">
-                                                    <div className="flex items-start justify-between mb-2">
-                                                        <div>
-                                                            <p className="font-semibold text-slate-900">{GAME_NAMES[stat.gameName] || stat.gameName}</p>
-                                                            <p className="text-xs text-slate-500">ID: {stat.gameName}</p>
-                                                        </div>
-                                                        <Badge variant={stat.totalPlays > 50 ? "default" : "secondary"}>
-                                                            #{index + 1}
-                                                        </Badge>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-2 text-sm">
-                                                        <div>
-                                                            <p className="text-slate-500">Sessions</p>
-                                                            <p className="font-bold text-slate-900">{stat.totalPlays}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-slate-500">Players</p>
-                                                            <p className="font-bold text-slate-900">{stat.uniquePlayers}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-slate-500">Completion</p>
-                                                            <p className="font-bold text-green-600">{Math.round(stat.completionRate)}%</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-slate-500">Avg Time</p>
-                                                            <p className="font-bold text-blue-600">{Math.round(stat.avgDuration)}s</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* Distribution Pie Chart */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-slate-900">Session Distribution</CardTitle>
-                                    <CardDescription>How sessions are distributed across all 9 games</CardDescription>
-                                </CardHeader>
-                                <CardContent className="h-[350px]">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={gameStats?.map((stat, idx) => ({
-                                                    name: GAME_NAMES[stat.gameName] || stat.gameName,
-                                                    value: stat.totalPlays,
-                                                    fill: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316'][idx % 9]
-                                                })) || []}
-                                                cx="50%"
-                                                cy="50%"
-                                                labelLine={true}
-                                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                                                outerRadius={100}
-                                                dataKey="value"
-                                            />
-                                            <Tooltip />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </CardContent>
-                            </Card>
-                        </>
+                    {trend && (
+                        <TrendingUp className={`w-4 h-4 ${trendColors[trend]}`} />
                     )}
-                </TabsContent>
+                </div>
+                <h3 className="text-2xl font-black text-white mb-1">{value.toLocaleString()}</h3>
+                <p className="text-sm text-slate-400 font-medium">{title}</p>
+                {subtext && <p className="text-xs text-slate-500 mt-1">{subtext}</p>}
+            </CardContent>
+        </Card>
+    );
+}
 
-                {/* ENGAGEMENT TAB */}
-                <TabsContent value="engagement" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Session Retention</CardTitle>
-                            <CardDescription>กราฟแสดงระยะเวลาที่ผู้ใช้ใช้งานต่อครั้ง (นาที)</CardDescription>
-                        </CardHeader>
-                        <CardContent className="h-[300px]">
-                            {/* Simple placeholder or another chart */}
-                            <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-500">
-                                <BarChart width={800} height={300} data={[
-                                    { range: '0-5m', users: 150 },
-                                    { range: '5-15m', users: 320 },
-                                    { range: '15-30m', users: 280 },
-                                    { range: '30-60m', users: 120 },
-                                    { range: '>60m', users: 45 },
-                                ]}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="range" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Bar dataKey="users" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                                </BarChart>
+export default function AdminAnalytics() {
+    // Date range helpers
+    const getToday = () => {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        return now;
+    };
+
+    const getMonthStart = () => {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), 1);
+    };
+
+    const getYearStart = () => {
+        const now = new Date();
+        return new Date(now.getFullYear(), 0, 1);
+    };
+
+    const [dateRange, setDateRange] = useState<'today' | 'month' | 'year' | 'custom'>('today');
+    const [startDate, setStartDate] = useState(getToday());
+    const [endDate, setEndDate] = useState(new Date());
+
+    const { metrics, dailyData, growthData, topFeatures, loading, error, refetch } = useMarketAnalytics({
+        startDate,
+        endDate
+    });
+
+    const handleDateRangeChange = (range: 'today' | 'month' | 'year') => {
+        setDateRange(range);
+        const end = new Date();
+
+        switch (range) {
+            case 'today':
+                setStartDate(getToday());
+                setEndDate(end);
+                break;
+            case 'month':
+                setStartDate(getMonthStart());
+                setEndDate(end);
+                break;
+            case 'year':
+                setStartDate(getYearStart());
+                setEndDate(end);
+                break;
+        }
+    };
+
+    const handleCustomDateChange = (type: 'start' | 'end', value: string) => {
+        setDateRange('custom');
+        const date = new Date(value);
+        if (type === 'start') {
+            setStartDate(date);
+        } else {
+            setEndDate(date);
+        }
+    };
+
+    const handleExportCSV = () => {
+        if (!dailyData.length) return;
+
+        const csv = [
+            ['Date', 'Unique Users', 'Total Sessions'],
+            ...dailyData.map(d => [d.date, d.uniqueUsers, d.totalSessions])
+        ].map(row => row.join(',')).join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `analytics-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-slate-950">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-white font-bold">Loading Analytics...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-slate-950">
+                <Card className="bg-red-950 border-red-800 max-w-md">
+                    <CardHeader>
+                        <CardTitle className="text-red-400">Error Loading Analytics</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-red-300 mb-4">{error}</p>
+                        <Button onClick={refetch} variant="outline" className="w-full">
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Retry
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-slate-950 p-6">
+            <div className="max-w-7xl mx-auto space-y-6">
+
+                {/* Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-between"
+                >
+                    <div>
+                        <h1 className="text-4xl font-black text-white mb-2">Market Analytics</h1>
+                        <p className="text-slate-400">Real-time user engagement and growth metrics</p>
+                    </div>
+                    <div className="flex gap-3">
+                        <Button
+                            onClick={refetch}
+                            variant="outline"
+                            className="border-slate-700 text-white hover:bg-slate-800"
+                        >
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Refresh
+                        </Button>
+                        <Button
+                            onClick={handleExportCSV}
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                        >
+                            <Download className="w-4 h-4 mr-2" />
+                            Export CSV
+                        </Button>
+                    </div>
+                </motion.div>
+
+                {/* Date Range Selector */}
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="space-y-4"
+                >
+                    {/* Quick Filters */}
+                    <div className="flex gap-3">
+                        <Button
+                            onClick={() => handleDateRangeChange('today')}
+                            variant={dateRange === 'today' ? 'default' : 'outline'}
+                            className={dateRange === 'today' ? 'bg-purple-600 hover:bg-purple-700' : 'border-slate-700 text-white hover:bg-slate-800'}
+                        >
+                            📅 วันนี้
+                        </Button>
+                        <Button
+                            onClick={() => handleDateRangeChange('month')}
+                            variant={dateRange === 'month' ? 'default' : 'outline'}
+                            className={dateRange === 'month' ? 'bg-purple-600 hover:bg-purple-700' : 'border-slate-700 text-white hover:bg-slate-800'}
+                        >
+                            📆 เดือนนี้
+                        </Button>
+                        <Button
+                            onClick={() => handleDateRangeChange('year')}
+                            variant={dateRange === 'year' ? 'default' : 'outline'}
+                            className={dateRange === 'year' ? 'bg-purple-600 hover:bg-purple-700' : 'border-slate-700 text-white hover:bg-slate-800'}
+                        >
+                            🗓️ ปีนี้
+                        </Button>
+                    </div>
+
+                    {/* Custom Date Range Picker */}
+                    <Card className="bg-slate-900 border-slate-700">
+                        <CardContent className="p-4">
+                            <div className="flex flex-wrap items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm text-slate-300 font-medium whitespace-nowrap">📅 จาก:</label>
+                                    <input
+                                        type="date"
+                                        value={startDate.toISOString().split('T')[0]}
+                                        onChange={(e) => handleCustomDateChange('start', e.target.value)}
+                                        className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm text-slate-300 font-medium whitespace-nowrap">📅 ถึง:</label>
+                                    <input
+                                        type="date"
+                                        value={endDate.toISOString().split('T')[0]}
+                                        onChange={(e) => handleCustomDateChange('end', e.target.value)}
+                                        className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    />
+                                </div>
+                                <Button
+                                    onClick={refetch}
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                    🔍 ดูข้อมูล
+                                </Button>
                             </div>
+                            {dateRange === 'custom' && (
+                                <p className="text-xs text-slate-400 mt-2">
+                                    เลือกช่วงเวลา: {startDate.toLocaleDateString('th-TH')} - {endDate.toLocaleDateString('th-TH')}
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
-                </TabsContent>
+                </motion.div>
 
-                {/* VOCAB CHALLENGE TAB */}
-                <TabsContent value="vocab" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Game Completion Rate</CardTitle>
-                                <CardDescription>อัตราการเล่นจนจบเกมรายวัน</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-[300px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={trafficData}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="date" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Bar dataKey="users" name="Games Played" fill="#f59e0b" />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Average Score Trend</CardTitle>
-                                <CardDescription>คะแนนเฉลี่ยของผู้เล่น (เต็ม 30)</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-[300px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={[
-                                        { date: '1 Dec', score: 24 },
-                                        { date: '5 Dec', score: 25 },
-                                        { date: '10 Dec', score: 26 },
-                                        { date: '14 Dec', score: 25.5 },
-                                    ]}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="date" />
-                                        <YAxis domain={[0, 30]} />
-                                        <Tooltip />
-                                        <Line type="monotone" dataKey="score" stroke="#10b981" strokeWidth={2} />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </TabsContent>
+                {/* Metrics Overview */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                >
+                    <StatCard
+                        title="Active Users"
+                        value={metrics?.dau || 0}
+                        subtext={`ช่วง${dateRange === 'today' ? 'วันนี้' : dateRange === 'month' ? 'เดือนนี้' : dateRange === 'year' ? 'ปีนี้' : 'ที่เลือก'}`}
+                        icon={Users}
+                        color="blue"
+                        trend="up"
+                    />
+                    <StatCard
+                        title="Weekly Active Users"
+                        value={metrics?.wau || 0}
+                        subtext="Last 7 days"
+                        icon={Activity}
+                        color="green"
+                        trend="up"
+                    />
+                    <StatCard
+                        title="Total Sessions"
+                        value={metrics?.sessionsInRange || 0}
+                        subtext="Total visits"
+                        icon={TrendingUp}
+                        color="purple"
+                    />
+                    <StatCard
+                        title="New Users"
+                        value={metrics?.newUsersInRange || 0}
+                        subtext="Sign-ups"
+                        icon={UserPlus}
+                        color="pink"
+                        trend="up"
+                    />
+                </motion.div>
 
-                {/* FINANCIALS TAB */}
-                <TabsContent value="financial" className="space-y-4">
-                    <Card>
+                {/* Charts Row 1: Users & Sessions */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="grid grid-cols-1 gap-6"
+                >
+                    <Card className="bg-slate-900 border-slate-700">
                         <CardHeader>
-                            <CardTitle>Monthly Recurring Revenue (MRR)</CardTitle>
-                            <CardDescription>รายได้รวมรายเดือน (บาท)</CardDescription>
+                            <CardTitle className="text-white">📈 Daily Active Users & Sessions</CardTitle>
+                            <CardDescription>Unique users vs total sessions over time</CardDescription>
                         </CardHeader>
-                        <CardContent className="h-[350px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={revenueData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="month" />
-                                    <YAxis />
-                                    <Tooltip formatter={(value) => `฿${value}`} />
-                                    <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={dailyData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                    <XAxis
+                                        dataKey="date"
+                                        stroke="#94a3b8"
+                                        tick={{ fill: '#94a3b8' }}
+                                    />
+                                    <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: '#1e293b',
+                                            border: '1px solid #475569',
+                                            borderRadius: '8px'
+                                        }}
+                                        labelStyle={{ color: '#fff' }}
+                                    />
+                                    <Legend wrapperStyle={{ color: '#fff' }} />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="uniqueUsers"
+                                        stroke="#3b82f6"
+                                        strokeWidth={3}
+                                        name="Unique Users"
+                                        dot={{ fill: '#3b82f6', r: 4 }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="totalSessions"
+                                        stroke="#10b981"
+                                        strokeWidth={3}
+                                        name="Total Sessions"
+                                        dot={{ fill: '#10b981', r: 4 }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                {/* Charts Row 2: Growth & Features */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                >
+                    {/* User Growth */}
+                    <Card className="bg-slate-900 border-slate-700">
+                        <CardHeader>
+                            <CardTitle className="text-white">📊 User Growth</CardTitle>
+                            <CardDescription>Cumulative users over time</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <AreaChart data={growthData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                    <XAxis
+                                        dataKey="date"
+                                        stroke="#94a3b8"
+                                        tick={{ fill: '#94a3b8' }}
+                                    />
+                                    <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: '#1e293b',
+                                            border: '1px solid #475569',
+                                            borderRadius: '8px'
+                                        }}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="totalUsers"
+                                        stroke="#a855f7"
+                                        fill="#a855f7"
+                                        fillOpacity={0.3}
+                                        strokeWidth={2}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* Top Features */}
+                    <Card className="bg-slate-900 border-slate-700">
+                        <CardHeader>
+                            <CardTitle className="text-white">🔥 Top Features</CardTitle>
+                            <CardDescription>Most clicked buttons & features</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={topFeatures} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                    <XAxis type="number" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
+                                    <YAxis
+                                        type="category"
+                                        dataKey="feature"
+                                        width={120}
+                                        stroke="#94a3b8"
+                                        tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: '#1e293b',
+                                            border: '1px solid #475569',
+                                            borderRadius: '8px'
+                                        }}
+                                    />
+                                    <Bar
+                                        dataKey="clicks"
+                                        fill="#f59e0b"
+                                        radius={[0, 8, 8, 0]}
+                                    />
                                 </BarChart>
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
-                </TabsContent>
+                </motion.div>
 
-                {/* DATA WAREHOUSE TAB - FOR DATA SCIENTISTS */}
-                <TabsContent value="warehouse" className="space-y-4">
-                    <Card className="border-2 border-primary/20">
-                        <CardHeader className="bg-muted/30">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Database className="h-5 w-5 text-primary" />
-                                        Raw Data Repository
-                                    </CardTitle>
-                                    <CardDescription>
-                                        ดาวน์โหลดข้อมูล Raw Data สำหรับนำไปวิเคราะห์ต่อ (CSV/JSON/SQL)
-                                    </CardDescription>
-                                </div>
-                                <Button variant="outline" onClick={() => setIsSystemHealthOpen(true)}>
-                                    <Activity className="mr-2 h-4 w-4" />
-                                    System Health
-                                </Button>
-                            </div>
+                {/* Engagement Insights */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                >
+                    <Card className="bg-gradient-to-r from-purple-900 to-pink-900 border-purple-700">
+                        <CardHeader>
+                            <CardTitle className="text-white">💡 Engagement Insights</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-0">
-                            <div className="rounded-md border-t"></div>
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
-                                    <tr>
-                                        <th className="px-6 py-3 font-medium">Table Name</th>
-                                        <th className="px-6 py-3 font-medium">Records</th>
-                                        <th className="px-6 py-3 font-medium">Size</th>
-                                        <th className="px-6 py-3 font-medium">Last Updated</th>
-                                        <th className="px-6 py-3 font-medium text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {databaseTables.map((table) => (
-                                        <tr key={table.name} className="hover:bg-muted/20 transition-colors">
-                                            <td className="px-6 py-4 font-mono text-blue-600 font-medium">
-                                                {table.name}
-                                            </td>
-                                            <td className="px-6 py-4">{table.rows.toLocaleString()}</td>
-                                            <td className="px-6 py-4 font-mono text-xs">{table.size}</td>
-                                            <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{table.updated}</td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button variant="ghost" size="sm" className="h-8" onClick={() => handlePreview(table.name)}>
-                                                        Preview
-                                                    </Button>
-                                                    <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => handleDownloadCSV(table.name)}>
-                                                        <Download className="h-3 w-3" />
-                                                        CSV
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-white">
+                                <div>
+                                    <p className="text-sm text-purple-200 mb-1">Sessions per User</p>
+                                    <p className="text-3xl font-black">
+                                        {metrics?.dau ? (metrics.sessionsInRange / metrics.dau).toFixed(2) : '0'}
+                                    </p>
+                                    <p className="text-xs text-purple-300 mt-1">Average visits per user</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-purple-200 mb-1">WAU/DAU Ratio</p>
+                                    <p className="text-3xl font-black">
+                                        {metrics?.dau && metrics?.wau ? ((metrics.dau / metrics.wau) * 100).toFixed(0) : '0'}%
+                                    </p>
+                                    <p className="text-xs text-purple-300 mt-1">Daily engagement rate</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-purple-200 mb-1">Total Users</p>
+                                    <p className="text-3xl font-black">
+                                        {growthData[growthData.length - 1]?.totalUsers.toLocaleString() || '0'}
+                                    </p>
+                                    <p className="text-xs text-purple-300 mt-1">All-time signups</p>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
-                </TabsContent>
-            </Tabs>
+                </motion.div>
 
-            {/* PREVIEW DIALOG */}
-            <Dialog open={!!previewData} onOpenChange={(open) => !open && setPreviewData(null)}>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-primary" />
-                            Data Preview: {previewData?.name}
-                        </DialogTitle>
-                        <DialogDescription>
-                            แสดงข้อมูลตัวอย่าง 5 แถวแรกจากตาราง (Read-only)
-                        </DialogDescription>
-                    </DialogHeader>
-                    {previewData && (
-                        <div className="border rounded-md overflow-x-auto">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-muted">
-                                    <tr>
-                                        {previewData.columns.map((col) => (
-                                            <th key={col} className="px-4 py-2 font-medium border-b">{col}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {previewData.data.map((row, idx) => (
-                                        <tr key={idx} className="hover:bg-muted/30">
-                                            {previewData.columns.map((col) => (
-                                                <td key={col} className="px-4 py-2 border-b whitespace-nowrap">
-                                                    {row[col]}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                    <DialogFooter>
-                        <Button onClick={() => setPreviewData(null)}>Close</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* SYSTEM HEALTH DIALOG */}
-            <Dialog open={isSystemHealthOpen} onOpenChange={setIsSystemHealthOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Activity className="h-5 w-5 text-primary" />
-                            System Health Status
-                        </DialogTitle>
-                        <DialogDescription>
-                            สถานะการทำงานของ Server และ Database
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-6 py-4">
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span>CPU Usage</span>
-                                <span className="font-bold text-green-600">42%</span>
-                            </div>
-                            <Progress value={42} className="h-2" />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span>Memory Usage (RAM)</span>
-                                <span className="font-bold text-amber-600">76%</span>
-                            </div>
-                            <Progress value={76} className="h-2 bg-muted [&>div]:bg-amber-500" />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span>Database Disk Space</span>
-                                <span className="font-bold text-blue-600">23%</span>
-                            </div>
-                            <Progress value={23} className="h-2 bg-muted [&>div]:bg-blue-500" />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 pt-2">
-                            <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-between">
-                                <span className="text-sm font-medium">Database Node</span>
-                                <Badge className="bg-green-500 hover:bg-green-600">Online</Badge>
-                            </div>
-                            <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-between">
-                                <span className="text-sm font-medium">API Server</span>
-                                <Badge className="bg-green-500 hover:bg-green-600">Healthy</Badge>
-                            </div>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
+            </div>
         </div>
     );
 }

@@ -125,4 +125,3 @@ export function usePublicDecks(filters?: PublicDecksFilters) {
 
   return { decks, loading, refetch: fetchPublicDecks };
 }
-
