@@ -103,26 +103,14 @@ export default function AdminCommunity() {
             // Fetch all decks
             const { data, error } = await supabase
                 .from('decks')
-                .select('*, sub_decks(count), profiles(username, display_name)')
+                .select('*, sub_decks(count)')
                 .order('display_order', { ascending: true });
 
             if (error) throw error;
 
-            // Separate admin decks (no user_id or admin created) and user decks
-            const adminList: any[] = [];
-            const userList: any[] = [];
-
-            (data || []).forEach(deck => {
-                // Consider deck as admin's if created_by is admin or if is_official is true
-                if (deck.is_official || !deck.user_id) {
-                    adminList.push(deck);
-                } else {
-                    userList.push(deck);
-                }
-            });
-
-            setAdminDecks(adminList);
-            setUserDecks(userList);
+            // All decks are admin decks since 'decks' table is for admin content
+            setAdminDecks(data || []);
+            setUserDecks([]);
         } catch (error) {
             console.error('Error fetching decks:', error);
             toast.error('ไม่สามารถโหลดข้อมูล Deck ได้');
@@ -230,16 +218,14 @@ export default function AdminCommunity() {
                 throw new Error('CSV ต้องมี column "front" และ "back" (หรือ คำศัพท์/ความหมาย)');
             }
 
-            // Create deck
+            // Create deck first
             const { data: newDeck, error: deckError } = await supabase
                 .from('decks')
                 .insert({
                     name: csvDeckName.trim(),
                     name_en: csvDeckName.trim(),
                     description: `Uploaded from CSV - ${csvFile.name}`,
-                    is_official: true,
                     is_published: false,
-                    user_id: user?.id,
                     category: 'อื่นๆ',
                     level: 'mixed'
                 })
@@ -248,8 +234,24 @@ export default function AdminCommunity() {
 
             if (deckError) throw deckError;
 
+            // Create sub_deck linked to deck
+            const { data: newSubDeck, error: subDeckError } = await supabase
+                .from('sub_decks')
+                .insert({
+                    name: csvDeckName.trim(),
+                    name_en: csvDeckName.trim(),
+                    description: `Uploaded from CSV - ${csvFile.name}`,
+                    deck_id: newDeck.id,
+                    is_published: false,
+                    creator_user_id: user?.id
+                })
+                .select()
+                .single();
+
+            if (subDeckError) throw subDeckError;
+
             // Parse flashcards - handle CSV with or without part of speech
-            const flashcards: { deck_id: string; front: string; back: string; part_of_speech?: string }[] = [];
+            const flashcards: { subdeck_id: string; front_text: string; back_text: string; part_of_speech?: string }[] = [];
             for (let i = 1; i < lines.length; i++) {
                 // Handle CSV values that may contain commas inside quotes
                 const values = parseCSVLine(lines[i]);
@@ -258,10 +260,10 @@ export default function AdminCommunity() {
                 const partOfSpeech = posIndex !== -1 ? values[posIndex]?.trim().replace(/^"|"$/g, '') : undefined;
 
                 if (front && back) {
-                    const flashcard: { deck_id: string; front: string; back: string; part_of_speech?: string } = {
-                        deck_id: newDeck.id,
-                        front,
-                        back
+                    const flashcard: { subdeck_id: string; front_text: string; back_text: string; part_of_speech?: string } = {
+                        subdeck_id: newSubDeck.id,
+                        front_text: front,
+                        back_text: back
                     };
                     if (partOfSpeech) {
                         flashcard.part_of_speech = partOfSpeech;
@@ -280,6 +282,12 @@ export default function AdminCommunity() {
                 .insert(flashcards);
 
             if (flashcardsError) throw flashcardsError;
+
+            // Update sub_deck flashcard_count
+            await supabase
+                .from('sub_decks')
+                .update({ flashcard_count: flashcards.length })
+                .eq('id', newSubDeck.id);
 
             // Update deck total_flashcards count
             await supabase

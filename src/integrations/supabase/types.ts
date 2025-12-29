@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_analytics: {
+        Row: {
+          avg_value: number | null
+          count: number | null
+          date: string
+          id: string
+          metadata: Json | null
+          metric_category: string | null
+          metric_label: string | null
+          metric_type: string
+          total_value: number | null
+          unique_users: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_value?: number | null
+          count?: number | null
+          date: string
+          id?: string
+          metadata?: Json | null
+          metric_category?: string | null
+          metric_label?: string | null
+          metric_type: string
+          total_value?: number | null
+          unique_users?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_value?: number | null
+          count?: number | null
+          date?: string
+          id?: string
+          metadata?: Json | null
+          metric_category?: string | null
+          metric_label?: string | null
+          metric_type?: string
+          total_value?: number | null
+          unique_users?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       deck_analytics: {
         Row: {
           avg_completion_rate: number | null
@@ -582,29 +624,124 @@ export type Database = {
         }
         Relationships: []
       }
-      notifications: {
+      notification_broadcast_recipients: {
         Row: {
+          broadcast_id: string
           created_at: string | null
           id: string
           is_read: boolean | null
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          broadcast_id: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          broadcast_id?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_broadcast_recipients_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "notification_broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_broadcasts: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
           message: string
+          read_count: number | null
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
+          target_audience: string
           title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          message: string
+          read_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          target_audience?: string
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          message?: string
+          read_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          target_audience?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string | null
+          target_audience: string | null
+          title: string
+          type: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
+          created_by?: string | null
           id?: string
           is_read?: boolean | null
           message: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          target_audience?: string | null
           title: string
+          type?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
+          created_by?: string | null
           id?: string
           is_read?: boolean | null
           message?: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          target_audience?: string | null
           title?: string
+          type?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -966,9 +1103,62 @@ export type Database = {
         }
         Relationships: []
       }
+      sub_deck_flashcards: {
+        Row: {
+          audio_url: string | null
+          created_at: string | null
+          difficulty_level: string | null
+          example_sentence: string | null
+          id: string
+          image_url: string | null
+          parts_of_speech: string | null
+          phonetic: string | null
+          sub_deck_id: string | null
+          translation: string | null
+          word: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string | null
+          difficulty_level?: string | null
+          example_sentence?: string | null
+          id?: string
+          image_url?: string | null
+          parts_of_speech?: string | null
+          phonetic?: string | null
+          sub_deck_id?: string | null
+          translation?: string | null
+          word?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string | null
+          difficulty_level?: string | null
+          example_sentence?: string | null
+          id?: string
+          image_url?: string | null
+          parts_of_speech?: string | null
+          phonetic?: string | null
+          sub_deck_id?: string | null
+          translation?: string | null
+          word?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_deck_flashcards_sub_deck_id_fkey"
+            columns: ["sub_deck_id"]
+            isOneToOne: false
+            referencedRelation: "sub_decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sub_decks: {
         Row: {
+          category: string | null
+          clone_count: number | null
           created_at: string
+          creator_user_id: string | null
           deck_id: string
           description: string | null
           description_en: string | null
@@ -978,17 +1168,22 @@ export type Database = {
           flashcard_count: number | null
           id: string
           is_free: boolean | null
+          is_public: boolean | null
           is_published: boolean | null
           level: string | null
           name: string
           name_en: string
+          original_deck_id: string | null
           published_at: string | null
           tags: string[] | null
           thumbnail_url: string | null
           updated_at: string
         }
         Insert: {
+          category?: string | null
+          clone_count?: number | null
           created_at?: string
+          creator_user_id?: string | null
           deck_id: string
           description?: string | null
           description_en?: string | null
@@ -998,17 +1193,22 @@ export type Database = {
           flashcard_count?: number | null
           id?: string
           is_free?: boolean | null
+          is_public?: boolean | null
           is_published?: boolean | null
           level?: string | null
           name: string
           name_en: string
+          original_deck_id?: string | null
           published_at?: string | null
           tags?: string[] | null
           thumbnail_url?: string | null
           updated_at?: string
         }
         Update: {
+          category?: string | null
+          clone_count?: number | null
           created_at?: string
+          creator_user_id?: string | null
           deck_id?: string
           description?: string | null
           description_en?: string | null
@@ -1018,10 +1218,12 @@ export type Database = {
           flashcard_count?: number | null
           id?: string
           is_free?: boolean | null
+          is_public?: boolean | null
           is_published?: boolean | null
           level?: string | null
           name?: string
           name_en?: string
+          original_deck_id?: string | null
           published_at?: string | null
           tags?: string[] | null
           thumbnail_url?: string | null
@@ -1033,6 +1235,13 @@ export type Database = {
             columns: ["deck_id"]
             isOneToOne: false
             referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_decks_original_deck_id_fkey"
+            columns: ["original_deck_id"]
+            isOneToOne: false
+            referencedRelation: "sub_decks"
             referencedColumns: ["id"]
           },
         ]
@@ -1081,16 +1290,19 @@ export type Database = {
       }
       system_settings: {
         Row: {
+          description: string | null
           key: string
           updated_at: string | null
           value: Json
         }
         Insert: {
+          description?: string | null
           key: string
           updated_at?: string | null
           value: Json
         }
         Update: {
+          description?: string | null
           key?: string
           updated_at?: string | null
           value?: Json
@@ -1169,6 +1381,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_activity_logs: {
+        Row: {
+          created_at: string
+          event_action: string
+          event_category: string | null
+          event_label: string | null
+          event_type: string
+          event_value: number | null
+          id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_action: string
+          event_category?: string | null
+          event_label?: string | null
+          event_type: string
+          event_value?: number | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_action?: string
+          event_category?: string | null
+          event_label?: string | null
+          event_type?: string
+          event_value?: number | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       user_deck_progress: {
         Row: {
@@ -1251,6 +1499,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_feedbacks: {
+        Row: {
+          admin_notes: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          message: string
+          rating: number
+          status: string
+          type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          message: string
+          rating: number
+          status?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          message?: string
+          rating?: number
+          status?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       user_flashcard_progress: {
         Row: {
@@ -1493,6 +1780,63 @@ export type Database = {
           target_value?: number
           title?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_onboarding: {
+        Row: {
+          age_group: string | null
+          best_time: string | null
+          biggest_problem: string | null
+          completed_at: string | null
+          created_at: string | null
+          daily_time: string | null
+          id: string
+          learning_goal: string | null
+          motivation_style: string | null
+          nickname: string | null
+          play_style: string | null
+          preferred_media: string | null
+          skill_level: string | null
+          spirit_animal: string | null
+          target_languages: string[] | null
+          user_id: string
+        }
+        Insert: {
+          age_group?: string | null
+          best_time?: string | null
+          biggest_problem?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          daily_time?: string | null
+          id?: string
+          learning_goal?: string | null
+          motivation_style?: string | null
+          nickname?: string | null
+          play_style?: string | null
+          preferred_media?: string | null
+          skill_level?: string | null
+          spirit_animal?: string | null
+          target_languages?: string[] | null
+          user_id: string
+        }
+        Update: {
+          age_group?: string | null
+          best_time?: string | null
+          biggest_problem?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          daily_time?: string | null
+          id?: string
+          learning_goal?: string | null
+          motivation_style?: string | null
+          nickname?: string | null
+          play_style?: string | null
+          preferred_media?: string | null
+          skill_level?: string | null
+          spirit_animal?: string | null
+          target_languages?: string[] | null
           user_id?: string
         }
         Relationships: []
@@ -1935,6 +2279,25 @@ export type Database = {
         }[]
       }
       cleanup_orphaned_progress: { Args: never; Returns: number }
+      clone_deck: {
+        Args: {
+          p_source_deck_id: string
+          p_target_folder_id: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      create_combined_community_deck: {
+        Args: {
+          p_category: string
+          p_description: string
+          p_emoji?: string
+          p_name: string
+          p_source_sub_deck_ids: string[]
+          p_tags: string[]
+        }
+        Returns: string
+      }
       create_game_room: {
         Args: { p_host_id: string; p_max_players?: number }
         Returns: {
@@ -2022,6 +2385,10 @@ export type Database = {
           room_id: string
           success: boolean
         }[]
+      }
+      leave_game_room: {
+        Args: { p_room_id: string; p_user_id: string }
+        Returns: Json
       }
       reject_friend_request: {
         Args: { p_request_id: string; p_user_id: string }

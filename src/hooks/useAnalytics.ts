@@ -84,7 +84,7 @@ export function useAnalytics() {
      */
     const trackFeatureUsage = useCallback((
         featureName: string,
-        action: 'start' | 'complete' | 'cancel',
+        action?: string,
         value?: number,
         metadata?: Record<string, any>
     ) => {

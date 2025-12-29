@@ -324,8 +324,8 @@ export default function OnboardingFlow() {
             if (answers.nickname) {
                 await supabase
                     .from('profiles')
-                    .update({ display_name: answers.nickname })
-                    .eq('id', user.id);
+                    .update({ nickname: answers.nickname })
+                    .eq('user_id', user.id);
             }
 
             // Set flag to prevent redirect loop

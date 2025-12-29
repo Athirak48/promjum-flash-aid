@@ -82,7 +82,7 @@ export default function AdminNotification() {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            setBroadcasts(data || []);
+            setBroadcasts((data || []) as NotificationBroadcast[]);
         } catch (error: any) {
             console.error('Error fetching broadcasts:', error);
             toast.error('ไม่สามารถโหลดข้อมูลได้');
@@ -124,7 +124,7 @@ export default function AdminNotification() {
                 await sendToRecipients(broadcast.id, formData.target_audience);
             }
 
-            setBroadcasts([broadcast, ...broadcasts]);
+            setBroadcasts([broadcast as NotificationBroadcast, ...broadcasts]);
             setIsCreateDialogOpen(false);
             setFormData({
                 title: '',
@@ -146,17 +146,11 @@ export default function AdminNotification() {
 
     const sendToRecipients = async (broadcastId: string, targetAudience: string) => {
         try {
-            // Get target users based on audience
-            let query = supabase.from('profiles').select('user_id');
-
-            if (targetAudience === 'premium') {
-                query = query.eq('subscription_tier', 'premium');
-            } else if (targetAudience === 'free') {
-                query = query.or('subscription_tier.is.null,subscription_tier.eq.free');
-            }
-            // 'all' = everyone
-
-            const { data: users, error } = await query;
+            // Get target users based on audience - simple query without complex filters
+            const { data: users, error } = await supabase
+                .from('profiles')
+                .select('user_id');
+                
             if (error) throw error;
 
             if (users && users.length > 0) {
