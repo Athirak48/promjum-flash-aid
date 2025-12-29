@@ -93,7 +93,8 @@ export function CreateCommunityDeckDialog({ open, onOpenChange, onSuccess }: Cre
             const { data, error } = await supabase
                 .from('user_flashcard_sets')
                 .select('id, title, card_count')
-                .eq('folder_id', folderId);
+                .eq('folder_id', folderId)
+                .is('parent_deck_id', null); // Only get top-level sets
 
             if (error) throw error;
 
@@ -136,34 +137,61 @@ export function CreateCommunityDeckDialog({ open, onOpenChange, onSuccess }: Cre
             // 1. Calculate total cards
             const sourceDecks = folderDecks.filter(d => selectedSourceDeckIds.has(d.id));
             const totalCards = sourceDecks.reduce((sum, d) => sum + d.total_cards, 0);
+            const parsedTags = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
 
-            // 2. Create Deck (Using user_flashcard_sets to bypass RLS on 'decks')
-            // 'usePublicDecks' queries this table for source='shared'
-            const { data: newSet, error: setError } = await supabase
+            // 2. Create Parent Community Deck
+            const { data: parentDeck, error: parentError } = await supabase
                 .from('user_flashcard_sets')
                 .insert({
                     user_id: user.id,
                     title: `${emoji} ${name}`,
-                    source: 'shared',
-                    card_count: totalCards
+                    description: description,
+                    source: 'community',
+                    card_count: totalCards,
+                    category: category,
+                    tags: parsedTags,
+                    clone_count: 0,
+                    is_public: true
                 })
                 .select()
                 .single();
 
-            if (setError) throw setError;
-            if (!newSet) throw new Error('Failed to create deck set');
+            if (parentError) throw parentError;
+            if (!parentDeck) throw new Error('Failed to create parent deck');
 
-            // 3. Copy Flashcards
-            let allCardsToInsert: any[] = [];
+            // 3. Create child subdecks and copy flashcards
             for (const sourceId of selectedSourceDeckIds) {
+                const sourceDeck = folderDecks.find(d => d.id === sourceId);
+                if (!sourceDeck) continue;
+
+                // Create child subdeck
+                const { data: childDeck, error: childError } = await supabase
+                    .from('user_flashcard_sets')
+                    .insert({
+                        user_id: user.id,
+                        parent_deck_id: parentDeck.id,
+                        title: sourceDeck.name,
+                        source: 'community_subdeck',
+                        card_count: sourceDeck.total_cards,
+                        is_public: true
+                    })
+                    .select()
+                    .single();
+
+                if (childError) {
+                    console.error('Error creating child deck:', childError);
+                    continue;
+                }
+
+                // Copy flashcards to child subdeck
                 const { data: sourceCards } = await supabase
                     .from('user_flashcards')
                     .select('*')
                     .eq('flashcard_set_id', sourceId);
 
-                if (sourceCards) {
+                if (sourceCards && sourceCards.length > 0) {
                     const mappedCards = sourceCards.map(c => ({
-                        flashcard_set_id: newSet.id,
+                        flashcard_set_id: childDeck.id,
                         user_id: user.id,
                         front_text: c.front_text,
                         back_text: c.back_text,
@@ -171,16 +199,13 @@ export function CreateCommunityDeckDialog({ open, onOpenChange, onSuccess }: Cre
                         back_image_url: c.back_image_url,
                         part_of_speech: c.part_of_speech
                     }));
-                    allCardsToInsert = [...allCardsToInsert, ...mappedCards];
+
+                    const { error: cardsError } = await supabase
+                        .from('user_flashcards')
+                        .insert(mappedCards);
+
+                    if (cardsError) console.error('Error copying cards:', cardsError);
                 }
-            }
-
-            if (allCardsToInsert.length > 0) {
-                const { error: cardsError } = await supabase
-                    .from('user_flashcards')
-                    .insert(allCardsToInsert);
-
-                if (cardsError) console.error('Error copying cards:', cardsError);
             }
 
             toast.success('สร้าง Community Deck สำเร็จ! 🎉');
@@ -201,6 +226,8 @@ export function CreateCommunityDeckDialog({ open, onOpenChange, onSuccess }: Cre
         setName('');
         setDescription('');
         setEmoji('📦');
+        setCategory('English');
+        setTags('');
         setSelectedSourceDeckIds(new Set());
     };
 
@@ -358,26 +385,38 @@ export function CreateCommunityDeckDialog({ open, onOpenChange, onSuccess }: Cre
 
                 <DialogFooter className="flex gap-2 sm:justify-between">
                     {step === 2 && (
-                        <Button variant="ghost" onClick={() => setStep(1)} disabled={loading} className="text-slate-400 hover:text-white">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setStep(1)}
+                            className="text-slate-400 hover:text-white"
+                        >
                             กลับ
                         </Button>
                     )}
-                    <div className="flex gap-2 w-full sm:w-auto justify-end">
-                        {step === 1 ? (
-                            <Button onClick={() => setStep(2)} className="bg-purple-600 hover:bg-purple-700 text-white">
-                                ต่อไป
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={loading || selectedSourceDeckIds.size === 0}
-                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)] border-none"
-                            >
-                                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                แชร์ไปยัง Community
-                            </Button>
-                        )}
-                    </div>
+                    <div className="flex-1" />
+                    {step === 1 ? (
+                        <Button
+                            onClick={() => setStep(2)}
+                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
+                        >
+                            ถัดไป
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={loading || selectedSourceDeckIds.size === 0}
+                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white min-w-[180px]"
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    กำลังสร้าง...
+                                </>
+                            ) : (
+                                'แชร์ไปยัง Community'
+                            )}
+                        </Button>
+                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>
