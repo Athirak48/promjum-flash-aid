@@ -80,34 +80,66 @@ const FeedbackMascot = () => {
   if (shouldHide) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {/* Speech Bubble */}
       <motion.div
         initial={{ opacity: 0, y: 10, scale: 0.8 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ delay: 2, duration: 0.5 }}
-        className="mr-4 mb-2 bg-white text-slate-900 px-4 py-2 rounded-2xl rounded-br-none shadow-xl border-2 border-slate-100 relative max-w-[150px] text-center"
+        className="mr-4 mb-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-5 py-3 rounded-2xl rounded-br-none shadow-xl border-2 border-white/30 relative max-w-[180px] text-center backdrop-blur-md"
       >
-        <p className="text-xs font-bold font-cute">มีอะไรบอกผมไหม? 💬</p>
+        <p className="text-sm font-bold font-prompt">มีอะไรจะบอกไหมครับ? 💬</p>
+        {/* Arrow */}
+        <div className="absolute bottom-0 right-0 translate-x-[-8px] translate-y-[90%] w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[12px] border-t-pink-600" />
       </motion.div>
 
-      {/* Mascot Image */}
+      {/* Mascot Image with Enhanced Animation */}
       <motion.button
-        whileHover={{ scale: 1.1, rotate: 5 }}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{
+          scale: 1,
+          opacity: 1,
+          y: [0, -12, 0],
+          rotate: [0, -3, 3, -3, 0]
+        }}
+        transition={{
+          scale: { duration: 0.5, delay: 0.3 },
+          opacity: { duration: 0.5, delay: 0.3 },
+          y: {
+            repeat: Infinity,
+            duration: 2,
+            ease: "easeInOut"
+          },
+          rotate: {
+            repeat: Infinity,
+            duration: 3,
+            ease: "easeInOut"
+          }
+        }}
+        whileHover={{ scale: 1.15, y: -18 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => {
           trackButtonClick('Feedback Mascot', 'global');
           navigate('/feedback');
         }}
-        className="w-20 h-20 md:w-24 md:h-24 relative hover:drop-shadow-2xl transition-all"
+        className="w-20 h-20 md:w-28 md:h-28 relative cursor-pointer"
       >
+        {/* Glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-2xl opacity-40 group-hover:opacity-60 transition-opacity" />
+
         <img
-          src="/feedback-mascot.png"
+          src="/monkey-mascot.png"
           alt="Feedback Mascot"
-          className="w-full h-full object-contain drop-shadow-lg"
+          className="relative w-full h-full object-contain drop-shadow-2xl"
         />
-        {/* Notification Dot */}
-        <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 border-2 border-white rounded-full animate-bounce" />
+        {/* Notification Dot with Pulse */}
+        <motion.span
+          animate={{ scale: [1, 1.3, 1] }}
+          transition={{ repeat: Infinity, duration: 2 }}
+          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-3 border-white rounded-full flex items-center justify-center shadow-lg"
+        >
+          <span className="text-white text-xs font-black">!</span>
+        </motion.span>
       </motion.button>
     </div>
   );
@@ -292,6 +324,8 @@ const App = () => {
                     <Route path="*" element={<><Navbar /><NotFoundPage /></>} />
                   </Routes>
 
+                  {/* Global Feedback Mascot Widget */}
+                  <FeedbackMascot />
                 </BrowserRouter>
               </MaintenanceCheck>
             </AuthProvider>

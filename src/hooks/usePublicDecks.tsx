@@ -35,8 +35,7 @@ export function usePublicDecks(filters?: PublicDecksFilters) {
         try {
             setLoading(true);
 
-            // Query user_flashcard_sets that could be shared (source = 'shared' or similar)
-            // Since public_decks_with_creator view doesn't exist, we'll query available data
+            // Query user_flashcard_sets with user profiles
             let query = supabase
                 .from('user_flashcard_sets')
                 .select(`
@@ -46,7 +45,12 @@ export function usePublicDecks(filters?: PublicDecksFilters) {
                     card_count,
                     created_at,
                     updated_at,
-                    user_id
+                    user_id,
+                    profiles:user_id (
+                        display_name,
+                        username,
+                        avatar_url
+                    )
                 `)
                 .eq('source', 'shared');
 
@@ -73,23 +77,33 @@ export function usePublicDecks(filters?: PublicDecksFilters) {
 
             if (error) throw error;
 
-            // Transform to PublicDeck format
-            const transformedDecks: PublicDeck[] = (data || []).map(set => ({
-                id: set.id,
-                name: set.title,
-                description: '',
-                deck_id: set.id,
-                folder_id: '',
-                creator_user_id: set.user_id,
-                clone_count: 0,
-                tags: [],
-                category: null,
-                created_at: set.created_at,
-                updated_at: set.updated_at,
-                creator_nickname: 'ผู้ใช้',
-                creator_avatar: null,
-                total_flashcards: set.card_count || 0
-            }));
+            // Transform to PublicDeck format with real user data
+            const transformedDecks: PublicDeck[] = (data || []).map((set: any) => {
+                const profile = set.profiles;
+                const nickname = profile?.display_name || profile?.username || 'ผู้ใช้';
+                const avatar = profile?.avatar_url || null;
+
+                // Extract emoji and category from title if present
+                const titleParts = set.title.match(/^([\p{Emoji}]+)\s+(.+)$/u);
+                const cleanTitle = titleParts ? titleParts[2] : set.title;
+
+                return {
+                    id: set.id,
+                    name: set.title,
+                    description: `แชร์โดย ${nickname}`,
+                    deck_id: set.id,
+                    folder_id: '',
+                    creator_user_id: set.user_id,
+                    clone_count: 0,
+                    tags: [],
+                    category: null,
+                    created_at: set.created_at,
+                    updated_at: set.updated_at,
+                    creator_nickname: nickname,
+                    creator_avatar: avatar,
+                    total_flashcards: set.card_count || 0
+                };
+            });
 
             setDecks(transformedDecks);
         } catch (error: any) {

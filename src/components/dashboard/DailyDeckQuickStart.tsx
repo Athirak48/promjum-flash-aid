@@ -412,7 +412,7 @@ export function DailyDeckQuickStart({
                 trackButtonClick('Learning Now', 'dashboard');
                 setShowLearningFlow(true);
               }}
-              className="w-full btn-space-glass text-white rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold transition-all"
+              className="learning-now-button w-full btn-space-glass text-white rounded-xl sm:rounded-2xl h-11 sm:h-14 text-sm sm:text-lg font-bold transition-all"
             >
               <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 fill-current" />
               <span className="sm:hidden">เรียนเลย</span>

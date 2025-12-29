@@ -311,6 +311,7 @@ export function LearningSessionListeningPhase({
                             <span className="text-sm font-black bg-white/20 px-2 py-0.5 rounded-md backdrop-blur-sm">
                                 Step {(currentQuestion % 2) + 1}/2
                             </span>
+                            <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-lg animate-pulse">MOCK</span>
                         </div>
                     </div>
 

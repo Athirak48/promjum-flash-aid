@@ -19,6 +19,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 import { CreateCommunityDeckDialog } from '@/components/CreateCommunityDeckDialog';
 import { Plus } from 'lucide-react';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { useUserDecks } from '@/hooks/useUserDecks';
+import { OnboardingBanner } from '@/components/onboarding/OnboardingBanner';
 
 export default function DecksPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,6 +33,8 @@ export default function DecksPage() {
   const navigate = useNavigate();
   const { trackPageView } = useAnalytics();
   const { user } = useAuth(); // Get current user
+  const { hasDecks, deckCount } = useUserDecks();
+  const { isOnboarding, markStepComplete, skipOnboarding } = useOnboarding();
 
   useEffect(() => {
     trackPageView('Community', 'decks');
@@ -49,6 +54,114 @@ export default function DecksPage() {
       toast({
         title: "เกิดข้อผิดพลาด",
         description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCloneDeck = async (deck: PublicDeck) => {
+    if (!user) {
+      toast({
+        title: "กรุณาเข้าสู่ระบบ",
+        description: "คุณต้องเข้าสู่ระบบก่อนโคลน Deck",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // 1. Find or create 'Community Uploads' folder
+      let { data: existingFolder } = await supabase
+        .from('user_folders')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('title', 'Community Uploads')
+        .single();
+
+      let communityFolderId: string;
+
+      if (!existingFolder) {
+        const { data: newFolder, error: folderError } = await supabase
+          .from('user_folders')
+          .insert({
+            user_id: user.id,
+            title: 'Community Uploads',
+            emoji: '🌍'
+          })
+          .select()
+          .single();
+
+        if (folderError) throw folderError;
+        communityFolderId = newFolder.id;
+      } else {
+        communityFolderId = existingFolder.id;
+      }
+
+      // 2. Fetch all flashcards from the source deck
+      const { data: sourceCards, error: cardsError } = await supabase
+        .from('user_flashcards')
+        .select('*')
+        .eq('flashcard_set_id', deck.id);
+
+      if (cardsError) throw cardsError;
+
+      // 3. Create new flashcard set in the Community Uploads folder
+      const { data: newSet, error: setError } = await supabase
+        .from('user_flashcard_sets')
+        .insert({
+          user_id: user.id,
+          folder_id: communityFolderId,
+          title: deck.name,
+          source: 'community',
+          card_count: sourceCards?.length || 0
+        })
+        .select()
+        .single();
+
+      if (setError) throw setError;
+
+      // 4. Clone all flashcards
+      if (sourceCards && sourceCards.length > 0) {
+        const clonedCards = sourceCards.map(card => ({
+          flashcard_set_id: newSet.id,
+          user_id: user.id,
+          front_text: card.front_text,
+          back_text: card.back_text,
+          front_image_url: card.front_image_url,
+          back_image_url: card.back_image_url,
+          part_of_speech: card.part_of_speech
+        }));
+
+        const { error: insertError } = await supabase
+          .from('user_flashcards')
+          .insert(clonedCards);
+
+        if (insertError) throw insertError;
+      }
+
+      toast({
+        title: "โคลนสำเร็จ! 🎉",
+        description: `คุณได้โคลน "${deck.name}" ไปยังโฟลเดอร์ Community Uploads แล้ว`,
+        variant: "default"
+      });
+
+      // Check if this is first-time user completing onboarding
+      if (isOnboarding && deckCount === 0) {
+        await markStepComplete('deck_downloaded');
+        setTimeout(() => {
+          toast({
+            title: "ยอดเยี่ยม! 🎉",
+            description: "คุณมีคำศัพท์แล้ว มาลองเรียนกันเลย!",
+          });
+          navigate('/dashboard');
+        }, 1500);
+      }
+
+    } catch (error: any) {
+      console.error('Error cloning deck:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถโคลน Deck ได้",
         variant: "destructive"
       });
     }
@@ -177,6 +290,15 @@ export default function DecksPage() {
             </p>
           </motion.div>
 
+          {/* Onboarding Banner for First-Time Users */}
+          {deckCount === 0 && (
+            <OnboardingBanner
+              message="ยังไม่มีคำศ้พท์ เลือกดาวน์โหลด 1 ชุดเพื่อเริ่มเรียน!"
+              onSkip={skipOnboarding}
+              showSkip={true}
+            />
+          )}
+
           {/* Search and Filters */}
           <div className="flex flex-col md:flex-row gap-3 mb-8 items-stretch md:items-center">
             {/* Search Bar */}
@@ -273,11 +395,8 @@ export default function DecksPage() {
                   key={deck.id}
                   deck={deck}
                   index={index + mockFolderBundles.length}
-                  onClone={() => {
-                    toast({
-                      title: "คุณสมบัตินี้กำลังมา! 🚀",
-                      description: "เร็วๆ นี้คุณจะสามารถโคลน Deck ได้"
-                    });
+                  onClone={async () => {
+                    await handleCloneDeck(deck);
                   }}
                   currentUserId={user?.id}
                   onDelete={handleDeleteDeck}
