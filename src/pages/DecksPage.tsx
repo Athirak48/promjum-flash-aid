@@ -5,19 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Users, TrendingUp, Clock, Copy, BookOpen, Eye, Folder, Globe, Trash2, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCloneDeck } from '@/hooks/useCloneDeck';
 import { useToast } from '@/hooks/use-toast';
 import { FolderBundlePreview } from '@/components/FolderBundlePreview';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-
-
 import { CreateCommunityDeckDialog } from '@/components/CreateCommunityDeckDialog';
+import { CommunityDeckDetailDialog } from '@/components/CommunityDeckDetailDialog';
 import { Plus } from 'lucide-react';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useUserDecks } from '@/hooks/useUserDecks';
@@ -169,8 +167,10 @@ export default function DecksPage() {
 
   // Preview dialog states
   const [showPreview, setShowPreview] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false); // Create Dialog State
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedBundle, setSelectedBundle] = useState<any | null>(null);
+  const [showDeckDetail, setShowDeckDetail] = useState(false);
+  const [selectedDeck, setSelectedDeck] = useState<PublicDeck | null>(null);
 
   const categories = [
     { id: undefined, label: 'ทั้งหมด', emoji: '🌍' },
@@ -395,8 +395,9 @@ export default function DecksPage() {
                   key={deck.id}
                   deck={deck}
                   index={index + mockFolderBundles.length}
-                  onClone={async () => {
-                    await handleCloneDeck(deck);
+                  onViewDetail={() => {
+                    setSelectedDeck(deck);
+                    setShowDeckDetail(true);
                   }}
                   currentUserId={user?.id}
                   onDelete={handleDeleteDeck}
@@ -423,12 +424,19 @@ export default function DecksPage() {
             />
           )}
 
+          {/* Community Deck Detail Dialog */}
+          <CommunityDeckDetailDialog
+            open={showDeckDetail}
+            onOpenChange={setShowDeckDetail}
+            deck={selectedDeck}
+            currentUserId={user?.id}
+          />
+
           <CreateCommunityDeckDialog
             open={showCreateDialog}
             onOpenChange={setShowCreateDialog}
             onSuccess={() => {
-              // Refresh decks logic if needed (e.g. invalidate query)
-              window.location.reload(); // Simple refresh for now
+              window.location.reload();
             }}
           />
 
@@ -546,17 +554,16 @@ function FolderBundleCard({
 function PublicDeckCard({
   deck,
   index,
-  onClone,
+  onViewDetail,
   currentUserId,
   onDelete
 }: {
   deck: PublicDeck;
   index: number;
-  onClone: () => void;
+  onViewDetail: () => void;
   currentUserId?: string;
   onDelete: (id: string) => void;
 }) {
-  const navigate = useNavigate();
   const isOwner = currentUserId && deck.creator_user_id === currentUserId;
 
   return (
@@ -638,8 +645,12 @@ function PublicDeckCard({
           )}
         </div>
 
-        {/* Stats */}
+        {/* Stats - Updated to show subdeck count */}
         <div className="flex items-center gap-3 text-sm mb-4 mt-auto">
+          <div className="flex items-center gap-1.5 text-white/60 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+            <Folder className="w-3.5 h-3.5 text-purple-400" />
+            <span className="font-medium">{deck.total_sets || 0} ชุด</span>
+          </div>
           <div className="flex items-center gap-1.5 text-white/60 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
             <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
             <span className="font-medium">{deck.total_flashcards}</span>
@@ -650,15 +661,10 @@ function PublicDeckCard({
           </div>
         </div>
 
-
-        {/* Clone Button (Disable for owner?) -> Normally owner might want to clone too, but maybe edit is better. For now keep Clone. 
-            User req: "delete or edit". I provided Delete. Edit is implied as Metadata edit or Manage. 
-            Let's keep Clone for everyone.
-        */}
+        {/* View Detail Button */}
         <Button
-          onClick={onClone}
-          disabled={isOwner} // Disable clone for owner? Or maybe allow. User didn't specify. I'll disable to avoid confusion.
-          className={`w-full gap-2 rounded-xl font-bold shadow-[0_4px_15px_rgba(168,85,247,0.4)] border-none h-11 relative overflow-hidden group/btn ${isOwner ? 'bg-slate-700 text-slate-400 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white'}`}
+          onClick={onViewDetail}
+          className={`w-full gap-2 rounded-xl font-bold shadow-[0_4px_15px_rgba(168,85,247,0.4)] border-none h-11 relative overflow-hidden group/btn ${isOwner ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 shadow-none' : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white'}`}
         >
           {isOwner ? (
             <span className="relative z-10 flex items-center gap-2">
@@ -669,8 +675,8 @@ function PublicDeckCard({
             <>
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
               <span className="relative z-10 flex items-center gap-2">
-                <Copy className="w-4 h-4" />
-                โคลน Deck นี้
+                <Eye className="w-4 h-4" />
+                ดูคำศัพท์
               </span>
             </>
           )}
