@@ -142,13 +142,13 @@ export function TodaySchedule({ activeGoal, refetch, deleteGoal, startSmartSessi
 
         // Check completion status from ACTUAL records
         // This prevents the "infinite retake" bug because we check if a record exists
-        // FIX: Also check 'assessments' (history) because sometimes practice_sessions insert fails or user is migrating.
+        // FIX: Check both formats for compatibility (pretest vs pre-test)
         const preTestDone = isPreTest && (
-            todaysPracticeSessions.some(s => s.session_mode === 'pretest') ||
-            assessments.some(a => a.assessment_type === 'pretest')
+            todaysPracticeSessions.some(s => s.session_mode === 'pre-test' || s.session_mode === 'pretest') ||
+            assessments.some(a => a.assessment_type === 'pre-test' || a.assessment_type === 'pretest')
         );
-        const interimDone = isInterimTestDay && todaysPracticeSessions.some(s => s.session_mode === 'interim');
-        const postTestDone = isPostTestDay && todaysPracticeSessions.some(s => s.session_mode === 'posttest');
+        const interimDone = isInterimTestDay && todaysPracticeSessions.some(s => s.session_mode === 'interim' || s.session_mode === 'interim-test');
+        const postTestDone = isPostTestDay && todaysPracticeSessions.some(s => s.session_mode === 'post-test' || s.session_mode === 'posttest');
 
         // Session 1 (08:00) - The Assessment Slot
         const isAssessmentSession = isPreTest || isInterimTestDay || isPostTestDay;

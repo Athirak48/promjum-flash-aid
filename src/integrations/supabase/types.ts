@@ -579,6 +579,56 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_assessments: {
+        Row: {
+          assessment_type: string
+          completed_at: string | null
+          correct_answers: number | null
+          created_at: string
+          goal_id: string
+          id: string
+          test_size_percentage: number | null
+          time_spent_seconds: number | null
+          total_questions: number | null
+          user_id: string
+          wrong_answers: number | null
+        }
+        Insert: {
+          assessment_type: string
+          completed_at?: string | null
+          correct_answers?: number | null
+          created_at?: string
+          goal_id: string
+          id?: string
+          test_size_percentage?: number | null
+          time_spent_seconds?: number | null
+          total_questions?: number | null
+          user_id: string
+          wrong_answers?: number | null
+        }
+        Update: {
+          assessment_type?: string
+          completed_at?: string | null
+          correct_answers?: number | null
+          created_at?: string
+          goal_id?: string
+          id?: string
+          test_size_percentage?: number | null
+          time_spent_seconds?: number | null
+          total_questions?: number | null
+          user_id?: string
+          wrong_answers?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_assessments_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "user_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       individual_challenge_vocab: {
         Row: {
           back: string
@@ -761,6 +811,7 @@ export type Database = {
           created_at: string
           deck_id: string | null
           duration_minutes: number | null
+          goal_id: string | null
           grammar_avg: number | null
           id: string
           naturalness_avg: number | null
@@ -780,6 +831,7 @@ export type Database = {
           created_at?: string
           deck_id?: string | null
           duration_minutes?: number | null
+          goal_id?: string | null
           grammar_avg?: number | null
           id?: string
           naturalness_avg?: number | null
@@ -799,6 +851,7 @@ export type Database = {
           created_at?: string
           deck_id?: string | null
           duration_minutes?: number | null
+          goal_id?: string | null
           grammar_avg?: number | null
           id?: string
           naturalness_avg?: number | null
@@ -818,6 +871,13 @@ export type Database = {
             columns: ["deck_id"]
             isOneToOne: false
             referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_sessions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "user_goals"
             referencedColumns: ["id"]
           },
           {

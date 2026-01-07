@@ -1,19 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAssessment } from "@/hooks/useAssessment";
-import { useWeakWords } from "@/hooks/useWeakWords";
 import { AssessmentSetup } from "./AssessmentSetup";
 import { AssessmentQuiz } from "./AssessmentQuiz";
 import { AssessmentResultsDisplay } from "./AssessmentResultsDisplay";
-import type { AssessmentType, TestSizePercentage } from "@/types/assessment";
-import type { Flashcard } from "@/types/flashcard";
+import type { AssessmentType } from "@/types/assessment";
 import type { StudyGoal } from "@/types/goals";
 
 type AssessmentPhase = 'setup' | 'quiz' | 'results';
 
+interface AssessmentCard {
+    id: string;
+    front_text: string;
+    back_text: string;
+}
+
 interface AssessmentManagerProps {
     goal: StudyGoal;
     assessmentType: AssessmentType;
-    cards: Flashcard[]; // All cards in the goal
+    cards: AssessmentCard[];
     onComplete: () => void;
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -30,21 +34,17 @@ export function AssessmentManager({
     const { createAssessment, completeAssessment, getAssessmentResults } = useAssessment();
     const [phase, setPhase] = useState<AssessmentPhase>('setup');
     const [assessmentId, setAssessmentId] = useState<string | null>(null);
-    const [selectedCards, setSelectedCards] = useState<Flashcard[]>([]);
+    const [selectedCards, setSelectedCards] = useState<AssessmentCard[]>([]);
     const [results, setResults] = useState<any>(null);
 
     // Sample cards based on test size
-    const sampleCards = (testSize: TestSizePercentage) => {
+    const sampleCards = (testSize: number) => {
         const totalQuestions = Math.round(cards.length * (testSize / 100));
-
-        // Simple random sampling for MVP
-        // TODO: Implement smart sampling (80% weak, 20% strong)
         const shuffled = [...cards].sort(() => Math.random() - 0.5);
         return shuffled.slice(0, totalQuestions);
     };
 
-    const handleStartQuiz = async (testSize: TestSizePercentage) => {
-        // Create assessment
+    const handleStartQuiz = async (testSize: number) => {
         const assessment = await createAssessment({
             goal_id: goal.id,
             assessment_type: assessmentType,
@@ -69,7 +69,6 @@ export function AssessmentManager({
     }) => {
         if (!assessmentId) return;
 
-        // Save final results
         await completeAssessment(
             assessmentId,
             quizResults.correct,
@@ -77,7 +76,6 @@ export function AssessmentManager({
             quizResults.timeSpent
         );
 
-        // Get full results
         const fullResults = await getAssessmentResults(assessmentId);
         if (fullResults) {
             setResults(fullResults);
@@ -89,7 +87,6 @@ export function AssessmentManager({
         onOpenChange(false);
         onComplete();
 
-        // Reset state
         setTimeout(() => {
             setPhase('setup');
             setAssessmentId(null);

@@ -252,13 +252,13 @@ export default function InterimTestPage() {
             if (sessionError) console.error('Error recording interim session:', sessionError);
 
             // 2. Record in Goal Assessments
-            // @ts-ignore
             const { error: assessmentError } = await supabase
                 .from('goal_assessments')
                 .insert({
+                    user_id: user.id,
                     goal_id: goalId,
                     assessment_type: 'interim',
-                    test_size_percentage: Math.round((results.total / (progressData?.length || 1)) * 100),
+                    test_size_percentage: 100,
                     total_questions: results.total,
                     correct_answers: results.correct,
                     wrong_answers: results.total - results.correct,
