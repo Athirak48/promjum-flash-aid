@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { AssessmentResults } from "@/types/assessment";
-import { TrendingUp, TrendingDown, Award, Clock, Target } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Target } from "lucide-react";
 
 interface AssessmentResultsDisplayProps {
     results: AssessmentResults;
@@ -16,7 +16,10 @@ export function AssessmentResultsDisplay({
     onRetry,
 }: AssessmentResultsDisplayProps) {
     const { assessment, weak_words, improvement } = results;
-    const { accuracy, correct_answers, total_questions, time_spent_seconds } = assessment;
+    const { correct_answers, total_questions, time_spent_seconds, wrong_answers } = assessment;
+    
+    // Calculate accuracy from correct/total
+    const accuracy = total_questions > 0 ? (correct_answers / total_questions) * 100 : 0;
 
     const getGrade = () => {
         if (accuracy >= 90) return { grade: 'A', color: 'text-green-500', emoji: '🏆' };
@@ -28,7 +31,6 @@ export function AssessmentResultsDisplay({
     const grade = getGrade();
     const minutes = Math.floor(time_spent_seconds / 60);
     const seconds = time_spent_seconds % 60;
-
     const isPassed = accuracy >= 70;
 
     return (
@@ -38,7 +40,7 @@ export function AssessmentResultsDisplay({
                 <CardTitle className="text-3xl">
                     {assessment.assessment_type === 'pre-test' && 'Pre-test เสร็จสิ้น'}
                     {assessment.assessment_type === 'post-test' && 'Post-test เสร็จสิ้น'}
-                    {assessment.assessment_type.startsWith('progress') && 'Progress Test เสร็จสิ้น'}
+                    {assessment.assessment_type === 'interim' && 'Interim Test เสร็จสิ้น'}
                 </CardTitle>
                 <CardDescription>
                     {isPassed ? '🎉 ยอดเยี่ยม!' : 'เก่งมากแล้ว พยายามต่อไป!'}
@@ -67,7 +69,7 @@ export function AssessmentResultsDisplay({
 
                     <div className="text-center p-4 bg-red-500/10 rounded-lg">
                         <Target className="h-6 w-6 mx-auto mb-2 text-red-500" />
-                        <p className="text-2xl font-bold">{assessment.wrong_answers}</p>
+                        <p className="text-2xl font-bold">{wrong_answers}</p>
                         <p className="text-sm text-muted-foreground">ตอบผิด</p>
                     </div>
                 </div>

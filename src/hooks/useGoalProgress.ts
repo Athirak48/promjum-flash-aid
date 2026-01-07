@@ -35,8 +35,8 @@ export function useGoalProgress() {
             await supabase
                 .from('user_goals')
                 .update({
-                    is_active: false,
-                    completed_at: new Date().toISOString()
+                    is_completed: true,
+                    updated_at: new Date().toISOString()
                 })
                 .eq('id', activeGoal.id);
         } else {

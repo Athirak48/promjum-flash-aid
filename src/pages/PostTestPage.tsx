@@ -188,7 +188,7 @@ export default function PostTestPage() {
                         user_id: user.id,
                         deck_id: null, // Linked to goal, not specific deck necessarily
                         session_type: 'assessment',
-                        session_mode: 'posttest',
+                        session_mode: 'post-test',
                         words_learned: results.correct,
                         words_reviewed: results.total,
                         duration_minutes: 10, // Approx
@@ -202,13 +202,13 @@ export default function PostTestPage() {
                 // 2. Record in Goal Assessments
                 const percentage = results.total > 0 ? Math.round((results.correct / results.total) * 100) : 0;
 
-                // @ts-ignore
                 const { error: assessmentError } = await supabase
                     .from('goal_assessments')
                     .insert({
+                        user_id: user.id,
                         goal_id: goalId,
-                        assessment_type: 'posttest',
-                        test_size_percentage: 100, // Post-test is usually full or large sample
+                        assessment_type: 'post-test',
+                        test_size_percentage: 100,
                         total_questions: results.total,
                         correct_answers: results.correct,
                         wrong_answers: results.total - results.correct,

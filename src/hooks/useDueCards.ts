@@ -60,7 +60,7 @@ export function useDueCards(): UseDueCardsReturn {
             flashcards!inner(*)
           `, { count: 'exact' })
                     .eq('user_id', user.id)
-                    .eq('flashcards.deck_id', activeGoal.deck_id)
+                    .eq('flashcards.subdeck_id', activeGoal.deck_ids?.[0])
                     .lte('next_review_date', now)
                     .order('next_review_date', { ascending: true })
                     .limit(activeGoal.words_per_session); // 20 cards per session
