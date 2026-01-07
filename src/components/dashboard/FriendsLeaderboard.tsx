@@ -134,53 +134,39 @@ export function FriendsLeaderboard({ isWidget = false }: FriendsLeaderboardProps
 
   return (
     <>
-      <Card className="bg-black/30 backdrop-blur-xl border-white/10 h-full flex flex-col overflow-hidden rounded-[2rem] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-        <CardHeader className="pb-4 p-0">
+      <div className={`flex flex-col h-full ${isWidget ? '' : 'bg-black/30 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl'}`}>
+        <div className="pb-4 shrink-0">
           {/* Title */}
-          <div className="flex items-center justify-between mb-4">
-            <CardTitle className="text-xl font-black flex items-center gap-2">
-              {activeTab === 'xp' ? (
-                <>
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shadow-[0_0_10px_rgba(168,85,247,0.3)]">
-                    <Users className="w-5 h-5 text-purple-300" />
-                  </div>
-                  <span className="text-white drop-shadow-md">Friends</span>
-                </>
-              ) : (
-                <>
-                  <div className="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-500/30 flex items-center justify-center shadow-[0_0_10px_rgba(20,184,166,0.3)]">
-                    <Trophy className="w-5 h-5 text-teal-300" />
-                  </div>
-                  <span className="text-white drop-shadow-md">Challenge</span>
-                </>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              {/* Go to Profile Button */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                <Users className="w-5 h-5 text-purple-300" />
+              </div>
+              <h2 className="text-2xl font-black text-white tracking-tight">Friends</h2>
+            </div>
+
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white/70 hover:text-white hover:bg-white/10 rounded-full h-9 w-9"
+                className="text-white/50 hover:text-white hover:bg-white/5 rounded-xl w-8 h-8"
                 onClick={() => navigate('/profile')}
                 title="โปรไฟล์"
               >
-                <User2 className="w-4 h-4" />
+                <User2 className="w-5 h-5" />
               </Button>
-
-              {/* Search Friend Button */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white/70 hover:text-white hover:bg-white/10 rounded-full h-9 w-9"
+                className="text-white/50 hover:text-white hover:bg-white/5 rounded-xl w-8 h-8"
                 onClick={() => setShowAddFriend(true)}
               >
-                <Search className="w-4 h-4" />
+                <Search className="w-5 h-5" />
               </Button>
             </div>
           </div>
 
-          {/* Toggle Buttons */}
-          <div className="grid grid-cols-2 gap-1 p-1 bg-white/10 border border-white/20 rounded-full">
+          <div className="grid grid-cols-2 gap-1 p-1.5 bg-black/40 border border-white/5 rounded-2xl">
             <Button
               variant="ghost"
               size="sm"
@@ -202,11 +188,11 @@ export function FriendsLeaderboard({ isWidget = false }: FriendsLeaderboardProps
               🏆 Challenge
             </Button>
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className="p-0 pt-4 flex-1 flex flex-col min-h-0">
-          <ScrollArea className="h-[240px] pr-2 custom-scrollbar">
-            <div className="space-y-2 pb-4">
+        <div className="flex-1 min-h-0 relative px-1">
+          <ScrollArea className="h-full pr-3 custom-scrollbar">
+            <div className="space-y-3 pb-4 pt-2">
               {activeTab === 'xp' ? (
                 friendsLoading ? (
                   <div className="flex items-center justify-center h-32">
@@ -236,33 +222,34 @@ export function FriendsLeaderboard({ isWidget = false }: FriendsLeaderboardProps
               )}
             </div>
           </ScrollArea>
+        </div>
 
-          {/* Your Position */}
-          <div className="pt-3 mt-3 border-t border-dashed border-white/20">
-            <p className="text-[10px] text-white/60 font-black text-center mb-2 uppercase tracking-widest">Your Rank 🌟</p>
-            {activeTab === 'xp' ? renderMyPosition() : (
-              <div className="text-center text-white/40 text-xs py-2">
-                เร็วๆ นี้
-              </div>
-            )}
-
-            {activeTab === 'challenge' && (
-              <Button
-                variant="link"
-                className="w-full mt-2 text-xs text-white/70 hover:text-white h-auto py-1 font-bold"
-                onClick={() => navigate('/vocab-challenge')}
-              >
-                View Full Leaderboard →
-              </Button>
-            )}
+        <div className="pt-4 mt-auto shrink-0 pb-4">
+          <div className="flex items-center gap-2 mb-3 opacity-50 px-2">
+            <div className="flex-1 h-px bg-white/20"></div>
+            <p className="text-[10px] text-white font-black uppercase tracking-widest">Your Rank 🌟</p>
+            <div className="flex-1 h-px bg-white/20"></div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Add Friend Dialog */}
+          {activeTab === 'xp' ? renderMyPosition() : (
+            <div className="text-center text-white/40 text-xs py-2">
+              เร็วๆ นี้
+            </div>
+          )}
+
+          {activeTab === 'challenge' && (
+            <Button
+              variant="link"
+              className="w-full mt-2 text-xs text-white/70 hover:text-white h-auto py-1 font-bold"
+              onClick={() => navigate('/vocab-challenge')}
+            >
+              View Full Leaderboard →
+            </Button>
+          )}
+        </div>
+      </div>
+
       <AddFriendDialog open={showAddFriend} onOpenChange={setShowAddFriend} />
-
-      {/* Set Nickname Dialog */}
       <SetNicknameDialog open={showSetNickname} onOpenChange={setShowSetNickname} />
     </>
   );

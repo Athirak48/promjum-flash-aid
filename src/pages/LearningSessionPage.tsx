@@ -13,7 +13,8 @@ import {
     ChevronRight,
     Loader2,
     Sparkles,
-    RotateCcw
+    RotateCcw,
+    Brain, Target, GamepadIcon, Skull, Eye, Search, Shuffle, Sword, Hexagon, Check, ArrowRight // Added Check, ArrowRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -23,6 +24,7 @@ import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
 import { FlashcardMatchingGame } from '@/components/FlashcardMatchingGame';
 import { FlashcardListenChooseGame } from '@/components/FlashcardListenChooseGame';
 import { FlashcardHangmanGame } from '@/components/FlashcardHangmanGame';
+
 import { FlashcardVocabBlinderGame } from '@/components/FlashcardVocabBlinderGame';
 import { FlashcardWordSearchGame } from '@/components/FlashcardWordSearchGame';
 import { FlashcardWordScrambleGame } from '@/components/FlashcardWordScrambleGame';
@@ -30,8 +32,61 @@ import { FlashcardNinjaSliceGame } from '@/components/FlashcardNinjaSliceGame';
 import { FlashcardHoneyCombGame } from '@/components/FlashcardHoneyCombGame';
 import { LearningModes, VocabItem, AudioSettings, ListeningMCQPhase, ReadingMCQPhase } from '@/components/learning';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useStudyGoals } from '@/hooks/useStudyGoals'; // Added
+import { useAssessment } from '@/hooks/useAssessment'; // Added
 import { VocabWord } from '@/services/storyGenerationService';
 import { LearningErrorBoundary } from '@/components/common/LearningErrorBoundary';
+import { useSRSProgress } from '@/hooks/useSRSProgress';
+import { getFlashcardReviewQuality } from '@/utils/srsCalculator';
+
+// Game definitions matching GameSelectionDialog
+
+const GAMES = [
+    {
+        id: 'quiz',
+        title: 'Quiz 3sec',
+        subtitle: 'Multiple Choice',
+        description: 'ท้าทายความไว! ตอบคำถามภายใน 3 วินาที กดดันสุดๆ',
+        icon: Brain,
+        color: 'bg-blue-500',
+        gradient: 'from-blue-500 to-indigo-500',
+        bgGradient: 'from-blue-50 to-indigo-50',
+        hoverColor: 'hover:bg-blue-600'
+    },
+    {
+        id: 'scramble',
+        title: 'Word Scramble',
+        subtitle: '🔀 เรียงตัวอักษร',
+        description: 'เรียงตัวอักษรให้เป็นคำศัพท์ที่ถูกต้อง',
+        icon: Shuffle,
+        color: 'bg-lime-500',
+        gradient: 'from-lime-500 to-green-500',
+        bgGradient: 'from-lime-50 to-green-50',
+        hoverColor: 'hover:bg-lime-600'
+    },
+    {
+        id: 'matching',
+        title: 'Matching Game',
+        subtitle: 'เกมจับคู่',
+        description: 'จับคู่คำถามกับคำตอบที่ถูกต้อง',
+        icon: Target,
+        color: 'bg-violet-500',
+        gradient: 'from-violet-500 to-purple-500',
+        bgGradient: 'from-violet-50 to-purple-50',
+        hoverColor: 'hover:bg-violet-600'
+    },
+    {
+        id: 'honeycomb',
+        title: 'Honey Hive',
+        subtitle: '🐝 เชื่อมคำศัพท์',
+        description: 'ลากเส้นเชื่อมตัวอักษรเพื่อสร้างคำศัพท์',
+        icon: Hexagon,
+        color: 'bg-amber-500',
+        gradient: 'from-amber-500 to-orange-500',
+        bgGradient: 'from-amber-50 to-orange-50',
+        hoverColor: 'hover:bg-amber-600'
+    }
+];
 
 interface LearningSessionState {
     phases: string[];
@@ -66,6 +121,9 @@ export default function LearningSessionPage() {
     const [isPhaseComplete, setIsPhaseComplete] = useState(false);
     const { trackFeatureUsage } = useAnalytics();
 
+    // SRS Progress Hook
+    const { updateFlashcardSRS } = useSRSProgress();
+
     // Redirect if no state
     useEffect(() => {
         if (!state || !state.phases || state.phases.length === 0) {
@@ -77,10 +135,136 @@ export default function LearningSessionPage() {
         return null;
     }
 
-    const { phases, selectedVocab, audioSettings, selectedModes } = state;
+    const { phases, selectedVocab, audioSettings, selectedModes, showPreTestIntro, activeGoalId } = state as any;
     const currentPhase = phases[currentPhaseIndex];
     const totalPhases = phases.length;
     const progress = ((currentPhaseIndex) / totalPhases) * 100;
+
+    // Hooks
+    const { createAssessment, completeAssessment, saveAnswer } = useAssessment();
+    const { updateProgress, activeGoal } = useStudyGoals();
+
+    // Local state for Intro Overlay
+    const [isShowingIntro, setIsShowingIntro] = useState(!!showPreTestIntro);
+    // Assessment State
+    const [assessmentId, setAssessmentId] = useState<string | null>(null);
+
+    // Init Assessment on Start (if Pre-test)
+    useEffect(() => {
+        if (showPreTestIntro && activeGoalId && !assessmentId) {
+            const initAssessment = async () => {
+                const newAssessment = await createAssessment({
+                    goal_id: activeGoalId,
+                    assessment_type: 'pretest',
+                    test_size_percentage: 100,
+                    total_words: selectedVocab.length
+                });
+                if (newAssessment) setAssessmentId(newAssessment.id);
+            };
+            initAssessment();
+        }
+    }, [showPreTestIntro, activeGoalId]);
+
+    // Handle Finish Function
+    const handleSessionComplete = async (results: any) => {
+        if (showPreTestIntro && assessmentId) {
+            // Pre-test Logic
+            if (activeGoal) {
+                const wordsPerSession = activeGoal.words_per_session || 20;
+                const newProgress = (activeGoal.current_value || 0) + wordsPerSession;
+                await updateProgress(activeGoal.id, 0, newProgress);
+            }
+            navigate('/dashboard');
+        } else {
+            // Normal Session OR Bonus Mode
+
+            // CRITICAL: Check 'activeGoalId' from navigation state.
+            // If it is null (Bonus Mode), we DO NOT update goal progress.
+            if (activeGoalId && activeGoal) {
+                // Ensure we haven't already updated for this session (idempotency check?)
+                // For now, straightforward increment
+                const wordsPerSession = activeGoal.words_per_session || 20;
+                const newProgress = (activeGoal.current_value || 0) + wordsPerSession;
+                console.log(`[Session Complete] Updating Goal ${activeGoal.id} progress: ${newProgress}`);
+                await updateProgress(activeGoal.id, 0, newProgress);
+            } else {
+                console.log("[Session Complete] Bonus Mode or No Goal - Skipping Progress Update");
+            }
+
+            navigate('/learning-results', {
+                state: { results: phaseResults, selectedVocab, selectedModes, phases }
+            });
+        }
+    };
+
+    // If showing intro, render overlay
+    if (isShowingIntro) {
+        return (
+            <div className="fixed inset-0 z-50 bg-[#0f0f11] flex items-center justify-center p-6">
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px]" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px]" />
+
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative max-w-lg w-full bg-white/5 backdrop-blur-3xl border border-white/10 rounded-3xl p-8 shadow-2xl overflow-hidden"
+                >
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+
+                    <div className="text-center space-y-6">
+                        <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 transform rotate-3">
+                            <Sparkles className="w-10 h-10 text-white" />
+                        </div>
+
+                        <div>
+                            <h2 className="text-3xl font-black text-white mb-2 tracking-tight">
+                                Pre-Test Measurement
+                            </h2>
+                            <p className="text-slate-400 text-sm">
+                                ทดสอบวัดระดับความรู้พื้นฐานก่อนเริ่มเรียน
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                                <div className="text-2xl font-bold text-white mb-1">20</div>
+                                <div className="text-[10px] text-slate-500 uppercase tracking-wider">Questions</div>
+                            </div>
+                            <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                                <div className="text-2xl font-bold text-amber-400 mb-1">3s</div>
+                                <div className="text-[10px] text-slate-500 uppercase tracking-wider">Per Question</div>
+                            </div>
+                        </div>
+
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-left">
+                            <div className="flex items-start gap-3">
+                                <div className="mt-1 p-1 bg-blue-500 rounded-full">
+                                    <Check className="w-3 h-3 text-white" />
+                                </div>
+                                <div>
+                                    <h4 className="text-blue-200 font-bold text-sm">ไม่ต้องกังวล!</h4>
+                                    <p className="text-xs text-blue-300/80 leading-relaxed mt-1">
+                                        นี่เป็นเพียงการวัดผลก่อนเริ่ม คะแนนจะใช้เพื่อปรับแต่งบทเรียนให้เหมาะสมกับคุณ เลือกตอบให้ไวที่สุดเท่าที่ทำได้
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Button
+                            onClick={() => setIsShowingIntro(false)}
+                            className="w-full h-14 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-lg rounded-2xl shadow-xl shadow-indigo-900/30 transition-all hover:scale-[1.02] active:scale-95"
+                        >
+                            <span className="flex items-center gap-2">
+                                เริ่มทำแบบทดสอบ
+                                <ArrowRight className="w-5 h-5" />
+                            </span>
+                        </Button>
+                    </div>
+                </motion.div>
+            </div>
+        );
+    }
 
     // Convert vocab to format needed by components
     const flashcardData = selectedVocab.map(v => ({
@@ -104,6 +288,21 @@ export default function LearningSessionPage() {
         word: v.front_text,
         meaning: v.back_text,
     }));
+
+    // Handle individual flashcard answer (Updated for SRS)
+    const handleAnswer = async (cardId: string, known: boolean, timeTaken: number) => {
+        // Find property to determine if it is a user flashcard
+        const card = selectedVocab.find(v => v.id === cardId);
+        // Default to false if not found (safeguard)
+        const isUserCard = card?.isUserFlashcard ?? false;
+
+        // Calculate quality score (0-5)
+        const quality = getFlashcardReviewQuality(timeTaken, known);
+
+        // Update Global SRS Database
+        console.log(`[SRS Update] Card: ${cardId}, Quality: ${quality}, Known: ${known}, IsUser: ${isUserCard}`);
+        await updateFlashcardSRS(cardId, quality, known, isUserCard);
+    };
 
     // Handle phase completion
     const handlePhaseComplete = (result?: any) => {
@@ -206,6 +405,7 @@ export default function LearningSessionPage() {
                     <FlashcardSwiper
                         cards={flashcardData}
                         onClose={handleClose}
+                        onAnswer={handleAnswer}
                         onComplete={(result) => {
                             // Save results for the phase
                             const phaseResult: PhaseResult = {
@@ -273,32 +473,85 @@ export default function LearningSessionPage() {
             case 'game':
                 if (!selectedGameType) {
                     return (
-                        <div className="flex flex-col items-center justify-center h-full gap-6 p-8">
-                            <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="w-24 h-24 rounded-3xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-2xl"
-                            >
-                                <Gamepad2 className="w-12 h-12 text-white" />
-                            </motion.div>
-                            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 text-center">
-                                เลือกเกมที่อยากเล่น
-                            </h2>
-                            <Button
-                                onClick={() => setShowGameSelection(true)}
-                                size="lg"
-                                className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-bold rounded-xl px-8"
-                            >
-                                <Gamepad2 className="w-5 h-5 mr-2" />
-                                เลือกเกม
-                            </Button>
+                        <div className="flex flex-col items-center justify-start h-full p-4 overflow-y-auto">
+                            <div className="mb-6 mt-4 text-center">
+                                <motion.div
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg shadow-pink-200 mb-4"
+                                >
+                                    <Gamepad2 className="w-8 h-8 text-white" />
+                                </motion.div>
+                                <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                                    เลือกเกมที่อยากเล่น
+                                </h2>
+                                <p className="text-slate-500 text-sm font-medium mt-1">ฝึกฝนคำศัพท์ผ่านมินิเกมสุดสนุก</p>
+                            </div>
 
-                            <GameSelectionDialog
-                                open={showGameSelection}
-                                onOpenChange={setShowGameSelection}
-                                onSelectGame={handleGameSelect}
-                            />
+                            <div className="grid grid-cols-2 gap-4 w-full max-w-lg pb-10">
+                                {GAMES.map((game, index) => {
+                                    const IconComponent = game.icon;
+                                    return (
+                                        <Card
+                                            key={game.id}
+                                            className={`
+                                            cursor-pointer transition-all duration-300 ease-out
+                                            hover:scale-105 hover:shadow-2xl hover:-translate-y-1 border-2
+                                            hover:border-white active:scale-95
+                                            bg-white/80 backdrop-blur-sm
+                                            group relative overflow-hidden rounded-[1.5rem]
+                                            animate-in slide-in-from-bottom-4 fade-in duration-500
+                                            shadow-md shadow-gray-200/50
+                                            `}
+                                            style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
+                                            onClick={() => handleGameSelect(game.id as any)}
+                                        >
+                                            {/* Soft gradient overlay on hover */}
+                                            <div className={`absolute inset-0 bg-gradient-to-br ${game.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+
+                                            {/* Floating sparkles */}
+                                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                                                <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
+                                            </div>
+
+                                            <CardContent className="flex flex-col items-center justify-center p-6 text-center h-full relative z-10">
+                                                <div className={`
+                                                    w-16 h-16 rounded-2xl flex items-center justify-center mb-3
+                                                    bg-gradient-to-br ${game.gradient} shadow-lg shadow-${game.color.replace('bg-', '')}/40
+                                                    group-hover:shadow-2xl group-hover:scale-110 group-hover:-rotate-6
+                                                    transition-all duration-300 ease-out
+                                                `}>
+                                                    <IconComponent className="h-8 w-8 text-white drop-shadow-xl" />
+                                                </div>
+                                                <h3 className="text-lg font-black text-gray-800 leading-tight group-hover:text-gray-900 transition-colors mb-1">
+                                                    {game.title}
+                                                </h3>
+                                                <p className="font-bold text-xs text-gray-600 mb-4 h-8 flex items-center justify-center">
+                                                    {game.subtitle}
+                                                </p>
+
+                                                <Button
+                                                    className={`
+                                                    w-full bg-gradient-to-r ${game.gradient} text-white border-0
+                                                    shadow-lg shadow-${game.color.replace('bg-', '')}/40 group-hover:shadow-xl transition-all duration-300 ease-out
+                                                    rounded-xl h-10 text-sm font-bold tracking-wide
+                                                    group-hover:scale-105 active:scale-95
+                                                    relative overflow-hidden
+                                                    `}
+                                                >
+                                                    <span className="relative z-10 flex items-center justify-center gap-2">
+                                                        <GamepadIcon className="w-4 h-4" />
+                                                        เริ่มเล่น
+                                                    </span>
+                                                    <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
                         </div>
+
                     );
                 }
 
@@ -318,9 +571,7 @@ export default function LearningSessionPage() {
                             setCurrentPhaseIndex(prev => prev + 1);
                             setSelectedGameType(null);
                         } else {
-                            navigate('/learning-results', {
-                                state: { results: phaseResults, selectedVocab, selectedModes, phases }
-                            });
+                            handleSessionComplete(phaseResults);
                         }
                     },
                     onSelectNewGame: () => {

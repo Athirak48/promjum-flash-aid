@@ -256,14 +256,35 @@ export function VocabSelectionStep({
                     .eq('flashcard_set_id', selectedSetId)
                     .order('created_at', { ascending: false });
 
-                if (data) {
-                    setLibraryVocab(data.map(item => ({
-                        id: item.id,
-                        front_text: item.front_text,
-                        back_text: item.back_text,
-                        srs_score: null,
-                        srs_level: null
-                    })));
+                if (data && data.length > 0) {
+                    // Fetch SRS progress for these cards
+                    const cardIds = data.map(d => d.id);
+                    const { data: progressData } = await supabase
+                        .from('user_flashcard_progress')
+                        .select('user_flashcard_id, srs_score, srs_level')
+                        .in('user_flashcard_id', cardIds)
+                        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+
+                    // Create a map for quick lookup
+                    const progressMap = new Map();
+                    progressData?.forEach(p => {
+                        if (p.user_flashcard_id) {
+                            progressMap.set(p.user_flashcard_id, { score: p.srs_score, level: p.srs_level });
+                        }
+                    });
+
+                    setLibraryVocab(data.map(item => {
+                        const progress = progressMap.get(item.id);
+                        return {
+                            id: item.id,
+                            front_text: item.front_text,
+                            back_text: item.back_text,
+                            srs_score: progress?.score ?? null,
+                            srs_level: progress?.level ?? null
+                        };
+                    }));
+                } else {
+                    setLibraryVocab([]);
                 }
             } catch (error) {
                 console.error('Error fetching set vocab:', error);

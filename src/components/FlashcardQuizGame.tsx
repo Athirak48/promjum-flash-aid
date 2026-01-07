@@ -49,6 +49,8 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [timeTakenForCurrent, setTimeTakenForCurrent] = useState(0);
   const [gameStartTime] = useState(Date.now());
+  const [timeLeft, setTimeLeft] = useState(3); // 3 second countdown for extreme pressure!
+  const [isTimedOut, setIsTimedOut] = useState(false);
 
   // Stats
   const [correctCount, setCorrectCount] = useState(0);
@@ -75,6 +77,8 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
 
   useEffect(() => {
     setQuestionStartTime(Date.now());
+    setTimeLeft(3.0000); // Reset timer for each question (3 seconds with decimals)
+    setIsTimedOut(false);
   }, [currentIndex, questions]);
 
   useEffect(() => {
@@ -84,6 +88,68 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
       totalCards: flashcards.length
     });
   }, [flashcards]);
+
+  // Countdown timer effect - millisecond precision for excitement!
+  useEffect(() => {
+    if (isAnswered || isGameComplete || questions.length === 0) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        const newTime = prev - 0.01; // Decrease by 0.01 every 10ms
+        if (newTime <= 0) {
+          clearInterval(timer);
+          // Time's up - mark as wrong
+          setIsTimedOut(true);
+          setIsAnswered(true);
+          setSelectedAnswer(null);
+          setStreak(0);
+          setWrongCount(prev => prev + 1);
+          if (questions[currentIndex]) {
+            setWrongWords(prev => [...prev, {
+              word: questions[currentIndex].card.front_text,
+              meaning: questions[currentIndex].card.back_text
+            }]);
+          }
+          return 0;
+        }
+        return newTime;
+      });
+    }, 10); // Update every 10ms for smooth countdown
+
+    return () => clearInterval(timer);
+  }, [currentIndex, isAnswered, isGameComplete, questions]);
+
+  // Auto-proceed after answer/timeout
+  useEffect(() => {
+    if (!isAnswered) return;
+
+    const proceedTimer = setTimeout(async () => {
+      // Update SRS before proceeding
+      if (questions[currentIndex]) {
+        const isCorrect = selectedAnswer === questions[currentIndex].correctAnswer;
+        const timeTaken = (Date.now() - questionStartTime) / 1000;
+        await updateFromQuiz(questions[currentIndex].card.id, isCorrect, timeTaken, questions[currentIndex].card.isUserFlashcard);
+      }
+
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+        setSelectedAnswer(null);
+        setIsAnswered(false);
+        setIsTimedOut(false);
+      } else {
+        setIsGameComplete(true);
+        const gameDuration = Math.round((Date.now() - gameStartTime) / 1000);
+        trackGame('quiz', 'complete', score, {
+          totalCards: flashcards.length,
+          correctAnswers: correctCount,
+          wrongAnswers: wrongCount,
+          duration: gameDuration
+        });
+      }
+    }, 200); // Reduce delay to 200ms for near-instant transition
+
+    return () => clearTimeout(proceedTimer);
+  }, [isAnswered]);
 
 
   const generateQuestions = () => {
@@ -134,26 +200,9 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
     }
   };
 
+  // handleNext is now automatic, but keep for manual override if needed
   const handleNext = async () => {
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-    await updateFromQuiz(currentQuestion.card.id, isCorrect, timeTakenForCurrent, currentQuestion.card.isUserFlashcard);
-    console.log(`🧠 Quiz SRS: ${currentQuestion.card.id} Correct=${isCorrect} Time=${timeTakenForCurrent.toFixed(1)}s`);
-
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setSelectedAnswer(null);
-      setIsAnswered(false);
-    } else {
-      setIsGameComplete(true);
-      // Track game completion
-      const gameDuration = Math.round((Date.now() - gameStartTime) / 1000);
-      trackGame('quiz', 'complete', score, {
-        totalCards: flashcards.length,
-        correctAnswers: correctCount + (isCorrect ? 1 : 0),
-        wrongAnswers: wrongCount + (!isCorrect ? 1 : 0),
-        duration: gameDuration
-      });
-    }
+    // Manual next is disabled in timer mode - auto-proceed handles this
   };
 
 
@@ -275,10 +324,13 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
         />
       )}
 
-      <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 relative z-10 min-h-screen flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4 md:mb-6">
-          <Button variant="ghost" onClick={onClose} className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors">
+      {/* Critical Time Screen Flash */}
+      <div className={`fixed inset-0 bg-red-500/20 z-0 pointer-events-none transition-opacity duration-100 ${timeLeft <= 2 && !isAnswered ? 'opacity-100 animate-pulse' : 'opacity-0'}`} />
+
+      <div className="container mx-auto px-2 md:px-4 py-2 relative z-10 h-screen flex flex-col justify-center">
+        {/* Header - Compact */}
+        <div className="flex items-center justify-between mb-2">
+          <Button variant="ghost" onClick={onClose} size="sm" className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors h-8">
             <ArrowLeft className="mr-2 h-5 w-5" />
             ออก
           </Button>
@@ -297,27 +349,39 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
         </div>
 
         {/* Main Game Area */}
-        <div className="flex-1 flex items-center justify-center max-w-3xl mx-auto w-full">
-          <Card className="w-full bg-white/90 backdrop-blur-xl border-white/50 shadow-2xl rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden">
-            <CardHeader className="pb-0 md:pb-2 pt-4 md:pt-6">
-              <CardTitle className="text-center text-xl md:text-2xl font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
-                <span className="text-2xl md:text-3xl">⚡</span> Quiz Challenge
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 md:space-y-8 p-4 md:p-8">
+        <div className="flex-1 flex items-center justify-center max-w-2xl mx-auto w-full mb-2">
+          <Card className="w-full bg-white/90 backdrop-blur-xl border-white/50 shadow-2xl rounded-[1.5rem] overflow-hidden">
+            <CardContent className="space-y-3 p-4 pt-10">
 
-              {/* Question Display */}
-              <div className="text-center py-4 md:py-6">
-                <div className="mb-2 text-xs md:text-sm font-medium text-gray-500 uppercase tracking-widest">คำศัพท์</div>
-                <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-2 md:mb-4 break-words">
-                  {currentQuestion.card.back_text}
-                </h2>
-                <div className="h-1 w-16 md:w-24 bg-gradient-to-r from-violet-500 to-fuchsia-500 mx-auto rounded-full opacity-50"></div>
+              {/* Question Display with Timer */}
+              {/* Question Display with Timer */}
+              <div className="text-center py-2 relative">
+                {/* Countdown Timer - Large & Urgent */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-10">
+                  <div className={`
+                    min-w-[180px] h-20 rounded-2xl flex items-center justify-center font-mono font-black text-4xl tracking-wider
+                    transition-all duration-75 shadow-2xl px-4 border-4 border-white/30 backdrop-blur-md
+                    ${timeLeft <= 2 ? 'bg-red-600 text-white animate-pulse scale-110 shadow-red-500/80 rotate-1' :
+                      timeLeft <= 3 ? 'bg-orange-500 text-white shadow-orange-500/50' :
+                        'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-violet-500/50'}
+                    ${isAnswered ? 'opacity-50 grayscale' : ''}
+                  `}>
+                    {isTimedOut ? 'TIMEOUT' : timeLeft.toFixed(4)}
+                  </div>
+                </div>
+
+                <div className="mt-20">
+                  <div className="mb-1 text-[10px] font-medium text-gray-500 uppercase tracking-widest">คำศัพท์</div>
+                  <h2 className="text-3xl font-bold text-slate-900 mb-2 break-words text-shadow-sm">
+                    {currentQuestion.card.back_text}
+                  </h2>
+                </div>
               </div>
 
-              {/* Options Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                <AnimatePresence mode="wait">
+              {/* Options Grid - Stacked Vertically */}
+              {/* Options Grid - Stacked Vertically */}
+              <div className="flex flex-col gap-2 md:gap-2.5 max-w-lg mx-auto w-full">
+                <AnimatePresence mode="popLayout">
                   {currentQuestion.options.map((option, index) => {
                     const isSelected = selectedAnswer === option;
                     const isCorrect = option === currentQuestion.correctAnswer;
@@ -348,9 +412,9 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
                         onClick={() => handleAnswerSelect(option)}
                         disabled={isAnswered}
                         className={`
-                          relative p-4 md:p-6 text-base md:text-lg font-medium rounded-xl md:rounded-2xl text-left transition-all duration-300 flex items-center
+                          relative p-3 md:p-4 text-sm md:text-base font-medium rounded-xl text-left transition-all duration-300 flex items-center
                           ${buttonStyle}
-                          ${!isAnswered && 'hover:-translate-y-1 hover:shadow-md'}
+                          ${!isAnswered && 'hover:-translate-y-0.5 hover:shadow-sm'}
                         `}
                       >
                         <span className="mr-2">{option}</span>
@@ -361,20 +425,17 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
                 </AnimatePresence>
               </div>
 
-              {/* Next Button */}
+              {/* Auto-proceed indicator */}
               {isAnswered && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="pt-2 md:pt-4"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="pt-2 md:pt-4 text-center"
                 >
-                  <Button
-                    onClick={handleNext}
-                    className="w-full h-12 md:h-14 text-lg md:text-xl rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all bg-gradient-to-r from-violet-600 to-fuchsia-600 border-0"
-                    size="lg"
-                  >
-                    {currentIndex < questions.length - 1 ? 'ข้อถัดไป' : 'ดูสรุปผล'}
-                  </Button>
+                  <div className="inline-flex items-center gap-2 text-slate-500 text-sm font-medium">
+                    <div className="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span>{isTimedOut ? 'หมดเวลา!' : (selectedAnswer === currentQuestion.correctAnswer ? 'ถูกต้อง! 🎉' : 'ผิด 😢')} กำลังไปข้อถัดไป...</span>
+                  </div>
                 </motion.div>
               )}
 

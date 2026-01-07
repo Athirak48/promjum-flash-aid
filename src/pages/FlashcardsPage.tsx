@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, MoreVertical, Edit, Trash, Move, Type, Upload, X } from 'lucide-react';
+import { Search, Plus, Brain, GamepadIcon, Settings, BookOpen, Clock, Zap, Folder, FolderPlus, MoreVertical, Edit, Trash, Move, Type, Upload, X, Download } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { FlashcardQuizGame } from '@/components/FlashcardQuizGame';
@@ -370,6 +370,7 @@ export default function FlashcardsPage() {
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [bulkImportText, setBulkImportText] = useState(''); // For bulk import textarea
   const { flashcards, loading } = useFlashcards();
   const { trackPageView, trackButtonClick } = useAnalytics();
 
@@ -641,6 +642,66 @@ export default function FlashcardsPage() {
       [field]: value
     } : row));
   };
+
+  // Bulk Import Handler
+  const handleBulkImport = () => {
+    const text = bulkImportText.trim();
+    if (!text) {
+      toast({
+        title: "กรุณาใส่ข้อมูล",
+        description: "กรุณาพิมพ์ข้อมูลในรูปแบบ: คำศัพท์,ชนิด,ความหมาย",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Normalize part of speech to proper case
+    const normalizePartOfSpeech = (pos: string): string => {
+      const normalized = pos.trim().toLowerCase();
+      const mapping: { [key: string]: string } = {
+        'noun': 'Noun',
+        'verb': 'Verb',
+        'adjective': 'Adjective',
+        'adverb': 'Adverb',
+        'preposition': 'Preposition',
+        'conjunction': 'Conjunction',
+        'pronoun': 'Pronoun',
+        'interjection': 'Interjection',
+        'article': 'Article',
+        'phrase': 'Phrase'
+      };
+      return mapping[normalized] || 'Noun'; // Default to Noun if not found
+    };
+
+    const lines = text.split('\n').filter(line => line.trim());
+    const newRows = lines.map((line, index) => {
+      const parts = line.split(',').map(p => p.trim());
+      return {
+        id: Date.now() + index,
+        front: parts[0] || '',
+        partOfSpeech: normalizePartOfSpeech(parts[1] || 'Noun'),
+        back: parts[2] || '',
+        frontImage: null as File | null,
+        backImage: null as File | null
+      };
+    }).filter(row => row.front && row.back); // Only valid rows
+
+    if (newRows.length > 0) {
+      setFlashcardRows(newRows);
+      toast({
+        title: "นำเข้าสำเร็จ",
+        description: `นำเข้า ${newRows.length} คำศัพท์แล้ว`,
+      });
+      // Clear textarea
+      setBulkImportText('');
+    } else {
+      toast({
+        title: "ไม่พบข้อมูลที่ถูกต้อง",
+        description: "กรุณาตรวจสอบรูปแบบข้อมูลของคุณ",
+        variant: "destructive"
+      });
+    }
+  };
   const handleImageUpload = (id: number, side: 'front' | 'back') => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -850,17 +911,17 @@ export default function FlashcardsPage() {
                       {t('flashcards.createFlashcard')}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-6 rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
+                  <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-4 rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
                     <DialogHeader>
                       <DialogTitle className="text-xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">สร้างแฟลชการ์ดใหม่</DialogTitle>
-                      <DialogDescription className="text-white/50">
+                      <DialogDescription className="text-white/50 text-sm">
                         สร้างชุดคำศัพท์ใหม่สำหรับการเรียนรู้ของคุณ
                       </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 flex-1 flex flex-col min-h-0 mt-4">
+                    <div className="space-y-3 flex-1 flex flex-col min-h-0 mt-3">
                       {/* Title + Folder Row - Inline Layout */}
-                      <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+                      <div className="flex flex-col md:flex-row gap-2 md:gap-3">
                         {/* Flashcard Set Title */}
                         <div className="flex-1">
                           <Label htmlFor="flashcard-set-title" className="text-sm font-medium mb-1.5 block text-slate-200">
@@ -902,14 +963,40 @@ export default function FlashcardsPage() {
                         </div>
                       </div>
 
+                      {/* Bulk Import Section */}
+                      <div className="border-t border-white/10 pt-2">
+                        <Label className="text-sm font-medium mb-1 block text-slate-200">
+                          📝 นำเข้าหลายคำพร้อมกัน (Bulk Import)
+                        </Label>
+                        <p className="text-xs text-white/40 mb-1">
+                          วางข้อมูลในรูปแบบ: <code className="text-cyan-400 bg-white/10 px-1 rounded">คำศัพท์,ชนิด,ความหมาย</code> (แต่ละบรรทัด)
+                        </p>
+                        <textarea
+                          value={bulkImportText}
+                          onChange={(e) => setBulkImportText(e.target.value)}
+                          placeholder="ตัวอย่าง: cat,Noun,แมว"
+                          className="w-full h-16 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 focus:bg-white/10 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 resize-none font-mono text-sm"
+                        />
+                        <div className="flex justify-end mt-1">
+                          <Button
+                            onClick={handleBulkImport}
+                            disabled={!bulkImportText.trim()}
+                            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            นำเข้าข้อมูล
+                          </Button>
+                        </div>
+                      </div>
+
                       {/* Section Header */}
-                      <div className="flex items-center justify-between border-t border-white/10 pt-3">
+                      <div className="flex items-center justify-between border-t border-white/10 pt-2">
                         <Label className="text-sm font-semibold text-white/80">รายการคำศัพท์</Label>
                         <span className="text-xs font-bold text-white bg-white/10 border border-white/10 px-3 py-1 rounded-full">{flashcardRows.length} ใบ</span>
                       </div>
 
                       {/* Flashcard Rows - Expanded Area - With Custom Scrollbar */}
-                      <div ref={flashcardScrollRef} className="space-y-3 flex-1 overflow-y-auto pr-2 min-h-[250px] max-h-[40vh] custom-scrollbar">
+                      <div ref={flashcardScrollRef} className="space-y-2 flex-1 overflow-y-auto pr-2 min-h-[150px] max-h-[22vh] custom-scrollbar">
                         {flashcardRows.map((row, index) => (
                           <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border border-white/20 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-300 relative overflow-hidden">
                             {/* Decorative gradient blob */}

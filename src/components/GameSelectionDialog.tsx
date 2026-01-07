@@ -16,6 +16,40 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
   const { trackButtonClick } = useAnalytics();
 
   const games = [
+    // Visible games in order: Quiz, Scramble, Matching, Honeycomb, Listen
+    {
+      id: 'quiz',
+      title: 'Quiz 3sec',
+      subtitle: 'Multiple Choice',
+      description: 'ท้าทายความไว! ตอบคำถามภายใน 3 วินาที กดดันสุดๆ',
+      icon: Brain,
+      color: 'bg-blue-500',
+      gradient: 'from-blue-500 to-indigo-500',
+      bgGradient: 'from-blue-50 to-indigo-50',
+      hoverColor: 'hover:bg-blue-600'
+    },
+    {
+      id: 'scramble',
+      title: 'Word Scramble',
+      subtitle: '🔀 เรียงตัวอักษร',
+      description: 'เรียงตัวอักษรให้เป็นคำศัพท์ที่ถูกต้อง',
+      icon: Shuffle,
+      color: 'bg-lime-500',
+      gradient: 'from-lime-500 to-green-500',
+      bgGradient: 'from-lime-50 to-green-50',
+      hoverColor: 'hover:bg-lime-600'
+    },
+    {
+      id: 'matching',
+      title: 'Matching Game',
+      subtitle: 'เกมจับคู่',
+      description: 'จับคู่คำถามกับคำตอบที่ถูกต้อง',
+      icon: Target,
+      color: 'bg-purple-500',
+      gradient: 'from-purple-500 to-violet-500',
+      bgGradient: 'from-purple-50 to-violet-50',
+      hoverColor: 'hover:bg-purple-600'
+    },
     {
       id: 'honeycomb',
       title: 'Honey Hive',
@@ -38,6 +72,7 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
       bgGradient: 'from-pink-50 to-rose-50',
       hoverColor: 'hover:bg-pink-600'
     },
+    // Hidden games below (filtered out in render)
     {
       id: 'hangman',
       title: 'Hangman Master',
@@ -61,28 +96,6 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
       hoverColor: 'hover:bg-teal-600'
     },
     {
-      id: 'quiz',
-      title: 'Quiz Game',
-      subtitle: 'Multiple Choice',
-      description: 'ตอบคำถามแบบเลือกตอบ 4 ตัวเลือก',
-      icon: Brain,
-      color: 'bg-blue-500',
-      gradient: 'from-blue-500 to-indigo-500',
-      bgGradient: 'from-blue-50 to-indigo-50',
-      hoverColor: 'hover:bg-blue-600'
-    },
-    {
-      id: 'matching',
-      title: 'Matching Game',
-      subtitle: 'เกมจับคู่',
-      description: 'จับคู่คำถามกับคำตอบที่ถูกต้อง',
-      icon: Target,
-      color: 'bg-purple-500',
-      gradient: 'from-purple-500 to-violet-500',
-      bgGradient: 'from-purple-50 to-violet-50',
-      hoverColor: 'hover:bg-purple-600'
-    },
-    {
       id: 'wordSearch',
       title: 'Word Search',
       subtitle: '🔍 ค้นหาคำศัพท์',
@@ -92,17 +105,6 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
       gradient: 'from-cyan-500 to-blue-500',
       bgGradient: 'from-cyan-50 to-blue-50',
       hoverColor: 'hover:bg-cyan-600'
-    },
-    {
-      id: 'scramble',
-      title: 'Word Scramble',
-      subtitle: '🔀 เรียงตัวอักษร',
-      description: 'เรียงตัวอักษรให้เป็นคำศัพท์ที่ถูกต้อง',
-      icon: Shuffle,
-      color: 'bg-lime-500',
-      gradient: 'from-lime-500 to-green-500',
-      bgGradient: 'from-lime-50 to-green-50',
-      hoverColor: 'hover:bg-lime-600'
     },
     {
       id: 'ninja',
@@ -144,13 +146,17 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
           </p>
         </DialogHeader>
 
-        <div className="grid grid-cols-3 gap-2">
-          {games.map((game, index) => {
-            const IconComponent = game.icon;
-            return (
-              <Card
-                key={game.id}
-                className={`
+        {/* Hidden games: hangman, vocabBlinder, wordSearch, ninja, listen */}
+        {/* Hidden games: hangman, vocabBlinder, wordSearch, ninja, listen */}
+        <div className="grid grid-cols-2 gap-4 p-2">
+          {games
+            .filter(game => !['hangman', 'vocabBlinder', 'wordSearch', 'ninja', 'listen'].includes(game.id))
+            .map((game, index) => {
+              const IconComponent = game.icon;
+              return (
+                <Card
+                  key={game.id}
+                  className={`
                   cursor-pointer transition-all duration-300 ease-out
                   hover:scale-105 hover:shadow-2xl hover:-translate-y-1 border-2
                   hover:border-white active:scale-95
@@ -159,59 +165,59 @@ export function GameSelectionDialog({ open, onOpenChange, onSelectGame }: GameSe
                   animate-in slide-in-from-bottom-4 fade-in duration-500
                   shadow-md shadow-gray-200/50
                 `}
-                style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
-                onClick={() => handleGameSelect(game.id as any)}
-              >
-                {/* Soft gradient overlay on hover */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${game.bgGradient} opacity-0 group-hover:opacity-90 transition-opacity duration-500`} />
+                  style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
+                  onClick={() => handleGameSelect(game.id as any)}
+                >
+                  {/* Soft gradient overlay on hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${game.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
-                {/* Floating sparkles */}
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-500">
-                  <Sparkles className="h-4 w-4 text-yellow-400 animate-pulse" />
-                </div>
+                  {/* Floating sparkles */}
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                    <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
+                  </div>
 
-                <CardHeader className="text-center pb-0.5 pt-2 relative z-10 px-2">
-                  <div className={`
-                    w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-1
-                    bg-gradient-to-br ${game.gradient} shadow-md shadow-${game.color.replace('bg-', '')}/40
-                    group-hover:shadow-xl group-hover:scale-110 group-hover:-rotate-3
+                  <CardHeader className="text-center pb-2 pt-6 relative z-10 px-4">
+                    <div className={`
+                    w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3
+                    bg-gradient-to-br ${game.gradient} shadow-lg shadow-${game.color.replace('bg-', '')}/40
+                    group-hover:shadow-2xl group-hover:scale-110 group-hover:-rotate-6
                     transition-all duration-300 ease-out
                   `}>
-                    <IconComponent className="h-3.5 w-3.5 text-white drop-shadow-lg" />
-                  </div>
-                  <CardTitle className="text-[10px] font-extrabold text-gray-800 leading-tight group-hover:text-gray-900 transition-colors mb-0">{game.title}</CardTitle>
-                  <CardDescription className="font-bold text-[8px] text-gray-700 flex items-center justify-center gap-1">
-                    {game.subtitle}
-                  </CardDescription>
-                </CardHeader>
+                      <IconComponent className="h-8 w-8 text-white drop-shadow-xl" />
+                    </div>
+                    <CardTitle className="text-lg font-black text-gray-800 leading-tight group-hover:text-gray-900 transition-colors mb-1">{game.title}</CardTitle>
+                    <CardDescription className="font-bold text-xs text-gray-600 flex items-center justify-center gap-1">
+                      {game.subtitle}
+                    </CardDescription>
+                  </CardHeader>
 
-                <CardContent className="text-center pt-0 pb-2 relative z-10 px-2">
-                  <p className="text-[8px] text-gray-700 mb-1 min-h-[16px] line-clamp-2 leading-snug group-hover:text-gray-800 transition-colors font-medium">
-                    {game.description}
-                  </p>
-                  <Button
-                    className={`
+                  <CardContent className="text-center pt-0 pb-6 relative z-10 px-4">
+                    <p className="text-xs text-gray-600 mb-4 min-h-[32px] line-clamp-2 leading-relaxed group-hover:text-gray-800 transition-colors font-medium">
+                      {game.description}
+                    </p>
+                    <Button
+                      className={`
                       w-full bg-gradient-to-r ${game.gradient} text-white border-0
-                      shadow-md shadow-${game.color.replace('bg-', '')}/40 group-hover:shadow-lg transition-all duration-300 ease-out
-                      rounded-lg h-6 text-[9px] font-extrabold
+                      shadow-lg shadow-${game.color.replace('bg-', '')}/40 group-hover:shadow-xl transition-all duration-300 ease-out
+                      rounded-xl h-10 text-sm font-bold tracking-wide
                       group-hover:scale-105 active:scale-95
                       relative overflow-hidden
                     `}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGameSelect(game.id as any);
-                    }}
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-1">
-                      <GamepadIcon className="w-2.5 h-2.5" />
-                      เริ่มเล่น
-                    </span>
-                    <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGameSelect(game.id as any);
+                      }}
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        <GamepadIcon className="w-4 h-4" />
+                        เริ่มเล่น
+                      </span>
+                      <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
         </div>
       </DialogContent>
     </Dialog>

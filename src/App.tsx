@@ -29,6 +29,11 @@ import LearningResultsPage from "./pages/LearningResultsPage";
 import MultiplayerPage from "./pages/MultiplayerPage";
 import LobbyPage from "./pages/LobbyPage";
 import VocabChallengePage from "./pages/VocabChallengePage";
+import PreTestPage from "./pages/PreTestPage";
+import PreTestResultsPage from "./pages/PreTestResultsPage";
+import InterimTestPage from "./pages/InterimTestPage";
+import PostTestPage from "./pages/PostTestPage";
+import PostTestResultsPage from "./pages/PostTestResultsPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
@@ -57,93 +62,7 @@ const queryClient = new QueryClient();
 import { useAnalytics } from "./hooks/useAnalytics";
 
 
-const FeedbackMascot = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { trackButtonClick } = useAnalytics();
 
-  // Hide on auth, landing, feedback, games, learning flows, and onboarding
-  const hiddenPaths = ['/auth', '/landing', '/', '/feedback', '/onboarding'];
-  const hiddenPathPrefixes = [
-    '/flashcards/',  // Flashcard games and reviews
-    '/learning/',    // Learning flow after "Learning Now"
-    '/game/',        // Any game routes
-    '/vocab-challenge', // Vocab challenge
-    '/lobby/',       // Lobby games
-    '/admin',        // All admin pages
-  ];
-
-  // Check if current path should hide mascot
-  const shouldHide = hiddenPaths.includes(location.pathname) ||
-    hiddenPathPrefixes.some(prefix => location.pathname.startsWith(prefix));
-
-  if (shouldHide) return null;
-
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-      {/* Speech Bubble */}
-      <motion.div
-        initial={{ opacity: 0, y: 10, scale: 0.8 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ delay: 2, duration: 0.5 }}
-        className="mr-4 mb-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-5 py-3 rounded-2xl rounded-br-none shadow-xl border-2 border-white/30 relative max-w-[180px] text-center backdrop-blur-md"
-      >
-        <p className="text-sm font-bold font-prompt">มีอะไรจะบอกไหมครับ? 💬</p>
-        {/* Arrow */}
-        <div className="absolute bottom-0 right-0 translate-x-[-8px] translate-y-[90%] w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[12px] border-t-pink-600" />
-      </motion.div>
-
-      {/* Mascot Image with Enhanced Animation */}
-      <motion.button
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{
-          scale: 1,
-          opacity: 1,
-          y: [0, -12, 0],
-          rotate: [0, -3, 3, -3, 0]
-        }}
-        transition={{
-          scale: { duration: 0.5, delay: 0.3 },
-          opacity: { duration: 0.5, delay: 0.3 },
-          y: {
-            repeat: Infinity,
-            duration: 2,
-            ease: "easeInOut"
-          },
-          rotate: {
-            repeat: Infinity,
-            duration: 3,
-            ease: "easeInOut"
-          }
-        }}
-        whileHover={{ scale: 1.15, y: -18 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => {
-          trackButtonClick('Feedback Mascot', 'global');
-          navigate('/feedback');
-        }}
-        className="w-20 h-20 md:w-28 md:h-28 relative cursor-pointer"
-      >
-        {/* Glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-2xl opacity-40 group-hover:opacity-60 transition-opacity" />
-
-        <img
-          src="/monkey-mascot.png"
-          alt="Feedback Mascot"
-          className="relative w-full h-full object-contain drop-shadow-2xl"
-        />
-        {/* Notification Dot with Pulse */}
-        <motion.span
-          animate={{ scale: [1, 1.3, 1] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-3 border-white rounded-full flex items-center justify-center shadow-lg"
-        >
-          <span className="text-white text-xs font-black">!</span>
-        </motion.span>
-      </motion.button>
-    </div>
-  );
-};
 
 const App = () => {
   return (
@@ -301,6 +220,47 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     />
+                    {/* Assessment Routes */}
+                    <Route
+                      path="/pre-test"
+                      element={
+                        <ProtectedRoute>
+                          <PreTestPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/pre-test-results"
+                      element={
+                        <ProtectedRoute>
+                          <PreTestResultsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/interim-test"
+                      element={
+                        <ProtectedRoute>
+                          <InterimTestPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/post-test"
+                      element={
+                        <ProtectedRoute>
+                          <PostTestPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/post-test-results"
+                      element={
+                        <ProtectedRoute>
+                          <PostTestResultsPage />
+                        </ProtectedRoute>
+                      }
+                    />
                     {/* Multiplayer Route */}
                     <Route
                       path="/multiplayer"
@@ -325,7 +285,7 @@ const App = () => {
                   </Routes>
 
                   {/* Global Feedback Mascot Widget */}
-                  <FeedbackMascot />
+
                 </BrowserRouter>
               </MaintenanceCheck>
             </AuthProvider>

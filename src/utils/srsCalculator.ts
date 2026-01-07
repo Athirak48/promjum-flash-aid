@@ -32,132 +32,100 @@ export interface SRSUpdateResult {
 
 /**
  * Get quality score for Flashcard Review (Swipe mode)
- * Q=3: Correct first attempt, confident (≤7 seconds)
- * Q=1: Correct first attempt, but took >7 seconds
- * Q=0: Correct on subsequent attempts (2nd, 3rd, etc.)
- * Q=0: Wrong (swipe left)
+ * Q=5: Perfect (≤3s) - Instant recall
+ * Q=4: Good (≤6s) - Brief checking
+ * Q=3: Pass (≤10s) - Thinking needed
+ * Q=2: Hard (>10s) - Slow recall
+ * Q=0: Wrong
  */
 export function getFlashcardReviewQuality(
   isCorrect: boolean,
   attemptCount: number,
   timeTakenSeconds: number = 0
 ): number {
-  if (!isCorrect) {
-    return 0;
-  }
+  if (!isCorrect) return 0;
+  if (attemptCount > 1) return 1; // Correct after retry is barely passing
 
-  // Only first attempt can get Q > 0
-  if (attemptCount > 1) {
-    return 0;
-  }
-
-  // First attempt - check timing
-  if (timeTakenSeconds <= 7) {
-    return 3; // Confident, quick response
-  }
-
-  return 1; // Correct but hesitated
+  // First attempt timing
+  if (timeTakenSeconds <= 3) return 5;
+  if (timeTakenSeconds <= 6) return 4;
+  if (timeTakenSeconds <= 10) return 3;
+  return 2;
 }
 
 /**
  * Get quality score for Listen & Choose game
- * Q=2: Correct on first listen
- * Q=1: Replay needed before correct answer
- * Q=0: Wrong answer
+ * Q=5: Instant match (1st play)
+ * Q=3: Correct (1st play)
+ * Q=1: Replay needed
+ * Q=0: Wrong
  */
 export function getListenChooseQuality(isCorrect: boolean, playCount: number): number {
-  if (!isCorrect) {
-    return 0;
-  }
+  if (!isCorrect) return 0;
 
-  // First listen (playCount = 1) gets Q=2
   if (playCount <= 1) {
-    return 2;
+    return 5; // Standard for listening usually simpler if correct immediately
   }
-
-  // Replayed before answering correctly
-  return 1;
+  return 2; // Replayed
 }
 
 /**
  * Get quality score for Hangman Master game
- * Q=3: Perfect (0 wrong guesses)
- * Q=2: Good (≤3 wrong guesses)
- * Q=1: Okay (4-5 wrong guesses)
- * Q=0: Lost or ≥6 wrong guesses
+ * Q=5: Perfect (0 wrong)
+ * Q=3: Good (≤3 wrong)
+ * Q=1: Hard (>3 wrong)
+ * Q=0: Failed
  */
 export function getHangmanQuality(isComplete: boolean, wrongGuesses: number): number {
-  if (!isComplete || wrongGuesses >= 6) {
-    return 0;
-  }
+  if (!isComplete || wrongGuesses >= 6) return 0;
 
-  if (wrongGuesses === 0) {
-    return 3; // Perfect - remember spelling completely
-  }
-
-  if (wrongGuesses <= 3) {
-    return 2; // Good
-  }
-
-  return 1; // Many mistakes but still completed
+  if (wrongGuesses === 0) return 5;
+  if (wrongGuesses <= 2) return 4;
+  if (wrongGuesses <= 4) return 3;
+  return 1;
 }
 
 /**
- * Get quality score for Vocab Blinder game (with time factor)
- * Q=3: Correct in <3 seconds (instant recognition)
- * Q=2: Correct in 3-8 seconds (normal)
- * Q=1: Correct in >8 seconds (hesitated)
- * Q=0: Wrong answer
+ * Get quality score for Vocab Blinder game
+ * Q=5: < 2.5s
+ * Q=4: < 5s
+ * Q=3: < 8s
+ * Q=2: Slow
  */
 export function getVocabBlinderQuality(isCorrect: boolean, timeSeconds: number = 5): number {
-  if (!isCorrect) {
-    return 0;
-  }
+  if (!isCorrect) return 0;
 
-  if (timeSeconds < 3) {
-    return 3; // Instant recognition
-  }
-
-  if (timeSeconds <= 8) {
-    return 2; // Normal speed
-  }
-
-  return 1; // Slow/hesitated
+  if (timeSeconds < 2.5) return 5;
+  if (timeSeconds < 5) return 4;
+  if (timeSeconds < 8) return 3;
+  return 2;
 }
 
 /**
- * Get quality score for Quiz Game (with time factor)
- * Q=3: Correct in <5 seconds (very fast)
- * Q=2: Correct in 5-15 seconds (normal)
- * Q=1: Correct in >15 seconds (slow/guessing)
- * Q=0: Wrong answer
+ * Get quality score for Quiz Game
+ * Q=5: < 3s
+ * Q=4: < 6s
+ * Q=3: < 10s
+ * Q=2: > 10s
  */
 export function getQuizGameQuality(isCorrect: boolean, timeSeconds: number = 10): number {
-  if (!isCorrect) {
-    return 0;
-  }
+  if (!isCorrect) return 0;
 
-  if (timeSeconds < 5) {
-    return 3; // Very confident
-  }
-
-  if (timeSeconds <= 15) {
-    return 2; // Normal
-  }
-
-  return 1; // Slow/unsure
+  if (timeSeconds < 3) return 5;
+  if (timeSeconds < 6) return 4;
+  if (timeSeconds < 10) return 3;
+  return 2;
 }
 
 /**
  * Get quality score for Matching Game
- * Q=2: Matched correctly on first try
- * Q=0: Wrong match or not first try
+ * Match is usually easy/recognition based.
+ * Q=5: First try
+ * Q=0: Mistake
  */
 export function getMatchingGameQuality(isCorrect: boolean, isFirstTry: boolean): number {
-  if (!isCorrect) {
-    return 0;
-  }
-  return isFirstTry ? 3 : 1;
+  if (!isCorrect) return 0;
+  return isFirstTry ? 4 : 1; // Capped at 4 mostly unless very fast? Kept simple.
 }
 
 // ============================================
