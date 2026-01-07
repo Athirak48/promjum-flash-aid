@@ -31,7 +31,7 @@ export function FeedbackWidget() {
 
             {/* Monkey mascot */}
             <motion.div
-                className="relative w-20 h-20 sm:w-24 sm:h-24"
+                className="relative w-12 h-12 sm:w-14 sm:h-14"
                 animate={{
                     rotate: [0, -5, 5, -5, 0],
                     y: [0, -10, 0]

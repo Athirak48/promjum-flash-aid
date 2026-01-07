@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Check, Sparkles, Heart, Star } from 'lucide-react';
+import { toast } from 'sonner';
 
 export interface LearningModes {
     flashcard: boolean;
@@ -77,6 +78,23 @@ export function ModeSelectionStep({
     onNext
 }: ModeSelectionStepProps) {
     const handleToggleMode = (modeId: keyof LearningModes) => {
+        // Disable Listening and Reading modes for now
+        if (modeId === 'listening' || modeId === 'reading') {
+            toast('Coming Soon! 🚧', {
+                description: 'โหมดนี้กำลังรีบปั่นให้สุดฝีมือ รอหน่อยน้า!',
+                duration: 2000,
+                position: 'top-center',
+                style: {
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(10px)',
+                    border: '2px solid #f472b6',
+                    color: '#db2777',
+                    fontWeight: 600
+                }
+            });
+            return;
+        }
+
         onModeChange({
             ...selectedModes,
             [modeId]: !selectedModes[modeId],
@@ -151,17 +169,7 @@ export function ModeSelectionStep({
                         <motion.button
                             key={mode.id}
                             variants={itemVariants}
-                            whileHover={{ y: -4, scale: 1.02 }}
-                            whileTap={{ scale: 0.92 }}
-                            // Gentle pulse if idle
-                            animate={isIdle ? {
-                                scale: [1, 1.02, 1],
-                                transition: {
-                                    repeat: Infinity,
-                                    duration: 2,
-                                    delay: Math.random() // Randomize start for organic feel
-                                }
-                            } : {}}
+                            // Removed animations as requested - keep static click
                             onClick={() => handleToggleMode(mode.id as keyof LearningModes)}
                             className={`
                                 relative group p-3.5 rounded-3xl border-2 text-left transition-all duration-300 w-full
@@ -184,21 +192,15 @@ export function ModeSelectionStep({
                                 <Check className="w-3.5 h-3.5 stroke-[4px]" />
                             </motion.div>
 
-                            {/* Icon/Emoji - Bounces when selected */}
-                            <motion.div
-                                animate={isSelected ? {
-                                    rotate: [0, -10, 10, 0],
-                                    scale: [1, 1.2, 1],
-                                    y: [0, -2, 0]
-                                } : {}}
-                                transition={{ duration: 0.5 }}
+                            {/* Icon/Emoji - Static */}
+                            <div
                                 className={`
                                     w-12 h-12 rounded-2xl flex items-center justify-center text-3xl shadow-sm transition-colors duration-300
                                     ${isSelected ? 'bg-white/20 backdrop-blur-md' : 'bg-slate-50 group-hover:bg-white'}
                                 `}
                             >
                                 {mode.emoji}
-                            </motion.div>
+                            </div>
 
                             {/* Text Info */}
                             <div className="text-center z-10 w-full">

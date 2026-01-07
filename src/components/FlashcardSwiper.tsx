@@ -445,7 +445,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
   if (!currentCard) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-[#1a1c2e] via-[#2d1b4e] to-[#1c1a2e]">
+    <div className="fixed inset-0 z-50 bg-slate-50">
       <BackgroundDecorations />
 
       <div className="relative z-10 h-full flex flex-col">
@@ -453,18 +453,18 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
         <div className="flex items-center justify-between mb-4 md:mb-6 px-3 pt-4 gap-2">
           {/* Left: Back Button & Progress */}
           <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-            <Button variant="ghost" onClick={onClose} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white/10 hover:bg-white/20 text-white shadow-sm flex-shrink-0 border border-white/10">
+            <Button variant="ghost" onClick={onClose} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white hover:bg-slate-100 text-slate-700 shadow-sm flex-shrink-0 border border-slate-200">
               <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
 
             <div className="flex flex-col gap-0.5 sm:gap-1 flex-1 max-w-[120px] sm:max-w-[200px]">
-              <div className="flex items-center justify-between text-[10px] sm:text-sm font-bold text-white/90">
+              <div className="flex items-center justify-between text-[10px] sm:text-sm font-bold text-slate-600">
                 <span className="hidden sm:inline">ความคืบหน้า</span>
                 <span>{masteredCards.length} / {totalCards}</span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden backdrop-blur-sm">
+              <div className="h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-300 ease-in-out shadow-[0_0_10px_rgba(232,121,249,0.5)]"
+                  className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300 ease-in-out shadow-sm"
                   style={{ width: `${(masteredCards.length / totalCards) * 100}%` }}
                 />
               </div>
@@ -473,21 +473,21 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
 
           {/* Right: Stats Section */}
           <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-            <div className="flex items-center gap-1 bg-emerald-500/20 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border border-emerald-500/30 backdrop-blur-sm">
-              <div className="bg-emerald-500 rounded-full p-0.5">
-                <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
+            <div className="flex items-center gap-1 bg-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border border-slate-200 shadow-sm">
+              <div className="bg-emerald-100 rounded-full p-0.5">
+                <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-600" />
               </div>
-              <span className="font-bold text-xs sm:text-sm text-emerald-100">{rememberedCount}</span>
+              <span className="font-bold text-xs sm:text-sm text-emerald-600">{rememberedCount}</span>
             </div>
 
-            <div className="flex items-center gap-1 bg-rose-500/20 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border border-rose-500/30 backdrop-blur-sm">
-              <div className="bg-rose-500 rounded-full p-0.5">
-                <X className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
+            <div className="flex items-center gap-1 bg-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border border-slate-200 shadow-sm">
+              <div className="bg-rose-100 rounded-full p-0.5">
+                <X className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-rose-600" />
               </div>
-              <span className="font-bold text-xs sm:text-sm text-rose-100">{needPracticeCount}</span>
+              <span className="font-bold text-xs sm:text-sm text-rose-600">{needPracticeCount}</span>
             </div>
 
-            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 text-white/40 hover:text-white hover:bg-white/10">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 text-slate-400 hover:text-slate-600 hover:bg-slate-100">
               <MoreHorizontal className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
           </div>
@@ -506,7 +506,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
               return (
                 <div
                   key={nextIndex}
-                  className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 dark:from-slate-800 dark:via-purple-900/30 dark:to-slate-700 shadow-lg border-2 border-purple-300/70 dark:border-purple-500/40"
+                  className="absolute inset-0 rounded-3xl bg-white shadow-lg border-2 border-slate-200 dark:border-slate-700"
                   style={{
                     transform: `translateY(${offset * 12}px) scale(${1 - offset * 0.05})`,
                     opacity: 1 - offset * 0.15,
@@ -549,7 +549,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
                   }}
                 >
                   {/* Front */}
-                  <Card className="absolute inset-0 backface-hidden bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100 dark:from-slate-800 dark:via-purple-900/40 dark:to-slate-700 border-2 border-purple-300 dark:border-purple-500/50 shadow-2xl rounded-3xl flex items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden">
+                  <Card className="absolute inset-0 backface-hidden bg-white border-2 border-slate-200 dark:border-slate-700 shadow-2xl rounded-3xl flex items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden">
                     {/* Decorative corners like playing cards */}
                     <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-purple-400/60 rounded-tl-lg" />
                     <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-purple-400/60 rounded-tr-lg" />
@@ -578,12 +578,12 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
                         </div>
                       )}
 
-                      <div className="text-3xl sm:text-4xl md:text-4xl lg:text-4xl font-bold text-slate-800 dark:text-white mb-2 leading-normal py-2 break-words line-clamp-4">
+                      <div className="text-3xl sm:text-4xl md:text-4xl lg:text-4xl font-bold text-slate-900 mb-2 leading-normal py-2 break-words line-clamp-4">
                         {currentCard.front}
                       </div>
                       {currentCard.partOfSpeech && (
-                        <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/40 border border-purple-200 dark:border-purple-700 mb-4">
-                          <span className="text-sm font-semibold text-purple-700 dark:text-purple-300 italic">
+                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 border border-slate-200 mb-4">
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                             {currentCard.partOfSpeech}
                           </span>
                         </div>
@@ -594,7 +594,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
 
                   {/* Back */}
                   <Card
-                    className="absolute inset-0 backface-hidden bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-slate-800 dark:via-indigo-900/40 dark:to-slate-700 border-2 border-indigo-300 dark:border-indigo-500/50 shadow-2xl rounded-3xl flex items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden"
+                    className="absolute inset-0 backface-hidden bg-white border-2 border-slate-200 dark:border-slate-700 shadow-2xl rounded-3xl flex items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden"
                     style={{ transform: 'rotateY(180deg)' }}
                   >
                     {/* Decorative corners */}
@@ -615,7 +615,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
                           />
                         </div>
                       )}
-                      <div className="text-2xl sm:text-3xl md:text-3xl lg:text-3xl font-bold text-slate-800 dark:text-white mb-6 leading-normal py-2 break-words line-clamp-4">
+                      <div className="text-2xl sm:text-3xl md:text-3xl lg:text-3xl font-bold text-slate-900 mb-6 leading-normal py-2 break-words line-clamp-4">
                         {currentCard.back}
                       </div>
                       <div className="text-lg md:text-xl text-slate-500 dark:text-slate-400 font-medium break-words line-clamp-2 absolute bottom-8">
@@ -650,75 +650,7 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
           </div>
         </div>
 
-        {/* Bottom Controls */}
-        <div className="absolute bottom-0 left-0 right-0 p-8 pb-10">
-          <div className="max-w-md mx-auto flex items-center justify-center gap-6">
-            {/* 1. Don't Know (Red X) */}
-            <Button
-              onClick={() => handleAnswer(false)}
-              disabled={!isFlipped && !hasViewedAnswer}
-              className="h-14 w-14 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg hover:scale-110 transition-all disabled:opacity-30 border-4 border-white dark:border-slate-900"
-            >
-              <X className="h-6 w-6" />
-            </Button>
 
-            {/* 2. Previous (Gray Left) */}
-            <Button
-              onClick={() => {
-                // If we want this to be "Previous Card" without undo logic, we might need new logic.
-                // But typically "Left" in these apps means "Back" or "Undo".
-                // The image has a "Undo" in header too.
-                // Let's make this "Previous" in queue if possible, or just Undo.
-                // For now, mapping to Undo as per plan assumption.
-                handleUndo();
-              }}
-              disabled={history.length === 0}
-              className="h-14 w-14 rounded-full bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 shadow-md border-4 border-white dark:border-slate-900 disabled:opacity-30"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-
-            {/* 3. Play/Pause (Large Purple) */}
-            <Button
-              onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-              className="h-20 w-20 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white shadow-xl hover:scale-105 transition-all border-4 border-white dark:border-slate-900 flex items-center justify-center"
-            >
-              {isAutoPlaying ? (
-                <Pause className="h-8 w-8 fill-current" />
-              ) : (
-                <Play className="h-8 w-8 fill-current ml-1" />
-              )}
-            </Button>
-
-            {/* 4. Next (Gray Right) */}
-            <Button
-              onClick={() => {
-                if (!isFlipped && !hasViewedAnswer) {
-                  toast.error("กรุณาพลิกการ์ดเพื่อดูเฉลยก่อน");
-                  return;
-                }
-                if (currentIndex < reviewQueue.length - 1) {
-                  setCurrentIndex(prev => prev + 1);
-                  setIsFlipped(false);
-                  resetSwipe();
-                }
-              }}
-              disabled={currentIndex >= reviewQueue.length - 1 || (!isFlipped && !hasViewedAnswer)}
-              className="h-14 w-14 rounded-full bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 shadow-md border-4 border-white dark:border-slate-900 disabled:opacity-30"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </Button>
-
-            {/* 5. Know (Green Check) */}
-            <Button
-              onClick={() => handleAnswer(true)}
-              disabled={!isFlipped && !hasViewedAnswer}
-              className="h-14 w-14 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg hover:scale-110 transition-all disabled:opacity-30 border-4 border-white dark:border-slate-900"
-            >
-              <Check className="h-6 w-6" />
-            </Button>
-          </div>
-        </div>
       </div>
 
       {/* Tutorial Overlay */}
