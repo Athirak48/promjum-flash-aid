@@ -92,17 +92,26 @@ export function CreateCommunityDeckDialog({ open, onOpenChange, onSuccess }: Cre
         try {
             const { data, error } = await supabase
                 .from('user_flashcard_sets')
-                .select('id, title, card_count')
+                .select('id, title')
                 .eq('folder_id', folderId)
                 .is('parent_deck_id', null); // Only get top-level sets
 
             if (error) throw error;
 
-            const formatted = (data || []).map((d: any) => ({
-                id: d.id,
-                name: d.title,
-                total_cards: d.card_count || 0
+            // For each set, count actual flashcards
+            const formatted = await Promise.all((data || []).map(async (d: any) => {
+                const { count } = await supabase
+                    .from('user_flashcards')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('flashcard_set_id', d.id);
+
+                return {
+                    id: d.id,
+                    name: d.title,
+                    total_cards: count || 0
+                };
             }));
+
             setFolderDecks(formatted);
         } catch (error) {
             console.error('Error fetching decks:', error);
