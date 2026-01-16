@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import PostTestComponent from '@/components/assessment/PostTestComponent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Trophy, AlertCircle, Sparkles, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -55,16 +56,16 @@ export default function PostTestPage() {
             // Fetch Pre-Test data for comparison
             const { data } = await supabase
                 .from('goal_assessments')
-                .select('question_ids, total_questions, correct_answers, test_size_percentage') // Added field
+                .select('total_questions, correct_answers, test_size_percentage')
                 .eq('goal_id', goalId)
                 .eq('assessment_type', 'pre-test')
                 .single();
 
             if (data) {
                 setPreTestData({
-                    questionIds: data.question_ids || [],
-                    totalQuestions: data.total_questions,
-                    correctAnswers: data.correct_answers,
+                    questionIds: [], // question_ids column doesn't exist, use empty array
+                    totalQuestions: data.total_questions || 0,
+                    correctAnswers: data.correct_answers || 0,
                     testSizePercentage: data.test_size_percentage || 0
                 });
 

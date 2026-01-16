@@ -40,9 +40,9 @@ export function useOnboarding() {
                 console.error('Error checking onboarding:', error);
             }
 
-            const completed = !!data?.completed;
+            const completed = !!data?.completed_at;
             setHasCompletedOnboarding(completed);
-            setCurrentStep(data?.current_step || 'welcome');
+            setCurrentStep('welcome'); // Default step since current_step column doesn't exist
             setIsOnboarding(!completed);
         } catch (err) {
             console.error('Onboarding check failed:', err);

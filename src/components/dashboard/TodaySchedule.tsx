@@ -916,7 +916,7 @@ export function TodaySchedule({ activeGoal, refetch, deleteGoal, startSmartSessi
                                                                 state: {
                                                                     goalId: activeGoal.id,
                                                                     deckIds: activeGoal.deck_ids || [],
-                                                                    goalName: activeGoal.title || 'Study Goal'
+                                                                    goalName: activeGoal.goal_name || 'Study Goal'
                                                                 }
                                                             });
                                                         }}

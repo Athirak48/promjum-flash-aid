@@ -20,11 +20,11 @@ export function useWeakWords(user_id?: string, deckIds?: string[], goalCreatedAt
             let allowedFlashcardIds: Set<string> | null = null;
 
             if (deckIds && deckIds.length > 0) {
-                // Get flashcard IDs from user decks
+                // Get flashcard IDs from user decks (folder_id matches deckIds)
                 const { data: userSets } = await supabase
                     .from('user_flashcard_sets')
                     .select('id')
-                    .in('deck_id', deckIds);
+                    .in('folder_id', deckIds) as { data: { id: string }[] | null };
 
                 if (userSets && userSets.length > 0) {
                     const setIds = userSets.map(s => s.id);
@@ -48,7 +48,7 @@ export function useWeakWords(user_id?: string, deckIds?: string[], goalCreatedAt
                 }
             }
 
-            // Query 1: Shared flashcards (front field)
+            // Query 1: Shared flashcards (front_text field)
             let sharedQuery = supabase
                 .from('user_flashcard_progress')
                 .select(`
@@ -59,8 +59,8 @@ export function useWeakWords(user_id?: string, deckIds?: string[], goalCreatedAt
                     updated_at,
                     srs_score,
                     flashcards!inner (
-                        front,
-                        back
+                        front_text,
+                        back_text
                     )
                 `)
                 .eq('user_id', user_id)
@@ -116,12 +116,12 @@ export function useWeakWords(user_id?: string, deckIds?: string[], goalCreatedAt
 
             // Merge both results
             const combinedData = [
-                ...(sharedData || []).map(item => ({
+                ...(sharedData || []).map((item: any) => ({
                     ...item,
-                    word: item.flashcards?.front || 'Unknown',
-                    translation: item.flashcards?.back || ''
+                    word: item.flashcards?.front_text || 'Unknown',
+                    translation: item.flashcards?.back_text || ''
                 })),
-                ...(userData || []).map(item => ({
+                ...(userData || []).map((item: any) => ({
                     ...item,
                     word: item.user_flashcards?.front_text || 'Unknown',
                     translation: item.user_flashcards?.back_text || ''
@@ -177,22 +177,13 @@ export function useWeakWords(user_id?: string, deckIds?: string[], goalCreatedAt
     }, [user_id, deckIds, goalCreatedAt]);
 
     // Get weak words from assessment
+    // Note: assessment_answers table doesn't exist in current schema
     const getWeakWordsFromAssessment = useCallback(async (
-        assessment_id: string
+        _assessment_id: string
     ): Promise<string[]> => {
-        try {
-            const { data, error } = await supabase
-                .from('assessment_answers')
-                .select('flashcard_id, flashcards(front_text)')
-                .eq('assessment_id', assessment_id)
-                .eq('is_correct', false);
-
-            if (error) throw error;
-            return (data || []).map(item => item.flashcards?.front_text || 'Unknown');
-        } catch (err) {
-            console.error('Error fetching weak words from assessment:', err);
-            return [];
-        }
+        // This function is a placeholder since assessment_answers table doesn't exist
+        console.log('getWeakWordsFromAssessment called but assessment_answers table not available');
+        return [];
     }, []);
 
     // Auto-fetch on mount if user_id provided

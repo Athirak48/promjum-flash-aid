@@ -47,3 +47,15 @@ export interface WeakWord {
     last_wrong_at: string;
     difficulty_score: number;
 }
+
+export interface AssessmentAnswer {
+    id: string;
+    assessment_id: string;
+    flashcard_id: string;
+    question: string;
+    correct_answer: string;
+    user_answer: string | null;
+    is_correct: boolean;
+    time_taken_seconds: number;
+    created_at: string;
+}

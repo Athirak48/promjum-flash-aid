@@ -536,11 +536,11 @@ export function useStudyGoals() {
             // Try user flashcard sets first (most common for goals)
             console.log("Fetching flashcards for deck:", primaryDeckId);
             // Query user deck: user_flashcard_sets -> user_flashcards
-            let { data: userSets, error: setsError } = await supabase
+            const { data: userSets, error: setsError } = await supabase
                 .from('user_flashcard_sets')
                 .select('id')
-                .eq('deck_id', primaryDeckId)
-                .limit(100);
+                .eq('folder_id', primaryDeckId)
+                .limit(100) as { data: { id: string }[] | null; error: any };
 
             let deckCards: any[] = [];
             let isUserDeck = false;
