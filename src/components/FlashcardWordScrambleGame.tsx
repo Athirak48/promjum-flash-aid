@@ -41,6 +41,11 @@ export function FlashcardWordScrambleGame({ vocabList, onGameFinish, onExit, onN
     const [currentIndex, setCurrentIndex] = useState(0);
     const [score, setScore] = useState(0);
     const [gameStartTime] = useState(Date.now());
+
+    // Per-word timer
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const [wordStartTime, setWordStartTime] = useState<number>(0);
+
     const [correctCount, setCorrectCount] = useState(0);
     const [wrongCount, setWrongCount] = useState(0);
     const [totalXPEarned, setTotalXPEarned] = useState(0);
@@ -84,11 +89,28 @@ export function FlashcardWordScrambleGame({ vocabList, onGameFinish, onExit, onN
             if (currentIndex < gameWords.length) {
                 // Only setup round if the word actually changed
                 setupRound(gameWords[currentIndex]);
+
+                // Reset timer for new word
+                setElapsedTime(0);
+                setWordStartTime(performance.now());
             }
             // Note: We removed the else { finishGame() } here to avoid double-calling or premature finishing.
             // finishGame is now called explicitly when the last word is completed.
         }
     }, [currentIndex, gameWords]);
+
+    // Timer - Stopwatch with high precision
+    useEffect(() => {
+        if (gameFinished) return;
+
+        const timer = setInterval(() => {
+            if (feedback !== 'correct') { // Pause timer on correct animation
+                const now = performance.now();
+                setElapsedTime((now - wordStartTime) / 1000);
+            }
+        }, 10);
+        return () => clearInterval(timer);
+    }, [wordStartTime, feedback, gameFinished]);
 
     const setupRound = (wordObj: ScrambleWord) => {
         const word = wordObj.word.toUpperCase().replace(/[^A-Z]/g, ''); // Clean word
@@ -637,13 +659,18 @@ export function FlashcardWordScrambleGame({ vocabList, onGameFinish, onExit, onN
     const progress = ((currentIndex) / gameWords.length) * 100;
 
     return (
-        <div className="flex flex-col items-center max-w-4xl mx-auto p-4 md:p-6 min-h-[600px] w-full relative">
+        <div className="flex flex-col items-center max-w-4xl mx-auto p-4 md:p-6 min-h-[600px] w-full relative bg-[#0a0a16] rounded-3xl overflow-hidden">
 
-            {/* Ambient Background Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg h-full max-h-[500px] bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
+            {/* Starry Background Effect */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                <div className="absolute top-10 left-10 w-1 h-1 bg-white rounded-full opacity-80" />
+                <div className="absolute top-1/2 right-20 w-1.5 h-1.5 bg-blue-200 rounded-full opacity-60" />
+                <div className="absolute bottom-20 left-1/3 w-1 h-1 bg-white rounded-full opacity-50" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/40 via-[#0a0a16] to-[#0a0a16]" />
+            </div>
 
             {/* Header */}
-            <header className="w-full flex justify-between items-center mb-8 relative z-10">
+            <header className="w-full flex justify-between items-center mb-12 relative z-10">
                 <Button
                     variant="ghost"
                     size="icon"
@@ -656,22 +683,25 @@ export function FlashcardWordScrambleGame({ vocabList, onGameFinish, onExit, onN
                 <div className="flex flex-col items-center">
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">Word Scramble</span>
                     <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-24 bg-slate-800/50 rounded-full overflow-hidden">
+                        <div className="h-1 w-24 bg-slate-800 rounded-full overflow-hidden">
                             <motion.div
-                                className="h-full bg-gradient-to-r from-blue-400 to-indigo-500"
+                                className="h-full bg-indigo-500"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${progress}%` }}
                                 transition={{ duration: 0.5 }}
                             />
                         </div>
-                        <span className="text-xs font-semibold text-slate-400 tabular-nums">
+                        <span className="text-xs font-semibold text-slate-500 tabular-nums">
                             {currentIndex + 1} / {gameWords.length}
                         </span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-full font-bold text-sm flex items-center gap-2 backdrop-blur-md">
+                    <div className="px-4 py-1.5 bg-[#1e1b4b] border border-indigo-500/30 text-indigo-300 rounded-full font-bold text-sm flex items-center gap-2">
+                        <span className="font-mono tabular-nums">{elapsedTime.toFixed(4)}s</span>
+                    </div>
+                    <div className="px-4 py-1.5 bg-[#1e1b4b] border border-indigo-500/30 text-indigo-300 rounded-full font-bold text-sm flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-indigo-400" />
                         <span className="tabular-nums">{score}</span>
                     </div>
@@ -679,55 +709,46 @@ export function FlashcardWordScrambleGame({ vocabList, onGameFinish, onExit, onN
             </header>
 
             {/* Main Game Area */}
-            <div className="flex-1 w-full flex flex-col items-center justify-center space-y-12 relative z-10">
+            <div className="flex-1 w-full flex flex-col items-center justify-start space-y-12 relative z-10">
 
-                {/* Question / Meaning Card */}
+                {/* Question / Meaning Card - Dark Blue Box */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     key={currentIndex}
                     className="w-full max-w-2xl text-center"
                 >
-                    <div className="group relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    <div className="w-full bg-[#0f172a] border border-slate-800 p-12 rounded-[2rem] shadow-2xl relative overflow-hidden">
+                        {/* Inner Glow */}
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1/2 bg-indigo-500/5 blur-3xl pointer-events-none" />
 
-                        <Card className="relative p-8 md:p-12 bg-slate-900/50 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[2.5rem] overflow-hidden">
-                            {/* Decorative Grid */}
-                            <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.03]" />
+                        <div className="relative flex flex-col items-center gap-4">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={speakWord}
+                                className="w-10 h-10 rounded-full bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-indigo-300 transition-all mb-2"
+                            >
+                                <Volume2 className="w-5 h-5" />
+                            </Button>
 
-                            <div className="relative flex flex-col items-center gap-6">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={speakWord}
-                                    className="w-12 h-12 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 transition-all hover:scale-110"
-                                >
-                                    <Volume2 className="w-6 h-6" />
-                                </Button>
-
-                                <div className="space-y-2">
-                                    <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight drop-shadow-lg leading-tight">
-                                        {gameWords[currentIndex].meaning}
-                                    </h2>
-                                    <p className="text-indigo-200/60 font-medium text-sm md:text-base animate-pulse">
-                                        Tap letters to spell the word
-                                    </p>
-                                </div>
-                            </div>
-                        </Card>
+                            <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight leading-tight">
+                                {gameWords[currentIndex].meaning}
+                            </h2>
+                            <p className="text-slate-500 font-medium text-sm tracking-wide">
+                                Tap letters to spell the word
+                            </p>
+                        </div>
                     </div>
                 </motion.div>
 
                 {/* Answer Slots - The "Tray" */}
                 <div className="w-full max-w-3xl flex justify-center">
-                    <motion.div
-                        animate={controls}
-                        className="flex flex-wrap justify-center gap-2 md:gap-4 p-4 rounded-3xl bg-black/20 backdrop-blur-sm border border-white/5"
-                    >
+                    <div className="flex flex-wrap justify-center gap-3 p-4">
                         {placedLetters.length > 0 && placedLetters.map((letter, index) => (
                             <div key={`slot-container-${index}`} className="relative">
-                                {/* Empty Slot Marker */}
-                                <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-white/10 bg-white/5" />
+                                {/* Empty Slot Marker - Dashed Outline */}
+                                <div className="absolute inset-0 rounded-xl border-2 border-dashed border-slate-700 bg-transparent" />
 
                                 <motion.div
                                     key={`slot-${index}`}
@@ -735,32 +756,27 @@ export function FlashcardWordScrambleGame({ vocabList, onGameFinish, onExit, onN
                                     layoutId={letter ? letter.id : undefined}
                                     className={`
                                         relative w-12 h-14 md:w-14 md:h-16 rounded-xl flex items-center justify-center 
-                                        text-2xl md:text-3xl font-black select-none
-                                        shadow-[0_4px_0_rgba(0,0,0,0.2)] transition-all
+                                        text-2xl md:text-3xl font-black select-none cursor-pointer
+                                        transition-all
                                         ${letter
                                             ? feedback === 'correct'
-                                                ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 text-white shadow-emerald-900/50 scale-105 z-10'
+                                                ? 'bg-emerald-500 text-white shadow-[0_4px_0_#064e3b]'
                                                 : feedback === 'wrong'
-                                                    ? 'bg-gradient-to-t from-rose-600 to-rose-400 text-white shadow-rose-900/50'
-                                                    : revealedPositions.has(index)
-                                                        ? 'bg-gradient-to-t from-amber-600 to-yellow-500 text-white shadow-amber-900/50 cursor-not-allowed'
-                                                        : 'bg-gradient-to-t from-indigo-600 to-blue-500 text-white shadow-indigo-900/50 hover:-translate-y-1 hover:shadow-lg cursor-pointer'
+                                                    ? 'bg-rose-500 text-white shadow-[0_4px_0_#881337]'
+                                                    : 'bg-white text-slate-900 shadow-[0_4px_0_#cbd5e1] hover:-translate-y-1'
                                             : 'opacity-0'
                                         }
                                     `}
                                 >
                                     {letter?.char}
-
-                                    {/* Shine effect */}
-                                    {letter && <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 to-transparent rounded-t-2xl" />}
                                 </motion.div>
                             </div>
                         ))}
-                    </motion.div>
+                    </div>
                 </div>
 
-                {/* Letter Pool - Fixed positions (scrambled but no shifting!) */}
-                <div className="flex flex-wrap justify-center gap-2 md:gap-3 min-h-[100px] max-w-3xl px-4">
+                {/* Letter Pool - Scrambled Letters */}
+                <div className="flex flex-wrap justify-center gap-2 md:gap-3 px-4 pb-8">
                     {gameWords[currentIndex] && Array.from({ length: gameWords[currentIndex].word.toUpperCase().replace(/[^A-Z]/g, '').length }).map((_, slotIndex) => {
                         // Get letter from scrambled array at this index
                         const letter = scrambledLetters[slotIndex];
@@ -770,19 +786,18 @@ export function FlashcardWordScrambleGame({ vocabList, onGameFinish, onExit, onN
                                 key={`pool-slot-${slotIndex}`}
                                 onClick={() => letter && handlePoolClick(letter)}
                                 disabled={!letter}
-                                whileHover={letter ? { scale: 1.1, translateY: -4 } : {}}
+                                whileHover={letter ? { scale: 1.1, translateY: -2 } : {}}
                                 whileTap={letter ? { scale: 0.95 } : {}}
                                 className={`relative w-12 h-14 md:w-14 md:h-16 rounded-xl 
                                            flex items-center justify-center text-2xl md:text-3xl font-black
-                                           border-2 transition-all duration-200
+                                           transition-all duration-200
                                            ${letter
-                                        ? 'bg-white text-slate-700 border-slate-100 hover:border-indigo-200 hover:text-indigo-600 shadow-[0_4px_0_#cbd5e1] active:shadow-none active:translate-y-[4px] cursor-pointer'
-                                        : 'bg-transparent border-transparent shadow-none opacity-0 pointer-events-none'
+                                        ? 'bg-white text-slate-900 shadow-[0_4px_0_#cbd5e1] active:shadow-none active:translate-y-[4px] cursor-pointer'
+                                        : 'bg-transparent shadow-none opacity-0 pointer-events-none'
                                     }`}
                                 style={{ visibility: letter ? 'visible' : 'hidden' }}
                             >
                                 <span className="relative z-10">{letter?.char || ''}</span>
-                                {letter && <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white to-slate-50 rounded-t-xl opacity-50" />}
                             </motion.button>
                         );
                     })}

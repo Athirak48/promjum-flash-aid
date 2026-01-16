@@ -13,6 +13,7 @@ export interface StudyGoal {
     created_at: string;
     sessions_completed: number;
     words_learned: number;
+    current_value: number;
     current_day: number;
     deck_ids?: string[];
 }

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trophy, CheckCircle, XCircle, Home, RotateCcw, ArrowRight, Gamepad2 } from 'lucide-react';
+import { ArrowLeft, Trophy, Check, X, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import BackgroundDecorations from '@/components/BackgroundDecorations';
 import { useSRSProgress } from '@/hooks/useSRSProgress';
 import { useXP } from '@/hooks/useXP';
 import { XPGainAnimation } from '@/components/xp/XPGainAnimation';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { cn } from '@/lib/utils';
+import confetti from 'canvas-confetti';
 
 interface Flashcard {
   id: string;
@@ -38,6 +39,7 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
   const { updateFromQuiz } = useSRSProgress();
   const { addGameXP, lastGain, clearLastGain } = useXP();
   const { trackGame } = useAnalytics();
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -46,10 +48,11 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isGameComplete, setIsGameComplete] = useState(false);
   const [totalXPEarned, setTotalXPEarned] = useState(0);
-  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  const [timeTakenForCurrent, setTimeTakenForCurrent] = useState(0);
-  const [gameStartTime] = useState(Date.now());
-  const [timeLeft, setTimeLeft] = useState(3); // 3 second countdown for extreme pressure!
+
+  // New Timer Logic
+  const [startTime, setStartTime] = useState(Date.now());
+  const [timeLeft, setTimeLeft] = useState(5.0000);
+  const [progress, setProgress] = useState(100);
   const [isTimedOut, setIsTimedOut] = useState(false);
 
   // Stats
@@ -57,6 +60,135 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
   const [wrongCount, setWrongCount] = useState(0);
   const [wrongWords, setWrongWords] = useState<{ word: string; meaning: string }[]>([]);
 
+  useEffect(() => {
+    generateQuestions();
+    trackGame('quiz', 'start', undefined, { totalCards: flashcards.length });
+  }, [flashcards]);
+
+  // Generate Questions
+  const generateQuestions = () => {
+    const newQuestions = flashcards.map(card => {
+      const correctAnswer = card.front_text;
+      const otherCards = flashcards.filter(c => c.id !== card.id);
+      const wrongOptions = otherCards
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3)
+        .map(c => c.front_text);
+      const options = [...wrongOptions, correctAnswer].sort(() => Math.random() - 0.5);
+      return { card, options, correctAnswer };
+    });
+    setQuestions(newQuestions);
+  };
+
+  // Reset Timer per Question
+  useEffect(() => {
+    if (questions.length > 0 && !isGameComplete) {
+      setStartTime(Date.now());
+      setTimeLeft(5.0000);
+      setProgress(100);
+      setIsTimedOut(false);
+    }
+  }, [currentIndex, questions, isGameComplete]);
+
+  // Timer Countdown loop
+  useEffect(() => {
+    if (isAnswered || isGameComplete || questions.length === 0) return;
+
+    const duration = 5000; // 5 seconds
+    const interval = 10;
+
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const remaining = Math.max(0, 5 - (elapsed / 1000));
+      const newProgress = Math.max(0, 100 - (elapsed / duration) * 100);
+
+      setTimeLeft(remaining);
+      setProgress(newProgress);
+
+      if (remaining <= 0) {
+        clearInterval(timer);
+        handleTimeout();
+      }
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [startTime, isAnswered, isGameComplete, questions]);
+
+
+  const handleTimeout = () => {
+    setIsTimedOut(true);
+    setIsAnswered(true);
+    setSelectedAnswer(null); // No answer selected
+    setStreak(0);
+    setWrongCount(prev => prev + 1);
+
+    if (questions[currentIndex]) {
+      setWrongWords(prev => [...prev, {
+        word: questions[currentIndex].card.front_text,
+        meaning: questions[currentIndex].card.back_text
+      }]);
+    }
+  };
+
+  // Auto-proceed effect
+  useEffect(() => {
+    if (!isAnswered) return;
+
+    const proceedTimer = setTimeout(async () => {
+      // Logic from original code preserved
+      if (questions[currentIndex]) {
+        const isCorrect = selectedAnswer === questions[currentIndex].correctAnswer;
+        const timeTaken = (Date.now() - startTime) / 1000;
+        await updateFromQuiz(questions[currentIndex].card.id, isCorrect, timeTaken, questions[currentIndex].card.isUserFlashcard);
+      }
+
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+        setSelectedAnswer(null);
+        setIsAnswered(false);
+      } else {
+        setIsGameComplete(true);
+      }
+    }, 1500); // 1.5s delay to see feedback
+
+    return () => clearTimeout(proceedTimer);
+  }, [isAnswered]);
+
+  const handleAnswerSelect = async (answer: string) => {
+    if (isAnswered) return;
+    setSelectedAnswer(answer);
+    setIsAnswered(true);
+
+    const isCorrect = answer === questions[currentIndex].correctAnswer;
+
+    if (isCorrect) {
+      // Speed Bonus
+      const speedBonus = Math.floor(timeLeft * 20);
+      setScore(score + 100 + speedBonus + (streak * 10));
+      setStreak(prev => prev + 1);
+      setCorrectCount(prev => prev + 1);
+
+      const xpResult = await addGameXP('quiz', true, false);
+      if (xpResult?.xpAdded) setTotalXPEarned(prev => prev + xpResult.xpAdded);
+
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#34d399', '#10b981', '#ffffff']
+      });
+    } else {
+      setStreak(0);
+      setWrongCount(prev => prev + 1);
+      setWrongWords(prev => [...prev, {
+        word: questions[currentIndex].card.front_text,
+        meaning: questions[currentIndex].card.back_text
+      }]);
+      // Gentle Vibrate
+      if (navigator.vibrate) navigator.vibrate(50);
+    }
+  };
 
   const handleRestart = () => {
     setCurrentIndex(0);
@@ -68,380 +200,159 @@ export function FlashcardQuizGame({ flashcards, onClose, onNext, onSelectNewGame
     setCorrectCount(0);
     setWrongCount(0);
     setWrongWords([]);
-    setCorrectCount(0);
-    setWrongCount(0);
-    setWrongWords([]);
     generateQuestions();
-    setQuestionStartTime(Date.now());
   };
-
-  useEffect(() => {
-    setQuestionStartTime(Date.now());
-    setTimeLeft(3.0000); // Reset timer for each question (3 seconds with decimals)
-    setIsTimedOut(false);
-  }, [currentIndex, questions]);
-
-  useEffect(() => {
-    generateQuestions();
-    // Track game start
-    trackGame('quiz', 'start', undefined, {
-      totalCards: flashcards.length
-    });
-  }, [flashcards]);
-
-  // Countdown timer effect - millisecond precision for excitement!
-  useEffect(() => {
-    if (isAnswered || isGameComplete || questions.length === 0) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        const newTime = prev - 0.01; // Decrease by 0.01 every 10ms
-        if (newTime <= 0) {
-          clearInterval(timer);
-          // Time's up - mark as wrong
-          setIsTimedOut(true);
-          setIsAnswered(true);
-          setSelectedAnswer(null);
-          setStreak(0);
-          setWrongCount(prev => prev + 1);
-          if (questions[currentIndex]) {
-            setWrongWords(prev => [...prev, {
-              word: questions[currentIndex].card.front_text,
-              meaning: questions[currentIndex].card.back_text
-            }]);
-          }
-          return 0;
-        }
-        return newTime;
-      });
-    }, 10); // Update every 10ms for smooth countdown
-
-    return () => clearInterval(timer);
-  }, [currentIndex, isAnswered, isGameComplete, questions]);
-
-  // Auto-proceed after answer/timeout
-  useEffect(() => {
-    if (!isAnswered) return;
-
-    const proceedTimer = setTimeout(async () => {
-      // Update SRS before proceeding
-      if (questions[currentIndex]) {
-        const isCorrect = selectedAnswer === questions[currentIndex].correctAnswer;
-        const timeTaken = (Date.now() - questionStartTime) / 1000;
-        await updateFromQuiz(questions[currentIndex].card.id, isCorrect, timeTaken, questions[currentIndex].card.isUserFlashcard);
-      }
-
-      if (currentIndex < questions.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-        setSelectedAnswer(null);
-        setIsAnswered(false);
-        setIsTimedOut(false);
-      } else {
-        setIsGameComplete(true);
-        const gameDuration = Math.round((Date.now() - gameStartTime) / 1000);
-        trackGame('quiz', 'complete', score, {
-          totalCards: flashcards.length,
-          correctAnswers: correctCount,
-          wrongAnswers: wrongCount,
-          duration: gameDuration
-        });
-      }
-    }, 200); // Reduce delay to 200ms for near-instant transition
-
-    return () => clearTimeout(proceedTimer);
-  }, [isAnswered]);
-
-
-  const generateQuestions = () => {
-    const newQuestions = flashcards.map(card => {
-      const correctAnswer = card.front_text;
-      const otherCards = flashcards.filter(c => c.id !== card.id);
-      const wrongOptions = otherCards
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3)
-        .map(c => c.front_text);
-
-      const options = [...wrongOptions, correctAnswer].sort(() => Math.random() - 0.5);
-
-      return {
-        card,
-        options,
-        correctAnswer
-      };
-    });
-
-    setQuestions(newQuestions);
-  };
-
-  const handleAnswerSelect = async (answer: string) => {
-    if (isAnswered) return;
-
-    setSelectedAnswer(answer);
-    setIsAnswered(true);
-
-    const timeTaken = (Date.now() - questionStartTime) / 1000;
-    setTimeTakenForCurrent(timeTaken);
-
-    const isCorrect = answer === currentQuestion.correctAnswer;
-
-    if (isCorrect) {
-      setScore(score + 10 + (streak * 2));
-      setStreak(streak + 1);
-      setCorrectCount(correctCount + 1);
-      // Add XP for correct answer
-      const xpResult = await addGameXP('quiz', true, false);
-      if (xpResult?.xpAdded) {
-        setTotalXPEarned(prev => prev + xpResult.xpAdded);
-      }
-    } else {
-      setStreak(0);
-      setWrongCount(wrongCount + 1);
-      setWrongWords(prev => [...prev, { word: currentQuestion.card.front_text, meaning: currentQuestion.card.back_text }]);
-    }
-  };
-
-  // handleNext is now automatic, but keep for manual override if needed
-  const handleNext = async () => {
-    // Manual next is disabled in timer mode - auto-proceed handles this
-  };
-
 
   if (questions.length === 0) return null;
-
   const currentQuestion = questions[currentIndex];
 
+  // --- RESULT SCREEN ---
   if (isGameComplete) {
-    const total = correctCount + wrongCount;
-    const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
-
     return (
-      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-auto flex items-center justify-center p-4 z-50">
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 max-w-sm w-full shadow-2xl text-center border border-white/50 relative overflow-hidden"
-        >
-          <div className="absolute top-0 left-0 w-full h-20 sm:h-24 bg-gradient-to-b from-violet-50 to-transparent -z-10"></div>
+      <div className="flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-500 fixed inset-0 z-50 bg-[#09090b] overflow-hidden">
+        {/* Background FX */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-900/40 via-[#09090b] to-[#09090b]" />
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_20px_rgba(168,85,247,0.5)]"></div>
 
-          <div className="w-14 h-14 sm:w-20 sm:h-20 bg-white rounded-2xl sm:rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-3 sm:mb-4 border border-slate-50">
-            <Trophy className="h-7 w-7 sm:h-10 sm:w-10 text-yellow-500 drop-shadow-sm" />
+        <div className="mb-8 relative z-10">
+          <div className="absolute inset-0 bg-purple-500 blur-[80px] opacity-30 rounded-full" />
+          <Trophy className="w-32 h-32 text-yellow-400 drop-shadow-[0_0_25px_rgba(250,204,21,0.6)] animate-bounce" />
+        </div>
+
+        <h2 className="relative z-10 text-5xl font-black text-white italic tracking-tighter mb-2 drop-shadow-2xl">
+          RUN COMPLETE
+        </h2>
+
+        {/* Stats Grid */}
+        <div className="relative z-10 grid grid-cols-2 gap-4 w-full max-w-sm mb-10">
+          <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-xl">
+            <div className="text-4xl font-black text-white mb-1">{score}</div>
+            <div className="text-xs text-purple-300 font-bold tracking-[0.2em] uppercase">Score</div>
           </div>
-
-          <h2 className="text-lg sm:text-xl font-black text-slate-800 mb-1 tracking-tight">{t('games.excellent')}</h2>
-          <p className="text-slate-500 mb-3 sm:mb-4 font-medium text-xs sm:text-sm">
-            {t('games.completedQuiz')}
-          </p>
-
-          <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-2 sm:p-3 mb-3 sm:mb-4 border border-slate-100">
-            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">{t('games.totalScore')}</p>
-            <p className="text-lg sm:text-xl font-black text-violet-600 tracking-tight">{score} {t('common.points')}</p>
+          <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-xl">
+            <div className="text-4xl font-black text-white mb-1">+{totalXPEarned}</div>
+            <div className="text-xs text-yellow-300 font-bold tracking-[0.2em] uppercase">XP Earned</div>
           </div>
+        </div>
 
-          {/* XP Earned Section */}
-          {totalXPEarned > 0 && (
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl sm:rounded-2xl p-2 sm:p-3 mb-3 sm:mb-4 border border-purple-100">
-              <p className="text-[10px] text-purple-400 uppercase tracking-wider font-bold mb-0.5">XP Earned</p>
-              <p className="text-lg sm:text-xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent tracking-tight">+{totalXPEarned} XP ⚡</p>
+        {/* Wrong Words Summary */}
+        {wrongWords.length > 0 ? (
+          <div className="relative z-10 bg-red-500/10 border border-red-500/30 rounded-2xl p-4 w-full max-w-sm mb-8 text-left max-h-40 overflow-y-auto">
+            <div className="text-red-400 text-xs font-bold uppercase mb-2 flex items-center gap-2">
+              <X className="w-4 h-4" /> Review Needed
             </div>
-          )}
-
-          {/* Wrong Words Section */}
-          {wrongWords.length > 0 ? (
-            <div className="bg-red-50 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-red-100 mb-3 sm:mb-4 text-left">
-              <div className="flex items-center gap-1.5 mb-1.5 sm:mb-2">
-                <span className="text-red-500 text-sm">❌</span>
-                <span className="font-bold text-xs sm:text-sm text-red-700">{t('games.wrongWords')} ({wrongWords.length})</span>
+            {wrongWords.map((w, idx) => (
+              <div key={idx} className="flex justify-between text-sm text-red-200 mb-1">
+                <span>{w.word}</span>
+                <span className="opacity-70">{w.meaning}</span>
               </div>
-              <div className="space-y-1 sm:space-y-1.5 max-h-20 sm:max-h-24 overflow-y-auto custom-scrollbar">
-                {wrongWords.map((w, idx) => (
-                  <div key={idx} className="flex justify-between items-center bg-white rounded-md px-2 py-1 text-[10px] sm:text-xs">
-                    <span className="font-medium text-red-800 truncate mr-2">{w.word}</span>
-                    <span className="text-red-500 truncate">{w.meaning}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="bg-green-50 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-green-100 mb-3 sm:mb-4 text-center">
-              <span className="text-2xl sm:text-3xl mb-1 block">🎉</span>
-              <span className="font-bold text-xs sm:text-sm text-green-700">{t('games.noWrongWords')}</span>
-            </div>
-          )}
-
-          <div className="flex flex-row gap-2 justify-center w-full">
-            <Button
-              onClick={handleRestart}
-              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 transition-all rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs font-bold active:scale-95 px-1 sm:px-3"
-            >
-              <span className="hidden sm:inline">{t('games.playAgain')}</span>
-              <span className="sm:hidden">{t('games.playAgainShort')}</span>
-            </Button>
-
-            <Button
-              onClick={() => {
-                if (onSelectNewGame) {
-                  onSelectNewGame();
-                } else {
-                  const selectedVocab = flashcards.map(f => ({
-                    id: f.id,
-                    word: f.front_text,
-                    meaning: f.back_text
-                  }));
-                  navigate('/ai-listening-section3-intro', {
-                    state: { selectedVocab }
-                  });
-                }
-              }}
-              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs font-bold active:scale-95 transition-all px-1 sm:px-3"
-            >
-              <Gamepad2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 shrink-0" />
-              <span className="hidden sm:inline">{t('games.selectGame')}</span>
-              <span className="sm:hidden">{t('games.selectGameShort')}</span>
-            </Button>
-
-            <Button
-              onClick={onClose}
-              className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 border-0 rounded-lg sm:rounded-xl h-9 sm:h-10 text-[10px] sm:text-xs font-bold active:scale-95 transition-all px-1 sm:px-3"
-            >
-              {t('common.next')}
-            </Button>
+            ))}
           </div>
-        </motion.div>
+        ) : (
+          <div className="relative z-10 bg-green-500/10 border border-green-500/30 rounded-2xl p-4 w-full max-w-sm mb-8 text-center text-green-400 font-bold">
+            PERFECT RUN! 🎉
+          </div>
+        )}
+
+        <div className="relative z-10 flex gap-4 w-full max-w-sm">
+          <Button variant="outline" onClick={onClose} className="flex-1 h-14 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold">
+            EXIT
+          </Button>
+          <Button onClick={handleRestart} className="flex-1 h-14 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-[0_0_20px_rgba(168,85,247,0.4)]">
+            PLAY AGAIN
+          </Button>
+        </div>
       </div>
     );
   }
 
+  // --- GAME UI ---
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-violet-50 via-fuchsia-50 to-violet-100 dark:from-violet-950 dark:via-fuchsia-900 dark:to-violet-950 overflow-auto">
-      <BackgroundDecorations />
-
-      {/* XP Gain Animation */}
-      {lastGain && (
-        <XPGainAnimation
-          amount={lastGain.amount}
-          levelUp={lastGain.levelUp}
-          onComplete={clearLastGain}
+    <div className="fixed inset-0 bg-[#0f172a] overflow-hidden flex flex-col items-center justify-center z-[100]">
+      {/* --- TOP BAR: PROGRESS --- */}
+      <div className="absolute top-0 left-0 right-0 h-2 bg-slate-900 z-50">
+        <motion.div
+          className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 shadow-[0_0_10px_rgba(236,72,153,0.5)]"
+          animate={{ width: `${progress}%` }}
+          transition={{ ease: "linear", duration: 0 }}
         />
-      )}
+      </div>
 
-      {/* Critical Time Screen Flash */}
-      <div className={`fixed inset-0 bg-red-500/20 z-0 pointer-events-none transition-opacity duration-100 ${timeLeft <= 2 && !isAnswered ? 'opacity-100 animate-pulse' : 'opacity-0'}`} />
-
-      <div className="container mx-auto px-2 md:px-4 py-2 relative z-10 h-screen flex flex-col justify-center">
-        {/* Header - Compact */}
-        <div className="flex items-center justify-between mb-2">
-          <Button variant="ghost" onClick={onClose} size="sm" className="rounded-full hover:bg-slate-200/50 text-slate-500 hover:text-slate-800 transition-colors h-8">
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            ออก
-          </Button>
-
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="flex items-center gap-1.5 md:gap-2 bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
-              <Trophy className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
-              <span className="font-bold text-base md:text-lg">{score}</span>
-            </div>
-            <div className="bg-white/80 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-sm border border-white/50">
-              <span className="font-bold text-base md:text-lg text-primary">
-                {currentIndex + 1} / {questions.length}
-              </span>
-            </div>
+      {/* --- HEADER --- */}
+      <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-40">
+        <Button variant="ghost" onClick={onClose} className="rounded-full text-slate-400 hover:text-white hover:bg-white/10">
+          <ArrowLeft className="w-6 h-6" />
+        </Button>
+        <div className="flex gap-3">
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-white/10 text-yellow-400 font-mono font-bold">
+            <Zap className="w-4 h-4" /> {score}
+          </div>
+          <div className="px-3 py-1 rounded-full bg-slate-800/80 border border-white/10 text-slate-400 font-mono text-xs">
+            {currentIndex + 1}/{questions.length}
           </div>
         </div>
+      </div>
 
-        {/* Main Game Area */}
-        <div className="flex-1 flex items-center justify-center max-w-2xl mx-auto w-full mb-2">
-          <Card className="w-full bg-white/90 backdrop-blur-xl border-white/50 shadow-2xl rounded-[1.5rem] overflow-hidden">
-            <CardContent className="space-y-3 p-4 pt-10">
+      {/* --- BACKGROUND --- */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 bg-repeat brightness-150 contrast-150 mix-blend-overlay"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[120px]"></div>
+      </div>
 
-              {/* Question Display with Timer */}
-              {/* Question Display with Timer */}
-              <div className="text-center py-2 relative">
-                {/* Countdown Timer - Large & Urgent */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-10">
-                  <div className={`
-                    min-w-[180px] h-20 rounded-2xl flex items-center justify-center font-mono font-black text-4xl tracking-wider
-                    transition-all duration-75 shadow-2xl px-4 border-4 border-white/30 backdrop-blur-md
-                    ${timeLeft <= 2 ? 'bg-red-600 text-white animate-pulse scale-110 shadow-red-500/80 rotate-1' :
-                      timeLeft <= 3 ? 'bg-orange-500 text-white shadow-orange-500/50' :
-                        'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-violet-500/50'}
-                    ${isAnswered ? 'opacity-50 grayscale' : ''}
-                  `}>
-                    {isTimedOut ? 'TIMEOUT' : timeLeft.toFixed(4)}
-                  </div>
-                </div>
-
-                <div className="mt-20">
-                  <div className="mb-1 text-[10px] font-medium text-gray-500 uppercase tracking-widest">คำศัพท์</div>
-                  <h2 className="text-3xl font-bold text-slate-900 mb-2 break-words text-shadow-sm">
-                    {currentQuestion.card.back_text}
-                  </h2>
-                </div>
-              </div>
-
-              {/* Options Grid - Stacked Vertically */}
-              {/* Options Grid - Stacked Vertically */}
-              <div className="flex flex-col gap-2 md:gap-2.5 max-w-lg mx-auto w-full">
-                <AnimatePresence mode="popLayout">
-                  {currentQuestion.options.map((option, index) => {
-                    const isSelected = selectedAnswer === option;
-                    const isCorrect = option === currentQuestion.correctAnswer;
-
-                    let buttonStyle = "bg-white hover:bg-violet-50 border-2 border-violet-100 text-violet-900";
-                    let icon = null;
-
-                    if (isAnswered) {
-                      if (isCorrect) {
-                        buttonStyle = "bg-green-500 border-green-600 text-white shadow-lg scale-105";
-                        icon = <CheckCircle className="ml-auto h-5 w-5 md:h-6 md:w-6" />;
-                      } else if (isSelected) {
-                        buttonStyle = "bg-red-500 border-red-600 text-white opacity-50";
-                        icon = <XCircle className="ml-auto h-5 w-5 md:h-6 md:w-6" />;
-                      } else {
-                        buttonStyle = "bg-gray-100 text-gray-400 border-gray-200 opacity-50";
-                      }
-                    } else if (isSelected) {
-                      buttonStyle = "bg-violet-600 border-violet-700 text-white shadow-lg scale-95";
-                    }
-
-                    return (
-                      <motion.button
-                        key={`${currentIndex}-${index}`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        onClick={() => handleAnswerSelect(option)}
-                        disabled={isAnswered}
-                        className={`
-                          relative p-3 md:p-4 text-sm md:text-base font-medium rounded-xl text-left transition-all duration-300 flex items-center
-                          ${buttonStyle}
-                          ${!isAnswered && 'hover:-translate-y-0.5 hover:shadow-sm'}
-                        `}
-                      >
-                        <span className="mr-2">{option}</span>
-                        {icon}
-                      </motion.button>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
-
-              {/* Auto-proceed indicator */}
-              {isAnswered && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="pt-2 md:pt-4 text-center"
-                >
-                  <div className="inline-flex items-center gap-2 text-slate-500 text-sm font-medium">
-                    <div className="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span>{isTimedOut ? 'หมดเวลา!' : (selectedAnswer === currentQuestion.correctAnswer ? 'ถูกต้อง! 🎉' : 'ผิด 😢')} กำลังไปข้อถัดไป...</span>
-                  </div>
-                </motion.div>
-              )}
-
-            </CardContent>
-          </Card>
+      {/* --- CARD --- */}
+      <div className="relative z-10 w-full max-w-md px-6 pb-10">
+        <div className="mb-12 text-center">
+          <h2 className="text-5xl md:text-6xl font-black text-white tracking-tight drop-shadow-[0_0_25px_rgba(255,255,255,0.2)]">
+            {currentQuestion.card.back_text}
+          </h2>
+          <div className="mt-6 mx-auto w-20 h-1.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 shadow-lg shadow-cyan-500/30" />
         </div>
+
+        <div className="flex flex-col gap-3">
+          <AnimatePresence mode="popLayout">
+            {currentQuestion.options.map((option, idx) => {
+              let visualState = 'idle';
+              if (isAnswered) {
+                if (option === currentQuestion.correctAnswer) visualState = 'correct';
+                else if (selectedAnswer === option) visualState = 'wrong';
+                else visualState = 'dimmed';
+              }
+
+              return (
+                <motion.button
+                  key={`${currentIndex}-${idx}`}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  onClick={() => handleAnswerSelect(option)}
+                  disabled={isAnswered}
+                  className={cn(
+                    "relative group w-full p-4 rounded-xl text-lg font-bold transition-all duration-200 border-2 overflow-hidden flex items-center justify-between",
+                    visualState === 'idle' && "bg-slate-800/40 border-slate-700/50 text-slate-200 hover:bg-slate-800/80 hover:border-purple-500/50 hover:text-white hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] active:scale-95",
+                    visualState === 'correct' && "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] scale-105 z-10",
+                    visualState === 'wrong' && "bg-rose-500/20 border-rose-500 text-rose-400 scale-95 opacity-80",
+                    visualState === 'dimmed' && "bg-slate-900/20 border-transparent text-slate-600 opacity-30"
+                  )}
+                >
+                  <span>{option}</span>
+                  {visualState === 'correct' && <Check className="w-6 h-6" />}
+                  {visualState === 'wrong' && <X className="w-6 h-6" />}
+                </motion.button>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+
+        {/* Feedback Footer */}
+        {isAnswered && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute bottom-0 left-0 w-full text-center pb-4">
+            <span className={cn("text-lg font-bold flex items-center justify-center gap-2",
+              isTimedOut ? "text-orange-400" : selectedAnswer === currentQuestion.correctAnswer ? "text-green-400" : "text-red-400"
+            )}>
+              {isTimedOut ? '⏰ TIME UP!' : selectedAnswer === currentQuestion.correctAnswer ? '✨ AWESOME!' : '❌ WRONG'}
+            </span>
+          </motion.div>
+        )}
       </div>
     </div>
   );

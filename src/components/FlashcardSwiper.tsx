@@ -35,6 +35,7 @@ interface FlashcardSwiperProps {
     incorrect: number;
     needsReview: number;
     cardStats: Record<string, { missCount: number }>;
+    answers?: Array<{ wordId: string; isCorrect: boolean }>;
   }) => void;
   /** Called when user wants to review again (for Learning Now flow) */
   onReviewAgain?: () => void;
@@ -418,11 +419,17 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
 
               <Button
                 onClick={() => {
+                  const generatedAnswers = cards.map(card => ({
+                    wordId: card.id,
+                    isCorrect: !cardStats[card.id]?.missCount // If missCount > 0, it's incorrect
+                  }));
+
                   const results = {
                     correct: rememberedCount,
                     incorrect: needPracticeCount,
                     needsReview: needPracticeCount,
-                    cardStats: cardStats
+                    cardStats: cardStats,
+                    answers: generatedAnswers // Pass detailed answers
                   };
                   if (onContinue) {
                     onContinue(results);
@@ -578,17 +585,20 @@ export function FlashcardSwiper({ cards, onClose, onComplete, onAnswer, onContin
                         </div>
                       )}
 
-                      <div className="text-3xl sm:text-4xl md:text-4xl lg:text-4xl font-bold text-slate-900 mb-2 leading-normal py-2 break-words line-clamp-4">
+                      <div className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-bold text-slate-900 mb-1 leading-normal py-2 break-words line-clamp-4">
                         {currentCard.front}
                       </div>
+
+                      {/* Part of Speech - Simple Text Under Word */}
                       {currentCard.partOfSpeech && (
-                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 border border-slate-200 mb-4">
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                            {currentCard.partOfSpeech}
-                          </span>
+                        <div className="text-sm sm:text-base text-purple-600 font-medium italic mb-6">
+                          ({currentCard.partOfSpeech})
                         </div>
                       )}
-                      <div className="text-sm md:text-base text-slate-400 font-medium absolute bottom-8">แตะเพื่อดูความหมาย</div>
+
+                      <div className="text-sm md:text-base text-slate-300 font-normal absolute bottom-8">
+                        แตะเพื่อดูความหมาย
+                      </div>
                     </div>
                   </Card>
 

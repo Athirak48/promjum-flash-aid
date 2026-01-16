@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowLeft, Sparkles, RefreshCw, BookOpen, Target } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Target, Settings2, Plus, Minus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 
-export type WordCountOption = '10' | '12' | '15' | '20';
+export type WordCountOption = '10' | '12' | '15' | '20' | 'custom';
 export type LearningModeOption = 'review-only' | 'review-and-new';
 
 export interface WordCountSettings {
@@ -19,17 +21,24 @@ interface WordCountStepProps {
 
 export function WordCountStep({ onNext, onBack }: WordCountStepProps) {
     const [wordCountOption, setWordCountOption] = useState<WordCountOption>('12');
+
+    // State: Total Count and New Word Ratio (0-100)
+    const [customCount, setCustomCount] = useState<number>(12);
+    const [newRatio, setNewRatio] = useState<number>(60); // Default 60% New
+
     const [learningMode, setLearningMode] = useState<LearningModeOption>('review-and-new');
 
-    const wordCount = parseInt(wordCountOption);
+    const wordCount = useMemo(() => customCount, [customCount]);
 
     const breakdown = useMemo(() => {
         if (learningMode === 'review-only') {
-            return { review: wordCount, new: 0 };
+            return { review: customCount, new: 0 };
         }
-        const reviewCount = Math.ceil(wordCount * 0.3);
-        return { review: reviewCount, new: wordCount - reviewCount };
-    }, [wordCount, learningMode]);
+
+        const newCount = Math.round(customCount * (newRatio / 100));
+        const reviewCount = customCount - newCount;
+        return { review: reviewCount, new: newCount };
+    }, [customCount, learningMode, newRatio]);
 
     const handleNext = () => {
         onNext({
@@ -39,24 +48,38 @@ export function WordCountStep({ onNext, onBack }: WordCountStepProps) {
         });
     };
 
+    const handlePresetClick = (option: string) => {
+        setWordCountOption(option as WordCountOption);
+        setCustomCount(parseInt(option));
+        // We keep the current ratio or reset? optional. Keeping ratio is friendlier.
+    };
+
+    const adjustTotal = (amount: number) => {
+        setCustomCount(prev => {
+            const val = Math.max(5, Math.min(100, prev + amount));
+            setWordCountOption('custom');
+            return val;
+        });
+    };
+
     return (
         <div className="flex flex-col h-full">
-            {/* Cute Header */}
-            <div className="text-center mb-8">
+            {/* Cute Header - Compacted */}
+            <div className="text-center mb-2">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="inline-flex items-center gap-2 mb-3"
+                    className="inline-flex items-center gap-2 mb-1"
                 >
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-                        <Target className="w-6 h-6 text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
+                        <Target className="w-5 h-5 text-white" />
                     </div>
                 </motion.div>
                 <motion.h2
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+                    className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
                 >
                     วันนี้อยากเรียนกี่คำ?
                 </motion.h2>
@@ -64,18 +87,18 @@ export function WordCountStep({ onNext, onBack }: WordCountStepProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.15 }}
-                    className="text-sm text-slate-500 dark:text-slate-400 mt-1"
+                    className="text-xs text-slate-500 dark:text-slate-400"
                 >
                     เลือกจำนวนที่พอดีกับเวลาของคุณ
                 </motion.p>
             </div>
 
-            {/* Word Count Cards */}
+            {/* Word Count Presets - Compacted */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="grid grid-cols-4 gap-3 mb-6"
+                className="grid grid-cols-4 gap-2 mb-3"
             >
                 {[
                     { count: '10', emoji: '☕', time: '~5 นาที' },
@@ -88,134 +111,140 @@ export function WordCountStep({ onNext, onBack }: WordCountStepProps) {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 + index * 0.05 }}
-                        onClick={() => setWordCountOption(option.count as WordCountOption)}
+                        onClick={() => handlePresetClick(option.count)}
                         className={`
-                            relative p-4 rounded-2xl transition-all duration-300
+                            relative p-2 rounded-xl transition-all duration-300
                             ${wordCountOption === option.count
-                                ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-xl scale-105 ring-4 ring-purple-200 dark:ring-purple-900'
-                                : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border-2 border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-600'
+                                ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg scale-105 ring-2 ring-purple-200 dark:ring-purple-900'
+                                : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-600'
                             }
                         `}
                     >
                         {option.recommended && (
-                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-emerald-400 to-green-500 text-white rounded-full shadow-lg">
+                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[9px] font-bold bg-gradient-to-r from-emerald-400 to-green-500 text-white rounded-full shadow-md whitespace-nowrap z-10">
                                 ✨ แนะนำ
                             </span>
                         )}
-                        <span className="text-2xl mb-1 block">{option.emoji}</span>
-                        <span className={`text-2xl font-black ${wordCountOption === option.count ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
+                        <span className="text-lg mb-0.5 block">{option.emoji}</span>
+                        <span className={`text-xl font-black ${wordCountOption === option.count ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
                             {option.count}
                         </span>
-                        <span className={`text-xs block mt-1 ${wordCountOption === option.count ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
+                        <span className={`text-[10px] block ${wordCountOption === option.count ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
                             {option.time}
                         </span>
                     </motion.button>
                 ))}
             </motion.div>
 
-            {/* Learning Mode Cards */}
+            {/* Total Count Fine-Tune - Compacted */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 }}
-                className="grid grid-cols-2 gap-3 mb-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center justify-center gap-4 mb-3"
             >
-                <button
-                    onClick={() => setLearningMode('review-only')}
-                    className={`
-                        p-4 rounded-2xl transition-all duration-300 text-left
-                        ${learningMode === 'review-only'
-                            ? 'bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-xl ring-4 ring-orange-200 dark:ring-orange-900'
-                            : 'bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-orange-300'
-                        }
-                    `}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => adjustTotal(-1)}
+                    className="h-10 w-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${learningMode === 'review-only' ? 'bg-white/20' : 'bg-orange-100 dark:bg-orange-900/30'}`}>
-                            <RefreshCw className={`w-5 h-5 ${learningMode === 'review-only' ? 'text-white' : 'text-orange-500'}`} />
-                        </div>
-                        <div>
-                            <p className={`font-bold ${learningMode === 'review-only' ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
-                                ทวนเก่าอย่างเดียว
-                            </p>
-                            <p className={`text-xs ${learningMode === 'review-only' ? 'text-white/70' : 'text-slate-500'}`}>
-                                เน้นทบทวนคำที่เรียนไปแล้ว
-                            </p>
-                        </div>
+                    <Minus className="w-5 h-5 text-slate-400" />
+                </Button>
+                <div className="text-center w-24">
+                    <div className="text-xs font-medium text-slate-500 mb-0.5">จำนวนทั้งหมด</div>
+                    <div className="text-4xl font-black text-slate-800 dark:text-slate-100 tracking-tighter">
+                        {customCount}
                     </div>
-                </button>
-
-                <button
-                    onClick={() => setLearningMode('review-and-new')}
-                    className={`
-                        p-4 rounded-2xl transition-all duration-300 text-left
-                        ${learningMode === 'review-and-new'
-                            ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-xl ring-4 ring-purple-200 dark:ring-purple-900'
-                            : 'bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-purple-300'
-                        }
-                    `}
+                </div>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => adjustTotal(1)}
+                    className="h-10 w-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${learningMode === 'review-and-new' ? 'bg-white/20' : 'bg-purple-100 dark:bg-purple-900/30'}`}>
-                            <BookOpen className={`w-5 h-5 ${learningMode === 'review-and-new' ? 'text-white' : 'text-purple-500'}`} />
-                        </div>
-                        <div>
-                            <p className={`font-bold ${learningMode === 'review-and-new' ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
-                                ทวนเก่า + เรียนใหม่
-                            </p>
-                            <p className={`text-xs ${learningMode === 'review-and-new' ? 'text-white/70' : 'text-slate-500'}`}>
-                                ผสมผสาน = จำได้ดีกว่า
-                            </p>
-                        </div>
-                    </div>
-                </button>
+                    <Plus className="w-5 h-5 text-slate-400" />
+                </Button>
             </motion.div>
 
-            {/* Summary Card */}
+            {/* Gradient Slider Ratio Control - Compacted */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="bg-gradient-to-r from-slate-100 to-purple-50 dark:from-slate-800 dark:to-purple-900/20 rounded-2xl p-4 mb-6"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mb-4 px-1"
             >
-                <div className="flex items-center justify-center gap-4">
-                    <div className="text-center">
-                        <span className="text-3xl font-black text-orange-500">{breakdown.review}</span>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">ทบทวน</p>
-                    </div>
-                    {learningMode === 'review-and-new' && (
-                        <>
-                            <span className="text-2xl text-slate-300 dark:text-slate-600">+</span>
-                            <div className="text-center">
-                                <span className="text-3xl font-black text-emerald-500">{breakdown.new}</span>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">ใหม่</p>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-visible">
+
+                    {/* Labels Above */}
+                    <div className="flex justify-between items-end mb-3 px-1">
+                        <div className="text-left group cursor-pointer" onClick={() => setNewRatio(0)}>
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                                <span className="text-[10px] font-bold text-slate-500 group-hover:text-orange-500 transition-colors">ทบทวน (เก่า)</span>
                             </div>
-                        </>
-                    )}
-                    <span className="text-2xl text-slate-300 dark:text-slate-600">=</span>
-                    <div className="text-center">
-                        <span className="text-3xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{wordCount}</span>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">คำ</p>
+                            <div className="text-2xl font-black text-orange-500 transition-transform group-hover:scale-110 origin-left">
+                                {breakdown.review}
+                            </div>
+                        </div>
+
+                        <div className="text-right group cursor-pointer" onClick={() => setNewRatio(100)}>
+                            <div className="flex items-center gap-1.5 justify-end mb-0.5">
+                                <span className="text-[10px] font-bold text-slate-500 group-hover:text-emerald-500 transition-colors">เรียนรู้ (ใหม่)</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            </div>
+                            <div className="text-2xl font-black text-emerald-500 transition-transform group-hover:scale-110 origin-right">
+                                {breakdown.new}
+                            </div>
+                        </div>
                     </div>
+
+                    {/* The Slider */}
+                    <div className="relative h-4 w-full flex items-center">
+                        {/* Background Gradient Track - decorative */}
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-emerald-500 opacity-20" />
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-emerald-500 h-1.5 my-auto" />
+
+                        <Slider
+                            value={[newRatio]}
+                            max={100}
+                            min={0}
+                            step={5}
+                            onValueChange={(val) => setNewRatio(val[0])}
+                            // Customizing internal classes using arbitrary variants
+                            className={`
+                                [&_[role=track]]:bg-transparent 
+                                [&_[role=range]]:bg-transparent
+                                [&_[role=thumb]]:h-6 [&_[role=thumb]]:w-6 [&_[role=thumb]]:border-3 [&_[role=thumb]]:bg-white [&_[role=thumb]]:shadow-md
+                                ${newRatio > 50 ? '[&_[role=thumb]]:border-emerald-500' : '[&_[role=thumb]]:border-orange-500'}
+                                transition-colors duration-300
+                            `}
+                        />
+                    </div>
+
+                    <div className="flex justify-between mt-2 text-[9px] text-slate-400 font-medium px-1 select-none">
+                        <span>เน้นทบทวน</span>
+                        <span>50/50</span>
+                        <span>เน้นของใหม่</span>
+                    </div>
+
                 </div>
             </motion.div>
 
-            {/* Navigation Buttons */}
-            <div className="flex gap-3 mt-auto">
+            {/* Navigation Buttons - Compacted */}
+            <div className="flex gap-3 mt-auto pt-2">
                 <Button
                     onClick={onBack}
                     variant="outline"
-                    className="flex-1 h-12 rounded-2xl font-bold text-base border-2"
+                    className="flex-1 h-10 rounded-xl font-bold text-sm bg-transparent border-slate-600 text-white hover:bg-white/10 hover:text-white"
                 >
-                    <ArrowLeft className="w-5 h-5 mr-2" />
+                    <ArrowLeft className="w-4 h-4 mr-2" />
                     ย้อนกลับ
                 </Button>
                 <Button
                     onClick={handleNext}
-                    className="flex-[2] h-12 rounded-2xl font-bold text-base bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
+                    className="flex-[2] h-10 rounded-xl font-bold text-sm bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md hover:shadow-lg transition-all hover:scale-[1.02]"
                 >
                     ถัดไป
-                    <ArrowRight className="w-5 h-5 ml-2" />
+                    <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
             </div>
         </div>

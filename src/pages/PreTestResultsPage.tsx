@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, TrendingUp, Timer, Rocket } from 'lucide-react';
+import { CheckCircle2, XCircle, TrendingUp, Timer, Rocket, Map, Target, FastForward, Calendar } from 'lucide-react';
 
 export default function PreTestResultsPage() {
     const location = useLocation();
@@ -23,21 +23,21 @@ export default function PreTestResultsPage() {
                 <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
             </div>
 
-            <div className="w-full max-w-md animate-in zoom-in-95 duration-500 ease-out relative z-10">
+            <div className="w-full max-w-[380px] animate-in zoom-in-95 duration-500 ease-out relative z-10">
                 <Card className="border border-white/10 bg-slate-900/90 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden">
-                    <CardContent className="p-6 space-y-4">
+                    <CardContent className="p-5 space-y-4">
                         {/* Header Section */}
                         <div className="text-center space-y-3">
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
                                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                                <p className="text-xs text-slate-300 font-medium">Your learning plan has been customized 🎉</p>
+                                <p className="text-[10px] text-slate-300 font-medium">Your learning plan has been customized 🎉</p>
                             </div>
 
-                            <div className="py-4">
-                                <span className="text-[4.5rem] leading-none font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-400 via-pink-400 to-purple-500 drop-shadow-[0_0_30px_rgba(168,85,247,0.5)]">
+                            <div className="py-2">
+                                <span className="text-6xl leading-none font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-400 via-pink-400 to-purple-500 drop-shadow-[0_0_30px_rgba(168,85,247,0.5)]">
                                     {percentage}%
                                 </span>
-                                <p className="text-slate-400 font-medium mt-3 text-sm">
+                                <p className="text-slate-400 font-medium mt-2 text-xs">
                                     {correct} out of {total} correct
                                 </p>
                             </div>
@@ -86,30 +86,59 @@ export default function PreTestResultsPage() {
                             </div>
                         </div>
 
-                        {/* What happens next */}
-                        <div className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border border-blue-500/20 rounded-xl p-4 text-white shadow-lg">
-                            <div className="flex gap-3">
-                                <TrendingUp className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                                <div className="space-y-2">
-                                    <h4 className="font-bold text-blue-100 text-xs uppercase tracking-wide">
-                                        What happens next?
-                                    </h4>
-                                    <ul className="text-xs text-blue-200/80 space-y-1 leading-relaxed">
-                                        <li>• Known words ({correct}) → Scheduled for review in 7 days</li>
-                                        <li>• Unknown words ({wrong}) → Added to learning queue (Priority)</li>
-                                        <li>• Your study time is optimized by ~{percentage}%</li>
-                                    </ul>
+                        {/* Personalized Plan Timeline */}
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4 backdrop-blur-sm">
+                            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2 uppercase tracking-wider">
+                                <Map className="w-4 h-4 text-indigo-400" />
+                                Your Personalized Plan
+                            </h3>
+
+                            <div className="space-y-4 relative pl-1">
+                                {/* Vertical Indent Line */}
+                                <div className="absolute left-[11px] top-2 bottom-4 w-0.5 bg-gradient-to-b from-indigo-500/50 via-purple-500/30 to-transparent rounded-full" />
+
+                                {/* Step 1: Learning Priority */}
+                                <div className="relative flex gap-4 items-start group">
+                                    <div className="w-6 h-6 rounded-full bg-[#0f172a] border border-indigo-500/50 flex items-center justify-center shrink-0 z-10 shadow-[0_0_15px_rgba(99,102,241,0.4)] mt-0.5">
+                                        <Target className="w-3 h-3 text-indigo-400" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className="text-sm font-bold text-indigo-200">Focus on {wrong} Unknown Words</p>
+                                        <p className="text-[11px] text-slate-400 leading-snug">
+                                            These are your top priority. We've added them to your learning queue for immediate practice.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Step 2: Efficiency Boost */}
+                                <div className="relative flex gap-4 items-start group">
+                                    <div className="w-6 h-6 rounded-full bg-[#0f172a] border border-emerald-500/50 flex items-center justify-center shrink-0 z-10 shadow-[0_0_15px_rgba(16,185,129,0.4)] mt-0.5">
+                                        <FastForward className="w-3 h-3 text-emerald-400" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className="text-sm font-bold text-emerald-200">Skip {correct} Known Words</p>
+                                        <p className="text-[11px] text-slate-400 leading-snug">
+                                            You've mastered these! We won't waste your time teaching them again right now.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Step 3: Retention Strategy */}
+                                <div className="relative flex gap-4 items-start group">
+                                    <div className="w-6 h-6 rounded-full bg-[#0f172a] border border-amber-500/50 flex items-center justify-center shrink-0 z-10 shadow-[0_0_15px_rgba(245,158,11,0.4)] mt-0.5">
+                                        <Calendar className="w-3 h-3 text-amber-400" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className="text-sm font-bold text-amber-200">Smart Review: 7 Days</p>
+                                        <p className="text-[11px] text-slate-400 leading-snug">
+                                            We'll bring the known words back for a quick check next week to ensure long-term memory.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Time Saved Badge */}
-                        {percentage > 0 && (
-                            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg py-2.5 px-4 text-white text-center shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2">
-                                <Timer className="h-4 w-4" />
-                                <span className="font-semibold text-sm">Estimated time saved: ~{timeSaved} minutes</span>
-                            </div>
-                        )}
+
 
                         {/* CTA Button */}
                         <Button

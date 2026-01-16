@@ -1,23 +1,14 @@
-import { useRef } from "react";
-import { DailyDeckQuickStart } from "@/components/dashboard/DailyDeckQuickStart";
-import { SuggestedDeck } from "@/components/dashboard/SuggestedDeck";
-import { FriendsLeaderboard } from "@/components/dashboard/FriendsLeaderboard";
-import { AITips } from "@/components/dashboard/AITips";
-import { TodaySchedule } from "@/components/dashboard/TodaySchedule";
+import { useRef, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import SM2FocusDashboard from "@/components/dashboard/SM2FocusDashboard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { ArcadeGrid } from "@/components/dashboard/ArcadeGrid";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useAnalytics } from "@/hooks/useAnalytics";
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useStudyGoals } from "@/hooks/useStudyGoals";
 import { OnboardingSpotlight } from "@/components/onboarding/OnboardingSpotlight";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Crown, Sparkles, TrendingUp, Target, Users, BookOpen, Award, Brain } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Dashboard() {
@@ -29,15 +20,25 @@ export default function Dashboard() {
     const location = useLocation();
     const [activeTab, setActiveTab] = useState('overview');
     const [isLoading, setIsLoading] = useState(true);
+    const hasRefetched = useRef(false);
 
     const isPro = false; // TODO: Check from user subscription
 
-    // Handle navigation from Pre-Test Results (auto-switch to Focus Mode)
+    // Handle navigation from Pre-Test Results (auto-switch to Focus Mode) & Refetch
     useEffect(() => {
         if (location.state?.activeTab) {
             setActiveTab(location.state.activeTab);
         }
-    }, [location.state]);
+        // Only Refetch Once per navigation to prevent loop
+        if (location.state?.shouldRefetch && !hasRefetched.current) {
+            console.log("Dashboard: Refetching data as requested...");
+            hasRefetched.current = true;
+            refetch();
+
+            // Optional: Clear state to clean up history (requires re-navigation or just ignoring)
+            // But tracking via Ref is sufficient for this session.
+        }
+    }, [location.state, refetch]);
 
     useEffect(() => {
         try {
@@ -64,7 +65,7 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 relative overflow-hidden">
+        <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/50 via-slate-950 to-bg-slate-950 relative overflow-hidden pb-20">
             {/* Animated Background - Reduced */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
                 <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl"></div>
@@ -83,79 +84,25 @@ export default function Dashboard() {
                 />
             )}
 
-            <div className="container mx-auto px-3 py-2 relative z-10 max-w-7xl">
-                {/* Compact Header */}
+            <div className="container mx-auto px-4 py-2 relative z-10 max-w-7xl">
 
+                {/* 1. Slim Header (Stats) */}
+                <DashboardHeader />
 
-                {/* Compact Tabs */}
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2">
-                    <TabsList className="grid w-full grid-cols-3 bg-slate-900/50 backdrop-blur-xl border border-white/10">
-                        <TabsTrigger value="overview" className="text-sm">
-                            <TrendingUp className="mr-1 h-4 w-4" />
-                            Overview
-                        </TabsTrigger>
-                        <TabsTrigger value="focus" className="text-sm">
-                            <Brain className="mr-1 h-4 w-4" />
-                            Focus Mode
-                        </TabsTrigger>
-                        <TabsTrigger value="social" className="text-sm">
-                            <Users className="mr-1 h-4 w-4" />
-                            Social
-                        </TabsTrigger>
-                    </TabsList>
+                {/* 2. Hero Section (Focus Mode - The 'North Star') */}
+                <div className="mt-2"> {/* Reduced Margin */}
+                    <SM2FocusDashboard
+                        activeGoal={activeGoal}
+                        refetch={refetch}
+                        deleteGoal={deleteGoal}
+                        startSmartSession={startSmartSession}
+                        loading={isLoading}
+                    />
+                </div>
 
-                    {/* Overview Tab - OPTIMIZED FOR SINGLE SCREEN */}
-                    <TabsContent value="overview" className="mt-0">
-                        <div className="scale-[0.85] origin-top">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-                                {/* Main Section */}
-                                <div className="lg:col-span-2">
-                                    <DailyDeckQuickStart
-                                        streak={stats?.streak || 0}
-                                        totalXP={stats?.totalXP || 0}
-                                        wordsLearnedToday={stats?.wordsLearnedToday || 0}
-                                        wordsLearned={stats?.wordsLearned || 0}
-                                        timeSpentToday={stats?.timeSpentToday || 0}
-                                        ranking={stats?.ranking || 0}
-                                    />
-                                </div>
+                {/* 3. Secondary 'Playground' Grid */}
+                <ArcadeGrid />
 
-                                {/* Sidebar */}
-                                <div className="space-y-2">
-                                    <TodaySchedule
-                                        activeGoal={activeGoal}
-                                        refetch={refetch}
-                                        deleteGoal={deleteGoal}
-                                        startSmartSession={startSmartSession}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </TabsContent>
-
-                    {/* Focus Mode Tab - FULLY FUNCTIONAL */}
-                    <TabsContent value="focus" className="mt-4">
-                        <SM2FocusDashboard
-                            activeGoal={activeGoal}
-                            refetch={refetch}
-                            deleteGoal={deleteGoal}
-                            startSmartSession={startSmartSession}
-                            loading={isLoading}
-                        />
-                    </TabsContent>
-
-                    {/* Social */}
-                    <TabsContent value="social" className="mt-0">
-                        <Card className="bg-slate-900/50 backdrop-blur-xl border-white/10">
-                            <CardHeader className="p-4">
-                                <CardTitle className="text-white">Friends & Leaderboard</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                                <FriendsLeaderboard isWidget={false} />
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
             </div>
         </div>
     );

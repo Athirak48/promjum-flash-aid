@@ -44,11 +44,12 @@ export function useUserStats() {
                     .eq('user_id', user.id)
                     .single();
 
-                // 1.1 Calculate Total Words Learned (Dynamic)
+                // 1.1 Calculate Total Words Learned (Correctly Count Only Level > 0)
                 const { count: totalWordsCount } = await supabase
                     .from('user_flashcard_progress')
                     .select('*', { count: 'exact', head: true })
-                    .eq('user_id', user.id);
+                    .eq('user_id', user.id)
+                    .gt('srs_level', 0); // Only count words that are actually learned (Level > 0)
 
                 // 2. Calculate Words Learned Today
                 const today = new Date();
@@ -58,6 +59,7 @@ export function useUserStats() {
                     .from('user_flashcard_progress')
                     .select('*', { count: 'exact', head: true })
                     .eq('user_id', user.id)
+                    .gt('srs_level', 0) // Only count learned words
                     .gte('created_at', today.toISOString());
 
                 // 3. Subdecks count

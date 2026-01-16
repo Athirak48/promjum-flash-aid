@@ -24,7 +24,7 @@ export default function PreTestComponent({ questions, onComplete, onCancel }: Pr
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [results, setResults] = useState<{ questionId: string; correct: boolean }[]>([]);
-    const [timeLeft, setTimeLeft] = useState(4);
+    const [timeLeft, setTimeLeft] = useState(5);
     const [isBreakTime, setIsBreakTime] = useState(false);
     const [currentSet, setCurrentSet] = useState(1);
 
@@ -42,7 +42,7 @@ export default function PreTestComponent({ questions, onComplete, onCancel }: Pr
                 if (prev <= 1) {
                     // Auto-move to next if time runs out
                     handleNextQuestion(null);
-                    return 4;
+                    return 5;
                 }
                 return prev - 1;
             });
@@ -75,7 +75,7 @@ export default function PreTestComponent({ questions, onComplete, onCancel }: Pr
         setResults(updatedResults);
 
         setSelectedAnswer(null);
-        setTimeLeft(4);
+        setTimeLeft(5);
 
         // Check if we finished current set
         if (currentIndex + 1 >= questionsInCurrentSet.length) {

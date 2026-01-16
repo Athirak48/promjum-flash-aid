@@ -31,6 +31,37 @@ export interface SRSUpdateResult {
 }
 
 /**
+ * GAME TIERS: The "10/10" Logic
+ * Prevents "Fake Mastery" by capping scores for easy games.
+ * 
+ * TIER 1 (Recognition): Cap 10 (Intermediate)
+ * - Users only "Recognize" the word. Cannot prove full mastery.
+ * 
+ * TIER 2 (Recall): Cap 15 (Master)
+ * - Users must "Produce" the word (Spell, Speak, or Self-Verify).
+ */
+export const GAME_TIERS: Record<string, { tier: 1 | 2; cap: number }> = {
+  // Recognition Games (Easy)
+  'quiz': { tier: 1, cap: 10 },
+  'matching': { tier: 1, cap: 10 },
+  'wordsearch': { tier: 1, cap: 10 },
+  'ninja': { tier: 1, cap: 10 },
+  'listen-choose': { tier: 1, cap: 10 },
+  'vocab-blinder': { tier: 1, cap: 10 },
+
+  // Recall Games (Hard)
+  'flashcard': { tier: 2, cap: 15 },
+  'scramble': { tier: 2, cap: 15 },
+  'hangman': { tier: 2, cap: 15 },
+  'honeycomb': { tier: 2, cap: 15 },
+  'speaking': { tier: 2, cap: 15 },
+};
+
+export function getGameScoreCap(gameId: string): number {
+  return GAME_TIERS[gameId]?.cap ?? 15; // Default to 15 (Recall) if unknown
+}
+
+/**
  * Get quality score for Flashcard Review (Swipe mode)
  * Q=5: Perfect (≤3s) - Instant recall
  * Q=4: Good (≤6s) - Brief checking
@@ -221,63 +252,133 @@ export function getHoneyCombQuality(isCorrect: boolean, attemptsNeeded: number):
 
 /**
  * Combine SRS score - adds new quality to existing score
- * If currentScore is null (unplayed), the new score is just the quality
+ * NOW STANDARDIZED: Maps Quality (0-5) to Score Delta (+2/+1/-3)
+ * Capped at 'maxScore' (Default 15).
  */
-export function combineSRSScore(currentScore: number | null | undefined, newQuality: number): number {
-  if (currentScore === null || currentScore === undefined) {
-    return newQuality;
+export function combineSRSScore(currentScore: number | null | undefined, qualityScore: number, maxScore: number = 15): number {
+  const current = currentScore ?? 0;
+  let delta = 0;
+
+  if (qualityScore >= 5) {
+    // Perfect/Fast Recall
+    delta = 2;
+  } else if (qualityScore >= 3) {
+    // Correct but slow/average (Pass/Good)
+    delta = 1;
+  } else {
+    // Incorrect
+    delta = -3;
   }
-  return currentScore + newQuality;
+
+  // Apply delta and clamp between 0 and maxScore
+  // Note: maxScore only limits growth. 
+  // If current is already 15 and maxScore is 10 (Tier 1), we shouldn't force it down to 10 if correct.
+  // Actually, Tier 1 is "Maintenance". It shouldn't reduce score unless wrong.
+  // So clamp: Min: 0. Max: Max(current, maxScore) if we want to allow holding high score.
+  // BUT the request is to "Separate" words. 
+  // If I play Quiz on a Master word, I should just maintain 15, not be capped at 10.
+  // The cap is for GROWTH. You cannot GROW past 10 with Quiz.
+  // So: NewScore = Current + Delta.
+  // If NewScore > 10 and maxScore is 10: NewScore = Max(Current, 10).
+  // Wait, if Current is 9 and delta is +2 -> New is 11. Cap is 10. Result 10. Correct.
+  // If Current is 15 and delta is +2 -> New is 17. Cap is 10. 
+  // We don't want to reset 15 to 10 just because they played a quiz.
+
+  let newScore = current + delta;
+
+  if (delta > 0) {
+    // Growth/Maintenance
+    if (newScore > maxScore) {
+      // If we are growing past cap, stop at cap.
+      // Unless we were ALREADY past cap.
+      newScore = Math.max(current, maxScore);
+      // Wait, if current is 15, max is 10. Max(15, 10) = 15. So it stays 15.
+      // If current is 9, max is 10. New is 11. Max(9, 10) = 10. So it stops at 10.
+
+      // But wait, if I have 15 and play Quiz (+2), I want to stay 15.
+      // Math.max(15, 10) works.
+      // Check upper bound: 15 is absolute hard cap.
+      newScore = Math.min(15, newScore);
+    } else {
+      // Normal growth below cap
+    }
+  } else {
+    // Penalty (delta < 0)
+    // Just apply delta.
+    newScore = Math.max(0, newScore);
+  }
+
+  // Final check: Hard cap 15 always
+  return Math.min(15, newScore);
 }
 
 /**
- * Calculate next review date and interval based on SRS algorithm (SM-2 Style)
- * Now fully enabled with 0-5 scale inputs.
+ * Calculate next review date and interval based on Unified SRS algorithm
  */
 export function calculateSRS(
   currentData: Partial<SRSData>,
-  qualityScore: number
+  qualityScore: number,
+  deadlineDays?: number, // Optional: For compression context
+  maxScore: number = 15  // NEW: Safety Cap based on Game Tier
 ): SRSUpdateResult {
   let easiness = currentData.easinessFactor ?? 2.5;
   let interval = currentData.intervalDays ?? 0;
   let level = currentData.srsLevel ?? 0;
-  const currentScore = currentData.srsScore;
+  const currentScore = currentData.srsScore ?? 0;
 
-  // 1. Calculate new SRS Score (Cumulative)
-  const newSrsScore = combineSRSScore(currentScore, qualityScore);
+  // 1. Calculate new SRS Score (Tier-Capped)
+  const newSrsScore = combineSRSScore(currentScore, qualityScore, maxScore);
 
-  // 2. Logic based on Quality (0-5)
-  if (qualityScore >= 3) {
-    // Correct response (3=Pass, 4=Good, 5=Perfect)
+  const isCorrect = qualityScore >= 3;
 
-    // Update Interval
-    if (level === 0) {
-      interval = 1;
-    } else if (level === 1) {
-      interval = 6;
-    } else {
-      interval = Math.round(interval * easiness);
-    }
-
-    // Update Level (consecutive correct count equivalent)
-    level++;
-
-    // Update Easiness Factor (Standard SM-2 Formula)
+  // 2. Update Easiness Factor (Standard SM-2 Formula)
+  if (isCorrect) {
     // EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
     easiness = easiness + (0.1 - (5 - qualityScore) * (0.08 + (5 - qualityScore) * 0.02));
-
   } else {
-    // Incorrect response (0=Fail, 1=Fail, 2=Fail)
-    level = 0;
-    interval = 1; // Reset to 1 day
-    // EF stays same or could decrease slightly, but standard SM-2 keeps it or drops it.
-    // Let's keep it but ensure it doesn't go below 1.3
+    // Decrease EF for failures
+    easiness = easiness - 0.2;
   }
-
-  // Cap Easiness
   if (easiness < 1.3) easiness = 1.3;
 
-  // Calculate Next Review Date
+  // 3. Update Level based on Score Thresholds
+  if (isCorrect) {
+    // Promote if Mastery Score is high enough
+    if (newSrsScore >= 12) {
+      level++;
+    }
+    // If capped at 10 (Tier 1), user CANNOT reach Score 12, so Level won't increase past a certain point naturally.
+  } else {
+    // Demote if Mastery Score drops too low
+    if (newSrsScore <= 5) {
+      level = Math.max(0, level - 1);
+    }
+  }
+
+  // 4. Calculate Interval based on Level (Exponential)
+  if (level === 0) {
+    interval = 1;
+  } else if (level === 1) {
+    interval = 1;
+  } else if (level === 2) {
+    interval = 6;
+  } else {
+    // Exponential Growth: 6 * EF^(Level-2)
+    interval = Math.round(6 * Math.pow(easiness, level - 2));
+  }
+
+  // Failure Reset Override: Force re-review tomorrow if wrong
+  if (!isCorrect) {
+    interval = 1;
+  }
+
+  // 5. Apply Deadline Compression (if provided)
+  if (deadlineDays !== undefined && deadlineDays < 7 && interval > 1) {
+    const maxInterval = Math.max(1, Math.floor(deadlineDays / 2));
+    interval = Math.min(interval, maxInterval);
+  }
+
+  // 6. Calculate Next Date
   const nextDate = new Date();
   nextDate.setDate(nextDate.getDate() + interval);
 

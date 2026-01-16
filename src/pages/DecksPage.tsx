@@ -267,7 +267,7 @@ export default function DecksPage() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative mb-12 text-center"
+            className="relative mb-4 md:mb-12 text-center"
           >
             <div className="absolute top-0 right-0 hidden md:block">
               <Button
@@ -280,9 +280,9 @@ export default function DecksPage() {
             </div>
             <div className="inline-block relative">
               <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full pointer-events-none" />
-              <h1 className="relative text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/50 drop-shadow-[0_0_30px_rgba(255,255,255,0.5)] mb-4 font-cute">
+              <h1 className="relative text-3xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/50 drop-shadow-[0_0_30px_rgba(255,255,255,0.5)] mb-4 font-cute">
                 Community Decks
-                <span className="absolute -top-4 -right-12 text-4xl animate-bounce delay-700">🌍</span>
+                <span className="absolute -top-4 -right-6 md:-right-12 text-2xl md:text-4xl animate-bounce delay-700">🌍</span>
               </h1>
             </div>
             <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto font-light leading-relaxed">
@@ -369,7 +369,7 @@ export default function DecksPage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-20">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-40 md:pb-20">
               {/* Mock Folder Bundles - Show when category matches */}
               {mockFolderBundles
                 .filter(bundle => !selectedCategory || bundle.category === selectedCategory)
@@ -436,7 +436,7 @@ export default function DecksPage() {
       </main>
 
       {/* Mobile FAB - Fixed Bottom Right */}
-      <div className="md:hidden fixed bottom-20 right-4 z-50">
+      <div className="md:hidden fixed bottom-8 right-4 z-50">
         <Button
           onClick={() => setShowCreateDialog(true)}
           className="rounded-full w-14 h-14 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-[0_4px_20px_rgba(168,85,247,0.6)] border-none p-0 flex items-center justify-center"
@@ -466,77 +466,91 @@ function FolderBundleCard({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="glass-card group rounded-xl sm:rounded-[2rem] border border-white/10 hover:border-white/30 hover:shadow-[0_0_40px_rgba(168,85,247,0.3)] transition-all duration-300 relative overflow-visible bg-black/40 p-3 sm:p-6"
+      className="group relative h-full"
     >
-      {/* Glow Effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl sm:rounded-[2rem] pointer-events-none" />
+      {/* Abstract Gradient Blob Background - Decorative */}
+      <div className="absolute -inset-0.5 bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 rounded-[2.2rem] opacity-30 group-hover:opacity-75 blur-lg transition duration-500" />
 
-      <div className="relative z-10">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-2 sm:mb-3">
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-            <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/20 flex-shrink-0">
-              <Folder className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300" />
+      {/* Main Card Content */}
+      <div className="relative h-full bg-slate-950/90 backdrop-blur-3xl rounded-[2rem] border border-white/10 p-5 flex flex-col overflow-hidden">
+
+        {/* Top Shine */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+
+        {/* Header Section */}
+        <div className="relative z-10 flex justify-between items-start mb-4">
+          <div className="flex gap-4 items-center">
+            {/* Folder Icon Box */}
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+              <span className="text-3xl filter drop-shadow-md">📂</span>
             </div>
+
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm sm:text-lg font-bold text-white group-hover:text-primary transition-colors truncate">
+              {/* Badge Category */}
+              <Badge className="mb-1.5 bg-white/10 text-white/80 hover:bg-white/20 border-0 text-[10px] px-2 py-0.5 pointer-events-none data-[category='English']:bg-blue-500/20 data-[category='English']:text-blue-300" data-category={bundle.category}>
+                {bundle.category || 'General'}
+              </Badge>
+              <h3 className="text-xl font-black text-white leading-tight truncate group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-indigo-400 group-hover:to-pink-400 transition-all duration-300">
                 {bundle.name}
               </h3>
-              <div className="flex items-center gap-1">
-                <Avatar className="w-3 h-3 sm:w-4 sm:h-4 border border-white/20">
-                  <AvatarImage src={bundle.creator_avatar || undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-[8px] sm:text-[10px]">
-                    {bundle.creator_nickname?.charAt(0)?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-[10px] sm:text-xs text-white/60 truncate">{bundle.creator_nickname}</span>
-              </div>
             </div>
           </div>
         </div>
 
+        {/* Creator Info - Cute Pill */}
+        <div className="flex items-center gap-2 mb-4 bg-white/5 w-fit pr-3 rounded-full border border-white/5">
+          <Avatar className="w-6 h-6 border-2 border-slate-900">
+            <AvatarImage src={bundle.creator_avatar || undefined} />
+            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-[9px] text-white">
+              {bundle.creator_nickname?.charAt(0)?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs font-medium text-slate-300">
+            {bundle.creator_nickname}
+          </span>
+        </div>
+
         {/* Description */}
-        <p className="text-[11px] sm:text-sm text-white/70 line-clamp-2 mb-2 sm:mb-4">
+        <p className="text-sm text-slate-400 mb-5 line-clamp-2 min-h-[2.5em] leading-relaxed">
           {bundle.description}
         </p>
 
-        {/* Stats - Compact */}
-        <div className="grid grid-cols-3 gap-1 sm:gap-2 mb-2 sm:mb-4">
-          <div className="bg-white/5 rounded-lg p-1.5 sm:p-2 border border-white/10 text-center">
-            <p className="text-[8px] sm:text-[10px] text-white/50">ชุด</p>
-            <p className="text-xs sm:text-base font-bold text-white">{bundle.total_sets}</p>
+        {/* Stats Grid - "Cards" style */}
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          <div className="bg-slate-900/50 rounded-xl p-2 border border-white/5 flex flex-col items-center justify-center">
+            <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Sets</span>
+            <span className="text-lg font-bold text-indigo-400">{bundle.total_sets}</span>
           </div>
-          <div className="bg-white/5 rounded-lg p-1.5 sm:p-2 border border-white/10 text-center">
-            <p className="text-[8px] sm:text-[10px] text-white/50">คำศัพท์</p>
-            <p className="text-xs sm:text-base font-bold text-white">{bundle.total_cards}</p>
+          <div className="bg-slate-900/50 rounded-xl p-2 border border-white/5 flex flex-col items-center justify-center">
+            <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Vocab</span>
+            <span className="text-lg font-bold text-pink-400">{bundle.total_cards}</span>
           </div>
-          <div className="bg-white/5 rounded-lg p-1.5 sm:p-2 border border-white/10 text-center">
-            <p className="text-[8px] sm:text-[10px] text-white/50">โคลน</p>
-            <p className="text-xs sm:text-base font-bold text-pink-400">{bundle.clone_count}</p>
+          <div className="bg-slate-900/50 rounded-xl p-2 border border-white/5 flex flex-col items-center justify-center">
+            <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Clones</span>
+            <span className="text-lg font-bold text-emerald-400 flex items-center gap-1">
+              <Copy className="w-3 h-3" /> {bundle.clone_count}
+            </span>
           </div>
         </div>
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-1 mb-2 sm:mb-4">
-          <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[8px] sm:text-[10px] px-1.5 py-0">
-            {bundle.category}
-          </Badge>
-          {bundle.tags.slice(0, 1).map((tag: string) => (
-            <Badge key={tag} className="bg-white/5 text-white/50 border-white/10 text-[8px] sm:text-[10px] px-1.5 py-0">
+        <div className="flex-1 flex flex-wrap gap-1.5 mb-5 content-start">
+          {bundle.tags.map((tag: string) => (
+            <span key={tag} className="text-[11px] font-medium text-slate-400 px-2 py-1 rounded-md bg-white/5 border border-white/5 hover:border-white/20 transition-colors">
               #{tag}
-            </Badge>
+            </span>
           ))}
         </div>
 
-        {/* Action Button */}
+        {/* Action Button - Full Width Gradient */}
         <Button
           onClick={onPreview}
-          size="sm"
-          className="w-full gap-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-[10px] sm:text-xs h-7 sm:h-9 px-2"
+          className="w-full h-11 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 text-white font-bold shadow-lg shadow-purple-900/20 group-hover:shadow-purple-500/40 transition-all duration-300"
         >
-          <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-          ดูคำศัพท์
+          <Eye className="w-4 h-4 mr-2" />
+          ดูคำศัพท์ข้างใน
         </Button>
+
       </div>
     </motion.div>
   );
@@ -564,114 +578,111 @@ function PublicDeckCard({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="glass-card group h-full flex flex-col rounded-[2.5rem] border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] transition-all duration-300 relative overflow-visible bg-black/40"
+      className="group relative h-full"
     >
-      {/* Glow Effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2.5rem] pointer-events-none" />
+      {/* Abstract Gradient Blob Background */}
+      <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-[2.2rem] opacity-30 group-hover:opacity-75 blur-lg transition duration-500" />
 
-      {/* Owner Badge & Controls */}
-      {isOwner && (
-        <div className="absolute top-4 right-4 z-20 flex gap-2">
-          <Badge className="bg-purple-600 text-white border-purple-400">Owner</Badge>
-          <Button
-            variant="destructive"
-            size="icon"
-            className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (window.confirm('คุณต้องการลบ Deck นี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
-                onDelete(deck.id);
-              }
-            }}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
+      {/* Main Card Content */}
+      <div className="relative h-full bg-slate-950/90 backdrop-blur-3xl rounded-[2rem] border border-white/10 p-5 flex flex-col overflow-hidden">
+
+        {/* Top Shine */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+
+        {/* Owner Badge & Controls */}
+        {isOwner && (
+          <div className="absolute top-4 right-4 z-20 flex gap-2">
+            <Badge className="bg-purple-600 text-white border-purple-400 shadow-lg shadow-purple-900/40">Owner</Badge>
+            <Button
+              variant="destructive"
+              size="icon"
+              className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ring-2 ring-red-500/20"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm('คุณต้องการลบ Deck นี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+                  onDelete(deck.id);
+                }
+              }}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+
+        {/* Header Section */}
+        <div className="relative z-10 flex gap-4 items-start mb-4">
+          {/* Deck Icon Box */}
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.3)] shrink-0">
+            <BookOpen className="w-7 h-7 text-cyan-400" />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            {/* Category Badge */}
+            {(deck.category) && (
+              <Badge className="mb-1.5 bg-white/10 text-white/80 hover:bg-white/20 border-0 text-[10px] px-2 py-0.5 pointer-events-none data-[category='English']:bg-blue-500/20 data-[category='English']:text-blue-300" data-category={deck.category}>
+                {deck.category}
+              </Badge>
+            )}
+            <h3 className="text-xl font-black text-white leading-tight line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-cyan-400 group-hover:to-blue-400 transition-all duration-300">
+              {deck.name}
+            </h3>
+          </div>
         </div>
-      )}
 
-      <div className="p-6 relative z-10 flex flex-col h-full">
-        {/* Creator Info */}
-        <div className="flex items-center gap-3 mb-4">
-          <Avatar className="w-8 h-8 border border-white/20">
+        {/* Creator Info - Cute Pill */}
+        <div className="flex items-center gap-2 mb-4 bg-white/5 w-fit pr-3 rounded-full border border-white/5">
+          <Avatar className="w-6 h-6 border-2 border-slate-900">
             <AvatarImage src={deck.creator_avatar || undefined} />
-            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-xs">
+            <AvatarFallback className="bg-gradient-to-br from-cyan-500 to-blue-500 text-[9px] text-white">
               {deck.creator_nickname?.charAt(0)?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-white/80 font-medium truncate">
-              {deck.creator_nickname || 'Anonymous'}
-            </p>
-          </div>
-          {!isOwner && (
-            <Badge className="bg-white/10 text-white/60 border-white/20 text-xs">
-              🌍 Public
-            </Badge>
-          )}
+          <span className="text-xs font-medium text-slate-300">
+            {deck.creator_nickname || 'Anonymous'}
+          </span>
         </div>
-
-        {/* Deck Name */}
-        <h3 className="text-xl font-black text-white mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
-          {deck.name}
-        </h3>
 
         {/* Description */}
-        <p className="text-sm text-white/60 line-clamp-2 mb-4 leading-relaxed">
-          {deck.description || 'No description'}
+        <p className="text-sm text-slate-400 mb-5 line-clamp-2 min-h-[2.5em] leading-relaxed">
+          {deck.description || 'No description provided.'}
         </p>
 
-        {/* Categories & Tags */}
-        <div className="flex-1">
-          {(deck.category || (deck.tags && deck.tags.length > 0)) && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {deck.category && (
-                <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-xs">
-                  {deck.category}
-                </Badge>
-              )}
-              {deck.tags?.slice(0, 2).map(tag => (
-                <Badge key={tag} className="bg-white/5 text-white/50 border-white/10 text-xs">
-                  #{tag}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Stats */}
-        <div className="flex items-center gap-3 text-sm mb-4 mt-auto">
-          <div className="flex items-center gap-1.5 text-white/60 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-            <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="font-medium">{deck.total_flashcards}</span>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-2 mb-5">
+          <div className="bg-slate-900/50 rounded-xl p-2 border border-white/5 flex flex-col items-center justify-center">
+            <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Vocab</span>
+            <span className="text-lg font-bold text-cyan-400">{deck.total_flashcards}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-white/60 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-            <Users className="w-3.5 h-3.5 text-pink-400" />
-            <span className="font-medium">{deck.clone_count}</span>
+          <div className="bg-slate-900/50 rounded-xl p-2 border border-white/5 flex flex-col items-center justify-center">
+            <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Clones</span>
+            <span className="text-lg font-bold text-pink-400 flex items-center gap-1">
+              <Users className="w-3 h-3" /> {deck.clone_count}
+            </span>
           </div>
         </div>
 
+        {/* Tags */}
+        <div className="flex-1 flex flex-wrap gap-1.5 mb-5 content-start">
+          {deck.tags?.slice(0, 3).map(tag => (
+            <span key={tag} className="text-[11px] font-medium text-slate-400 px-2 py-1 rounded-md bg-white/5 border border-white/5 hover:border-white/20 transition-colors">
+              #{tag}
+            </span>
+          ))}
+        </div>
 
-        {/* Clone Button (Disable for owner?) -> Normally owner might want to clone too, but maybe edit is better. For now keep Clone. 
-            User req: "delete or edit". I provided Delete. Edit is implied as Metadata edit or Manage. 
-            Let's keep Clone for everyone.
-        */}
+        {/* Action Button */}
         <Button
           onClick={onClone}
-          disabled={isOwner} // Disable clone for owner? Or maybe allow. User didn't specify. I'll disable to avoid confusion.
-          className={`w-full gap-2 rounded-xl font-bold shadow-[0_4px_15px_rgba(168,85,247,0.4)] border-none h-11 relative overflow-hidden group/btn ${isOwner ? 'bg-slate-700 text-slate-400 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white'}`}
+          disabled={isOwner}
+          className={`w-full h-11 rounded-xl font-bold shadow-lg transition-all duration-300 ${isOwner ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5' : 'bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 hover:from-cyan-500 hover:via-blue-500 hover:to-purple-500 text-white shadow-blue-900/20 group-hover:shadow-blue-500/40'}`}
         >
           {isOwner ? (
-            <span className="relative z-10 flex items-center gap-2">
-              <Check className="w-4 h-4" />
-              คุณเป็นเจ้าของ
-            </span>
+            <>
+              <Check className="w-4 h-4 mr-2" /> Owned
+            </>
           ) : (
             <>
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
-              <span className="relative z-10 flex items-center gap-2">
-                <Copy className="w-4 h-4" />
-                โคลน Deck นี้
-              </span>
+              <Copy className="w-4 h-4 mr-2" /> Clone Deck
             </>
           )}
         </Button>

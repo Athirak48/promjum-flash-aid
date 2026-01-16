@@ -155,7 +155,7 @@ export default function LearningSessionPage() {
             const initAssessment = async () => {
                 const newAssessment = await createAssessment({
                     goal_id: activeGoalId,
-                    assessment_type: 'pretest',
+                    assessment_type: 'pre-test',
                     test_size_percentage: 100,
                     total_words: selectedVocab.length
                 });

@@ -668,7 +668,8 @@ export default function FlashcardsPage() {
         'pronoun': 'Pronoun',
         'interjection': 'Interjection',
         'article': 'Article',
-        'phrase': 'Phrase'
+        'phrase': 'Phrase',
+        'phrasal verb': 'Phrasal Verb'
       };
       return mapping[normalized] || 'Noun'; // Default to Noun if not found
     };
@@ -891,243 +892,246 @@ export default function FlashcardsPage() {
               <div className="flex flex-wrap gap-3">
                 {/* Search */}
                 <div className="relative w-full md:w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                   <Input
                     placeholder={t('flashcards.search')}
-                    className="pl-10"
+                    className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10 focus:border-purple-500/50 rounded-xl"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
 
-                {/* Create Flashcard Button */}
-                <Dialog open={showCreateFlashcardDialog} onOpenChange={setShowCreateFlashcardDialog}>
-                  <DialogTrigger asChild>
-                    <Button
-                      className="w-full md:w-auto bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-semibold shadow-lg hover:shadow-cyan-500/25"
-                      onClick={() => trackButtonClick('Create Flashcard', 'flashcards')}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t('flashcards.createFlashcard')}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-4 rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
-                    <DialogHeader>
-                      <DialogTitle className="text-xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">สร้างแฟลชการ์ดใหม่</DialogTitle>
-                      <DialogDescription className="text-white/50 text-sm">
-                        สร้างชุดคำศัพท์ใหม่สำหรับการเรียนรู้ของคุณ
-                      </DialogDescription>
-                    </DialogHeader>
+                {/* Buttons Container - Grid on mobile, Flex on desktop */}
+                <div className="grid grid-cols-2 md:flex gap-2 w-full md:w-auto">
+                  <Dialog open={showCreateFlashcardDialog} onOpenChange={setShowCreateFlashcardDialog}>
+                    <DialogTrigger asChild>
+                      <Button
+                        className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold shadow-lg hover:shadow-purple-500/25 rounded-xl border-0"
+                        onClick={() => trackButtonClick('Create Flashcard', 'flashcards')}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {t('flashcards.createFlashcard')}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-4 rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
+                      <DialogHeader>
+                        <DialogTitle className="text-xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">สร้างแฟลชการ์ดใหม่</DialogTitle>
+                        <DialogDescription className="text-white/50 text-sm">
+                          สร้างชุดคำศัพท์ใหม่สำหรับการเรียนรู้ของคุณ
+                        </DialogDescription>
+                      </DialogHeader>
 
-                    <div className="space-y-3 flex-1 flex flex-col min-h-0 mt-3">
-                      {/* Title + Folder Row - Inline Layout */}
-                      <div className="flex flex-col md:flex-row gap-2 md:gap-3">
-                        {/* Flashcard Set Title */}
-                        <div className="flex-1">
-                          <Label htmlFor="flashcard-set-title" className="text-sm font-medium mb-1.5 block text-slate-200">
-                            ชื่อชุดแฟลชการ์ด *
-                          </Label>
-                          <Input
-                            id="flashcard-set-title"
-                            placeholder="เช่น คำศัพท์ภาษาอังกฤษพื้นฐาน"
-                            value={newFlashcardSetTitle}
-                            onChange={(e) => setNewFlashcardSetTitle(e.target.value)}
-                            className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10 focus:border-purple-500/50"
-                          />
-                        </div>
+                      <div className="space-y-3 flex-1 flex flex-col min-h-0 mt-3">
+                        {/* Title + Folder Row - Inline Layout */}
+                        <div className="flex flex-col md:flex-row gap-2 md:gap-3">
+                          {/* Flashcard Set Title */}
+                          <div className="flex-1">
+                            <Label htmlFor="flashcard-set-title" className="text-sm font-medium mb-1.5 block text-slate-200">
+                              ชื่อชุดแฟลชการ์ด *
+                            </Label>
+                            <Input
+                              id="flashcard-set-title"
+                              placeholder="เช่น คำศัพท์ภาษาอังกฤษพื้นฐาน"
+                              value={newFlashcardSetTitle}
+                              onChange={(e) => setNewFlashcardSetTitle(e.target.value)}
+                              className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10 focus:border-purple-500/50"
+                            />
+                          </div>
 
-                        {/* Folder Selection */}
-                        <div className="md:w-[280px]">
-                          <Label className="text-sm font-medium mb-1.5 block text-slate-200">โฟลเดอร์</Label>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="icon" onClick={() => setShowNewFolderDialog(true)} className="h-10 w-10 flex-shrink-0 bg-white/5 border-white/10 hover:bg-white/10 hover:text-white" title="สร้างโฟลเดอร์ใหม่">
-                              <FolderPlus className="h-4 w-4" />
-                            </Button>
-                            <Select value={selectedFolderForFlashcard} onValueChange={setSelectedFolderForFlashcard}>
-                              <SelectTrigger className="flex-1 bg-white/5 border-white/10 text-white focus:ring-purple-500/50">
-                                <SelectValue placeholder="เลือกโฟลเดอร์" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">ไม่เลือกโฟลเดอร์</SelectItem>
-                                {folders.map(folder => (
-                                  <SelectItem key={folder.id} value={folder.id}>
-                                    <div className="flex items-center gap-2">
-                                      <Folder className="h-4 w-4" />
-                                      {folder.title}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          {/* Folder Selection */}
+                          <div className="md:w-[280px]">
+                            <Label className="text-sm font-medium mb-1.5 block text-slate-200">โฟลเดอร์</Label>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="icon" onClick={() => setShowNewFolderDialog(true)} className="h-10 w-10 flex-shrink-0 bg-white/5 border-white/10 hover:bg-white/10 hover:text-white" title="สร้างโฟลเดอร์ใหม่">
+                                <FolderPlus className="h-4 w-4" />
+                              </Button>
+                              <Select value={selectedFolderForFlashcard} onValueChange={setSelectedFolderForFlashcard}>
+                                <SelectTrigger className="flex-1 bg-white/5 border-white/10 text-white focus:ring-purple-500/50">
+                                  <SelectValue placeholder="เลือกโฟลเดอร์" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white border-slate-200 text-slate-900">
+                                  <SelectItem value="none" className="focus:bg-slate-100 focus:text-slate-900">ไม่เลือกโฟลเดอร์</SelectItem>
+                                  {folders.map(folder => (
+                                    <SelectItem key={folder.id} value={folder.id} className="focus:bg-slate-100 focus:text-slate-900">
+                                      <div className="flex items-center gap-2">
+                                        <Folder className="h-4 w-4 text-slate-500" />
+                                        {folder.title}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Bulk Import Section */}
-                      <div className="border-t border-white/10 pt-2">
-                        <Label className="text-sm font-medium mb-1 block text-slate-200">
-                          📝 นำเข้าหลายคำพร้อมกัน (Bulk Import)
-                        </Label>
-                        <p className="text-xs text-white/40 mb-1">
-                          วางข้อมูลในรูปแบบ: <code className="text-cyan-400 bg-white/10 px-1 rounded">คำศัพท์,ชนิด,ความหมาย</code> (แต่ละบรรทัด)
-                        </p>
-                        <textarea
-                          value={bulkImportText}
-                          onChange={(e) => setBulkImportText(e.target.value)}
-                          placeholder="ตัวอย่าง: cat,Noun,แมว"
-                          className="w-full h-16 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 focus:bg-white/10 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 resize-none font-mono text-sm"
-                        />
-                        <div className="flex justify-end mt-1">
-                          <Button
-                            onClick={handleBulkImport}
-                            disabled={!bulkImportText.trim()}
-                            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            นำเข้าข้อมูล
-                          </Button>
+                        {/* Bulk Import Section */}
+                        <div className="border-t border-white/10 pt-2">
+                          <Label className="text-sm font-medium mb-1 block text-slate-200">
+                            📝 นำเข้าหลายคำพร้อมกัน (Bulk Import)
+                          </Label>
+                          <p className="text-xs text-white/40 mb-1">
+                            วางข้อมูลในรูปแบบ: <code className="text-cyan-400 bg-white/10 px-1 rounded">คำศัพท์,ชนิด,ความหมาย</code> (แต่ละบรรทัด)
+                          </p>
+                          <textarea
+                            value={bulkImportText}
+                            onChange={(e) => setBulkImportText(e.target.value)}
+                            placeholder="ตัวอย่าง: cat,Noun,แมว"
+                            className="w-full h-16 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 focus:bg-white/10 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 resize-none font-mono text-sm"
+                          />
+                          <div className="flex justify-end mt-1">
+                            <Button
+                              onClick={handleBulkImport}
+                              disabled={!bulkImportText.trim()}
+                              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              นำเข้าข้อมูล
+                            </Button>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Section Header */}
-                      <div className="flex items-center justify-between border-t border-white/10 pt-2">
-                        <Label className="text-sm font-semibold text-white/80">รายการคำศัพท์</Label>
-                        <span className="text-xs font-bold text-white bg-white/10 border border-white/10 px-3 py-1 rounded-full">{flashcardRows.length} ใบ</span>
-                      </div>
+                        {/* Section Header */}
+                        <div className="flex items-center justify-between border-t border-white/10 pt-2">
+                          <Label className="text-sm font-semibold text-white/80">รายการคำศัพท์</Label>
+                          <span className="text-xs font-bold text-white bg-white/10 border border-white/10 px-3 py-1 rounded-full">{flashcardRows.length} ใบ</span>
+                        </div>
 
-                      {/* Flashcard Rows - Expanded Area - With Custom Scrollbar */}
-                      <div ref={flashcardScrollRef} className="space-y-2 flex-1 overflow-y-auto pr-2 min-h-[150px] max-h-[22vh] custom-scrollbar">
-                        {flashcardRows.map((row, index) => (
-                          <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border border-white/20 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-300 relative overflow-hidden">
-                            {/* Decorative gradient blob */}
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                            <div className="flex items-center justify-between w-full sm:w-auto sm:justify-center relative z-10">
-                              <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-purple-500/30 text-white font-bold text-sm sm:text-base">
-                                {index + 1}
+                        {/* Flashcard Rows - Expanded Area - With Custom Scrollbar */}
+                        <div ref={flashcardScrollRef} className="space-y-2 flex-1 overflow-y-auto pr-2 min-h-[150px] max-h-[22vh] custom-scrollbar">
+                          {flashcardRows.map((row, index) => (
+                            <div key={row.id} className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border border-white/20 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-300 relative overflow-hidden">
+                              {/* Decorative gradient blob */}
+                              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                              <div className="flex items-center justify-between w-full sm:w-auto sm:justify-center relative z-10">
+                                <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-purple-500/30 text-white font-bold text-sm sm:text-base">
+                                  {index + 1}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="sm:hidden text-white/40 hover:text-red-400 hover:bg-red-400/10 h-8 w-8 rounded-full"
+                                  onClick={() => handleRemoveFlashcardRow(row.id)}
+                                  disabled={flashcardRows.length === 1}
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
                               </div>
+
+                              <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-4 w-full items-center">
+                                <Input
+                                  value={row.front}
+                                  onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
+                                  placeholder="คำศัพท์ (ด้านหน้า)"
+                                  className="bg-white/10 border-white/10 text-white placeholder:text-white/40 focus:bg-white/20 focus:border-purple-400/50 focus:ring-2 focus:ring-purple-500/20 h-11 rounded-xl transition-all"
+                                />
+
+                                {/* Part of Speech Dropdown */}
+                                <Select
+                                  value={row.partOfSpeech}
+                                  onValueChange={(value) => handleFlashcardTextChange(row.id, 'partOfSpeech', value)}
+                                >
+                                  <SelectTrigger className="w-full md:w-[140px] h-11 rounded-xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/20 text-pink-100 focus:ring-pink-500/30 hover:bg-pink-500/20 transition-all">
+                                    <SelectValue placeholder="Type" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-white border-slate-200 text-slate-900">
+                                    <SelectItem value="Noun" className="focus:bg-slate-100 focus:text-slate-900">Noun</SelectItem>
+                                    <SelectItem value="Verb" className="focus:bg-slate-100 focus:text-slate-900">Verb</SelectItem>
+                                    <SelectItem value="Adjective" className="focus:bg-slate-100 focus:text-slate-900">Adjective</SelectItem>
+                                    <SelectItem value="Adverb" className="focus:bg-slate-100 focus:text-slate-900">Adverb</SelectItem>
+                                    <SelectItem value="Preposition" className="focus:bg-slate-100 focus:text-slate-900">Preposition</SelectItem>
+                                    <SelectItem value="Conjunction" className="focus:bg-slate-100 focus:text-slate-900">Conjunction</SelectItem>
+                                    <SelectItem value="Pronoun" className="focus:bg-slate-100 focus:text-slate-900">Pronoun</SelectItem>
+                                    <SelectItem value="Interjection" className="focus:bg-slate-100 focus:text-slate-900">Interjection</SelectItem>
+                                    <SelectItem value="Article" className="focus:bg-slate-100 focus:text-slate-900">Article</SelectItem>
+                                    <SelectItem value="Phrase" className="focus:bg-slate-100 focus:text-slate-900">Phrase</SelectItem>
+                                    <SelectItem value="Phrasal Verb" className="focus:bg-slate-100 focus:text-slate-900">Phrasal Verb</SelectItem>
+                                  </SelectContent>
+                                </Select>
+
+                                <Input
+                                  value={row.back}
+                                  onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
+                                  placeholder="ความหมาย (ด้านหลัง)"
+                                  className="bg-white/10 border-white/10 text-white placeholder:text-white/40 focus:bg-white/20 focus:border-pink-400/50 focus:ring-2 focus:ring-pink-500/20 h-11 rounded-xl transition-all"
+                                />
+                              </div>
+
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="sm:hidden text-white/40 hover:text-red-400 hover:bg-red-400/10 h-8 w-8 rounded-full"
+                                className="hidden sm:flex text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-9 w-9 rounded-full opacity-0 group-hover:opacity-100 transition-all"
                                 onClick={() => handleRemoveFlashcardRow(row.id)}
                                 disabled={flashcardRows.length === 1}
                               >
                                 <Trash className="h-4 w-4" />
                               </Button>
                             </div>
+                          ))}
 
-                            <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-4 w-full items-center">
-                              <Input
-                                value={row.front}
-                                onChange={(e) => handleFlashcardTextChange(row.id, 'front', e.target.value)}
-                                placeholder="คำศัพท์ (ด้านหน้า)"
-                                className="bg-white/10 border-white/10 text-white placeholder:text-white/40 focus:bg-white/20 focus:border-purple-400/50 focus:ring-2 focus:ring-purple-500/20 h-11 rounded-xl transition-all"
-                              />
-
-                              {/* Part of Speech Dropdown */}
-                              <Select
-                                value={row.partOfSpeech}
-                                onValueChange={(value) => handleFlashcardTextChange(row.id, 'partOfSpeech', value)}
-                              >
-                                <SelectTrigger className="w-full md:w-[140px] h-11 rounded-xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/20 text-pink-100 focus:ring-pink-500/30 hover:bg-pink-500/20 transition-all">
-                                  <SelectValue placeholder="Type" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-slate-900 border-white/10 text-white">
-                                  <SelectItem value="Noun" className="focus:bg-white/10">Noun</SelectItem>
-                                  <SelectItem value="Verb" className="focus:bg-white/10">Verb</SelectItem>
-                                  <SelectItem value="Adjective" className="focus:bg-white/10">Adjective</SelectItem>
-                                  <SelectItem value="Adverb" className="focus:bg-white/10">Adverb</SelectItem>
-                                  <SelectItem value="Preposition" className="focus:bg-white/10">Preposition</SelectItem>
-                                  <SelectItem value="Conjunction" className="focus:bg-white/10">Conjunction</SelectItem>
-                                  <SelectItem value="Pronoun" className="focus:bg-white/10">Pronoun</SelectItem>
-                                  <SelectItem value="Interjection" className="focus:bg-white/10">Interjection</SelectItem>
-                                  <SelectItem value="Article" className="focus:bg-white/10">Article</SelectItem>
-                                  <SelectItem value="Phrase" className="focus:bg-white/10">Phrase</SelectItem>
-                                </SelectContent>
-                              </Select>
-
-                              <Input
-                                value={row.back}
-                                onChange={(e) => handleFlashcardTextChange(row.id, 'back', e.target.value)}
-                                placeholder="ความหมาย (ด้านหลัง)"
-                                className="bg-white/10 border-white/10 text-white placeholder:text-white/40 focus:bg-white/20 focus:border-pink-400/50 focus:ring-2 focus:ring-pink-500/20 h-11 rounded-xl transition-all"
-                              />
-                            </div>
-
+                          {/* Add Row Button - Inside Scroll Area */}
+                          <div className="flex justify-center py-4">
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              className="hidden sm:flex text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 h-9 w-9 rounded-full opacity-0 group-hover:opacity-100 transition-all"
-                              onClick={() => handleRemoveFlashcardRow(row.id)}
-                              disabled={flashcardRows.length === 1}
+                              variant="outline"
+                              onClick={handleAddFlashcardRow}
+                              className="text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300 rounded-full px-6"
                             >
-                              <Trash className="h-4 w-4" />
+                              <Plus className="h-4 w-4 mr-2" />
+                              เพิ่มแถว
                             </Button>
                           </div>
-                        ))}
+                        </div>
+                      </div>
 
-                        {/* Add Row Button - Inside Scroll Area */}
-                        <div className="flex justify-center py-4">
-                          <Button
-                            variant="outline"
-                            onClick={handleAddFlashcardRow}
-                            className="text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300 rounded-full px-6"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            เพิ่มแถว
+                      {/* Footer - Fixed at bottom */}
+                      <div className="flex items-center justify-between pt-4 border-t mt-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => setShowCreateFlashcardDialog(false)}
+                          className="text-muted-foreground"
+                        >
+                          ยกเลิก
+                        </Button>
+                        <Button
+                          onClick={handleCreateFlashcards}
+                          className="bg-gradient-primary text-primary-foreground hover:shadow-glow px-6"
+                        >
+                          สร้างชุดแฟลชการ์ด
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Create Folder Button */}
+                  <Dialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full md:w-auto bg-white/5 hover:bg-white/10 border-white/10 text-white hover:text-white hover:border-white/20 rounded-xl backdrop-blur-sm">
+                        <FolderPlus className="h-4 w-4 mr-2" />
+                        {t('flashcards.createFolder')}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
+                      <DialogHeader>
+                        <DialogTitle className="text-white">{t('flashcards.createFolder')}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <Input
+                          placeholder={t('flashcards.enterFolderName')}
+                          value={newFolderName}
+                          onChange={e => setNewFolderName(e.target.value)}
+                        />
+                        <div className="flex gap-2">
+                          <Button onClick={handleCreateFolder} className="flex-1">
+                            {t('flashcards.create')}
+                          </Button>
+                          <Button variant="outline" onClick={() => setShowNewFolderDialog(false)}>
+                            {t('flashcards.cancel')}
                           </Button>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Footer - Fixed at bottom */}
-                    <div className="flex items-center justify-between pt-4 border-t mt-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => setShowCreateFlashcardDialog(false)}
-                        className="text-muted-foreground"
-                      >
-                        ยกเลิก
-                      </Button>
-                      <Button
-                        onClick={handleCreateFlashcards}
-                        className="bg-gradient-primary text-primary-foreground hover:shadow-glow px-6"
-                      >
-                        สร้างชุดแฟลชการ์ด
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Create Folder Button */}
-                <Dialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full md:w-auto">
-                      <FolderPlus className="h-4 w-4 mr-2" />
-                      {t('flashcards.createFolder')}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white" style={{ transform: 'translate(-50%, -50%)' }}>
-                    <DialogHeader>
-                      <DialogTitle className="text-white">{t('flashcards.createFolder')}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Input
-                        placeholder={t('flashcards.enterFolderName')}
-                        value={newFolderName}
-                        onChange={e => setNewFolderName(e.target.value)}
-                      />
-                      <div className="flex gap-2">
-                        <Button onClick={handleCreateFolder} className="flex-1">
-                          {t('flashcards.create')}
-                        </Button>
-                        <Button variant="outline" onClick={() => setShowNewFolderDialog(false)}>
-                          {t('flashcards.cancel')}
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </div>
 

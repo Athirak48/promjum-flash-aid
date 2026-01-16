@@ -12,6 +12,7 @@ import {
   getWordScrambleQuality,
   getNinjaSliceQuality,
   getHoneyCombQuality,
+  getGameScoreCap,
   combineSRSScore
 } from '@/utils/srsCalculator';
 
@@ -82,23 +83,25 @@ export function useSRSProgress() {
 
   /**
    * Update SRS for a flashcard with a quality score
+   * Added 'maxScore' parameter for Tiered SRS (Default 15 for safety, but callers should specify)
    */
   const updateFlashcardSRS = useCallback(async (
     flashcardId: string,
     qualityScore: number,
     isCorrect: boolean,
-    isUserFlashcard: boolean = false
+    isUserFlashcard: boolean = false,
+    maxScore: number = 15 // NEW: Safety Cap based on Game Tier
   ) => {
     const progress = await getOrCreateProgress(flashcardId, isUserFlashcard);
     if (!progress) return null;
 
-    // Calculate new SRS values
+    // Calculate new SRS values with CAP
     const srsResult = calculateSRS({
       easinessFactor: progress.easiness_factor ?? 2.5,
       intervalDays: progress.interval_days ?? 1,
       srsLevel: progress.srs_level ?? 0,
       srsScore: progress.srs_score
-    }, qualityScore);
+    }, qualityScore, undefined, maxScore);
 
     // Update the record
     const { data, error } = await supabase
@@ -127,9 +130,7 @@ export function useSRSProgress() {
 
   /**
    * Update SRS from Flashcard Review (Swipe mode)
-   * Q=3: Correct first attempt ≤7s
-   * Q=1: Correct first attempt >7s
-   * Q=0: Wrong or subsequent attempts
+   * Tier 2: Recall -> Cap 15
    */
   const updateFromFlashcardReview = useCallback(async (
     flashcardId: string,
@@ -139,14 +140,13 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getFlashcardReviewQuality(isCorrect, attemptCount, timeTakenSeconds);
-    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
+    const maxScore = getGameScoreCap('flashcard');
+    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard, maxScore);
   }, [updateFlashcardSRS]);
 
   /**
    * Update SRS from Listen & Choose game
-   * Q=2: Correct first listen
-   * Q=1: Replay needed
-   * Q=0: Wrong
+   * Tier 1: Recognition -> Cap 10
    */
   const updateFromListenChoose = useCallback(async (
     flashcardId: string,
@@ -155,14 +155,13 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getListenChooseQuality(isCorrect, playCount);
-    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
+    const maxScore = getGameScoreCap('listen-choose'); // 10
+    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard, maxScore);
   }, [updateFlashcardSRS]);
 
   /**
    * Update SRS from Hangman game
-   * Q=2: Perfect (0 wrong)
-   * Q=1: ≤3 wrong guesses
-   * Q=0: Lost or >5 wrong
+   * Tier 2: Recall -> Cap 15
    */
   const updateFromHangman = useCallback(async (
     flashcardId: string,
@@ -171,15 +170,13 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getHangmanQuality(isComplete, wrongGuesses);
-    return updateFlashcardSRS(flashcardId, qualityScore, isComplete, isUserFlashcard);
+    const maxScore = getGameScoreCap('hangman'); // 15
+    return updateFlashcardSRS(flashcardId, qualityScore, isComplete, isUserFlashcard, maxScore);
   }, [updateFlashcardSRS]);
 
   /**
    * Update SRS from Vocab Blinder game
-   * Q=3: Correct <3s
-   * Q=2: Correct 3-8s
-   * Q=1: Correct >8s
-   * Q=0: Wrong
+   * Tier 1: Recognition -> Cap 10
    */
   const updateFromVocabBlinder = useCallback(async (
     flashcardId: string,
@@ -188,15 +185,13 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getVocabBlinderQuality(isCorrect, timeSeconds);
-    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
+    const maxScore = getGameScoreCap('vocab-blinder'); // 10
+    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard, maxScore);
   }, [updateFlashcardSRS]);
 
   /**
    * Update SRS from Quiz game
-   * Q=3: Correct <5s
-   * Q=2: Correct 5-15s
-   * Q=1: Correct >15s
-   * Q=0: Wrong
+   * Tier 1: Recognition -> Cap 10
    */
   const updateFromQuiz = useCallback(async (
     flashcardId: string,
@@ -205,13 +200,13 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getQuizGameQuality(isCorrect, timeSeconds);
-    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
+    const maxScore = getGameScoreCap('quiz'); // 10
+    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard, maxScore);
   }, [updateFlashcardSRS]);
 
   /**
    * Update SRS from Matching game
-   * Q=2: First try correct
-   * Q=0: Wrong or not first try
+   * Tier 1: Recognition -> Cap 10
    */
   const updateFromMatching = useCallback(async (
     flashcardId: string,
@@ -220,15 +215,13 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getMatchingGameQuality(isCorrect, isFirstTry);
-    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
+    const maxScore = getGameScoreCap('matching'); // 10
+    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard, maxScore);
   }, [updateFlashcardSRS]);
 
   /**
    * Update SRS from Word Search game
-   * Q=3: Found <10 seconds
-   * Q=2: Found 10-30 seconds
-   * Q=1: Found >30 seconds
-   * Q=0: Not found
+   * Tier 1: Recognition -> Cap 10
    */
   const updateFromWordSearch = useCallback(async (
     flashcardId: string,
@@ -237,15 +230,13 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getWordSearchQuality(isFound, timeSeconds);
-    return updateFlashcardSRS(flashcardId, qualityScore, isFound, isUserFlashcard);
+    const maxScore = getGameScoreCap('wordsearch'); // 10
+    return updateFlashcardSRS(flashcardId, qualityScore, isFound, isUserFlashcard, maxScore);
   }, [updateFlashcardSRS]);
 
   /**
    * Update SRS from Word Scramble game
-   * Q=3: No hints used
-   * Q=2: 1-2 hints
-   * Q=1: >2 hints
-   * Q=0: Failed
+   * Tier 2: Recall -> Cap 15
    */
   const updateFromWordScramble = useCallback(async (
     flashcardId: string,
@@ -254,14 +245,13 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getWordScrambleQuality(isComplete, hintsUsed);
-    return updateFlashcardSRS(flashcardId, qualityScore, isComplete, isUserFlashcard);
+    const maxScore = getGameScoreCap('scramble'); // 15
+    return updateFlashcardSRS(flashcardId, qualityScore, isComplete, isUserFlashcard, maxScore);
   }, [updateFlashcardSRS]);
 
   /**
    * Update SRS from Ninja Slice game
-   * Q=3: Correct first try
-   * Q=1: Correct but had mistakes
-   * Q=0: Wrong
+   * Tier 1: Recognition -> Cap 10
    */
   const updateFromNinjaSlice = useCallback(async (
     flashcardId: string,
@@ -270,15 +260,13 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getNinjaSliceQuality(isCorrect, wasFirstTry);
-    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
+    const maxScore = getGameScoreCap('ninja'); // 10
+    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard, maxScore);
   }, [updateFlashcardSRS]);
 
   /**
    * Update SRS from HoneyComb game
-   * Q=3: First attempt
-   * Q=2: 2-3 attempts
-   * Q=1: >3 attempts
-   * Q=0: Wrong
+   * Tier 2: Recall -> Cap 15
    */
   const updateFromHoneyComb = useCallback(async (
     flashcardId: string,
@@ -287,11 +275,15 @@ export function useSRSProgress() {
     isUserFlashcard: boolean = false
   ) => {
     const qualityScore = getHoneyCombQuality(isCorrect, attemptsNeeded);
-    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard);
+    const maxScore = getGameScoreCap('honeycomb'); // 15
+    return updateFlashcardSRS(flashcardId, qualityScore, isCorrect, isUserFlashcard, maxScore);
   }, [updateFlashcardSRS]);
 
   /**
    * Batch update SRS for multiple flashcards
+   * Note: Batch updates usually only happen in migrations or simple updates.
+   * Assuming default cap 15 unless specified?
+   * Actually, let's keep it 15 (Safe default).
    */
   const updateBatchSRS = useCallback(async (results: FlashcardSRSResult[]) => {
     const updates = results.map(result =>

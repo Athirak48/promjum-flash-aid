@@ -67,6 +67,7 @@ export interface AssessmentResults {
 export interface WeakWord {
     flashcard_id: string;
     word: string;
+    translation?: string;
     times_wrong: number;
     last_wrong_at: string;
     difficulty_score: number; // 0-1, higher = more difficult

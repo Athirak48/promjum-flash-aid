@@ -10,6 +10,7 @@ interface PostTestQuestion {
     id: string;
     front_text: string;
     back_text: string;
+    part_of_speech?: string;
     options: string[];
     correctAnswer: string;
 }
@@ -21,6 +22,7 @@ interface PostTestProps {
         total: number;
         wrongWords: Array<{ front: string; back: string; correct: string }>;
         score: number; // Percentage
+        answers: Array<{ questionId: string; isCorrect: boolean }>; // NEW: For dual-score calculation
     }) => void;
     onCancel: () => void;
     isRetestMode: boolean; // Re-test pre-test set vs Test all words
@@ -38,7 +40,7 @@ export default function PostTestComponent({
     const [isCorrect, setIsCorrect] = useState(false);
     const [results, setResults] = useState<{ questionId: string; correct: boolean; userAnswer: string }[]>([]);
     const [showBreak, setShowBreak] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(10); // 10 seconds for final test
+    const [timeLeft, setTimeLeft] = useState(5); // 5 seconds for final test
 
     // Pagination / Set Logic
     const [currentSet, setCurrentSet] = useState(1);
@@ -46,6 +48,16 @@ export default function PostTestComponent({
 
     const currentQuestion = questions[currentIndex];
     const progressPercent = ((currentIndex + 1) / questions.length) * 100;
+
+    // Auto-advance timer ref
+    useEffect(() => {
+        if (showFeedback) {
+            const timer = setTimeout(() => {
+                handleNext();
+            }, 500); // 0.5s delay (snappy feedback)
+            return () => clearTimeout(timer);
+        }
+    }, [showFeedback]);
 
     // Timer countdown
     useEffect(() => {
@@ -55,7 +67,7 @@ export default function PostTestComponent({
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     handleTimeout();
-                    return 10;
+                    return 5;
                 }
                 return prev - 1;
             });
@@ -84,60 +96,61 @@ export default function PostTestComponent({
         }]);
 
         // Reset timer during feedback
-        setTimeLeft(10);
+        setTimeLeft(5);
     };
 
     const handleNext = () => {
-        setShowFeedback(false);
         setSelectedAnswer(null);
+        setShowFeedback(false);
+        setIsCorrect(false);
 
-        // Check for break after every 20 questions
-        if ((currentIndex + 1) % 20 === 0 && currentIndex + 1 < questions.length) {
-            setShowBreak(true);
-        } else if (currentIndex + 1 >= questions.length) {
-            finishTest();
+        const nextIndex = currentIndex + 1;
+        const questionsPerSet = 20;
+
+        if (nextIndex < questions.length) {
+            // Check if it's the end of a set (and not the very end of all questions)
+            if (nextIndex > 0 && nextIndex % questionsPerSet === 0) {
+                setShowBreak(true);
+                setCurrentSet(prev => prev + 1);
+            } else {
+                setCurrentIndex(nextIndex);
+            }
         } else {
-            setCurrentIndex(currentIndex + 1);
+            // All questions completed
+            const correctCount = results.filter(r => r.correct).length;
+            const totalCount = results.length;
+            const score = (correctCount / totalCount) * 100;
+
+            const wrongWords = results
+                .filter(r => !r.correct)
+                .map(r => {
+                    const originalQuestion = questions.find(q => q.id === r.questionId);
+                    return {
+                        front: originalQuestion?.front_text || 'N/A',
+                        back: originalQuestion?.back_text || 'N/A',
+                        correct: originalQuestion?.correctAnswer || 'N/A'
+                    };
+                });
+
+            onComplete({
+                correct: correctCount,
+                total: totalCount,
+                wrongWords,
+                score,
+                answers: results.map(r => ({ questionId: r.questionId, isCorrect: r.correct }))
+            });
         }
     };
 
     const handleContinueAfterBreak = () => {
         setShowBreak(false);
-        setCurrentSet(currentSet + 1);
-        setCurrentIndex(currentIndex + 1);
-    };
-
-    const finishTest = () => {
-        const correctCount = results.filter(r => r.correct).length;
-        const score = Math.round((correctCount / results.length) * 100);
-
-        const wrongWords = results
-            .filter(r => !r.correct)
-            .map(r => {
-                const q = questions.find(q => q.id === r.questionId);
-                return {
-                    front: q?.front_text || '',
-                    back: r.userAnswer,
-                    correct: q?.back_text || ''
-                };
-            });
-
-        onComplete({
-            correct: correctCount,
-            total: results.length,
-            wrongWords,
-            score
-        });
+        setCurrentIndex(prev => prev + 1); // Move to the first question of the next set
     };
 
     if (!currentQuestion) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <Card className="w-full max-w-md">
-                    <CardContent className="p-6">
-                        <p className="text-center text-muted-foreground">Loading questions...</p>
-                    </CardContent>
-                </Card>
+            <div className="flex items-center justify-center min-h-screen bg-[#050505] text-white">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
             </div>
         );
     }
@@ -145,34 +158,37 @@ export default function PostTestComponent({
     // Break Screen
     if (showBreak) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
+            <div className="flex items-center justify-center min-h-screen bg-[#050505] relative overflow-hidden font-sans">
+                {/* Background Effects */}
+                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 blur-[100px] rounded-full pointer-events-none" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
+
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="w-full max-w-md"
+                    className="w-full max-w-md relative z-10"
                 >
-                    <Card className="border-2 border-purple-200 dark:border-purple-800">
+                    <Card className="border-white/10 bg-[#0a0a0b]/80 backdrop-blur-2xl shadow-2xl">
                         <CardHeader className="text-center">
-                            <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30">
-                                <Trophy className="h-8 w-8 text-white" />
+                            <div className="mx-auto mb-6 w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-[0_0_30px_-5px_rgba(147,51,234,0.5)]">
+                                <Trophy className="h-10 w-10 text-white" />
                             </div>
-                            <CardTitle className="text-2xl">Set {currentSet} Completed! 🎯</CardTitle>
+                            <CardTitle className="text-3xl font-bold text-white mb-2">Set {currentSet} Completed! 🎯</CardTitle>
+                            <p className="text-slate-400">Rest your eyes for a moment...</p>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <p className="text-center text-muted-foreground">
-                                You've completed {currentIndex + 1} questions.
-                            </p>
-                            <p className="text-center">
-                                <span className="text-3xl font-bold text-purple-600">
+                        <CardContent className="space-y-6">
+                            <div className="flex justify-center items-end gap-2 my-4">
+                                <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
                                     {results.filter(r => r.correct).length}
                                 </span>
-                                <span className="text-muted-foreground"> / {results.length} correct so far</span>
-                            </p>
+                                <span className="text-lg text-slate-500 font-medium mb-2">/ {results.length} Correct</span>
+                            </div>
+
                             <Button
                                 onClick={handleContinueAfterBreak}
-                                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 h-12 text-lg font-bold"
+                                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white h-14 text-xl font-bold rounded-xl shadow-lg shadow-purple-900/40 hover:shadow-purple-500/20 transition-all hover:scale-[1.02]"
                             >
-                                Continue to Set {currentSet + 1}
+                                Continue Next Set 🚀
                             </Button>
                         </CardContent>
                     </Card>
@@ -182,153 +198,147 @@ export default function PostTestComponent({
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 p-6">
-            <div className="max-w-3xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <Trophy className="h-6 w-6 text-purple-600" />
-                            Post-test - Final Exam
-                        </h1>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs px-2 py-1 rounded-md border border-purple-200 dark:border-purple-800 font-medium">
-                                Set {currentSet} of {totalSets}
-                            </span>
-                            <span className="text-slate-400 text-sm">•</span>
-                            <span className="text-sm text-muted-foreground">
-                                Question {currentIndex + 1}/{questions.length}
-                            </span>
+        <div className="min-h-screen bg-[#050505] p-4 font-sans relative overflow-hidden flex flex-col items-center justify-center">
+            {/* Cosmic Background Effects */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#050505] to-[#050505] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-purple-500/5 blur-[120px] rounded-full pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
+
+            <div className="w-full max-w-2xl space-y-6 relative z-10">
+                {/* Header & Stats */}
+                <div className="flex items-end justify-between px-2">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-purple-500/10 text-purple-300 border-purple-500/20 px-2.5 py-0.5 text-[10px] uppercase tracking-wider">
+                                Final Exam
+                            </Badge>
+                            <span className="text-slate-500 text-xs font-medium">Set {currentSet}/{totalSets}</span>
+                        </div>
+                        <div className="text-slate-400 text-sm">
+                            Question <span className="text-white font-bold text-lg">{currentIndex + 1}</span><span className="text-slate-600">/{questions.length}</span>
                         </div>
                     </div>
-                    <Button variant="ghost" onClick={onCancel}>
-                        Exit
-                    </Button>
+
+                    {/* Timer */}
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border backdrop-blur-md transition-all duration-300 ${timeLeft <= 3 ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/10'}`}>
+                        <Clock className={`h-4 w-4 ${timeLeft <= 3 ? 'text-red-400 animate-pulse' : 'text-blue-400'}`} />
+                        <span className={`text-xl font-mono font-bold ${timeLeft <= 3 ? 'text-red-400' : 'text-white'}`}>
+                            {timeLeft}s
+                        </span>
+                    </div>
                 </div>
 
                 {/* Progress Bar */}
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Progress</span>
-                                <span className="font-medium">{Math.round(progressPercent)}%</span>
-                            </div>
-                            <Progress value={progressPercent} className="h-2" />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Timer */}
-                <Card className="border-2 border-purple-200 dark:border-purple-800">
-                    <CardContent className="p-4">
-                        <div className="flex items-center justify-center gap-2">
-                            <Clock className={`h-5 w-5 ${timeLeft <= 3 ? 'text-red-600 animate-pulse' : 'text-purple-600'}`} />
-                            <span className={`text-2xl font-bold ${timeLeft <= 3 ? 'text-red-600' : 'text-purple-600'}`}>
-                                {timeLeft}s
-                            </span>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressPercent}%` }}
+                        className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                    />
+                </div>
 
                 {/* Question Card */}
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentIndex}
-                        initial={{ x: 300, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: -300, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
                     >
-                        <Card className="border-2 border-purple-200 dark:border-purple-800">
-                            <CardHeader>
-                                <CardTitle className="text-center text-xl">
-                                    {currentQuestion.front_text}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {currentQuestion.options.map((option, idx) => {
-                                    const isSelected = selectedAnswer === option;
-                                    const isCorrectOption = option === currentQuestion.correctAnswer;
+                        <Card className="border-0 bg-transparent shadow-none">
+                            <CardContent className="p-0 space-y-6">
+                                {/* Question Text */}
+                                <div className="min-h-[140px] flex flex-col items-center justify-center p-8 rounded-3xl bg-[#0a0a0b]/60 backdrop-blur-xl border border-white/10 shadow-2xl relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none" />
+                                    <h2 className="text-center text-3xl md:text-4xl font-bold text-white leading-tight tracking-tight drop-shadow-lg break-words max-w-full mb-2">
+                                        {currentQuestion.front_text}
+                                    </h2>
+                                    {currentQuestion.part_of_speech && (
+                                        <span className="text-slate-500 text-lg italic font-medium bg-white/5 px-4 py-1 rounded-full border border-white/5">
+                                            {currentQuestion.part_of_speech}
+                                        </span>
+                                    )}
+                                </div>
 
-                                    let buttonClass = '';
-                                    if (showFeedback) {
-                                        if (isCorrectOption) {
-                                            buttonClass = 'bg-green-600 hover:bg-green-700 border-green-600';
+                                {/* Options Grid */}
+                                <div className="grid gap-3">
+                                    {currentQuestion.options.map((option, idx) => {
+                                        const isSelected = selectedAnswer === option;
+                                        const isCorrectOption = option === currentQuestion.correctAnswer;
+
+                                        // Dynamic Style Logic
+                                        let containerStyle = "bg-[#0f0f10] border-white/5 hover:bg-white/5";
+                                        let textStyle = "text-slate-300 group-hover:text-white";
+                                        let ringStyle = "";
+
+                                        if (showFeedback) {
+                                            if (isCorrectOption) {
+                                                containerStyle = "bg-green-500/10 border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.2)]";
+                                                textStyle = "text-green-400 font-bold";
+                                            } else if (isSelected) {
+                                                containerStyle = "bg-red-500/10 border-red-500/50";
+                                                textStyle = "text-red-400";
+                                            } else {
+                                                containerStyle = "bg-[#0f0f10]/50 border-white/5 opacity-50";
+                                            }
                                         } else if (isSelected) {
-                                            buttonClass = 'bg-red-600 hover:bg-red-700 border-red-600';
+                                            containerStyle = "bg-purple-600 border-purple-500 shadow-lg shadow-purple-600/20";
+                                            textStyle = "text-white font-bold";
                                         }
-                                    } else if (isSelected) {
-                                        buttonClass = 'bg-purple-600 hover:bg-purple-700';
-                                    }
 
-                                    return (
-                                        <Button
-                                            key={idx}
-                                            onClick={() => handleAnswerSelect(option)}
-                                            disabled={showFeedback}
-                                            variant="outline"
-                                            className={`w-full h-auto py-4 text-left justify-start ${buttonClass}`}
-                                        >
-                                            <span className="mr-3 flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-semibold">
-                                                {String.fromCharCode(65 + idx)}
-                                            </span>
-                                            <span className="flex-1">{option}</span>
-                                            {showFeedback && isCorrectOption && (
-                                                <CheckCircle2 className="h-5 w-5 text-white ml-2" />
-                                            )}
-                                            {showFeedback && isSelected && !isCorrectOption && (
-                                                <XCircle className="h-5 w-5 text-white ml-2" />
-                                            )}
-                                        </Button>
-                                    );
-                                })}
+                                        return (
+                                            <motion.button
+                                                key={idx}
+                                                whileHover={!showFeedback ? { scale: 1.01, y: -2 } : {}}
+                                                whileTap={!showFeedback ? { scale: 0.98 } : {}}
+                                                onClick={() => handleAnswerSelect(option)}
+                                                disabled={showFeedback}
+                                                className={`group relative w-full p-4 md:p-5 rounded-2xl border-2 text-left transition-all duration-300 flex items-center gap-4 ${containerStyle}`}
+                                            >
+                                                {/* Choice Letter Bubble */}
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-300 ${showFeedback && isCorrectOption ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' :
+                                                    showFeedback && isSelected ? 'bg-red-500 text-white' :
+                                                        isSelected ? 'bg-white text-purple-600' :
+                                                            'bg-white/5 text-slate-400 group-hover:bg-white/10 group-hover:text-white'
+                                                    }`}>
+                                                    {String.fromCharCode(65 + idx)}
+                                                </div>
+
+                                                <span className={`text-lg md:text-xl flex-1 ${textStyle}`}>
+                                                    {option}
+                                                </span>
+
+                                                {/* Status Icons */}
+                                                {showFeedback && isCorrectOption && (
+                                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                                                        <CheckCircle2 className="h-6 w-6 text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
+                                                    </motion.div>
+                                                )}
+                                                {showFeedback && isSelected && !isCorrectOption && (
+                                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                                                        <XCircle className="h-6 w-6 text-red-500" />
+                                                    </motion.div>
+                                                )}
+                                            </motion.button>
+                                        );
+                                    })}
+                                </div>
                             </CardContent>
                         </Card>
                     </motion.div>
                 </AnimatePresence>
 
-                {/* Feedback & Next Button */}
-                {showFeedback && (
-                    <motion.div
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
+                {/* Cancel/Exit */}
+                <div className="flex justify-center">
+                    <Button
+                        variant="ghost"
+                        onClick={onCancel}
+                        className="text-slate-600 hover:text-slate-400 hover:bg-white/5 text-xs uppercase tracking-widest"
                     >
-                        <Card className={isCorrect ? 'bg-green-50 dark:bg-green-950 border-green-200' : 'bg-red-50 dark:bg-red-950 border-red-200'}>
-                            <CardContent className="p-4 text-center">
-                                <div className="flex items-center justify-center gap-2 mb-3">
-                                    {isCorrect ? (
-                                        <>
-                                            <CheckCircle2 className="h-6 w-6 text-green-600" />
-                                            <span className="text-lg font-bold text-green-700 dark:text-green-300">Correct!</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <XCircle className="h-6 w-6 text-red-600" />
-                                            <span className="text-lg font-bold text-red-700 dark:text-red-300">Wrong</span>
-                                        </>
-                                    )}
-                                </div>
-                                <Button
-                                    onClick={handleNext}
-                                    className="w-full"
-                                    size="lg"
-                                >
-                                    Next Question
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
-
-                {/* Info Note */}
-                <Card className="bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800">
-                    <CardContent className="p-4">
-                        <p className="text-sm text-center text-muted-foreground">
-                            💡 Instant Feedback Mode - See results immediately after each answer
-                        </p>
-                    </CardContent>
-                </Card>
+                        Quit Exam
+                    </Button>
+                </div>
             </div>
         </div>
     );

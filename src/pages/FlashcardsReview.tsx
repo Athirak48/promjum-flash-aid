@@ -23,6 +23,7 @@ interface FlashcardData {
   id: string;
   front: string;
   back: string;
+  partOfSpeech?: string; // Added partOfSpeech
   isUserFlashcard?: boolean;
 }
 
@@ -52,6 +53,7 @@ export default function FlashcardsReview() {
     id: card.id,
     front: card.front_text,
     back: card.back_text,
+    partOfSpeech: card.part_of_speech, // Map from DB
   }));
 
   const handleClose = () => {
@@ -461,7 +463,8 @@ export default function FlashcardsReview() {
         back: c.back,
         // Map images if they exist in source but maybe not in type
         frontImage: (c as any).frontImage,
-        backImage: (c as any).backImage
+        backImage: (c as any).backImage,
+        partOfSpeech: c.partOfSpeech // Pass to Swiper
       }))}
       onClose={handleClose}
       onComplete={handleReviewComplete}

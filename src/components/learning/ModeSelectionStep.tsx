@@ -1,7 +1,7 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Check, Sparkles, Heart, Star } from 'lucide-react';
+import { Check, Sparkles, Heart, Star, Layers, Gamepad2, Headphones, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface LearningModes {
@@ -20,40 +20,51 @@ interface ModeSelectionStepProps {
 const modeOptions = [
     {
         id: 'flashcard',
-        emoji: '🃏',
+        icon: Layers,
         label: 'Flashcard',
         labelTh: 'ทบทวนความจำ',
-        // Strong/Dark colors for selected state
-        activeBg: 'bg-gradient-to-br from-blue-500 to-indigo-600',
-        activeRing: 'ring-blue-300',
-        activeShadow: 'shadow-blue-200',
+        // Pro Blue-Indigo Theme
+        activeBg: 'bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700',
+        activeRing: 'ring-indigo-300',
+        activeShadow: 'shadow-indigo-500/30',
+        iconColor: 'text-indigo-600',
+        activeIconColor: 'text-white'
     },
     {
         id: 'game',
-        emoji: '🎮',
+        icon: Gamepad2, // Better Gamepad Icon
         label: 'Game',
         labelTh: 'เกมสนุก ๆ',
-        activeBg: 'bg-gradient-to-br from-pink-500 to-rose-600',
-        activeRing: 'ring-pink-300',
-        activeShadow: 'shadow-pink-200',
+        // Pro Pink-Rose Theme
+        activeBg: 'bg-gradient-to-br from-pink-600 via-rose-600 to-rose-700',
+        activeRing: 'ring-rose-300',
+        activeShadow: 'shadow-rose-500/30',
+        iconColor: 'text-rose-600',
+        activeIconColor: 'text-white'
     },
     {
         id: 'listening',
-        emoji: '🎧',
+        icon: Headphones,
         label: 'Listening',
         labelTh: 'ฝึกฟัง',
-        activeBg: 'bg-gradient-to-br from-violet-500 to-purple-600',
+        // Pro Violet-Purple Theme
+        activeBg: 'bg-gradient-to-br from-violet-600 via-purple-600 to-purple-700',
         activeRing: 'ring-purple-300',
-        activeShadow: 'shadow-purple-200',
+        activeShadow: 'shadow-purple-500/30',
+        iconColor: 'text-purple-600',
+        activeIconColor: 'text-white'
     },
     {
         id: 'reading',
-        emoji: '📖',
+        icon: BookOpen,
         label: 'Reading',
         labelTh: 'ฝึกอ่าน',
-        activeBg: 'bg-gradient-to-br from-amber-400 to-orange-500',
+        // Pro Amber-Orange Theme
+        activeBg: 'bg-gradient-to-br from-amber-500 via-orange-500 to-orange-600',
         activeRing: 'ring-orange-300',
-        activeShadow: 'shadow-orange-200',
+        activeShadow: 'shadow-orange-500/30',
+        iconColor: 'text-orange-600',
+        activeIconColor: 'text-white'
     },
 ];
 
@@ -68,7 +79,7 @@ const containerVariants = {
 };
 
 const itemVariants = {
-    hidden: { y: 15, opacity: 0 },
+    hidden: { y: 20, opacity: 0 },
     show: { y: 0, opacity: 1 }
 };
 
@@ -81,16 +92,9 @@ export function ModeSelectionStep({
         // Disable Listening and Reading modes for now
         if (modeId === 'listening' || modeId === 'reading') {
             toast('Coming Soon! 🚧', {
-                description: 'โหมดนี้กำลังรีบปั่นให้สุดฝีมือ รอหน่อยน้า!',
+                description: 'โหมดนี้กำลังพัฒนาครับ',
                 duration: 2000,
                 position: 'top-center',
-                style: {
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    backdropFilter: 'blur(10px)',
-                    border: '2px solid #f472b6',
-                    color: '#db2777',
-                    fontWeight: 600
-                }
             });
             return;
         }
@@ -105,109 +109,88 @@ export function ModeSelectionStep({
     const canProceed = selectedCount > 0;
 
     return (
-        <div className="space-y-4 px-1 max-h-[80vh] flex flex-col">
-            {/* Header Section - Compact but ALIVE */}
-            <div className="text-center space-y-2 pt-1 shrink-0">
-                <motion.div
-                    className="relative inline-block cursor-help"
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    <motion.div
-                        className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-b from-white to-pink-50 shadow-xl shadow-pink-200/50 flex items-center justify-center border-4 border-white relative z-10"
-                        animate={{
-                            y: [0, -6, 0],
-                            rotate: [0, -2, 2, 0],
-                            scale: [1, 1.02, 1]
-                        }}
-                        transition={{
-                            repeat: Infinity,
-                            duration: 3,
-                            ease: "easeInOut"
-                        }}
-                    >
-                        <motion.img
+        <div className="space-y-6 px-2 max-h-[80vh] flex flex-col">
+            {/* Header Section - Clean & Pro */}
+            <div className="text-center space-y-1 pt-2 shrink-0">
+                <div className="relative inline-block mb-2">
+                    <div className="w-20 h-20 mx-auto rounded-3xl bg-white shadow-xl shadow-indigo-100 flex items-center justify-center border-[3px] border-white relative z-10">
+                        <img
                             src="/logo.png"
                             alt="Promjum Logo"
-                            className="w-16 h-16 object-contain drop-shadow-md"
+                            className="w-14 h-14 object-contain"
                         />
-                    </motion.div>
-
-                    {/* Cute decorations appearing around logo */}
-                    <motion.div
-                        className="absolute -right-2 -top-2 bg-yellow-400 text-white p-1.5 rounded-full shadow-lg z-20"
-                        animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                    >
+                    </div>
+                    <div className="absolute -right-2 -top-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-white p-1.5 rounded-full shadow-lg z-20">
                         <Star className="w-3.5 h-3.5 fill-current" />
-                    </motion.div>
-                </motion.div>
+                    </div>
+                </div>
 
                 <div>
-                    <h2 className="text-2xl font-black text-slate-700 dark:text-white tracking-tight">
-                        เลือกโหมดการเรียน <motion.span inline-block animate={{ rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} className="inline-block text-2xl">🎀</motion.span>
+                    <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
+                        เลือกโหมดการเรียน <span className="text-pink-500">✨</span>
                     </h2>
                     <p className="text-sm font-medium text-slate-400">
-                        จิ้มเลือกโหมดที่อยากเรียนได้เลย!
+                        เลือกรูปแบบการเรียนที่คุณต้องการ
                     </p>
                 </div>
             </div>
 
-            {/* Grid Options - Juicy & Bouncy */}
+            {/* Grid Options - Pro Design */}
             <motion.div
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
-                className="grid grid-cols-2 gap-3 shrink-0 px-2"
+                className="grid grid-cols-2 gap-4 shrink-0 px-2"
             >
                 {modeOptions.map((mode) => {
                     const isSelected = selectedModes[mode.id as keyof LearningModes];
-                    // "Pick Me" animation if nothing is selected
-                    const isIdle = selectedCount === 0;
 
                     return (
                         <motion.button
                             key={mode.id}
                             variants={itemVariants}
-                            // Removed animations as requested - keep static click
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => handleToggleMode(mode.id as keyof LearningModes)}
                             className={`
-                                relative group p-3.5 rounded-3xl border-2 text-left transition-all duration-300 w-full
-                                flex flex-col items-center justify-center gap-2 overflow-visible
+                                relative group p-4 rounded-3xl border-2 text-left transition-all duration-300 w-full h-[140px]
+                                flex flex-col items-center justify-center gap-3 overflow-hidden
                                 ${isSelected
-                                    ? `${mode.activeBg} ${mode.activeRing} ring-4 ring-offset-2 ring-offset-white border-transparent text-white shadow-xl scale-[1.02] z-10`
-                                    : 'bg-white border-slate-100 hover:border-pink-300 hover:bg-pink-50/50 text-slate-600 shadow-sm'
+                                    ? `${mode.activeBg} ${mode.activeRing} ring-2 ring-offset-2 ring-offset-white border-transparent text-white ${mode.activeShadow} shadow-lg z-10`
+                                    : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-xl hover:shadow-slate-100 text-slate-600 shadow-sm'
                                 }
                             `}
                         >
-                            {/* Checkmark Badge - Pops in */}
+                            {/* Glass Shine Effect on Selected */}
+                            {isSelected && (
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+                            )}
+
+                            {/* Checkmark Badge */}
                             <motion.div
                                 initial={false}
-                                animate={{ scale: isSelected ? 1 : 0 }}
-                                className={`
-                                    absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-md border-2 border-white
-                                    ${isSelected ? 'bg-white text-pink-500' : 'bg-slate-200'}
-                                `}
+                                animate={{ scale: isSelected ? 1 : 0, opacity: isSelected ? 1 : 0 }}
+                                className="absolute top-3 right-3 bg-white text-indigo-600 rounded-full p-1 shadow-sm z-20"
                             >
-                                <Check className="w-3.5 h-3.5 stroke-[4px]" />
+                                <Check className="w-3 w-3 stroke-[4px]" />
                             </motion.div>
 
-                            {/* Icon/Emoji - Static */}
+                            {/* Icon Container */}
                             <div
                                 className={`
-                                    w-12 h-12 rounded-2xl flex items-center justify-center text-3xl shadow-sm transition-colors duration-300
-                                    ${isSelected ? 'bg-white/20 backdrop-blur-md' : 'bg-slate-50 group-hover:bg-white'}
+                                    w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors duration-300 relative z-10
+                                    ${isSelected ? 'bg-white/20 backdrop-blur-md text-white' : `bg-slate-50 group-hover:bg-indigo-50/50 ${mode.iconColor}`}
                                 `}
                             >
-                                {mode.emoji}
+                                <mode.icon strokeWidth={2} className="w-7 h-7" />
                             </div>
 
                             {/* Text Info */}
                             <div className="text-center z-10 w-full">
-                                <div className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-slate-700'}`}>
+                                <div className={`font-bold text-base leading-tight ${isSelected ? 'text-white' : 'text-slate-800'}`}>
                                     {mode.label}
                                 </div>
-                                <div className={`text-[10px] font-semibold ${isSelected ? 'text-white/90' : 'text-slate-400'}`}>
+                                <div className={`text-xs font-medium mt-0.5 ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
                                     {mode.labelTh}
                                 </div>
                             </div>

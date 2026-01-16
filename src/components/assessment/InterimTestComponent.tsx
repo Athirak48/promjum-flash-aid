@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Zap, TrendingDown, Award } from 'lucide-react';
+import { Clock, Zap, TrendingDown, Award, AlertTriangle, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface InterimTestQuestion {
     id: string;
     front_text: string;
     back_text: string;
+    part_of_speech?: string;
     options: string[];
     correctAnswer: string;
-    isWeak: boolean; // Track if this is a weak word
+    isWeak: boolean;
 }
 
 interface InterimTestProps {
@@ -20,11 +21,11 @@ interface InterimTestProps {
     onComplete: (results: {
         correct: number;
         total: number;
-        leechIds: string[]; // Cards that failed (need reset)
-        bonusIds: string[]; // Cards that passed (get bonus)
+        leechIds: string[];
+        bonusIds: string[];
     }) => void;
     onCancel: () => void;
-    testNumber: number; // Which interim test (1, 2, 3, etc.)
+    testNumber: number;
 }
 
 export default function InterimTestComponent({
@@ -41,21 +42,16 @@ export default function InterimTestComponent({
     const [currentSet, setCurrentSet] = useState(1);
 
     const totalSets = Math.ceil(questions.length / 20);
-    // Slice questions for the current set (1-based index converted to 0-based logic)
     const questionsInCurrentSet = questions.slice((currentSet - 1) * 20, currentSet * 20);
     const currentQuestion = questionsInCurrentSet[currentIndex];
 
-    // Calculate global progress based on results count + current local index
-    // Or simpler: (results.length / questions.length) * 100 ? 
-    // Let's keep it consistent: local set progress or global? 
-    // User wants "sets of 20", so progress bar could be for the current set or global.
-    // Let's do Global Progress to keep context.
+    // Global Progress
     const globalIndex = (currentSet - 1) * 20 + currentIndex;
-    const progressPercent = ((globalIndex + 1) / questions.length) * 100;
+    const progressPercent = ((globalIndex) / questions.length) * 100;
 
-    // Timer countdown
+    // Timer logic
     useEffect(() => {
-        if (isBreakTime || !currentQuestion) return;
+        if (isBreakTime || !currentQuestion || selectedAnswer) return;
 
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
@@ -68,15 +64,14 @@ export default function InterimTestComponent({
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [currentIndex, isBreakTime]);
+    }, [currentIndex, isBreakTime, selectedAnswer]);
 
     const handleAnswerSelect = (answer: string) => {
         if (selectedAnswer) return;
-
         setSelectedAnswer(answer);
 
         const isCorrect = answer === currentQuestion.correctAnswer;
-        setResults([...results, {
+        setResults(prev => [...prev, {
             questionId: currentQuestion.id,
             correct: isCorrect,
             isWeak: currentQuestion.isWeak
@@ -84,11 +79,11 @@ export default function InterimTestComponent({
 
         setTimeout(() => {
             handleNextQuestion(answer);
-        }, 100);
+        }, 500); // 500ms feedback delay
     };
 
     const handleNextQuestion = (answer: string | null) => {
-        // If timeout (answer is null), record as wrong
+        // Handle timeout
         if (answer === null) {
             setResults(prev => [...prev, {
                 questionId: currentQuestion.id,
@@ -105,7 +100,8 @@ export default function InterimTestComponent({
             if (currentSet < totalSets) {
                 setIsBreakTime(true);
             } else {
-                finishTest();
+                // Determine completion will be handled by effect, but need to ensure last result is registered
+                // The effect dependency on results will catch it.
             }
         } else {
             setCurrentIndex(currentIndex + 1);
@@ -118,48 +114,9 @@ export default function InterimTestComponent({
         setCurrentIndex(0);
     };
 
-    const finishTest = () => {
-        const correctCount = results.filter(r => r.correct).length; // Note: results state might lag one cycle in strict mode, but here we append before calling function in handleAnswerSelect? No, we append to state. 
-        // Actually, setResults is async. We should calculate based on prev state or pass the new result.
-        // Wait, in handleAnswerSelect, I call setResults then setTimeout -> handleNextQuestion.
-        // In handleNextQuestion, I check indices.
-        // When finishTest is called, the LAST result is already in 'results' state from the previous render?
-        // Let's be safe: we need to ensure the last result is included.
-        // The 'results' array will update on next render. 
-        // FIX: The current logic updates results state, triggers re-render. 
-        // But handleNextQuestion is called inside setTimeout.
-        // The 'results' variable in handleNextQuestion closure is the OLD one.
-        // However, we are not using 'results' in handleNextQuestion logic, only for finishTest.
-        // We should recalculate valid outcomes in finishTest using the latest state, but wait...
-        // Actually, standard React pattern: we can't rely on 'results' being updated immediately in the same closure.
-        // But since we use setTimeout(100ms), it's likely updated? No, closure captures the old scope.
-        // We really should flush the last answer to the onComplete directly if it's the very last question.
-        // OR better: rely on the fact that we push to state.
-
-        // Let's refine: The `results` used in `finishTest` will be stale if called directly from the event handler closure of the last question.
-        // BUT, `handleNextQuestion` is called 100ms later. It is possible the state has updated? 
-        // No, `handleNextQuestion` is defined in the render scope. If it's called from a timeout set in a PREVIOUS render, it captures the scope of THAT previous render.
-        // This is a common bug.
-        // CORRECTION: use a ref for results or pass the complete list to finishTest.
-        // For now, I'll trust the existing pattern used in `PreTestComponent` which seemed to work, 
-        // but to be safe, I'll use a functional state update or `useEffect` for completion?
-        // Actually, let's keep it simple: `results` is state. 
-        // If I answer last question -> setResults -> setTimeout -> handleNextQuestion.
-        // The handleNextQuestion captured in the timeout IS stale.
-        // So `finishTest` will use stale `results`.
-        // To fix this without refactoring everything: I will assume the `PreTest` works because of lucky timing or I missed something. 
-        // Ah, `PreTest` was written by me? 
-        // Wait, looking at PreTest code: `setResults([...results, newResult])`.
-        // The easy fix is to pass the latest result accumulator to `finishTest` or use a `useEffect` to trigger finish.
-        // But to avoid complex refactoring now, I will add the logic to calculate final metrics *including* the last answer if needed?
-        // Actually, simplest fix: Use a `useEffect` to watch for `results.length` vs `questions.length`.
-
-    };
-
-    // Use Effect to trigger completion when all questions answered
+    // Completion Handler
     useEffect(() => {
         if (results.length > 0 && results.length === questions.length) {
-            // Calculate completions
             const correctCount = results.filter(r => r.correct).length;
             const leechIds = results.filter(r => !r.correct).map(r => r.questionId);
             const bonusIds = results.filter(r => r.correct).map(r => r.questionId);
@@ -167,47 +124,66 @@ export default function InterimTestComponent({
         }
     }, [results, questions.length]);
 
-    // Remove direct call to finishTest from handleNext logic for the very last item, 
-    // OR just handle the index movement.
-    // If we just rely on useEffect, we don't need finishTest() call in handleNextQuestion for the last item.
-    // We just stop.
-
-    /* 
-       Refined Logic for 'handleNextQuestion':
-       If finished current set, and it's NOT the last set -> Break.
-       If finished current set, and it IS the last set -> Do nothing (useEffect will handle completion).
-    */
-
+    // Loading State
     if (!currentQuestion && !isBreakTime && results.length !== questions.length) {
-        return <div className="p-6 text-center text-white">Loading...</div>;
+        return <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center text-indigo-400">Loading...</div>;
+    }
+
+    // Processing State
+    if (results.length === questions.length) {
+        return (
+            <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center relative overflow-hidden font-sans">
+                {/* Cosmic Background */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#0a0a0b] to-[#0a0a0b]" />
+                <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 animate-pulse" />
+
+                <div className="relative z-10 text-center space-y-6">
+                    <div className="relative w-24 h-24 mx-auto">
+                        <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20" />
+                        <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <Zap className="w-8 h-8 text-indigo-400 animate-pulse" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 animate-pulse">
+                            Processing Results...
+                        </h2>
+                        <p className="text-slate-500 text-sm">
+                            Calculating SRS Score & Leech Detection
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     // Break Screen
     if (isBreakTime) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-slate-950 p-6">
+            <div className="flex items-center justify-center min-h-screen bg-[#0a0a0b] p-6 text-slate-200">
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     className="w-full max-w-md"
                 >
-                    <Card className="border-2 border-orange-500/30 bg-slate-900/95 backdrop-blur-xl shadow-2xl">
-                        <CardHeader className="text-center">
-                            <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-r from-orange-600 to-red-600 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/30">
-                                <Zap className="h-8 w-8 text-white" />
+                    <Card className="border-0 bg-white/5 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -mr-10 -mt-10" />
+                        <CardContent className="p-8 text-center space-y-6 relative z-10">
+                            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-4 animate-bounce">
+                                <Zap className="h-10 w-10 text-white fill-white" />
                             </div>
-                            <CardTitle className="text-2xl text-white">Set {currentSet} Completed! 🏁</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <p className="text-center text-slate-300">
-                                You've finished {currentSet * 20} questions. <br />
-                                {totalSets - currentSet} sets remaining.
+                            <h2 className="text-2xl font-bold text-white">Set {currentSet} Completed!</h2>
+                            <p className="text-slate-400">
+                                พักหายใจสักนิด แล้วไปลุยต่อ! <br />
+                                เหลืออีก {totalSets - currentSet} ชุด
                             </p>
                             <Button
                                 onClick={handleContinueAfterBreak}
-                                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold h-12 shadow-lg shadow-orange-500/30"
+                                className="w-full h-12 text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-[0_0_20px_-5px_#6366f1] transition-all hover:scale-[1.02] rounded-xl"
                             >
-                                Continue to Set {currentSet + 1}
+                                ลุยต่อเลย (Continue)
                             </Button>
                         </CardContent>
                     </Card>
@@ -216,118 +192,157 @@ export default function InterimTestComponent({
         );
     }
 
-    if (results.length === questions.length) {
-        return <div className="flex items-center justify-center min-h-screen"><p className="text-white">Processing Results...</p></div>;
-    }
-
     return (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800 p-6">
-            <div className="max-w-3xl mx-auto space-y-6">
+        <div className="min-h-screen bg-[#0a0a0b] text-slate-100 font-sans selection:bg-indigo-500/30 overflow-hidden relative">
+            {/* Cosmic Background */}
+            <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] mix-blend-screen" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] mix-blend-screen" />
+            </div>
+
+            <div className="relative z-10 container mx-auto px-4 py-6 max-w-2xl flex flex-col min-h-screen">
+
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
-                            <Zap className="h-6 w-6 text-orange-600" />
-                            Interim Test #{testNumber}
-                        </h1>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs px-2 py-1 rounded-md border border-orange-200 dark:border-orange-800 font-medium">
-                                Set {currentSet} of {totalSets}
-                            </span>
-                            <span className="text-slate-400 text-sm">•</span>
-                            <span className="text-muted-foreground text-sm">
-                                Question {(currentIndex) + 1}/{questionsInCurrentSet.length}
-                            </span>
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center border border-indigo-500/30">
+                            <Zap className="h-5 w-5 text-indigo-400" />
+                        </div>
+                        <div>
+                            <h1 className="font-bold text-lg leading-tight">Interim Test #{testNumber}</h1>
+                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                                <span>Set {currentSet}/{totalSets}</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-600" />
+                                <span>Question {currentIndex + 1}/{questionsInCurrentSet.length}</span>
+                            </div>
                         </div>
                     </div>
-                    <Button variant="ghost" onClick={onCancel}>
-                        Exit
-                    </Button>
+
+                    <div className="flex items-center gap-3">
+                        {/* Timer */}
+                        <div className={`
+                            flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-mono font-bold text-lg 
+                            transition-colors duration-300
+                            ${timeLeft <= 2
+                                ? 'bg-rose-500/20 border-rose-500/50 text-rose-400 animate-pulse'
+                                : 'bg-white/5 border-white/10 text-indigo-300'}
+                        `}>
+                            <Clock className="w-4 h-4" />
+                            <span>00:0{timeLeft}</span>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onCancel}
+                            className="text-slate-400 hover:text-white hover:bg-white/10 rounded-lg"
+                        >
+                            <span className="sr-only">Exit</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Progress Bar */}
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Total Progress</span>
-                                <span className="font-medium">{Math.round(progressPercent)}%</span>
+                {/* Question Area */}
+                <div className="flex-1 flex flex-col justify-center pb-20">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={globalIndex}
+                            initial={{ x: 50, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: -50, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: "circOut" }}
+                            className="w-full"
+                        >
+                            {/* Question Card */}
+                            <div className="mb-6 relative">
+                                {/* Weak Word Warning */}
+                                {currentQuestion.isWeak && (
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                                        <Badge variant="destructive" className="bg-rose-500 text-white border-0 shadow-lg shadow-rose-900/40 px-3 py-1 flex items-center gap-1.5">
+                                            <TrendingDown className="w-3 h-3" />
+                                            Weak Word
+                                        </Badge>
+                                    </div>
+                                )}
+
+                                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-indigo-500/20 p-8 text-center shadow-[0_0_40px_-10px_rgba(99,102,241,0.15)] backdrop-blur-md">
+                                    <div className="absolute inset-0 bg-white/5 mix-blend-overlay" />
+
+                                    <div className="relative z-10 space-y-3">
+                                        <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-xl mb-2">
+                                            {currentQuestion.front_text}
+                                        </h2>
+
+                                        {currentQuestion.part_of_speech && (
+                                            <span className="inline-block px-3 py-1 rounded-full bg-white/10 border border-white/5 text-slate-300 text-sm italic font-medium">
+                                                {currentQuestion.part_of_speech}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <Progress value={progressPercent} className="h-2" />
-                        </div>
-                    </CardContent>
-                </Card>
 
-                {/* Timer */}
-                <Card className="border-2 border-orange-200 dark:border-orange-800">
-                    <CardContent className="p-4">
-                        <div className="flex items-center justify-center gap-2">
-                            <Clock className={`h-5 w-5 ${timeLeft <= 2 ? 'text-red-600 animate-pulse' : 'text-orange-600'}`} />
-                            <span className={`text-2xl font-bold ${timeLeft <= 2 ? 'text-red-600' : 'text-orange-600'}`}>
-                                {timeLeft}s
-                            </span>
-                        </div>
-                    </CardContent>
-                </Card>
+                            {/* Options */}
+                            <div className="grid gap-3">
+                                {currentQuestion.options.map((option, idx) => {
+                                    const isSelected = selectedAnswer === option;
+                                    const isCorrect = option === currentQuestion.correctAnswer;
 
-                {/* Word Type Badge */}
-                {currentQuestion.isWeak && (
-                    <Badge variant="destructive" className="w-full justify-center py-2">
-                        <TrendingDown className="h-4 w-4 mr-2" />
-                        Weak Word - Extra Focus Needed
-                    </Badge>
-                )}
+                                    // Show correct/incorrect state if answer selected
+                                    let stateStyles = "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-indigo-500/30";
+                                    if (selectedAnswer) {
+                                        if (isSelected && isCorrect) {
+                                            stateStyles = "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-[0_0_15px_-5px_#10b981]";
+                                        } else if (isSelected && !isCorrect) {
+                                            stateStyles = "bg-rose-500/20 border-rose-500/50 text-rose-300 shadow-[0_0_15px_-5px_#f43f5e]";
+                                        } else if (!isSelected && isCorrect) {
+                                            // Show correct answer even if wrong one selected
+                                            stateStyles = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400/70";
+                                        } else {
+                                            stateStyles = "opacity-40 bg-black/20 border-transparent";
+                                        }
+                                    }
 
-                {/* Question Card */}
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={globalIndex}
-                        initial={{ x: 300, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: -300, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        <Card className="border-2 border-orange-200 dark:border-orange-800">
-                            <CardHeader>
-                                <CardTitle className="text-center text-xl">
-                                    {currentQuestion.front_text}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {currentQuestion.options.map((option, idx) => (
-                                    <Button
-                                        key={idx}
-                                        onClick={() => handleAnswerSelect(option)}
-                                        disabled={selectedAnswer !== null}
-                                        variant={selectedAnswer === option ? 'default' : 'outline'}
-                                        className={`w-full h-auto py-4 text-left justify-start ${selectedAnswer === option
-                                            ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                                            : ''
-                                            }`}
-                                    >
-                                        <span className="mr-3 flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-semibold text-gray-700 dark:text-gray-300">
-                                            {String.fromCharCode(65 + idx)}
-                                        </span>
-                                        <span className="flex-1">{option}</span>
-                                    </Button>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                </AnimatePresence>
+                                    return (
+                                        <motion.button
+                                            key={idx}
+                                            disabled={selectedAnswer !== null}
+                                            onClick={() => handleAnswerSelect(option)}
+                                            whileHover={!selectedAnswer ? { scale: 1.01, x: 4 } : {}}
+                                            whileTap={!selectedAnswer ? { scale: 0.98 } : {}}
+                                            className={`
+                                                relative w-full p-4 rounded-xl border text-left flex items-center gap-4 transition-all duration-200
+                                                ${stateStyles}
+                                            `}
+                                        >
+                                            <div className={`
+                                                w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold border transition-colors
+                                                ${isSelected
+                                                    ? 'bg-transparent border-current'
+                                                    : 'bg-black/20 border-white/10 text-slate-500'}
+                                            `}>
+                                                {String.fromCharCode(65 + idx)}
+                                            </div>
+                                            <span className="text-lg font-medium truncate flex-1">{option}</span>
 
-                {/* Info Note */}
-                <Card className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Award className="h-4 w-4 text-orange-600" />
-                            <div>
-                                <p className="font-medium">Bonus Mode Active</p>
-                                <p className="text-xs">Correct = Bonus SRS Point • Wrong = Leech Detection (Reset to Stage 0)</p>
+                                            {selectedAnswer && isSelected && (
+                                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                                                    {isCorrect ? <Award className="w-5 h-5 text-emerald-400" /> : <AlertTriangle className="w-5 h-5 text-rose-400" />}
+                                                </motion.div>
+                                            )}
+                                        </motion.button>
+                                    );
+                                })}
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
+
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+
+                {/* Progress Footer */}
+                <div className="fixed bottom-0 left-0 w-full p-1 z-50">
+                    <Progress value={progressPercent} className="h-1 w-full bg-slate-800 rounded-none" indicatorClassName="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+                </div>
             </div>
         </div>
     );
