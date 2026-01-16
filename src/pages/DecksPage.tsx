@@ -27,7 +27,8 @@ export default function DecksPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'popular' | 'recent' | 'clones'>('recent');
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
-  const { decks, loading } = usePublicDecks({ search: searchTerm, sortBy, category: selectedCategory });
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const { decks, loading, refetch } = usePublicDecks({ search: searchTerm, sortBy, category: selectedCategory });
   const { cloneDeck, loading: cloning } = useCloneDeck();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -41,19 +42,38 @@ export default function DecksPage() {
   }, [trackPageView]);
 
   const handleDeleteDeck = async (id: string) => {
-    try {
-      const { error } = await supabase.from('sub_decks').delete().eq('id', id);
-      if (error) throw error;
+    if (!user) {
       toast({
-        title: "ลบ Deck สำเร็จ",
+        title: "กรุณาเข้าสู่ระบบ",
+        description: "คุณต้องเข้าสู่ระบบก่อนลบ Deck",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Delete from user_flashcard_sets (community decks)
+      const { error: deleteError } = await supabase
+        .from('user_flashcard_sets')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id); // Ensure user owns this deck
+
+      if (deleteError) throw deleteError;
+
+      toast({
+        title: "ลบ Deck สำเร็จ! ✅",
         description: "Deck ของคุณถูกลบออกจากระบบแล้ว",
         variant: "default"
       });
-      window.location.reload(); // Simple refresh
+
+      // Refetch deck list instead of full page reload
+      refetch();
     } catch (error: any) {
+      console.error('Error deleting deck:', error);
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: error.message,
+        description: error.message || "ไม่สามารถลบ Deck ได้",
         variant: "destructive"
       });
     }
@@ -139,6 +159,17 @@ export default function DecksPage() {
         if (insertError) throw insertError;
       }
 
+      // 5. Increment clone_count for the parent deck
+      const { error: updateError } = await supabase
+        .from('user_flashcard_sets')
+        .update({ clone_count: (deck.clone_count || 0) + 1 })
+        .eq('id', deck.id);
+
+      if (updateError) {
+        console.error('Error updating clone_count:', updateError);
+        // Don't throw, clone was successful even if count update failed
+      }
+
       toast({
         title: "โคลนสำเร็จ! 🎉",
         description: `คุณได้โคลน "${deck.name}" ไปยังโฟลเดอร์ Community Uploads แล้ว`,
@@ -167,10 +198,79 @@ export default function DecksPage() {
     }
   };
 
+  // Handle preview for community decks
+  const handlePreviewCommunityDeck = async (deck: PublicDeck) => {
+    try {
+      // 1. Fetch all subdecks of this parent deck
+      const { data: subdecks, error: subdeckError } = await supabase
+        .from('user_flashcard_sets')
+        .select('id, title, card_count')
+        .eq('parent_deck_id', deck.id)
+        .eq('source', 'community_subdeck');
+
+      if (subdeckError) throw subdeckError;
+
+      if (!subdecks || subdecks.length === 0) {
+        toast({
+          title: "ไม่พบคำศัพท์",
+          description: "Deck นี้ยังไม่มีคำศัพท์",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // 2. Fetch all flashcards from all subdecks
+      const allFlashcards: any[] = [];
+
+      for (const subdeck of subdecks) {
+        const { data: cards } = await supabase
+          .from('user_flashcards')
+          .select('id, front_text, back_text, part_of_speech')
+          .eq('flashcard_set_id', subdeck.id);
+
+        if (cards && cards.length > 0) {
+          // Map to include subdeck name as 'setName'
+          const mappedCards = cards.map(c => ({
+            id: c.id,
+            front: c.front_text,
+            back: c.back_text,
+            setName: subdeck.title
+          }));
+          allFlashcards.push(...mappedCards);
+        }
+      }
+
+      if (allFlashcards.length === 0) {
+        toast({
+          title: "ไม่พบคำศัพท์",
+          description: "Deck นี้ยังไม่มีคำศัพท์",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // 3. Set state and open preview
+      setSelectedCommunityDeck(deck);
+      setCommunityDeckFlashcards(allFlashcards);
+      setShowCommunityPreview(true);
+    } catch (error: any) {
+      console.error('Error fetching community deck preview:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถดึงข้อมูลได้",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Preview dialog states
   const [showPreview, setShowPreview] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false); // Create Dialog State
   const [selectedBundle, setSelectedBundle] = useState<any | null>(null);
+
+  // Community deck preview states
+  const [showCommunityPreview, setShowCommunityPreview] = useState(false);
+  const [selectedCommunityDeck, setSelectedCommunityDeck] = useState<PublicDeck | null>(null);
+  const [communityDeckFlashcards, setCommunityDeckFlashcards] = useState<any[]>([]);
 
   const categories = [
     { id: undefined, label: 'ทั้งหมด', emoji: '🌍' },
@@ -263,30 +363,59 @@ export default function DecksPage() {
       <main className="container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-7xl mx-auto">
 
-          {/* Header Section */}
+          {/* Header Section - Enhanced Modern Design */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative mb-4 md:mb-12 text-center"
+            className="relative mb-10 md:mb-14 text-center"
           >
-            <div className="absolute top-0 right-0 hidden md:block">
+            {/* Subtle floating orbs background */}
+            <div className="absolute top-1/2 left-1/3 w-40 h-40 bg-purple-500/20 rounded-full blur-[120px] animate-pulse" />
+            <div className="absolute top-1/2 right-1/3 w-40 h-40 bg-pink-500/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+
+            {/* Create Deck Button - Desktop */}
+            <div className="absolute -top-2 right-0 hidden md:block">
               <Button
-                onClick={() => setShowCreateDialog(true)}
-                className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] border-none gap-2"
+                onClick={() => {
+                  console.log('Create Deck button clicked!');
+                  setShowCreateDialog(true);
+                }}
+                className="group relative rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 border-none gap-2 px-5 py-2.5 font-bold transition-all duration-300 text-sm"
               >
                 <Plus className="w-4 h-4" />
-                สร้าง Deck
+                <span>สร้าง Deck</span>
               </Button>
             </div>
-            <div className="inline-block relative">
-              <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full pointer-events-none" />
-              <h1 className="relative text-3xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/50 drop-shadow-[0_0_30px_rgba(255,255,255,0.5)] mb-4 font-cute">
-                Community Decks
-                <span className="absolute -top-4 -right-6 md:-right-12 text-2xl md:text-4xl animate-bounce delay-700">🌍</span>
+
+            {/* Main Title - More Compact */}
+            <div className="relative mb-3">
+              <h1 className="relative text-4xl md:text-6xl lg:text-7xl font-black tracking-tight">
+                <span className="inline-block bg-gradient-to-r from-white via-purple-100 to-white bg-clip-text text-transparent">
+                  Community Decks
+                </span>
+                <motion.span
+                  className="inline-block ml-2 text-3xl md:text-4xl"
+                  animate={{
+                    rotate: [0, 10, -10, 0],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    repeatDelay: 2
+                  }}
+                >
+                  🌍
+                </motion.span>
               </h1>
             </div>
-            <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto font-light leading-relaxed">
-              ค้นพบและโคลน <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 font-bold">Deck คุณภาพ</span> จากชุมชน
+
+            {/* Subtitle - Cleaner Design */}
+            <p className="text-sm md:text-lg text-white/50 max-w-xl mx-auto font-light px-4">
+              ค้นพบและโคลน{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 font-semibold">
+                Deck คุณภาพ
+              </span>
+              {' '}จากชุมชน
             </p>
           </motion.div>
 
@@ -299,102 +428,105 @@ export default function DecksPage() {
             />
           )}
 
-          {/* Search and Filters */}
-          <div className="flex flex-col md:flex-row gap-3 mb-8 items-stretch md:items-center">
-            {/* Search Bar */}
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-              <input
-                type="text"
-                placeholder="ค้นหา Deck หรือชื่อผู้สร้าง..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 h-10 rounded-full bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 backdrop-blur-xl transition-all"
-              />
-            </div>
+          {/* Search and Filters - Enhanced Design */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-8"
+          >
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+              {/* Search Bar - Glassmorphism Style */}
+              <div className="relative flex-1 group">
+                {/* Glow effect */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-300" />
 
-            {/* Sort Buttons + Dropdown */}
-            <div className="flex gap-1.5 md:gap-2 items-center justify-between md:justify-end flex-shrink-0">
-              <Button
-                variant={sortBy === 'recent' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleSort('recent')}
-                className={`rounded-full flex-1 md:flex-none px-2 md:px-3 h-9 md:h-10 text-[11px] md:text-xs ${sortBy === 'recent'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'
-                  }`}
-              >
-                <Clock className="w-3 h-3 md:w-3.5 md:h-3.5 mr-0.5 md:mr-1" />
-                ล่าสุด
-              </Button>
-              <Button
-                variant={sortBy === 'popular' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleSort('popular')}
-                className={`rounded-full flex-1 md:flex-none px-2 md:px-3 h-9 md:h-10 text-[11px] md:text-xs ${sortBy === 'popular'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'
-                  }`}
-              >
-                <TrendingUp className="w-3 h-3 md:w-3.5 md:h-3.5 mr-0.5 md:mr-1" />
-                ยอดนิยม
-              </Button>
+                {/* Search input container */}
+                <div className="relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden group-hover:border-white/20 transition-all duration-300">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-hover:text-white/60 transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหา Deck หรือชื่อผู้สร้าง..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3.5 bg-transparent text-white text-sm md:text-base placeholder:text-white/40 focus:outline-none"
+                  />
+                </div>
+              </div>
 
-              {/* Language Dropdown */}
-              <Select value={selectedCategory || 'all'} onValueChange={(value) => setSelectedCategory(value === 'all' ? undefined : value)}>
-                <SelectTrigger className="w-[80px] md:w-[120px] h-9 md:h-10 rounded-full bg-white/5 border-white/20 text-white text-[11px] md:text-xs focus:ring-purple-500/50 px-2">
-                  <Globe className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1 text-purple-400" />
-                  <SelectValue placeholder="ภาษา" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-white/10 text-white">
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id || 'all'} value={cat.id || 'all'} className="focus:bg-white/10">
-                      <span className="flex items-center gap-2">
-                        <span>{cat.emoji}</span>
-                        <span>{cat.label}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Filter Buttons */}
+              <div className="flex gap-2 flex-wrap md:flex-nowrap">
+                {/* Sort Buttons */}
+                <Button
+                  variant={sortBy === 'recent' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleSort('recent')}
+                  className={`rounded-xl px-4 py-3 font-bold transition-all duration-300 ${sortBy === 'recent'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 shadow-lg shadow-purple-500/30'
+                    : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/20'
+                    }`}
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  ล่าสุด
+                </Button>
+                <Button
+                  variant={sortBy === 'popular' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleSort('popular')}
+                  className={`rounded-xl px-4 py-3 font-bold transition-all duration-300 ${sortBy === 'popular'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 shadow-lg shadow-purple-500/30'
+                    : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/20'
+                    }`}
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  ยอดนิยม
+                </Button>
+
+                {/* Language Dropdown */}
+                <Select value={selectedCategory || 'all'} onValueChange={(value) => setSelectedCategory(value === 'all' ? undefined : value)}>
+                  <SelectTrigger className={`w-full md:w-[140px] rounded-xl px-4 py-3 font-bold border transition-all duration-300 ${selectedCategory
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 shadow-lg shadow-purple-500/30'
+                    : 'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20'
+                    }`}>
+                    <Globe className="w-4 h-4 mr-2 text-purple-400" />
+                    <SelectValue placeholder="ภาษา" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10 text-white rounded-xl">
+                    {categories.map((cat) => (
+                      <SelectItem
+                        key={cat.id || 'all'}
+                        value={cat.id || 'all'}
+                        className="focus:bg-white/10 rounded-lg"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span>{cat.emoji}</span>
+                          <span>{cat.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Content */}
           {loading ? (
             // Loading skeleton
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-[400px] rounded-[2rem] bg-white/5" />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-[280px] rounded-2xl bg-white/5" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-40 md:pb-20">
-              {/* Mock Folder Bundles - Show when category matches */}
-              {mockFolderBundles
-                .filter(bundle => !selectedCategory || bundle.category === selectedCategory)
-                .map((bundle, index) => (
-                  <FolderBundleCard
-                    key={bundle.id}
-                    bundle={bundle}
-                    index={index}
-                    onPreview={() => {
-                      setSelectedBundle(bundle);
-                      setShowPreview(true);
-                    }}
-                    onClone={() => {
-                      setSelectedBundle(bundle);
-                      setShowPreview(true);
-                    }}
-                  />
-                ))}
-
-              {/* Real Public Decks */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 pb-40 md:pb-20">
+              {/* Real Public Decks Only - No Mock Data */}
               {decks.map((deck, index) => (
                 <PublicDeckCard
                   key={deck.id}
                   deck={deck}
-                  index={index + mockFolderBundles.length}
+                  index={index}
+                  onPreview={() => handlePreviewCommunityDeck(deck)}
                   onClone={async () => {
                     await handleCloneDeck(deck);
                   }}
@@ -429,6 +561,31 @@ export default function DecksPage() {
             onSuccess={() => {
               // Refresh decks logic if needed (e.g. invalidate query)
               window.location.reload(); // Simple refresh for now
+            }}
+          />
+
+          {/* Community Deck Preview Dialog */}
+          {selectedCommunityDeck && showCommunityPreview && (
+            <FolderBundlePreview
+              open={showCommunityPreview}
+              onOpenChange={setShowCommunityPreview}
+              folderName={selectedCommunityDeck.name}
+              flashcards={communityDeckFlashcards}
+            />
+          )}
+
+          {/* Create Community Deck Dialog */}
+          <CreateCommunityDeckDialog
+            open={showCreateDialog}
+            onOpenChange={setShowCreateDialog}
+            onSuccess={() => {
+              setShowCreateDialog(false);
+              refetch(); // Refresh deck list
+              toast({
+                title: "สร้าง Deck สำเร็จ! 🎉",
+                description: "Deck ของคุณถูกแชร์ไปยังชุมชนแล้ว",
+                variant: "default"
+              });
             }}
           />
 
@@ -560,12 +717,14 @@ function FolderBundleCard({
 function PublicDeckCard({
   deck,
   index,
+  onPreview,
   onClone,
   currentUserId,
   onDelete
 }: {
   deck: PublicDeck;
   index: number;
+  onPreview: () => void;
   onClone: () => void;
   currentUserId?: string;
   onDelete: (id: string) => void;
@@ -580,91 +739,89 @@ function PublicDeckCard({
       transition={{ delay: index * 0.1 }}
       className="group relative h-full"
     >
-      {/* Abstract Gradient Blob Background */}
-      <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-[2.2rem] opacity-30 group-hover:opacity-75 blur-lg transition duration-500" />
+      {/* Glow effect on hover */}
+      <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-50 blur-lg transition duration-300" />
 
       {/* Main Card Content */}
-      <div className="relative h-full bg-slate-950/90 backdrop-blur-3xl rounded-[2rem] border border-white/10 p-5 flex flex-col overflow-hidden">
+      <div className="relative h-full bg-slate-950/90 backdrop-blur-xl rounded-2xl border border-white/10 group-hover:border-white/20 p-4 flex flex-col overflow-hidden transition-all duration-300">
 
-        {/* Top Shine */}
-        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+        {/* Top gradient bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 opacity-60" />
 
-        {/* Owner Badge & Controls */}
+        {/* Delete Button for Owner - Always Visible */}
         {isOwner && (
-          <div className="absolute top-4 right-4 z-20 flex gap-2">
-            <Badge className="bg-purple-600 text-white border-purple-400 shadow-lg shadow-purple-900/40">Owner</Badge>
+          <div className="absolute top-2 right-2 z-20">
             <Button
               variant="destructive"
               size="icon"
-              className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ring-2 ring-red-500/20"
+              className="h-7 w-7 rounded-full bg-red-600/90 hover:bg-red-500 border border-red-400/30 shadow-lg shadow-red-900/50 transition-all"
               onClick={(e) => {
                 e.stopPropagation();
-                if (window.confirm('คุณต้องการลบ Deck นี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+                if (window.confirm('คุณต้องการลบ Deck นี้ใช่หรือไม่?')) {
                   onDelete(deck.id);
                 }
               }}
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         )}
 
-        {/* Header Section */}
-        <div className="relative z-10 flex gap-4 items-start mb-4">
-          {/* Deck Icon Box */}
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.3)] shrink-0">
-            <BookOpen className="w-7 h-7 text-cyan-400" />
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center shrink-0">
+            <BookOpen className="w-5 h-5 text-cyan-400" />
           </div>
-
           <div className="flex-1 min-w-0">
-            {/* Category Badge */}
-            {(deck.category) && (
-              <Badge className="mb-1.5 bg-white/10 text-white/80 hover:bg-white/20 border-0 text-[10px] px-2 py-0.5 pointer-events-none data-[category='English']:bg-blue-500/20 data-[category='English']:text-blue-300" data-category={deck.category}>
+            {deck.category && (
+              <Badge className="mb-1 bg-blue-500/20 text-blue-300 border-0 text-[9px] px-1.5 py-0">
                 {deck.category}
               </Badge>
             )}
-            <h3 className="text-xl font-black text-white leading-tight line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-cyan-400 group-hover:to-blue-400 transition-all duration-300">
+            <h3 className="text-sm font-bold text-white leading-tight line-clamp-1 group-hover:text-cyan-400 transition-colors">
               {deck.name}
             </h3>
           </div>
         </div>
 
-        {/* Creator Info - Cute Pill */}
-        <div className="flex items-center gap-2 mb-4 bg-white/5 w-fit pr-3 rounded-full border border-white/5">
-          <Avatar className="w-6 h-6 border-2 border-slate-900">
+        {/* Creator Info */}
+        <div className="flex items-center gap-1.5 mb-3">
+          <Avatar className="w-5 h-5 border border-slate-700">
             <AvatarImage src={deck.creator_avatar || undefined} />
-            <AvatarFallback className="bg-gradient-to-br from-cyan-500 to-blue-500 text-[9px] text-white">
+            <AvatarFallback className="bg-gradient-to-br from-cyan-500 to-blue-500 text-[8px] text-white">
               {deck.creator_nickname?.charAt(0)?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
-          <span className="text-xs font-medium text-slate-300">
+          <span className="text-[10px] font-medium text-slate-400 truncate">
             {deck.creator_nickname || 'Anonymous'}
           </span>
         </div>
 
         {/* Description */}
-        <p className="text-sm text-slate-400 mb-5 line-clamp-2 min-h-[2.5em] leading-relaxed">
+        <p className="text-[11px] text-slate-400 mb-3 line-clamp-2 leading-relaxed min-h-[2.2em]">
           {deck.description || 'No description provided.'}
         </p>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-2 mb-5">
-          <div className="bg-slate-900/50 rounded-xl p-2 border border-white/5 flex flex-col items-center justify-center">
-            <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Vocab</span>
-            <span className="text-lg font-bold text-cyan-400">{deck.total_flashcards}</span>
+        {/* Stats Grid - Compact */}
+        <div className="grid grid-cols-3 gap-1.5 mb-3">
+          <div className="bg-slate-900/50 rounded-lg p-1.5 border border-white/5 flex flex-col items-center">
+            <span className="text-[8px] text-slate-500 font-medium uppercase">Sets</span>
+            <span className="text-sm font-bold text-indigo-400">{deck.total_sets}</span>
           </div>
-          <div className="bg-slate-900/50 rounded-xl p-2 border border-white/5 flex flex-col items-center justify-center">
-            <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Clones</span>
-            <span className="text-lg font-bold text-pink-400 flex items-center gap-1">
-              <Users className="w-3 h-3" /> {deck.clone_count}
-            </span>
+          <div className="bg-slate-900/50 rounded-lg p-1.5 border border-white/5 flex flex-col items-center">
+            <span className="text-[8px] text-slate-500 font-medium uppercase">Vocab</span>
+            <span className="text-sm font-bold text-cyan-400">{deck.total_flashcards}</span>
+          </div>
+          <div className="bg-slate-900/50 rounded-lg p-1.5 border border-white/5 flex flex-col items-center">
+            <span className="text-[8px] text-slate-500 font-medium uppercase">Clones</span>
+            <span className="text-sm font-bold text-pink-400">{deck.clone_count}</span>
           </div>
         </div>
 
         {/* Tags */}
-        <div className="flex-1 flex flex-wrap gap-1.5 mb-5 content-start">
-          {deck.tags?.slice(0, 3).map(tag => (
-            <span key={tag} className="text-[11px] font-medium text-slate-400 px-2 py-1 rounded-md bg-white/5 border border-white/5 hover:border-white/20 transition-colors">
+        <div className="flex flex-wrap gap-1 mb-3 min-h-[20px]">
+          {deck.tags?.slice(0, 2).map(tag => (
+            <span key={tag} className="text-[9px] font-medium text-slate-400 px-1.5 py-0.5 rounded bg-white/5 border border-white/5">
               #{tag}
             </span>
           ))}
@@ -672,19 +829,10 @@ function PublicDeckCard({
 
         {/* Action Button */}
         <Button
-          onClick={onClone}
-          disabled={isOwner}
-          className={`w-full h-11 rounded-xl font-bold shadow-lg transition-all duration-300 ${isOwner ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5' : 'bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 hover:from-cyan-500 hover:via-blue-500 hover:to-purple-500 text-white shadow-blue-900/20 group-hover:shadow-blue-500/40'}`}
+          onClick={onPreview}
+          className="w-full h-9 rounded-xl font-bold shadow-lg transition-all duration-300 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 text-white text-xs mt-auto"
         >
-          {isOwner ? (
-            <>
-              <Check className="w-4 h-4 mr-2" /> Owned
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4 mr-2" /> Clone Deck
-            </>
-          )}
+          <Eye className="w-3.5 h-3.5 mr-1.5" /> ดูคำศัพท์ข้างใน
         </Button>
       </div>
     </motion.div>

@@ -281,7 +281,7 @@ export function FolderBundlePreview({
     );
 }
 
-// Set Card Component (List View)
+// Set Card Component (List View) - Modern Teen-Friendly Design
 function SetCard({
     setName,
     cards,
@@ -296,62 +296,113 @@ function SetCard({
     onPreview: () => void;
 }) {
     return (
-        <div
-            onClick={onToggle}
-            className={`glass-card rounded-xl sm:rounded-2xl border transition-all p-3 sm:p-6 cursor-pointer min-h-[100px] sm:min-h-[120px] ${isSelected
-                ? 'border-purple-500/50 bg-purple-500/10'
-                : 'border-white/10 hover:border-white/30 bg-black/40'
-                }`}
+        <motion.div
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="relative group"
         >
-            <div className="flex items-start justify-between gap-2 sm:gap-4">
-                {/* Left Side - Content */}
-                <div className="flex items-start gap-2 sm:gap-4 flex-1 min-w-0">
-                    <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={onToggle}
-                        className="border-white/30 mt-0.5 sm:mt-1 pointer-events-none"
-                    />
+            {/* Glow effect on hover */}
+            <div className={`absolute -inset-0.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isSelected
+                    ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500'
+                    : 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500'
+                } blur-xl`} />
 
-                    <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-xl font-bold text-white mb-1 sm:mb-2 truncate">
-                            {setName}
-                        </h3>
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-                            <Badge className="bg-white/10 text-white/60 border-white/10 text-[10px] sm:text-xs">
-                                📝 {cards.length} คำศัพท์
-                            </Badge>
-                        </div>
+            {/* Main Card */}
+            <div
+                onClick={onToggle}
+                className={`relative rounded-2xl border backdrop-blur-xl transition-all p-5 cursor-pointer overflow-hidden ${isSelected
+                        ? 'border-purple-400/50 bg-gradient-to-br from-purple-500/20 to-pink-500/20'
+                        : 'border-white/10 bg-slate-900/80 hover:border-white/30 hover:bg-slate-800/80'
+                    }`}
+            >
+                {/* Top decorative gradient bar */}
+                <div className={`absolute top-0 left-0 right-0 h-1 ${isSelected
+                        ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600'
+                        : 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 opacity-50'
+                    }`} />
 
-                        {/* Sample words preview */}
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                            {cards.slice(0, 4).map((card) => (
-                                <span key={card.id} className="text-[11px] sm:text-sm text-white/40">
-                                    {card.front}
-                                </span>
-                            ))}
-                            {cards.length > 4 && (
-                                <span className="text-[11px] sm:text-sm text-white/40">
-                                    +{cards.length - 4} more
-                                </span>
+                <div className="flex items-center justify-between gap-4">
+                    {/* Left Side - Checkbox + Content */}
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                        {/* Custom Checkbox with gradient */}
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggle();
+                            }}
+                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all mt-1 flex-shrink-0 ${isSelected
+                                    ? 'border-purple-400 bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/50'
+                                    : 'border-white/30 hover:border-white/50 hover:bg-white/10'
+                                }`}
+                        >
+                            {isSelected && (
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                >
+                                    <CheckCircle2 className="w-4 h-4 text-white" />
+                                </motion.div>
                             )}
                         </div>
-                    </div>
-                </div>
 
-                {/* Right Side - Action Button */}
-                <Button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onPreview();
-                    }}
-                    size="sm"
-                    className="gap-1 sm:gap-2 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/20 flex-shrink-0 h-7 sm:h-9 px-2 sm:px-3 text-[10px] sm:text-sm"
-                >
-                    <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                    Preview
-                </Button>
+                        <div className="flex-1 min-w-0">
+                            {/* Set Name with Icon */}
+                            <div className="flex items-center gap-2 mb-3">
+                                <h3 className="text-lg font-bold text-white truncate">
+                                    {setName}
+                                </h3>
+                            </div>
+
+                            {/* Stats Badge */}
+                            <div className="flex flex-wrap items-center gap-2 mb-3">
+                                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${isSelected
+                                        ? 'bg-white/20 backdrop-blur-sm'
+                                        : 'bg-white/10 backdrop-blur-sm'
+                                    }`}>
+                                    <span className="text-2xl">📝</span>
+                                    <span className="text-sm font-bold text-white">{cards.length}</span>
+                                    <span className="text-xs text-white/70">คำศัพท์</span>
+                                </div>
+                            </div>
+
+                            {/* Sample words preview - Modern pill style */}
+                            <div className="flex flex-wrap gap-2">
+                                {cards.slice(0, 5).map((card) => (
+                                    <span
+                                        key={card.id}
+                                        className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors"
+                                    >
+                                        {card.front}
+                                    </span>
+                                ))}
+                                {cards.length > 5 && (
+                                    <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-white/40">
+                                        +{cards.length - 5} more
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Side - Preview Button */}
+                    <Button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onPreview();
+                        }}
+                        size="sm"
+                        className={`gap-2 rounded-xl font-bold flex-shrink-0 h-10 px-4 shadow-lg transition-all ${isSelected
+                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-0 shadow-purple-500/30'
+                                : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white border-0 shadow-blue-500/20'
+                            }`}
+                    >
+                        <Eye className="w-4 h-4" />
+                        <span className="hidden sm:inline">Preview</span>
+                    </Button>
+                </div>
             </div>
-        </div>
+        </motion.div>
     );
 }
 
