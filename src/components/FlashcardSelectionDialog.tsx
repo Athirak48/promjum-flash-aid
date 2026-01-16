@@ -86,13 +86,13 @@ export function FlashcardSelectionDialog({
     const handleRandomSelect = (count: number) => {
         if (count <= 0) return;
 
-        // Smart Random Logic
-        const diffCards = flashcards.filter(f => f.id); // Valid check
+        // Smart Random Logic (Aligned with useOptimalCards 50/50 Weak/New)
+        const diffCards = flashcards.filter(f => f.id);
 
         // 1. Separate into pools
         const poolNew: string[] = [];
-        const poolHard: string[] = []; // SRS < 3
-        const poolMastered: string[] = []; // SRS >= 3
+        const poolHard: string[] = []; // SRS < 3 (Weak/Hard)
+        const poolMastered: string[] = []; // SRS >= 3 (Remembered/Mastered)
 
         diffCards.forEach(card => {
             const level = cardProgress[card.id];
@@ -105,28 +105,68 @@ export function FlashcardSelectionDialog({
             }
         });
 
-        // Shuffle each pool internally
+        // Shuffle pools
         const shuffle = (arr: string[]) => [...arr].sort(() => Math.random() - 0.5);
         const shuffledNew = shuffle(poolNew);
         const shuffledHard = shuffle(poolHard);
         const shuffledMastered = shuffle(poolMastered);
 
-        // 2. Select in order: New -> Hard -> Mastered
         let selected: string[] = [];
 
-        // Take from New
-        if (selected.length < count) {
-            selected = [...selected, ...shuffledNew.slice(0, count - selected.length)];
+        // Target quotas
+        const targetHard = Math.ceil(count * 0.5);
+        const targetNew = count - targetHard;
+
+        // 1. Fill First Half (Priority: Hard -> New -> Mastered)
+        let hardToTake = Math.min(targetHard, shuffledHard.length);
+        selected = [...selected, ...shuffledHard.slice(0, hardToTake)];
+
+        // Fallback for Hard gap: New
+        let hardGap = targetHard - selected.length;
+        if (hardGap > 0) {
+            let newCanTake = Math.min(hardGap, shuffledNew.length);
+            selected = [...selected, ...shuffledNew.slice(0, newCanTake)];
         }
 
-        // Take from Hard (if needed)
-        if (selected.length < count) {
-            selected = [...selected, ...shuffledHard.slice(0, count - selected.length)];
+        // Fallback for Hard gap: Mastered (if New exhausted)
+        let hardGap2 = targetHard - selected.length;
+        if (hardGap2 > 0) {
+            let masterCanTake = Math.min(hardGap2, shuffledMastered.length);
+            selected = [...selected, ...shuffledMastered.slice(0, masterCanTake)];
         }
 
-        // Take from Mastered (if needed)
-        if (selected.length < count) {
-            selected = [...selected, ...shuffledMastered.slice(0, count - selected.length)];
+        // 2. Fill Second Half (Priority: New -> Hard -> Mastered)
+        // Note: We must exclude cards already picked.
+        const getRemaining = (source: string[]) => source.filter(id => !selected.includes(id));
+
+        let remainingNew = getRemaining(shuffledNew);
+        let remainingHard = getRemaining(shuffledHard);
+        let remainingMastered = getRemaining(shuffledMastered); // Should be same as original if not touched, but strictness is good
+
+        // Need to fill up to total 'count'
+        let currentCount = selected.length;
+        let needed = count - currentCount;
+
+        if (needed > 0) {
+            // Try New first
+            let takeNew = Math.min(needed, remainingNew.length);
+            selected = [...selected, ...remainingNew.slice(0, takeNew)];
+            needed -= takeNew;
+
+            // Try Hard (if we have excess Hard not used in first half)
+            if (needed > 0) {
+                let takeHard = Math.min(needed, remainingHard.length);
+                selected = [...selected, ...remainingHard.slice(0, takeHard)];
+                needed -= takeHard;
+            }
+
+            // Try Mastered
+            if (needed > 0) {
+                remainingMastered = getRemaining(shuffledMastered); // Refresh
+                let takeMaster = Math.min(needed, remainingMastered.length);
+                selected = [...selected, ...remainingMastered.slice(0, takeMaster)];
+                needed -= takeMaster;
+            }
         }
 
         setSelectedIds(selected);

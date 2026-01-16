@@ -14,7 +14,7 @@ import { AlertCircle, Target, Calendar, BookOpen, Clock, Folder, FileText, Spark
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-// import { ScrollArea } from '@/components/ui/scroll-area'; // Removed to use flex-1 native scroll
+import { PricingDialog } from './PricingDialog';
 
 interface CreateGoalDialogProps {
     open: boolean;
@@ -45,8 +45,14 @@ export function CreateGoalDialog({ open, onOpenChange, onGoalCreated }: CreateGo
 
     // Planning Mode State
     const [planningMode, setPlanningMode] = useState<'duration' | 'intensity'>('duration');
-    const [targetWordsPerSession, setTargetWordsPerSession] = useState(15);
+    const [targetWordsPerSession, setTargetWordsPerSession] = useState(20);
     const [targetSessionsPerDay, setTargetSessionsPerDay] = useState(2);
+
+    // Business Logic State
+    const [showPricing, setShowPricing] = useState(false);
+    // Mock isPro - In real app, fetch from useUserStats/useAuth
+    const isPro = false;
+    const hasActiveGoal = goals && goals.length > 0;
 
     // Get unique goal names from previous goals for autocomplete
     useEffect(() => {
@@ -102,10 +108,27 @@ export function CreateGoalDialog({ open, onOpenChange, onGoalCreated }: CreateGo
         if (!goalName || selectedSets.length === 0) {
             return;
         }
+
+        if (totalWordsFromSets < 50) {
+            toast({
+                title: "คำศัพท์น้อยเกินไป ⚠️",
+                description: "เป้าหมายการเรียนต้องมีคำศัพท์อย่างน้อย 50 คำ เพื่อประสิทธิภาพสูงสุด",
+                variant: "destructive"
+            });
+            return;
+        }
+
         setShowRequirements(true);
     };
 
     const handleCreate = async () => {
+        // 1. LIMIT CHECK
+        // 1. LIMIT CHECK - BYPASSED (Free for 2 months)
+        // if (hasActiveGoal && !isPro) {
+        //     setShowPricing(true);
+        //     return;
+        // }
+
         if (!goalName || selectedSets.length === 0) return;
 
         const firstSet = selectedSets[0];
@@ -156,36 +179,31 @@ export function CreateGoalDialog({ open, onOpenChange, onGoalCreated }: CreateGo
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            {/* Added flex flex-col and w-full to ensure layout behaves correctly */}
-            <DialogContent className="sm:max-w-[550px] w-full max-h-[90vh] flex flex-col p-0 gap-0 bg-[#0a0a0b] border border-white/10 text-slate-200 shadow-2xl overflow-hidden rounded-3xl">
+            <DialogContent className="sm:max-w-[500px] w-full max-h-[85vh] flex flex-col p-0 gap-0 bg-[#0a0a0b]/95 backdrop-blur-xl border border-indigo-500/20 text-slate-200 shadow-[0_0_50px_-12px_rgba(99,102,241,0.25)] rounded-2xl">
 
-                {/* Header - Fixed */}
-                <div className="flex-none p-6 bg-gradient-to-br from-indigo-950/40 via-[#0a0a0b] to-[#0a0a0b] border-b border-white/5 relative">
-                    <div className="absolute top-0 right-0 p-6 opacity-20 pointer-events-none">
-                        <Sparkles className="h-24 w-24 text-indigo-500 blur-xl -mr-6 -mt-6" />
-                    </div>
+                {/* Header - Premium */}
+                <div className="flex-none p-5 bg-gradient-to-br from-indigo-950/40 via-[#0a0a0b] to-[#0a0a0b] border-b border-indigo-500/10 relative overflow-hidden">
                     <DialogHeader className="relative z-10 space-y-1">
-                        <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-bold text-indigo-300 w-fit mb-2 shadow-[0_0_15px_-5px_#6366f1]">
-                            <Target className="h-3 w-3" />
-                            <span>AI PLANNING</span>
-                        </div>
-                        <DialogTitle className="text-2xl font-bold text-white tracking-tight">
+                        <DialogTitle className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-200 tracking-tight">
                             สร้างเป้าหมายการเรียน
                         </DialogTitle>
-                        <DialogDescription className="text-slate-400 text-sm">
+                        <DialogDescription className="text-slate-400 text-xs text-indigo-200/70">
                             ออกแบบตารางเรียนที่เหมาะกับสมองของคุณด้วยระบบ SRS
                         </DialogDescription>
                     </DialogHeader>
                 </div>
 
-                {/* Scrollable Content - Flexible height */}
-                <div className="flex-1 overflow-y-auto min-h-0">
-                    <div className="p-6 space-y-6">
+                {/* Content - Compact & Premium */}
+                <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar relative">
+                    {/* Ambient Glow */}
+                    <div className="absolute top-0 left-0 w-full h-full bg-indigo-500/5 pointer-events-none" />
+
+                    <div className="p-5 space-y-5 relative z-10">
 
                         {/* 1. Goal Name */}
-                        <div className="space-y-3">
-                            <Label htmlFor="goal-name" className="text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                                <span className="bg-indigo-500/20 text-indigo-400 w-5 h-5 rounded-full flex items-center justify-center text-[10px]">1</span>
+                        <div className="space-y-2 group">
+                            <Label htmlFor="goal-name" className="text-slate-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 group-focus-within:text-indigo-300 transition-colors">
+                                <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-[0_0_10px_-4px_#6366f1]">1</div>
                                 ชื่อเป้าหมาย
                             </Label>
                             <Input
@@ -193,48 +211,48 @@ export function CreateGoalDialog({ open, onOpenChange, onGoalCreated }: CreateGo
                                 value={goalName}
                                 onChange={(e) => setGoalName(e.target.value)}
                                 placeholder="เช่น: เตรียมสอบ TGAT (พ.ย.)"
-                                className="h-11 bg-white/5 border-white/10 focus:border-indigo-500/50 focus:bg-indigo-950/20 text-white placeholder:text-slate-600 rounded-xl"
+                                className="h-10 text-xs bg-white/[0.03] backdrop-blur-md border-white/10 focus:border-indigo-500/50 focus:bg-indigo-950/20 focus:ring-2 focus:ring-indigo-500/10 text-white placeholder:text-slate-600 rounded-xl transition-all duration-300"
                             />
                         </div>
 
                         {/* 2. Selection Area */}
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <Label className="text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                                    <span className="bg-indigo-500/20 text-indigo-400 w-5 h-5 rounded-full flex items-center justify-center text-[10px]">2</span>
-                                    เลือกชุดคำศัพท์
+                                <Label className="text-slate-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
+                                    <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-[0_0_10px_-4px_#6366f1]">2</div>
+                                    เลือกชุดคำศัพท์ (เลือกได้มากกว่า 1)
                                 </Label>
                                 {totalWordsFromSets > 0 && (
-                                    <span className="text-xs font-medium text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                    <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shadow-[0_0_10px_-4px_#10b981]">
                                         <CheckCircle2 className="w-3 h-3" />
-                                        รวม {totalWordsFromSets} คำ
+                                        {totalWordsFromSets} คำ
                                     </span>
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-5 gap-0 rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden min-h-[180px]">
+                            <div className="grid grid-cols-5 gap-0 rounded-xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden h-[150px] shadow-inner">
                                 {/* Left: Browser (3 cols) */}
-                                <div className="col-span-3 border-r border-white/10 flex flex-col">
-                                    <div className="p-2 border-b border-white/5 bg-white/[0.02]">
+                                <div className="col-span-3 border-r border-white/10 flex flex-col h-full bg-white/[0.01]">
+                                    <div className="p-2 border-b border-white/5">
                                         <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
-                                            <SelectTrigger className="h-8 bg-transparent border-0 text-slate-300 text-xs focus:ring-0 px-2 hover:bg-white/5 rounded-lg">
-                                                <div className="flex items-center gap-2">
+                                            <SelectTrigger className="h-8 bg-transparent border-white/5 text-slate-300 text-[10px] focus:ring-0 px-2 hover:bg-white/5 rounded-lg transition-colors">
+                                                <div className="flex items-center gap-1.5">
                                                     <Folder className="w-3.5 h-3.5 text-indigo-400" />
                                                     <SelectValue placeholder="เลือกโฟลเดอร์..." />
                                                 </div>
                                             </SelectTrigger>
-                                            <SelectContent className="bg-[#1a1d24] border-white/10 text-slate-300">
+                                            <SelectContent className="bg-[#1a1d24] border-white/10 text-slate-300 backdrop-blur-xl">
                                                 {decks?.map((deck) => (
-                                                    <SelectItem key={deck.id} value={deck.id} className="text-xs">📂 {deck.deck_name}</SelectItem>
+                                                    <SelectItem key={deck.id} value={deck.id} className="text-xs focus:bg-indigo-500/20 focus:text-indigo-200">📂 {deck.deck_name}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
 
-                                    <div className="flex-1 overflow-y-auto h-[140px]">
-                                        <div className="p-2 space-y-1">
+                                    <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+                                        <div className="space-y-0.5">
                                             {flashcardSetsLoading ? (
-                                                <div className="text-center py-4 text-xs text-slate-500">Loading...</div>
+                                                <div className="text-center py-4 text-[10px] text-slate-500 animate-pulse">Loading sets...</div>
                                             ) : flashcardSets && flashcardSets.length > 0 ? (
                                                 flashcardSets.map((set) => {
                                                     const isSelected = selectedSets.some(s => s.id === set.id);
@@ -251,22 +269,23 @@ export function CreateGoalDialog({ open, onOpenChange, onGoalCreated }: CreateGo
                                                                 }])
                                                             }
                                                             className={cn(
-                                                                "w-full text-left px-3 py-2 rounded-lg text-xs transition-all flex items-center justify-between group",
+                                                                "w-full text-left px-2.5 py-2 rounded-lg text-[10px] transition-all flex items-center justify-between group relative overflow-hidden",
                                                                 isSelected
-                                                                    ? "bg-indigo-500/20 text-indigo-200"
+                                                                    ? "bg-indigo-500/20 text-indigo-100 font-medium"
                                                                     : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
                                                             )}
                                                         >
-                                                            <span className="truncate pr-2 font-medium">{set.title}</span>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="opacity-50 text-[10px]">{set.card_count}</span>
-                                                                {isSelected && <CheckCircle2 className="w-3 h-3 text-indigo-400" />}
+                                                            {isSelected && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-indigo-500" />}
+                                                            <span className="truncate pr-2">{set.title}</span>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="opacity-50 text-[9px]">{set.card_count}</span>
+                                                                {isSelected && <CheckCircle2 className="w-3 h-3 text-indigo-400 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]" />}
                                                             </div>
                                                         </button>
                                                     );
                                                 })
                                             ) : (
-                                                <div className="text-center py-8 text-xs text-slate-600">
+                                                <div className="text-center py-8 text-[10px] text-slate-600">
                                                     {selectedFolderId ? "ไม่มีชุดคำศัพท์" : "กรุณาเลือกโฟลเดอร์"}
                                                 </div>
                                             )}
@@ -275,29 +294,32 @@ export function CreateGoalDialog({ open, onOpenChange, onGoalCreated }: CreateGo
                                 </div>
 
                                 {/* Right: Selected (2 cols) */}
-                                <div className="col-span-2 bg-black/20 flex flex-col">
-                                    <div className="p-2.5 border-b border-white/5 flex items-center justify-between">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase">Selected</span>
-                                        <span className="text-[10px] text-slate-600 bg-white/5 px-1.5 rounded-full">{selectedSets.length}</span>
+                                <div className="col-span-2 bg-black/40 flex flex-col h-full shadow-[inset_10px_0_20px_-10px_rgba(0,0,0,0.5)]">
+                                    <div className="p-2 border-b border-white/5 flex items-center justify-between">
+                                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Selected</span>
+                                        <span className="text-[9px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 rounded-full">{selectedSets.length}</span>
                                     </div>
-                                    <div className="flex-1 overflow-y-auto h-[140px]">
-                                        <div className="p-2 space-y-1.5">
+                                    <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+                                        <div className="space-y-1">
                                             {selectedSets.map((set) => (
-                                                <div key={set.id} className="group flex items-center justify-between p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                                                <div key={set.id} className="group flex items-center justify-between p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/10 hover:bg-indigo-500/10 transition-colors">
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="text-xs font-medium text-indigo-200 truncate">{set.title}</p>
+                                                        <p className="text-[10px] font-medium text-indigo-200 truncate">{set.title}</p>
                                                     </div>
                                                     <button
                                                         onClick={() => setSelectedSets(selectedSets.filter(s => s.id !== set.id))}
-                                                        className="ml-2 text-indigo-400/50 hover:text-red-400 transition-colors"
+                                                        className="ml-1 text-slate-500 hover:text-red-400 transition-colors"
                                                     >
                                                         <X className="w-3 h-3" />
                                                     </button>
                                                 </div>
                                             ))}
                                             {selectedSets.length === 0 && (
-                                                <div className="text-center py-8 text-xs text-slate-600 italic">
-                                                    ยังไม่ได้เลือก
+                                                <div className="flex flex-col items-center justify-center h-full text-center pb-8 opacity-40">
+                                                    <Folder className="w-8 h-8 text-slate-600 mb-2" />
+                                                    <div className="text-[10px] text-slate-500 italic">
+                                                        ยังไม่ได้เลือก
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -308,249 +330,182 @@ export function CreateGoalDialog({ open, onOpenChange, onGoalCreated }: CreateGo
 
                         {/* 3. Duration & Stats */}
                         {!showRequirements ? (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label className="text-slate-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                                        <span className="bg-indigo-500/20 text-indigo-400 w-5 h-5 rounded-full flex items-center justify-center text-[10px]">3</span>
-                                        โหมดการวางแผน
+                                    <Label className="text-slate-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
+                                        <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-[0_0_10px_-4px_#6366f1]">3</div>
+                                        โหมดวางแผน
                                     </Label>
-                                    <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/5">
-                                        <button
-                                            onClick={() => setPlanningMode('duration')}
-                                            className={cn(
-                                                "px-2 py-1 text-[10px] rounded-md transition-all font-medium",
-                                                planningMode === 'duration' ? "bg-indigo-500 text-white shadow" : "text-slate-400 hover:text-slate-300"
-                                            )}
-                                        >
-                                            กำหนดวันจบ
-                                        </button>
-                                        <button
-                                            onClick={() => setPlanningMode('intensity')}
-                                            className={cn(
-                                                "px-2 py-1 text-[10px] rounded-md transition-all font-medium",
-                                                planningMode === 'intensity' ? "bg-indigo-500 text-white shadow" : "text-slate-400 hover:text-slate-300"
-                                            )}
-                                        >
-                                            กำหนดจำนวนคำ
-                                        </button>
-                                    </div>
+                                    {/* Toggle Removed */}
                                 </div>
 
                                 {planningMode === 'duration' ? (
                                     // MODE A: Duration Based
-                                    <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-indigo-900/10 to-purple-900/10 border border-white/5">
-                                        <div className="flex-1">
-                                            <Label className="text-xs text-slate-400 mb-1.5 block">ต้องการให้จบภายใน (วัน)</Label>
+                                    <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-indigo-950/30 to-purple-950/30 border border-indigo-500/10 relative overflow-hidden group hover:border-indigo-500/30 transition-colors">
+                                        <div className="absolute top-0 right-0 p-8 bg-indigo-500/5 blur-3xl rounded-full -mr-10 -mt-10 group-hover:bg-indigo-500/10 transition-colors" />
+
+                                        <div className="flex-1 relative z-10 block">
+                                            <Label className="text-[10px] text-slate-400 mb-2 block uppercase tracking-wider">ต้องการให้จบภายใน (วัน)</Label>
                                             <NumberSpinner
                                                 value={durationDays}
                                                 onChange={setDurationDays}
                                                 min={3}
                                                 max={365}
-                                                className="bg-white/5 border-white/10 text-white h-10 w-full"
+                                                className="bg-black/20 border-white/10 text-white h-9 w-full text-xs hover:border-indigo-500/30 focus-within:border-indigo-500/50 transition-colors"
                                             />
                                         </div>
-                                        <div className="w-px h-10 bg-white/10 mx-2" />
-                                        <div className="flex-1 text-center opacity-80">
-                                            <div className="text-xs text-slate-500 mb-1">คำใหม่ที่จะได้เรียน</div>
-                                            <div className="text-xl font-black text-white">
+                                        <div className="w-px h-10 bg-gradient-to-b from-transparent via-white/10 to-transparent mx-2" />
+                                        <div className="flex-1 text-center opacity-90 relative z-10">
+                                            <div className="text-[9px] text-slate-500 mb-1 uppercase tracking-wider">เฉลี่ยเรียนวันละ</div>
+                                            <div className="text-2xl font-black text-white leading-none drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
                                                 {Math.ceil(totalWordsFromSets / durationDays) || 0}
                                             </div>
-                                            <div className="text-[10px] text-slate-500">คำใหม่/วัน</div>
+                                            <div className="text-[9px] text-indigo-400/80 mt-1">คำใหม่</div>
                                         </div>
                                     </div>
                                 ) : (
                                     // MODE B: Intensity Based
-                                    <div className="space-y-3 p-4 rounded-xl bg-gradient-to-r from-indigo-900/10 to-purple-900/10 border border-white/5">
-                                        <div className="flex gap-4">
-                                            <div className="flex-1">
-                                                <Label className="text-xs text-slate-400 mb-1.5 block">คำใหม่ต่อรอบ</Label>
-                                                <NumberSpinner
-                                                    value={targetWordsPerSession}
-                                                    onChange={(val) => {
-                                                        setTargetWordsPerSession(val);
-                                                        // Auto-update duration
-                                                        const daily = val * targetSessionsPerDay;
-                                                        if (daily > 0) {
-                                                            const dur = Math.ceil(totalWordsFromSets / daily);
-                                                            setDurationDays(Math.max(1, dur));
-                                                        }
-                                                    }}
-                                                    min={5}
-                                                    max={50}
-                                                    className="bg-white/5 border-white/10 text-white h-10 w-full"
-                                                />
-                                            </div>
-                                            <div className="flex-1">
-                                                <Label className="text-xs text-slate-400 mb-1.5 block">จำนวนรอบต่อวัน</Label>
-                                                <NumberSpinner
-                                                    value={targetSessionsPerDay}
-                                                    onChange={(val) => {
-                                                        setTargetSessionsPerDay(val);
-
-                                                        // Auto-update duration
-                                                        const daily = targetWordsPerSession * val;
-                                                        if (daily > 0) {
-                                                            const dur = Math.ceil(totalWordsFromSets / daily);
-                                                            setDurationDays(Math.max(1, dur));
-                                                        }
-                                                    }}
-                                                    min={1}
-                                                    max={6}
-                                                    className="bg-white/5 border-white/10 text-white h-10 w-full"
-                                                />
-                                            </div>
+                                    <div className="flex gap-4 p-4 rounded-xl bg-gradient-to-r from-indigo-950/30 to-purple-950/30 border border-indigo-500/10 relative overflow-hidden group hover:border-indigo-500/30 transition-colors">
+                                        <div className="flex-1 relative z-10">
+                                            <Label className="text-[10px] text-slate-400 mb-2 block uppercase tracking-wider">คำใหม่/รอบ</Label>
+                                            <NumberSpinner
+                                                value={targetWordsPerSession}
+                                                onChange={(val) => {
+                                                    setTargetWordsPerSession(val);
+                                                    const daily = val * targetSessionsPerDay;
+                                                    if (daily > 0) {
+                                                        const dur = Math.ceil(totalWordsFromSets / daily);
+                                                        setDurationDays(Math.max(1, dur));
+                                                    }
+                                                }}
+                                                min={5}
+                                                max={50}
+                                                className="bg-black/20 border-white/10 text-white h-9 w-full text-xs hover:border-indigo-500/30 transition-colors"
+                                            />
                                         </div>
-                                        <div className="pt-2 border-t border-white/10 flex items-center justify-between">
-                                            <span className="text-xs text-slate-400">จะเรียนจบในประมาณ</span>
-                                            <span className="text-sm font-bold text-indigo-300">
-                                                {requirements.smartDuration || durationDays} วัน
-                                                <span className="text-[10px] font-normal text-slate-400 ml-1">
-                                                    (รวมวันพัก+สอบ)
-                                                </span>
-                                            </span>
+                                        <div className="flex-1 relative z-10">
+                                            <Label className="text-[10px] text-slate-400 mb-2 block uppercase tracking-wider">รอบ/วัน</Label>
+                                            <NumberSpinner
+                                                value={targetSessionsPerDay}
+                                                onChange={(val) => {
+                                                    setTargetSessionsPerDay(val);
+                                                    const daily = targetWordsPerSession * val;
+                                                    if (daily > 0) {
+                                                        const dur = Math.ceil(totalWordsFromSets / daily);
+                                                        setDurationDays(Math.max(1, dur));
+                                                    }
+                                                }}
+                                                min={1}
+                                                max={6}
+                                                className="bg-black/20 border-white/10 text-white h-9 w-full text-xs hover:border-indigo-500/30 transition-colors"
+                                            />
                                         </div>
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            // Results View
-                            <div className="animate-in fade-in zoom-in-95 duration-300 space-y-4">
-                                <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-5 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                                        <TrendingUp className="w-20 h-20 text-indigo-500" />
+                            // Results View - Compacted & Visual
+                            <div className="animate-in fade-in zoom-in-95 duration-500 space-y-3">
+                                <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4 relative overflow-hidden shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]">
+                                    {/* Decoration */}
+                                    <div className="absolute top-0 right-0 p-8 opacity-10">
+                                        <TrendingUp className="w-24 h-24 text-indigo-500 blur-sm" />
                                     </div>
 
                                     <div className="relative z-10">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="p-1.5 rounded-lg bg-indigo-500 text-white shadow-lg shadow-indigo-500/30">
-                                                <Sparkles className="w-4 h-4" />
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-[0_0_15px_-3px_#6366f1]">
+                                                <Sparkles className="w-4 h-4 animate-pulse" />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-white text-sm">AI Analysis Complete</h4>
-                                                <p className="text-[10px] text-indigo-300">สร้างแผนการเรียนที่เหมาะสมที่สุดแล้ว</p>
+                                                <h4 className="font-bold text-white text-sm tracking-tight">AI Strategy Certified</h4>
+                                                <p className="text-[10px] text-indigo-300">แผนการเรียนที่เหมาะสมกับคุณที่สุด</p>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4 mb-4">
-                                            <div className="bg-black/30 rounded-lg p-3 text-center border border-indigo-500/20">
-                                                <div className="text-[10px] text-indigo-200/60 mb-1">เป้าหมายต่อวัน</div>
-                                                <div className="text-2xl font-black text-white">{requirements.wordsPerDay} คำ</div>
-
+                                        <div className="grid grid-cols-2 gap-3 mb-3">
+                                            <div className="bg-black/40 rounded-lg p-3 text-center border border-white/5 shadow-lg backdrop-blur mx-auto w-full">
+                                                <div className="text-[9px] text-indigo-200/60 mb-1 uppercase tracking-wider">Target / Day</div>
+                                                <div className="text-2xl font-black text-white tracking-tight">{requirements.wordsPerDay} <span className="text-xs font-normal text-slate-500">words</span></div>
                                             </div>
-                                            <div className="bg-black/30 rounded-lg p-3 text-center border border-indigo-500/20">
-                                                <div className="text-[10px] text-indigo-200/60 mb-1">แบ่งเป็น</div>
-                                                <div className="text-2xl font-black text-white">{requirements.sessionsPerDay} รอบ</div>
-
+                                            <div className="bg-black/40 rounded-lg p-3 text-center border border-white/5 shadow-lg backdrop-blur mx-auto w-full">
+                                                <div className="text-[9px] text-indigo-200/60 mb-1 uppercase tracking-wider">Sessions</div>
+                                                <div className="text-2xl font-black text-white tracking-tight">{requirements.sessionsPerDay} <span className="text-xs font-normal text-slate-500">times</span></div>
                                             </div>
                                         </div>
 
-                                        {/* Smart Stats Breakdown */}
-                                        <div className="mt-3 bg-indigo-900/20 rounded-lg p-3 border border-indigo-500/10 mb-4">
+                                        {/* Smart Stats Breakdown - Glassy */}
+                                        <div className="bg-white/[0.02] rounded-lg p-2.5 border border-white/5 mb-3 backdrop-blur-sm">
                                             <div className="flex items-center justify-between mb-2">
-                                                <div className="text-[11px] font-semibold text-indigo-200 flex items-center gap-1">
+                                                <div className="text-[10px] font-semibold text-indigo-200 flex items-center gap-1.5">
                                                     <Sparkles className="w-3 h-3 text-amber-400" />
-                                                    แผนการเรียนอัจฉริยะ (AI Smart Plan)
+                                                    DIFFICULTY LEVEL
                                                 </div>
-                                                {/* Difficulty Badge */}
                                                 <div className={cn(
-                                                    "px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1",
+                                                    "px-2 py-0.5 rounded-full text-[9px] font-bold border flex items-center gap-1 shadow-sm",
                                                     requirements.difficulty === 'Easy' && "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
                                                     requirements.difficulty === 'Moderate' && "bg-blue-500/10 text-blue-400 border-blue-500/20",
                                                     requirements.difficulty === 'Challenging' && "bg-amber-500/10 text-amber-400 border-amber-500/20",
                                                     requirements.difficulty === 'Intense' && "bg-orange-500/10 text-orange-400 border-orange-500/20",
                                                     requirements.difficulty === 'Extreme' && "bg-red-500/10 text-red-400 border-red-500/20 animate-pulse"
                                                 )}>
-                                                    {requirements.difficulty === 'Extreme' && <AlertCircle className="w-3 h-3" />}
-                                                    {requirements.difficulty} Level
+                                                    {requirements.difficulty}
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-3 gap-2 text-center">
                                                 <div className="bg-black/20 rounded p-1.5 border border-white/5">
-                                                    <div className="text-[10px] text-slate-400">งานจริง (Reps)</div>
-                                                    <div className="text-sm font-bold text-white">{requirements.totalReps} ครั้ง</div>
+                                                    <div className="text-[8px] text-slate-400 uppercase">Total Reps</div>
+                                                    <div className="text-xs font-bold text-white">{requirements.totalReps}</div>
                                                 </div>
                                                 <div className="bg-black/20 rounded p-1.5 border border-white/5">
-                                                    <div className="text-[10px] text-slate-400">วันตกผลึก</div>
-                                                    <div className="text-sm font-bold text-emerald-400">{requirements.consolidationDays} วัน</div>
+                                                    <div className="text-[8px] text-slate-400 uppercase">Consolidation</div>
+                                                    <div className="text-xs font-bold text-emerald-400">{requirements.consolidationDays} Days</div>
                                                 </div>
                                                 <div className="bg-black/20 rounded p-1.5 border border-white/5">
-                                                    <div className="text-[10px] text-slate-400">วันสอบ</div>
-                                                    <div className="text-sm font-bold text-rose-400">{requirements.assessmentDays} ครั้ง</div>
-                                                    <div className="text-[8px] text-slate-400 mt-0.5 flex flex-wrap justify-center gap-x-1">
-                                                        <span>Pre: 1</span>
-                                                        <span>•</span>
-                                                        <span>Int: {Math.max(0, requirements.assessmentDays - 2)}</span>
-                                                        <span>•</span>
-                                                        <span>Post: 1</span>
-                                                    </div>
+                                                    <div className="text-[8px] text-slate-400 uppercase">Exam</div>
+                                                    <div className="text-xs font-bold text-rose-400">{requirements.assessmentDays} Times</div>
                                                 </div>
-                                            </div>
-
-                                            {/* Overload Warning */}
-                                            {requirements.difficulty === 'Extreme' && (
-                                                <div className="mt-3 p-2 bg-red-500/10 border border-red-500/30 rounded-lg flex gap-2">
-                                                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                                                    <div>
-                                                        <div className="text-[11px] font-bold text-red-400">⚠️ OVERLOAD WARNING</div>
-                                                        <p className="text-[10px] text-red-300/80 leading-tight">
-                                                            คุณกำลังพยายามเรียนหนักเกินไป ({requirements.sessionsPerDay} รอบ/วัน) เสี่ยงต่อการ Burnout สูงมาก!
-                                                            <br />แนะนำ: เพิ่มเวลาเรียนเป็น <strong>{Math.ceil(totalWordsFromSets / (3 * targetWordsPerSession))} วัน</strong> เพื่อลดความเครียด
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {requirements.difficulty === 'Intense' && (
-                                                <div className="mt-3 p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg flex gap-2">
-                                                    <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
-                                                    <div>
-                                                        <div className="text-[11px] font-bold text-orange-400">⚠️ High Intensity</div>
-                                                        <p className="text-[10px] text-orange-300/80 leading-tight">
-                                                            ตารางค่อนข้างแน่น ({requirements.sessionsPerDay} รอบ/วัน) ต้องมีวินัยสูงมาก
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            <div className="mt-2 text-[10px] text-slate-500 text-center">
-                                                *รวมวันพักและวันสอบในแผนแล้ว
                                             </div>
                                         </div>
 
-                                        <div className="space-y-2 bg-black/20 rounded-lg p-3">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Schedule Preview</p>
+                                        <div className="space-y-2 bg-black/30 rounded-lg p-3 border border-indigo-500/10">
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 pl-1 flex items-center gap-2">
+                                                <Clock className="w-3 h-3" />
+                                                ตารางเรียนที่แนะนำ (Schedule)
+                                            </p>
                                             {(() => {
                                                 const defaultTimes = ['08:00', '11:00', '14:00', '17:00', '20:00', '22:00'];
                                                 const getDefault = (i: number) => defaultTimes[i] || '23:00';
-
-                                                // Prepare sorted times for display to ensure strict order
                                                 const validSortedTimes = Array.from({ length: requirements.sessionsPerDay })
                                                     .map((_, i) => scheduleTimes[i] || getDefault(i));
                                                 validSortedTimes.sort();
 
-                                                return validSortedTimes.map((time, idx) => {
-                                                    const prevTime = idx > 0 ? validSortedTimes[idx - 1] : undefined;
-                                                    return (
-                                                        <div key={idx} className="flex items-center justify-between text-xs bg-white/5 p-2 rounded border border-white/5 hover:bg-white/10 transition-colors">
-                                                            <span className="text-slate-300 font-medium flex items-center gap-2">
-                                                                <Clock className="w-3 h-3 text-indigo-400" />
-                                                                Session {idx + 1}
-                                                            </span>
-                                                            <TimePicker
-                                                                size="sm"
-                                                                min={prevTime}
-                                                                value={time}
-                                                                onChange={(val) => {
-                                                                    // Update based on the current sorted view
-                                                                    const nextTimes = [...validSortedTimes];
-                                                                    nextTimes[idx] = val;
-                                                                    nextTimes.sort(); // Re-sort to maintain chronological order
-                                                                    setScheduleTimes(nextTimes);
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    );
-                                                });
+                                                return (
+                                                    <div className="grid grid-cols-1 gap-2">
+                                                        {validSortedTimes.map((time, idx) => (
+                                                            <div key={idx} className="flex items-center justify-between text-[11px] bg-white/5 hover:bg-white/10 p-2.5 rounded-lg border border-white/5 hover:border-indigo-500/30 transition-all group">
+                                                                <span className="text-slate-300 font-medium flex items-center gap-2">
+                                                                    <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1]" />
+                                                                    รอบที่ {idx + 1}
+                                                                </span>
+                                                                <div className="flex items-center gap-2 bg-black/40 px-2 py-1 rounded border border-white/5 group-hover:border-indigo-500/20 transition-colors">
+                                                                    <TimePicker
+                                                                        size="sm"
+                                                                        value={time}
+                                                                        onChange={(val) => {
+                                                                            const nextTimes = [...validSortedTimes];
+                                                                            nextTimes[idx] = val;
+                                                                            nextTimes.sort();
+                                                                            setScheduleTimes(nextTimes);
+                                                                        }}
+                                                                        className="h-6 text-xs p-0 border-0 bg-transparent focus:ring-0 text-indigo-300 font-mono font-bold"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                );
                                             })()}
                                         </div>
                                     </div>
@@ -561,17 +516,17 @@ export function CreateGoalDialog({ open, onOpenChange, onGoalCreated }: CreateGo
                     </div>
                 </div>
 
-                {/* Footer Action - Fixed at bottom */}
-                <div className="flex-none p-4 border-t border-white/5 bg-[#0a0a0b]/50 backdrop-blur-sm z-10">
+                {/* Footer Action - Premium */}
+                <div className="flex-none p-5 border-t border-white/5 bg-[#0a0a0b]/80 backdrop-blur-xl z-20 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.5)]">
                     {!showRequirements ? (
                         <Button
                             onClick={handleCalculate}
                             disabled={!goalName || selectedSets.length === 0}
-                            className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-900/20 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full h-11 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 hover:from-indigo-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold text-sm rounded-xl shadow-[0_0_25px_-5px_#6366f1] transition-all hover:scale-[1.01] hover:shadow-[0_0_35px_-5px_#6366f1] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none border border-white/10"
                         >
                             <span className="flex items-center gap-2">
-                                <Sparkles className="h-4 w-4" />
-                                คำนวณแผนการเรียน (AI)
+                                <Sparkles className="h-4 w-4 fill-white text-white animate-pulse" />
+                                คำนวณแผนการเรียน (AI Analysis)
                             </span>
                         </Button>
                     ) : (
@@ -579,18 +534,18 @@ export function CreateGoalDialog({ open, onOpenChange, onGoalCreated }: CreateGo
                             <Button
                                 variant="outline"
                                 onClick={() => setShowRequirements(false)}
-                                className="flex-1 h-12 border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white rounded-xl"
+                                className="flex-1 h-11 text-sm border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white rounded-xl backdrop-blur-sm transition-colors"
                             >
                                 แก้ไขข้อมูล
                             </Button>
                             <Button
                                 onClick={handleCreate}
                                 disabled={isCreating}
-                                className="flex-[2] h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-900/20"
+                                className="flex-[2] h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl shadow-[0_0_20px_-5px_#10b981] transition-all hover:shadow-[0_0_30px_-5px_#10b981] border border-white/10"
                             >
                                 {isCreating ? 'กำลังสร้าง...' : (
                                     <span className="flex items-center gap-2">
-                                        ยืนยันเริ่มเรียนทันที
+                                        ยืนยันเริ่มเรียน
                                         <ChevronRight className="w-4 h-4" />
                                     </span>
                                 )}
@@ -598,6 +553,8 @@ export function CreateGoalDialog({ open, onOpenChange, onGoalCreated }: CreateGo
                         </div>
                     )}
                 </div>
+
+                <PricingDialog open={showPricing} onOpenChange={setShowPricing} />
 
             </DialogContent>
         </Dialog>

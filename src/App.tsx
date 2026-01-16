@@ -34,6 +34,9 @@ import PreTestResultsPage from "./pages/PreTestResultsPage";
 import InterimTestPage from "./pages/InterimTestPage";
 import PostTestPage from "./pages/PostTestPage";
 import PostTestResultsPage from "./pages/PostTestResultsPage";
+import InterimTestResultsPage from "./pages/InterimTestResultsPage"; // Imported
+import MultiGameSessionPage from "./pages/MultiGameSessionPage";
+import MultiGameResultsPage from "./pages/MultiGameResultsPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminDecks from "./pages/admin/AdminDecks";
@@ -246,6 +249,14 @@ const App = () => {
                       }
                     />
                     <Route
+                      path="/interim-test-results"
+                      element={
+                        <ProtectedRoute>
+                          <InterimTestResultsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
                       path="/post-test"
                       element={
                         <ProtectedRoute>
@@ -258,6 +269,23 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <PostTestResultsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Multi-Game Session Routes */}
+                    <Route
+                      path="/multi-game-session"
+                      element={
+                        <ProtectedRoute>
+                          <MultiGameSessionPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/multi-game-results"
+                      element={
+                        <ProtectedRoute>
+                          <MultiGameResultsPage />
                         </ProtectedRoute>
                       }
                     />

@@ -19,6 +19,7 @@ export interface Flashcard {
     repetitions?: number;
     srs_score?: number | null;
     srs_level?: number | null;
+    part_of_speech?: string;
 }
 
 export function useFlashcards() {

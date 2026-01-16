@@ -62,12 +62,11 @@ const Navbar = () => {
   ];
 
   const userNavItems = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/classroom", label: "Lobby" },
-    { href: "/decks", label: "Community" },
-    { href: "/flashcards", label: "Deck" },
-    { href: "/vocab-challenge", label: "Vocab Challenge" },
-    { href: "/feedback", label: "Feedback" },
+    { href: "/dashboard", label: "หน้าหลัก" },
+    { href: "/flashcards", label: "คลังศัพท์" }, // Moved here
+    { href: "/classroom", label: "ลอบบี้" },
+    { href: "/decks", label: "ชุมชน" },
+    { href: "/feedback", label: "ข้อเสนอแนะ" },
   ];
 
   const adminNavItems = [
@@ -84,7 +83,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 flex-shrink-0 group">
+          <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2 flex-shrink-0 group">
             <div className="p-1.5 bg-white/95 rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.3)] backdrop-blur-md border border-white/50 group-hover:bg-white transition-all">
               <img
                 src={promjumLogo}
@@ -92,6 +91,10 @@ const Navbar = () => {
                 className="h-8 w-8 lg:h-10 lg:w-10 object-contain"
               />
             </div>
+            {/* BETA Badge - Right beside logo */}
+            <span className="px-2 py-0.5 text-[9px] lg:text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white rounded-md shadow-[0_0_12px_rgba(245,158,11,0.6)] border border-amber-300/50 animate-pulse">
+              BETA
+            </span>
             <span className="text-lg lg:text-xl font-bold bg-gradient-primary bg-clip-text text-transparent drop-shadow-sm group-hover:drop-shadow-md transition-all">
               Promjum
             </span>
@@ -175,24 +178,13 @@ const Navbar = () => {
 
             {/* Theme and Language toggles */}
             <div className="flex items-center space-x-1 ml-2">
-              <ThemeToggle />
-              <LanguageToggle />
+              <ThemeToggle className="text-white/90 hover:text-white hover:bg-white/10" />
+              <LanguageToggle className="text-white/90 hover:text-white hover:bg-white/10" />
             </div>
           </div>
 
           {/* Mobile menu button + all icons in one row */}
-          <div className="lg:hidden flex items-center space-x-0.5">
-            {userProfile && (
-              <div className="mr-0.5">
-                <FriendRequestsPopover />
-              </div>
-            )}
-            {/* Notification - only when logged in */}
-            {userProfile && (
-              <div className="mr-0.5">
-                <NotificationHub />
-              </div>
-            )}
+          <div className="lg:hidden flex items-center gap-2">
             {/* Profile - only when logged in */}
             {userProfile && (
               <Link to="/profile" className="h-8 w-8 flex items-center justify-center">
@@ -204,58 +196,58 @@ const Navbar = () => {
                 </Avatar>
               </Link>
             )}
-            <ThemeToggle />
-            <LanguageToggle />
+            <ThemeToggle className="text-white/90 hover:text-white hover:bg-white/10" />
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 text-white/90 hover:text-white hover:bg-white/10"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden">
-            <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`block rounded-md px-3 py-2 text-base font-medium transition-colors ${isActive(item.href)
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-primary"
-                    }`}
-                  onClick={() => {
-                    trackButtonClick(item.label, 'navbar-mobile');
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  {item.label}
-                </Link>
-              ))}
-
-              {!userProfile && (
-                <div className="space-y-2 pt-4">
-                  <Button variant="ghost" asChild className="w-full">
-                    <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                      {t('nav.login')}
-                    </Link>
-                  </Button>
-                  <Button variant="hero" asChild className="w-full">
-                    <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                      {t('nav.signup')}
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Mobile Navigation */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden">
+          <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={`block rounded-md px-3 py-2 text-base font-medium transition-colors ${isActive(item.href)
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-primary"
+                  }`}
+                onClick={() => {
+                  trackButtonClick(item.label, 'navbar-mobile');
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                {item.label}
+              </Link>
+            ))}
+
+            {!userProfile && (
+              <div className="space-y-2 pt-4">
+                <Button variant="ghost" asChild className="w-full">
+                  <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                    {t('nav.login')}
+                  </Link>
+                </Button>
+                <Button variant="hero" asChild className="w-full">
+                  <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                    {t('nav.signup')}
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </nav >
   );
 };

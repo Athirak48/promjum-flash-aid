@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 import {
     Star,
@@ -21,7 +22,11 @@ import {
     Rocket,
     GalleryVerticalEnd,
     Palette,
-    Laptop
+    Laptop,
+    Cat,
+    PawPrint,
+    Egg,
+    Crown
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import promjumLogo from "@/assets/promjum-logo.png";
@@ -176,145 +181,300 @@ const LandingPage = () => {
                 </div>
             </nav>
 
-            {/* Hero Section */}
-            <section className="relative pt-20 pb-12 px-4 md:pt-32 md:pb-20 md:px-6 min-h-screen flex items-start justify-center overflow-hidden">
-                {/* Animated Background Elements - Enhanced */}
+            {/* Hero Section - Cosmic Playground Split Layout 🌌 */}
+            <section className="relative pt-16 pb-12 px-4 md:pt-20 md:pb-24 overflow-hidden min-h-[90vh] flex items-start">
+                {/* Background Elements */}
                 <div className="absolute inset-0 pointer-events-none">
-                    {/* Main gradient orbs with richer colors */}
-                    <div className="absolute top-20 left-10 w-96 h-96 rounded-full blur-[140px] mix-blend-screen animate-pulse-slow" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(168,85,247,0.1) 70%)' }} />
-                    <div className="absolute bottom-20 right-10 w-[28rem] h-[28rem] rounded-full blur-[140px] mix-blend-screen animate-pulse-slow" style={{ animationDelay: "2s", background: 'radial-gradient(circle, rgba(236,72,153,0.3) 0%, rgba(59,130,246,0.15) 70%)' }} />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[120px] mix-blend-screen animate-float-random" style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.15) 0%, transparent 70%)' }} />
-
-                    {/* Additional accent orbs */}
-                    <div className="absolute top-40 right-1/4 w-64 h-64 bg-cyan-400/10 rounded-full blur-[100px] mix-blend-screen animate-pulse-slow" style={{ animationDelay: "1.5s" }} />
-
-                    {/* Enhanced Floating Stars/Particles */}
-                    <div className="absolute top-1/3 left-1/4 w-2 h-2 bg-white rounded-full blur-[1px] animate-float opacity-80" />
-                    <div className="absolute bottom-1/4 right-1/3 w-3 h-3 bg-indigo-400 rounded-full blur-[2px] animate-float" style={{ animationDelay: "1s" }} />
-                    <div className="absolute top-1/4 right-1/3 w-2 h-2 bg-purple-300 rounded-full blur-[1px] animate-float opacity-60" style={{ animationDelay: "0.5s" }} />
-                    <div className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-pink-300 rounded-full blur-[1px] animate-float opacity-70" style={{ animationDelay: "1.8s" }} />
+                    <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-b from-purple-500/10 to-transparent rounded-full blur-[120px] mix-blend-screen" />
+                    <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-t from-blue-500/10 to-transparent rounded-full blur-[100px] mix-blend-screen" />
                 </div>
 
-                <div className="container mx-auto max-w-5xl relative z-10 text-center">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="space-y-6 md:space-y-8"
-                    >
-                        <div className="inline-block relative mt-4 md:mt-0">
-                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight font-cute tracking-tight drop-shadow-2xl">
-                                <span className="inline-block animate-float" style={{ animationDelay: "0ms" }}>จำ</span>
-                                <span className="inline-block animate-float" style={{ animationDelay: "100ms" }}>คำ</span>
-                                <span className="inline-block animate-float" style={{ animationDelay: "200ms" }}>ศัพท์</span>
-                                <span className="inline-block animate-float" style={{ animationDelay: "300ms" }}>ใหม่</span>
-                            </h1>
-                            <div className="absolute -top-4 -right-4 md:-top-10 md:-right-10 text-2xl md:text-4xl animate-bounce">✨</div>
-                        </div>
-
-                        <h2 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-purple-300 to-pink-300 transform -rotate-2 px-2 drop-shadow-[0_2px_10px_rgba(168,85,247,0.5)]">
-                            ไม่ลืมคำศัพท์เก่า
-                        </h2>
-
-                        <p className="text-balance text-lg md:text-2xl text-white/80 leading-relaxed max-w-3xl mx-auto font-light tracking-wide px-2 md:px-4">
-                            เลิกท่องจำแบบเดิมๆ... สนุกไปกับคำศัพท์ที่หลากหลาย และระบบที่จะให้คุณจำคำศัพท์ได้เหมือนกับคนเก่า
-                        </p>
-
+                <div className="container mx-auto px-6 max-w-7xl relative z-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center -mt-8 md:-mt-12">
+                        {/* LEFT COLUMN: Typography & Action */}
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.5 }}
-                            className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center pt-4 md:pt-8 w-full px-4"
+                            initial={{ opacity: 0, x: -50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                            className="text-left space-y-8"
                         >
-                            <div className="relative group w-full sm:w-auto">
-                                {/* Enhanced multi-layer glow effect */}
-                                <div className="absolute -inset-1 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 rounded-xl md:rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition duration-500 animate-tilt"></div>
-                                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 rounded-xl md:rounded-2xl blur-sm opacity-50 group-hover:opacity-75 transition duration-500"></div>
+                            {/* Chip */}
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border-white/20 bg-white/5 animate-float" style={{ animationDuration: '4s' }}>
+                                <Sparkles className="w-4 h-4 text-yellow-400" />
+                                <span className="text-sm font-medium text-white/90">#1 Vocab App for Gen Z</span>
+                            </div>
+
+                            <div className="space-y-4 md:space-y-6">
+                                <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[1.4] md:leading-[1.6] font-cute tracking-tight drop-shadow-2xl">
+                                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-white py-2 md:py-4 -my-2">จำคำศัพท์</span>
+                                    <span className="block text-shimmer py-2 md:py-4 -my-2">แบบเร่งด่วน</span>
+                                </h1>
+                                <div className="h-2 w-24 md:w-32 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mt-4" />
+                            </div>
+
+                            <p className="text-lg md:text-2xl text-white/70 font-light max-w-xl leading-relaxed">
+                                เลิกท่องจำแบบเดิมๆ... มาสนุกกับ <span className="text-white font-semibold">Smart SRS</span> และเกมสุดมันส์ที่จะทำให้คุณเก่งอังกฤษแบบไม่รู้ตัว 🚀
+                            </p>
+
+                            <div className="flex flex-col sm:flex-row gap-4 md:gap-6 pt-4 md:pt-6">
                                 <Button
                                     size="lg"
-                                    className="relative flex items-center justify-center gap-3 bg-gradient-to-r from-[#A855F7] via-[#EC4899] to-[#3B82F6] hover:from-[#9333EA] hover:via-[#DB2777] hover:to-[#2563EB] text-white px-8 py-6 md:px-10 md:py-8 h-auto rounded-xl text-lg md:text-xl font-bold border border-white/30 shadow-[0_0_25px_rgba(168,85,247,0.6),0_0_50px_rgba(236,72,153,0.3)] hover:shadow-[0_0_35px_rgba(168,85,247,0.8),0_0_70px_rgba(236,72,153,0.5)] transition-all duration-300 w-full sm:w-auto transform hover:-translate-y-1 hover:scale-[1.02] overflow-hidden"
+                                    className="relative group overflow-hidden px-6 py-5 md:px-10 md:py-8 text-lg md:text-2xl h-auto rounded-[1.5rem] md:rounded-[2rem] w-full sm:w-auto hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_30px_rgba(168,85,247,0.4)] md:shadow-[0_0_50px_rgba(168,85,247,0.5)] hover:shadow-[0_0_80px_rgba(168,85,247,0.7)] bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 border border-white/20"
                                     asChild
                                 >
-                                    <Link to="/auth">
-                                        {/* Shimmer effect overlay */}
-                                        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                                        <span className="text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] relative z-10">Start Learning Now</span>
-                                        <Rocket className="w-5 h-5 md:w-6 md:h-6 text-white animate-bounce relative z-10" />
+                                    <Link to="/auth" className="flex items-center justify-center">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                                        <span className="relative z-10 flex items-center font-bold text-white tracking-wide">
+                                            เริ่มจำศัพท์กันเลย!
+                                            <Zap className="w-5 h-5 md:w-8 md:h-8 ml-2 md:ml-3 fill-yellow-400 text-yellow-400 animate-pulse drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]" />
+                                        </span>
                                     </Link>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="px-6 py-5 md:px-8 md:py-8 text-lg md:text-xl h-auto rounded-[1.5rem] md:rounded-[2rem] w-full sm:w-auto text-white/90 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 transition-all backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
+                                    asChild
+                                >
+                                    <a href="#features" className="flex items-center justify-center">
+                                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/10 flex items-center justify-center mr-3 md:mr-4 border border-white/20 group-hover:bg-white/20 transition-colors">
+                                            <Play className="w-4 h-4 md:w-5 md:h-5 fill-white text-white translate-x-0.5" />
+                                        </div>
+                                        ดูตัวอย่าง
+                                    </a>
                                 </Button>
                             </div>
 
-                            <Button
-                                variant="ghost"
-                                className="group/btn text-white/70 hover:text-white hover:bg-white/10 px-6 py-4 md:px-8 md:py-8 h-auto rounded-xl border border-white/10 hover:border-[#22D3EE]/40 transition-all w-full sm:w-auto text-base md:text-lg hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
-                                asChild
-                            >
-                                <Link to="/decks">
-                                    <Gamepad2 className="w-5 h-5 md:w-6 md:h-6 mr-2 text-[#22D3EE] group-hover/btn:drop-shadow-[0_0_8px_rgba(34,211,238,0.6)] transition-all" />
-                                    <span className="group-hover/btn:text-white transition-colors">Explore Games</span>
-                                </Link>
-                            </Button>
+
                         </motion.div>
 
-                        {/* Trust Badges - Enhanced Glassmorphism */}
+                        {/* RIGHT COLUMN: 3D Composition */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 1, delay: 0.2 }}
+                            className="relative h-[600px] w-full flex items-center justify-center perspective-1000"
+                        >
+                            {/* Main Planet/Core */}
+                            <div className="absolute w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 shadow-[0_0_100px_rgba(124,58,237,0.5)] animate-pulse-glow z-10 flex items-center justify-center border-4 border-white/10 backdrop-blur-3xl">
+                                <div className="text-8xl animate-bounce">🧠</div>
+                            </div>
 
-                    </motion.div>
+                            {/* Orbiting Elements */}
+                            {/* 1. Fun Mode (Bottom Right - Pushed Up) */}
+                            <motion.div
+                                animate={{ y: [-15, 15, -15], rotate: [0, 5, 0] }}
+                                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                                className="absolute bottom-40 -right-2 md:bottom-32 md:-right-32 p-4 md:p-6 glass-card-teal rounded-[1.5rem] md:rounded-[2rem] z-20"
+                            >
+                                <Gamepad2 className="w-8 h-8 md:w-12 md:h-12 text-teal-400 mb-2" />
+                                <div className="text-white font-bold text-sm md:text-lg">Fun Mode</div>
+                                <div className="text-white/50 text-[10px] md:text-xs">Play & Learn</div>
+                            </motion.div>
+
+                            {/* 2. Smart SRS (Bottom Left) */}
+                            <motion.div
+                                animate={{ y: [20, -20, 20], rotate: [0, -5, 0] }}
+                                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                                className="absolute -bottom-24 -left-2 md:-bottom-10 md:-left-32 p-4 md:p-6 glass-card-rose-violet rounded-[1.5rem] md:rounded-[2rem] z-20"
+                            >
+                                <Layers className="w-8 h-8 md:w-12 md:h-12 text-rose-400 mb-2" />
+                                <div className="text-white font-bold text-sm md:text-lg">Smart SRS</div>
+                                <div className="text-white/50 text-[10px] md:text-xs">No Forgetting</div>
+                            </motion.div>
+
+                            {/* 3. Community Badge (Far Right Center - Background) */}
+                            <motion.div
+                                animate={{ x: [-10, 10, -10], y: [-10, 10, -10] }}
+                                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                                className="absolute top-1/2 -right-10 md:-right-48 transform -translate-y-1/2 p-3 md:p-4 glass-card rounded-2xl z-0 blur-[2px] opacity-60 scale-75"
+                            >
+                                <Globe className="w-8 h-8 md:w-10 md:h-10 text-blue-400" />
+                            </motion.div>
+
+                            {/* 4. Pet System (Top Left) */}
+                            <motion.div
+                                animate={{ y: [-20, 20, -20], rotate: [0, -10, 0] }}
+                                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                                className="absolute top-0 -left-2 md:-left-24 p-4 md:p-5 glass-card-cyan-rose rounded-[1.5rem] md:rounded-[2rem] z-20"
+                            >
+                                <Cat className="w-8 h-8 md:w-10 md:h-10 text-pink-400 mb-2" />
+                                <div className="text-white font-bold text-xs md:text-sm">My Pet</div>
+                            </motion.div>
+
+                            {/* 5. Focus Mode (Top Right) */}
+                            <motion.div
+                                animate={{ y: [15, -15, 15], rotate: [0, 5, 0] }}
+                                transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                                className="absolute top-12 -right-2 md:top-10 md:-right-20 p-4 md:p-5 glass-card-teal rounded-[1.5rem] md:rounded-[2rem] z-20"
+                            >
+                                <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-teal-300 mb-2" />
+                                <div className="text-white font-bold text-xs md:text-sm">Focus</div>
+                                <div className="text-white/50 text-[10px] md:text-xs">Goal & Plan</div>
+                            </motion.div>
+
+                            {/* Orbit Rings */}
+                            <div className="absolute inset-0 border border-white/5 rounded-full rotate-[60deg] scale-150 pointer-events-none" />
+                            <div className="absolute inset-0 border border-white/5 rounded-full -rotate-[30deg] scale-125 pointer-events-none" />
+
+                        </motion.div>
+                    </div>
                 </div>
             </section>
 
-            {/* Features Grid - Glass Cards */}
-            <section id="features" className="py-24 relative z-10">
-                <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
-
+            {/* Features Section - Cosmic Bento Grid 🍱✨ */}
+            <section id="features" className="py-32 relative z-10 bg-gradient-to-b from-[#0B0F17] to-transparent">
                 <div className="container mx-auto px-6 max-w-7xl">
-                    <div className="text-center mb-20 space-y-4">
-                        <h2 className="text-4xl md:text-5xl font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-                            Features that make you <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent animate-pulse-glow">fluent</span>
+                    <div className="text-center mb-12 md:mb-24 space-y-4 md:space-y-6">
+                        <h2 className="text-3xl sm:text-4xl md:text-6xl font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)] whitespace-nowrap">
+                            ฟีเจอร์เด็ด <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500 animate-pulse-glow">มัดรวม</span> มาให้แล้ว
                         </h2>
-                        <p className="text-white/60 text-lg max-w-2xl mx-auto font-light tracking-wide">
-                            Complete all your study skills in one <span className="text-white font-medium">Space Glass</span> environment.
+                        <p className="text-white/60 text-xl font-light tracking-wide">
+                            ครบจบในที่เดียว ทั้งเรียน เล่น และแข่งขัน
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {features.map((feature, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.1 }}
-                                className="h-full"
-                            >
-                                <div className="group relative h-full">
-                                    <div className={`absolute -inset-0.5 rounded-[2.1rem] opacity-30 group-hover:opacity-100 transition duration-500 blur ${feature.color}`}></div>
-                                    <Card className="glass-card relative h-full rounded-[2rem] border border-white/10 overflow-hidden bg-black/40 group-hover:bg-black/30 transition-colors">
-                                        {/* Inner Shimmer */}
-                                        <div className="absolute inset-0 bg-gradient-to-tr from-white/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[minmax(250px,auto)]">
+                        {/* 1. Smart SRS (Large, Top Left) - 2x2 */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="md:col-span-2 md:row-span-2 group"
+                        >
+                            <div className="glass-card-purple-teal h-full rounded-[2.5rem] p-10 flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-purple-900/20 to-black/40 hover:scale-[1.02] transition-transform duration-500">
+                                <div className="absolute top-0 right-0 p-32 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-                                        <CardContent className="p-8 flex flex-col h-full relative z-10">
-                                            <div className={`w-16 h-16 ${feature.color} rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300 border border-white/20 relative overflow-hidden`}>
-                                                <div className="absolute inset-0 bg-white/20 blur-md" />
-                                                <div className="relative z-10">{feature.icon}</div>
-                                            </div>
-                                            <h3 className="text-2xl font-bold text-white mb-3 tracking-wide group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/70 transition-all">{feature.title}</h3>
-                                            <p className="text-white/60 leading-relaxed font-light group-hover:text-white/80 transition-colors">{feature.desc}</p>
-
-                                            <div className="mt-auto pt-6 flex w-full">
-                                                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                                    <div className={`h-full ${feature.color} opacity-0 group-hover:opacity-100 transition-all duration-700 w-0 group-hover:w-full`} />
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                <div className="space-y-4 relative z-10">
+                                    <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
+                                        <Zap className="w-8 h-8 text-purple-300" />
+                                    </div>
+                                    <h3 className="text-4xl font-bold text-white leading-tight">Smart SRS <br /><span className="text-purple-300">System</span></h3>
+                                    <p className="text-lg text-white/60 leading-relaxed font-light">
+                                        ระบบทบทวนอัจฉริยะที่จะคำนวณช่วงเวลาที่คุณ "กำลังจะลืม" แล้วเตือนให้ทบทวนทันที ทำให้จำได้แม่นขึ้น 300% 🧠⚡
+                                    </p>
                                 </div>
-                            </motion.div>
-                        ))}
+
+                                <div className="mt-8 relative h-32 w-full bg-white/5 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center">
+                                    <p className="text-white/30 text-sm italic">Interactive Graph Visualization Coming Soon...</p>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {/* 2. Games (Wide, Top Right) - 2x1 */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.1 }}
+                            className="md:col-span-2 group"
+                        >
+                            <div className="glass-card-teal h-full rounded-[2.5rem] p-8 flex items-center gap-8 relative overflow-hidden bg-gradient-to-r from-teal-900/20 to-emerald-900/20 hover:scale-[1.02] transition-transform duration-500">
+                                <div className="flex-1 space-y-3 relative z-10">
+                                    <div className="flex items-center gap-3">
+                                        <Gamepad2 className="w-8 h-8 text-emerald-400" />
+                                        <h3 className="text-3xl font-bold text-white">Minigames</h3>
+                                    </div>
+                                    <p className="text-white/70 font-light">
+                                        ท่องศัพท์เบื่อแล้ว? มาเล่นเกมกัน! ท้าเพื่อนในโหมด Battle หรือไต่หอคอย Tower Defense 🎮🔥
+                                    </p>
+                                </div>
+                                <div className="hidden md:block text-8xl opacity-20 rotate-12 group-hover:rotate-0 transition-transform duration-700">👾</div>
+                            </div>
+                        </motion.div>
+
+                        {/* 3. Focus Mode (1x1) */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.2 }}
+                            className="md:col-span-1 group"
+                        >
+                            <div className="glass-card h-full rounded-[2.5rem] p-8 flex flex-col justify-center text-center items-center relative overflow-hidden hover:bg-white/10 hover:scale-[1.02] transition-all">
+                                <div className="w-14 h-14 rounded-full bg-orange-500/20 flex items-center justify-center mb-6 animate-pulse-slow">
+                                    <BookOpen className="w-7 h-7 text-orange-400" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Focus Mode</h3>
+                                <p className="text-sm text-white/50">ตั้งเป้าหมาย แล้วลุยให้จบ!</p>
+                            </div>
+                        </motion.div>
+
+                        {/* 4. Community (1x1) */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.3 }}
+                            className="md:col-span-1 group"
+                        >
+                            <div className="glass-card h-full rounded-[2.5rem] p-8 flex flex-col justify-center text-center items-center relative overflow-hidden hover:bg-white/10 hover:scale-[1.02] transition-all">
+                                <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center mb-6">
+                                    <Globe className="w-7 h-7 text-blue-400 animate-spin-slow" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Community</h3>
+                                <p className="text-sm text-white/50">โหลดศัพท์ฟรีจากเพื่อนๆ ทั่วไทย</p>
+                            </div>
+                        </motion.div>
+
+                        {/* 5. Pet System - New Feature 🐾 */}
+                        <motion.div
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            initial={{ opacity: 0, y: 20 }}
+                            className="col-span-1 md:col-span-2 glass-card-cyan-rose p-8 rounded-3xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 min-h-[220px] flex flex-col justify-between"
+                        >
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Cat className="w-32 h-32 md:w-40 md:h-40 rotate-12" />
+                            </div>
+
+                            <div className="relative z-10">
+                                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-4 backdrop-blur-md border border-white/20">
+                                    <PawPrint className="w-6 h-6 text-pink-300" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">Pet Companions</h3>
+                                <p className="text-white/60 mb-4 leading-relaxed max-w-md">
+                                    เลี้ยงน้องจากไข่ไปจนร่างเทพ! ยิ่งจำศัพท์ได้เยอะ น้องยิ่งโตไว แถมมีสกิลช่วยบูสต์ XP และหยุดเวลาตอนตอบผิดได้ด้วย 🥚🐉✨
+                                </p>
+                                <div className="flex items-center gap-3 pt-2">
+                                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-sm">
+                                        <Egg className="w-5 h-5 text-yellow-300" />
+                                        <ArrowRight className="w-4 h-4 text-white/30" />
+                                        <Cat className="w-5 h-5 text-pink-300" />
+                                        <ArrowRight className="w-4 h-4 text-white/30" />
+                                        <Crown className="w-5 h-5 text-amber-400 animate-pulse" />
+                                    </div>
+                                    <span className="text-xs text-white/60 pl-2">Evolution System</span>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {/* 6. Mobile & Web (Wide Lower) - 2x1 */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.4 }}
+                            className="md:col-span-2 group"
+                        >
+                            <div className="glass-card h-full rounded-[2.5rem] p-8 flex items-center justify-between relative overflow-hidden bg-gradient-to-r from-pink-900/20 to-rose-900/20 hover:scale-[1.02] transition-transform duration-500">
+                                <div className="space-y-3 z-10">
+                                    <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                                        <Laptop className="w-6 h-6 text-pink-400" />
+                                        Anywhere, Anytime
+                                    </h3>
+                                    <p className="text-white/60 text-sm">เรียนได้ทั้งบนคอมและมือถือ ข้อมูลซิงค์กัน 100%</p>
+                                </div>
+                                <div className="flex gap-2 opacity-50">
+                                    <div className="w-12 h-20 border-2 border-white/20 rounded-xl bg-black/40 backdrop-blur-sm" />
+                                    <div className="w-24 h-20 border-2 border-white/20 rounded-xl bg-black/40 backdrop-blur-sm mt-8" />
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
                 </div>
             </section>
 
-            {/* Social Proof - Holographic Container */}
+            {/* Social Proof - Holographic Floating Reviews 💬🛸 */}
             <section id="reviews" className="py-24 relative overflow-hidden">
                 {/* Background Gradients */}
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none mix-blend-screen" />
@@ -322,38 +482,47 @@ const LandingPage = () => {
 
                 <div className="container mx-auto px-6 max-w-7xl relative z-10">
                     <h2 className="text-4xl md:text-5xl font-black text-center mb-16 text-white drop-shadow-lg">
-                        Loved by Real Learners <span className="text-accent drop-shadow-[0_0_15px_rgba(244,63,94,0.6)] animate-pulse">❤️</span>
+                        จากใจคนใช้งานจริง <span className="text-accent drop-shadow-[0_0_15px_rgba(244,63,94,0.6)] animate-pulse">❤️</span>
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {reviews.map((review, index) => (
                             <motion.div
                                 key={index}
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 50 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
-                                transition={{ delay: index * 0.1 }}
+                                transition={{ delay: index * 0.2 }}
+                                className={`relative group ${index === 1 ? 'md:-mt-12' : ''}`} // Staggered layout
                             >
-                                <div className="glass-card p-8 rounded-[2rem] h-full relative group border border-white/10 hover:border-white/30 transition-all bg-white/5">
-                                    <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-100 transition-opacity">
-                                        <Zap className="w-12 h-12 text-yellow-400 rotate-12" />
+                                {/* Chat Bubble Tail */}
+                                <div className={`absolute -bottom-2 left-8 w-6 h-6 rotate-45 border-b border-r border-white/20 bg-[#0B0F17] z-0 transition-colors group-hover:bg-white/5`}></div>
+
+                                <div className="glass-card p-8 rounded-[2rem] rounded-bl-sm h-full relative z-10 border border-white/20 bg-black/40 hover:bg-black/60 transition-all hover:scale-[1.03] duration-300">
+                                    <div className="absolute top-4 right-4 text-4xl opacity-20 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 transform rotate-12">
+                                        ❝
                                     </div>
 
-                                    <div className="flex items-center gap-4 mb-6 relative z-10">
-                                        <div className="text-4xl bg-black/30 p-4 rounded-full border border-white/10 shadow-inner">
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-white/10 to-white/5 border border-white/20 flex items-center justify-center text-2xl shadow-inner backdrop-blur-md">
                                             {review.avatar}
                                         </div>
                                         <div>
                                             <h4 className="text-lg font-bold text-white group-hover:text-primary transition-colors">{review.name}</h4>
-                                            <p className="text-sm text-white/50 uppercase tracking-wider font-semibold">{review.role}</p>
+                                            <Badge variant="secondary" className="bg-white/10 text-white/70 hover:bg-white/20 border-0 text-[10px] uppercase tracking-wider h-5">
+                                                {review.role}
+                                            </Badge>
                                         </div>
                                     </div>
-                                    <div className="flex text-yellow-400 mb-4 gap-1 relative z-10">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star key={i} className="w-4 h-4 fill-current drop-shadow-[0_0_5px_rgba(250,204,21,0.6)]" />
-                                        ))}
+
+                                    <div className="mb-4">
+                                        <div className="flex text-yellow-500 gap-0.5 mb-2 text-sm">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} className="w-3.5 h-3.5 fill-current" />
+                                            ))}
+                                        </div>
+                                        <p className="text-white/90 leading-relaxed font-light text-lg">"{review.content}"</p>
                                     </div>
-                                    <p className="text-white/80 leading-relaxed font-light italic relative z-10">"{review.content}"</p>
                                 </div>
                             </motion.div>
                         ))}
@@ -361,10 +530,10 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* CTA Footer - Floating Holographic Panel */}
-            <section className="py-32 text-center px-6 relative overflow-visible mt-0">
+            {/* CTA Footer - Floating Holographic Panel 🚀 */}
+            <section className="py-24 md:py-32 text-center px-4 md:px-6 relative overflow-visible mt-0">
                 <div className="container mx-auto max-w-5xl relative z-10">
-                    <div className="glass-card rounded-[2rem] p-8 md:p-24 relative overflow-hidden border border-white/20 shadow-[0_0_100px_rgba(168,85,247,0.2)] bg-black/60 group">
+                    <div className="glass-card rounded-[2rem] md:rounded-[3rem] p-8 md:p-24 relative overflow-hidden border border-white/20 shadow-[0_0_100px_rgba(168,85,247,0.2)] bg-black/60 group">
                         {/* Inner animated gradient */}
                         <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-xl"></div>
                         <div className="absolute inset-0 bg-noise opacity-[0.05] mix-blend-overlay"></div>
@@ -374,22 +543,25 @@ const LandingPage = () => {
                                 Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">Launch?</span>
                             </h2>
                             <p className="text-lg md:text-2xl text-white/70 font-light max-w-2xl mx-auto leading-relaxed px-2">
-                                Join the galaxy's most beautiful language learning community today.
+                                เข้าร่วมจักรวาลการเรียนรู้ที่สวยและสนุกที่สุดได้แล้ววันนี้
                             </p>
 
-                            <div className="pt-6 md:pt-8 flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
+                            <div className="pt-6 md:pt-8 flex flex-col sm:flex-row gap-6 justify-center items-center px-2 md:px-4">
                                 <Button
                                     size="lg"
-                                    className="btn-space-glass px-8 py-6 md:px-12 md:py-8 h-auto text-lg md:text-xl rounded-2xl shadow-[0_20px_60px_rgba(168,85,247,0.4)] hover:shadow-[0_30px_80px_rgba(168,85,247,0.6)] w-full sm:w-auto overflow-hidden whitespace-nowrap"
+                                    className="btn-space-glass px-8 py-5 md:px-12 md:py-8 h-auto text-lg md:text-xl rounded-2xl shadow-[0_20px_60px_rgba(168,85,247,0.4)] hover:shadow-[0_30px_80px_rgba(168,85,247,0.6)] w-full sm:w-auto overflow-hidden whitespace-nowrap transform hover:scale-105 transition-transform duration-300"
                                     asChild
                                 >
-                                    <Link to="/auth">Create Free Account 🚀</Link>
+                                    <Link to="/auth">
+                                        <Rocket className="w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 animate-pulse" />
+                                        สร้างบัญชีฟรี!
+                                    </Link>
                                 </Button>
                             </div>
 
-                            <div className="flex flex-col md:flex-row justify-center items-center gap-3 md:gap-8 pt-6 md:pt-12 text-xs md:text-sm text-white/50 font-medium uppercase tracking-widest px-4">
-                                <span className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/5 bg-white/5 w-fit"><Star className="w-4 h-4 text-yellow-400" /> No credit card</span>
-                                <span className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/5 bg-white/5 w-fit"><Globe className="w-4 h-4 text-cyan-400" /> Web & Mobile</span>
+                            <div className="flex flex-col md:flex-row justify-center items-center gap-3 md:gap-4 pt-4 md:pt-8 text-xs md:text-sm text-white/50 font-medium uppercase tracking-widest">
+                                <span className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-white/5 bg-white/5"><Star className="w-3 h-3 md:w-4 md:h-4 text-yellow-400" /> ไม่ต้องใช้บัตรเครดิต</span>
+                                <span className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-white/5 bg-white/5"><Globe className="w-3 h-3 md:w-4 md:h-4 text-cyan-400" /> ใช้งานได้ทุกที่</span>
                             </div>
                         </div>
                     </div>
@@ -410,23 +582,19 @@ const LandingPage = () => {
                             </div>
                         </div>
 
-                        <div className="text-white/30 text-xs">
-                            © 2024 Promjum. Made with <Heart className="w-3 h-3 inline mx-1 text-rose-500 animate-pulse" /> in Space.
+                        <div className="text-white/30 text-xs flex items-center gap-2">
+                            Made with <Heart className="w-3 h-3 text-rose-500 animate-pulse" /> for Thai Students
                         </div>
 
-                        <div className="flex items-center gap-8 text-xs text-white/40 font-bold tracking-widest uppercase">
-                            <a href="#" className="hover:text-white transition-colors relative group">
-                                Privacy
-                                <span className="absolute -bottom-1 left-0 w-0 h-px bg-white transition-all group-hover:w-full"></span>
-                            </a>
-                            <a href="#" className="hover:text-white transition-colors relative group">
-                                Terms
-                                <span className="absolute -bottom-1 left-0 w-0 h-px bg-white transition-all group-hover:w-full"></span>
-                            </a>
-                            <a href="#" className="hover:text-white transition-colors relative group">
-                                Contact
-                                <span className="absolute -bottom-1 left-0 w-0 h-px bg-white transition-all group-hover:w-full"></span>
-                            </a>
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-all"
+                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                            >
+                                <ArrowRight className="w-5 h-5 -rotate-90" />
+                            </Button>
                         </div>
                     </div>
                 </div>

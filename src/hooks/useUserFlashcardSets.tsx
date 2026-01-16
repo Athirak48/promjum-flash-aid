@@ -38,7 +38,20 @@ export function useUserFlashcardSets(folderId: string) {
                     console.error('Error fetching flashcard sets:', error);
                     setFlashcardSets([]);
                 } else {
-                    setFlashcardSets(data || []);
+                    // Manually count cards for each set to ensure accuracy
+                    const setsWithCounts = await Promise.all((data || []).map(async (set) => {
+                        const { count } = await supabase
+                            .from('user_flashcards')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('flashcard_set_id', set.id);
+
+                        return {
+                            ...set,
+                            card_count: count || 0
+                        };
+                    }));
+
+                    setFlashcardSets(setsWithCounts);
                 }
             } catch (err) {
                 console.error('Flashcard sets fetch failed:', err);

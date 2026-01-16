@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, X, GamepadIcon, Check, Smile, Download } from 'lucide-react';
+import { ArrowLeft, Plus, Search, BookOpen, Calendar, Clock, MoreVertical, Play, Edit, Trash, X, GamepadIcon, Check, Smile, Download, Layers } from 'lucide-react';
 import { FlashcardSwiper } from '@/components/FlashcardSwiper';
 import { FlashcardReviewPage } from '@/components/FlashcardReviewPage';
 import { GameSelectionDialog } from '@/components/GameSelectionDialog';
@@ -132,99 +132,131 @@ export function FolderDetail() {
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [setToMove, setSetToMove] = useState<FlashcardSet | null>(null);
   const [moveSearchTerm, setMoveSearchTerm] = useState('');
+
+  // Merge dialog states
+  const [showMergeDialog, setShowMergeDialog] = useState(false);
+  const [setToMergeFrom, setSetToMergeFrom] = useState<FlashcardSet | null>(null);
+  const [targetMergeFolderId, setTargetMergeFolderId] = useState<string>('');
+  const [targetMergeSetId, setTargetMergeSetId] = useState<string>('');
+  const [mergeAvailableSets, setMergeAvailableSets] = useState<FlashcardSet[]>([]);
+
   const [loadingFolders, setLoadingFolders] = useState(false);
   const [allFolders, setAllFolders] = useState<Folder[]>([]);
 
   // Fetch folder data from Supabase
-  useEffect(() => {
-    const fetchFolderData = async () => {
-      if (!folderId) {
-        setLoading(false);
+  const fetchFolderData = async () => {
+    if (!folderId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        toast({
+          title: "กรุณาเข้าสู่ระบบ",
+          description: "คุณต้องเข้าสู่ระบบเพื่อดูโฟลเดอร์",
+          variant: "destructive"
+        });
+        navigate('/auth');
         return;
       }
 
-      try {
-        setLoading(true);
-        // Get current user
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) {
-          toast({
-            title: "กรุณาเข้าสู่ระบบ",
-            description: "คุณต้องเข้าสู่ระบบเพื่อดูโฟลเดอร์",
-            variant: "destructive"
-          });
-          navigate('/auth');
-          return;
-        }
+      // Fetch folder
+      const { data: folderData, error: folderError } = await supabase
+        .from('user_folders')
+        .select('*')
+        .eq('id', folderId)
+        .eq('user_id', user.id)
+        .single();
 
-        // Fetch folder
-        const { data: folderData, error: folderError } = await supabase
-          .from('user_folders')
-          .select('*')
-          .eq('id', folderId)
-          .eq('user_id', user.id)
-          .single();
-
-        if (folderError || !folderData) {
-          toast({
-            title: "ไม่พบโฟลเดอร์",
-            description: "ไม่พบโฟลเดอร์ที่คุณต้องการดู",
-            variant: "destructive"
-          });
-          navigate('/flashcards');
-          return;
-        }
-
-        // Fetch flashcard sets in this folder
-        const { data: setsData, error: setsError } = await supabase
-          .from('user_flashcard_sets')
-          .select('*')
-          .eq('folder_id', folderId)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (setsError) throw setsError;
-
-        // For each set, count the flashcards
-        const setsWithCounts = await Promise.all((setsData || []).map(async (set) => {
-          const { count } = await supabase
-            .from('user_flashcards')
-            .select('*', { count: 'exact', head: true })
-            .eq('flashcard_set_id', set.id);
-
-          return {
-            id: set.id,
-            title: set.title,
-            cardCount: count || 0,
-            source: set.source,
-            progress: set.progress || 0,
-            lastReviewed: set.last_reviewed ? new Date(set.last_reviewed) : null,
-            nextReview: set.next_review ? new Date(set.next_review) : null,
-            isArchived: false,
-            folderId: set.folder_id || undefined
-          };
-        }));
-
-        setFolder({
-          id: folderData.id,
-          title: folderData.title,
-          cardSetsCount: setsWithCounts.length
-        });
-
-        setFlashcardSets(setsWithCounts);
-        setFilteredSets(setsWithCounts);
-      } catch (error) {
-        console.error('Error fetching folder data:', error);
+      if (folderError || !folderData) {
         toast({
-          title: "เกิดข้อผิดพลาด",
-          description: "ไม่สามารถดึงข้อมูลโฟลเดอร์ได้",
+          title: "ไม่พบโฟลเดอร์",
+          description: "ไม่พบโฟลเดอร์ที่คุณต้องการดู",
           variant: "destructive"
         });
-      } finally {
-        setLoading(false);
+        navigate('/flashcards');
+        return;
       }
-    };
 
+      // Fetch flashcard sets in this folder
+      const { data: setsData, error: setsError } = await supabase
+        .from('user_flashcard_sets')
+        .select('*')
+        .eq('folder_id', folderId)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (setsError) throw setsError;
+
+      // For each set, count the flashcards
+      const setsWithCounts = await Promise.all((setsData || []).map(async (set) => {
+        const { count } = await supabase
+          .from('user_flashcards')
+          .select('*', { count: 'exact', head: true })
+          .eq('flashcard_set_id', set.id);
+
+        // Calculate Real Progress: Reviewed (Distinct) / Total
+        let learnedCount = 0;
+        // 1. Get IDs of cards in this set
+        const { data: setCards } = await supabase
+          .from('user_flashcards')
+          .select('id')
+          .eq('flashcard_set_id', set.id);
+
+        if (setCards && setCards.length > 0) {
+          const ids = setCards.map(c => c.id);
+          // 2. Count how many have progress (Must check user_flashcard_id for user cards)
+          const { count: progressCount } = await supabase
+            .from('user_flashcard_progress')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .in('user_flashcard_id', ids);
+
+          learnedCount = progressCount || 0;
+        }
+
+        const total = count || 0;
+        const realProgress = total > 0 ? Math.round((learnedCount / total) * 100) : 0;
+
+        return {
+          id: set.id,
+          title: set.title,
+          cardCount: total,
+          source: set.source,
+          progress: realProgress,
+          lastReviewed: set.last_reviewed ? new Date(set.last_reviewed) : null,
+          nextReview: set.next_review ? new Date(set.next_review) : null,
+          isArchived: false,
+          folderId: set.folder_id || undefined
+        };
+      }));
+
+      setFolder({
+        id: folderData.id,
+        title: folderData.title,
+        cardSetsCount: setsWithCounts.length
+      });
+
+      setFlashcardSets(setsWithCounts);
+      setFilteredSets(setsWithCounts);
+    } catch (error) {
+      console.error('Error fetching folder data:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถดึงข้อมูลโฟลเดอร์ได้",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch folder data from Supabase
+  useEffect(() => {
+    setLoading(true);
     fetchFolderData();
   }, [folderId, navigate, toast]);
 
@@ -313,49 +345,7 @@ export function FolderDetail() {
 
   const handleReviewComplete = () => {
     // Refresh the flashcard sets to get updated progress
-    const refreshData = async () => {
-      if (!folderId) return;
-
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: setsData } = await supabase
-          .from('user_flashcard_sets')
-          .select('*')
-          .eq('folder_id', folderId)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (setsData) {
-          const setsWithCounts = await Promise.all(setsData.map(async (set) => {
-            const { count } = await supabase
-              .from('user_flashcards')
-              .select('*', { count: 'exact', head: true })
-              .eq('flashcard_set_id', set.id);
-
-            return {
-              id: set.id,
-              title: set.title,
-              cardCount: count || 0,
-              source: set.source,
-              progress: set.progress || 0,
-              lastReviewed: set.last_reviewed ? new Date(set.last_reviewed) : null,
-              nextReview: set.next_review ? new Date(set.next_review) : null,
-              isArchived: false,
-              folderId: set.folder_id || undefined
-            };
-          }));
-
-          setFlashcardSets(setsWithCounts);
-          setFilteredSets(setsWithCounts);
-        }
-      } catch (error) {
-        console.error('Error refreshing data:', error);
-      }
-    };
-
-    refreshData();
+    fetchFolderData();
     handleGameClose();
   };
 
@@ -413,7 +403,8 @@ export function FolderDetail() {
         'pronoun': 'Pronoun',
         'interjection': 'Interjection',
         'article': 'Article',
-        'phrase': 'Phrase'
+        'phrase': 'Phrase',
+        'phrasal verb': 'Phrasal Verb'
       };
       return mapping[normalized] || 'Noun'; // Default to Noun if not found
     };
@@ -432,7 +423,7 @@ export function FolderDetail() {
     }).filter(row => row.front && row.back); // Only valid rows
 
     if (newRows.length > 0) {
-      setFlashcardRows(newRows);
+      setFlashcardRows(prev => [...prev, ...newRows]);
       toast({
         title: "นำเข้าสำเร็จ",
         description: `นำเข้า ${newRows.length} คำศัพท์แล้ว`,
@@ -526,28 +517,36 @@ export function FolderDetail() {
         const rowsToInsert = validRows.filter(r => typeof r.id === 'number');
 
         // Handle Updates
-        for (const row of rowsToUpdate) {
-          const updatePayload: any = {
+        // Handle Updates (Batch Upsert)
+        if (rowsToUpdate.length > 0) {
+          const updates = rowsToUpdate.map(row => ({
+            id: String(row.id),
+            user_id: user.id,
+            flashcard_set_id: targetSetId,
             front_text: row.front.trim(),
             back_text: row.back.trim(),
-            part_of_speech: row.partOfSpeech || 'Noun'
-          };
+            part_of_speech: row.partOfSpeech || 'Noun',
+            // Note: Preserving existing logic where images are not handled in this text-update block
+            // If we wanted to preserve existing images, we would need to map them from row.frontImage if it's a string URL
+          }));
 
-          await supabase.from('user_flashcards').update(updatePayload).eq('id', String(row.id));
+          const { error: upsertError } = await supabase
+            .from('user_flashcards')
+            .upsert(updates);
+
+          if (upsertError) throw upsertError;
         }
 
         // Handle Inserts
         if (rowsToInsert.length > 0) {
-          const flashcardsToInsert = await Promise.all(rowsToInsert.map(async (row) => {
-            return {
-              user_id: user.id,
-              flashcard_set_id: targetSetId,
-              front_text: row.front.trim(),
-              back_text: row.back.trim(),
-              part_of_speech: row.partOfSpeech || 'Noun',
-              front_image_url: null,
-              back_image_url: null
-            };
+          const flashcardsToInsert = rowsToInsert.map(row => ({
+            user_id: user.id,
+            flashcard_set_id: targetSetId,
+            front_text: row.front.trim(),
+            back_text: row.back.trim(),
+            part_of_speech: row.partOfSpeech || 'Noun',
+            front_image_url: null,
+            back_image_url: null
           }));
 
           await supabase.from('user_flashcards').insert(flashcardsToInsert);
@@ -755,6 +754,90 @@ export function FolderDetail() {
     }
   };
 
+  const handleMergeClick = (set: FlashcardSet) => {
+    setSetToMergeFrom(set);
+    setTargetMergeFolderId(folderId || ''); // Default to current folder
+    setTargetMergeSetId('');
+    setMergeAvailableSets(flashcardSets); // Default to current sets
+    setShowMergeDialog(true);
+    fetchFolders(); // Reuse fetchFolders to populate folder list
+  };
+
+  // Fetch sets when target merge folder changes
+  useEffect(() => {
+    const fetchSetsForMerge = async () => {
+      if (!targetMergeFolderId) return;
+
+      // If current folder, use local state
+      if (targetMergeFolderId === folderId) {
+        setMergeAvailableSets(flashcardSets);
+        return;
+      }
+
+      try {
+        const { data: setsData } = await supabase
+          .from('user_flashcard_sets')
+          .select('id, title, folder_id') // We only need id and title really
+          .eq('folder_id', targetMergeFolderId)
+          .order('created_at', { ascending: false });
+
+        if (setsData) {
+          // We need to match FlashcardSet interface roughly
+          // For the dropdown we only display title (and maybe count if we fetched it, but skipping for speed on remote folders)
+          const mappedSets = setsData.map(s => ({
+            id: s.id,
+            title: s.title,
+            cardCount: 0, // Placeholder
+            source: 'created',
+            progress: 0,
+            lastReviewed: null,
+            nextReview: null,
+            isArchived: false,
+            folderId: s.folder_id
+          }));
+          setMergeAvailableSets(mappedSets);
+        }
+      } catch (error) {
+        console.error("Error fetching merge sets", error);
+      }
+    };
+
+    fetchSetsForMerge();
+  }, [targetMergeFolderId, folderId, flashcardSets]);
+
+  const handleConfirmMerge = async () => {
+    if (!setToMergeFrom || !targetMergeSetId) return;
+
+    try {
+      // 1. Move all cards from source to target
+      const { error: moveError } = await supabase
+        .from('user_flashcards')
+        .update({ flashcard_set_id: targetMergeSetId })
+        .eq('flashcard_set_id', setToMergeFrom.id);
+
+      if (moveError) throw moveError;
+
+      // 2. Delete the empty source set
+      const { error: deleteError } = await supabase
+        .from('user_flashcard_sets')
+        .delete()
+        .eq('id', setToMergeFrom.id);
+
+      if (deleteError) throw deleteError;
+
+      // 3. Refresh UI
+      fetchFolderData();
+      setShowMergeDialog(false);
+      setSetToMergeFrom(null);
+      setTargetMergeSetId('');
+      toast({ title: "รวมชุดสำเร็จ", description: "ย้ายการ์ดทั้งหมดเรียบร้อยแล้ว" });
+
+    } catch (error) {
+      console.error('Error merging sets:', error);
+      toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถรวมชุดแฟลชการ์ดได้", variant: "destructive" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-6">
@@ -944,14 +1027,23 @@ export function FolderDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <BackgroundDecorations />
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/50 via-slate-950 to-bg-slate-950 relative overflow-hidden p-6 pb-20">
+      {/* Animated Background - Match Dashboard */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl"></div>
+      </div>
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/flashcards')} className="mr-4">
-              <ArrowLeft className="h-6 w-6" />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate('/flashcards')}
+              className="mr-4 bg-rose-500 hover:bg-rose-600 text-white border-0 shadow-lg hover:shadow-rose-500/25 rounded-xl h-10 w-10 transition-all"
+            >
+              <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
@@ -1086,17 +1178,18 @@ export function FolderDetail() {
                           <SelectTrigger className="w-full md:w-[140px] h-11 rounded-xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/20 text-pink-100 focus:ring-pink-500/30 hover:bg-pink-500/20 transition-all">
                             <SelectValue placeholder="Type" />
                           </SelectTrigger>
-                          <SelectContent className="bg-slate-900 border-white/10 text-white">
-                            <SelectItem value="Noun" className="focus:bg-white/10">Noun</SelectItem>
-                            <SelectItem value="Verb" className="focus:bg-white/10">Verb</SelectItem>
-                            <SelectItem value="Adjective" className="focus:bg-white/10">Adjective</SelectItem>
-                            <SelectItem value="Adverb" className="focus:bg-white/10">Adverb</SelectItem>
-                            <SelectItem value="Preposition" className="focus:bg-white/10">Preposition</SelectItem>
-                            <SelectItem value="Conjunction" className="focus:bg-white/10">Conjunction</SelectItem>
-                            <SelectItem value="Pronoun" className="focus:bg-white/10">Pronoun</SelectItem>
-                            <SelectItem value="Interjection" className="focus:bg-white/10">Interjection</SelectItem>
-                            <SelectItem value="Article" className="focus:bg-white/10">Article</SelectItem>
-                            <SelectItem value="Phrase" className="focus:bg-white/10">Phrase</SelectItem>
+                          <SelectContent className="bg-white border-slate-200 text-slate-900">
+                            <SelectItem value="Noun" className="focus:bg-slate-100 focus:text-slate-900">Noun</SelectItem>
+                            <SelectItem value="Verb" className="focus:bg-slate-100 focus:text-slate-900">Verb</SelectItem>
+                            <SelectItem value="Adjective" className="focus:bg-slate-100 focus:text-slate-900">Adjective</SelectItem>
+                            <SelectItem value="Adverb" className="focus:bg-slate-100 focus:text-slate-900">Adverb</SelectItem>
+                            <SelectItem value="Preposition" className="focus:bg-slate-100 focus:text-slate-900">Preposition</SelectItem>
+                            <SelectItem value="Conjunction" className="focus:bg-slate-100 focus:text-slate-900">Conjunction</SelectItem>
+                            <SelectItem value="Pronoun" className="focus:bg-slate-100 focus:text-slate-900">Pronoun</SelectItem>
+                            <SelectItem value="Interjection" className="focus:bg-slate-100 focus:text-slate-900">Interjection</SelectItem>
+                            <SelectItem value="Article" className="focus:bg-slate-100 focus:text-slate-900">Article</SelectItem>
+                            <SelectItem value="Phrase" className="focus:bg-slate-100 focus:text-slate-900">Phrase</SelectItem>
+                            <SelectItem value="Phrasal Verb" className="focus:bg-slate-100 focus:text-slate-900">Phrasal Verb</SelectItem>
                           </SelectContent>
                         </Select>
 
@@ -1168,10 +1261,10 @@ export function FolderDetail() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredSets.map((set) => (
                 <div key={set.id} className="group relative transition-all duration-300 hover:scale-[1.02]">
-                  <div className="glass-card rounded-[2rem] border border-white/20 hover:border-white/40 bg-white/10 backdrop-blur-md p-6 relative overflow-hidden shadow-lg h-full flex flex-col">
+                  <div className="glass-card rounded-[1.5rem] border border-white/20 hover:border-white/40 bg-white/10 backdrop-blur-md p-5 relative overflow-hidden shadow-lg h-full flex flex-col">
                     {/* Light Reflection */}
                     <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
 
@@ -1179,20 +1272,20 @@ export function FolderDetail() {
                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
                     <div className="relative z-10 flex flex-col h-full">
-                      <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <h3 className="font-bold text-xl text-white mb-2 line-clamp-1 group-hover:text-primary transition-colors">{set.title}</h3>
-                          <div className="flex items-center gap-2 text-sm text-white/60 mb-2">
-                            <BookOpen className="h-4 w-4 text-cyan-400" />
+                          <h3 className="font-bold text-lg text-white mb-1 line-clamp-1 group-hover:text-primary transition-colors">{set.title}</h3>
+                          <div className="flex items-center gap-2 text-xs text-white/60 mb-2">
+                            <BookOpen className="h-3.5 w-3.5 text-cyan-400" />
                             <span>{set.cardCount} การ์ด</span>
                           </div>
-                          <Badge variant="outline" className="text-[10px] border-white/20 text-white/50 bg-white/5 hover:bg-white/10">
+                          <Badge variant="outline" className="text-[10px] border-white/20 text-white/50 bg-white/5 hover:bg-white/10 h-5 px-2">
                             {set.source}
                           </Badge>
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white/40 hover:text-white hover:bg-white/10 rounded-full">
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-white/40 hover:text-white hover:bg-white/10 rounded-full">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -1200,6 +1293,10 @@ export function FolderDetail() {
                             <DropdownMenuItem onClick={() => handleOpenEditSet(set)} className="focus:bg-white/10 focus:text-white rounded-lg">
                               <Edit className="h-4 w-4 mr-2" />
                               แก้ไข
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMergeClick(set)} className="focus:bg-white/10 focus:text-white rounded-lg">
+                              <Layers className="h-4 w-4 mr-2" />
+                              รวมกับชุดอื่น
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDeleteSetClick(set)} className="text-red-400 focus:bg-red-500/10 focus:text-red-300 rounded-lg">
                               <Trash className="h-4 w-4 mr-2" />
@@ -1209,12 +1306,12 @@ export function FolderDetail() {
                         </DropdownMenu>
                       </div>
 
-                      <div className="mb-4 mt-auto">
-                        <div className="flex justify-between text-xs font-medium text-white/50 mb-1">
+                      <div className="mb-3 mt-auto">
+                        <div className="flex justify-between text-[10px] font-medium text-white/50 mb-1">
                           <span>ความก้าวหน้า</span>
                           <span className="text-primary">{set.progress}%</span>
                         </div>
-                        <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                        <div className="w-full bg-white/10 rounded-full h-1 overflow-hidden">
                           <div
                             className="bg-primary h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(var(--primary),0.5)]"
                             style={{ width: `${set.progress}%` }}
@@ -1222,7 +1319,7 @@ export function FolderDetail() {
                         </div>
                       </div>
 
-                      <div className="space-y-2 text-[10px] text-white/40 mb-4">
+                      <div className="space-y-1 text-[10px] text-white/40 mb-3">
                         {set.lastReviewed && (
                           <div className="flex items-center gap-2">
                             <Clock className="h-3 w-3" />
@@ -1241,7 +1338,7 @@ export function FolderDetail() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="flex-1 bg-transparent border-white/10 text-white hover:bg-white/10 hover:text-white hover:border-white/30 rounded-xl"
+                          className="flex-1 bg-transparent border-white/10 text-white hover:bg-white/10 hover:text-white hover:border-white/30 rounded-xl h-8 text-xs"
                           onClick={() => handleReviewCards(set)}
                         >
                           <BookOpen className="h-3 w-3 mr-1" />
@@ -1249,7 +1346,7 @@ export function FolderDetail() {
                         </Button>
                         <Button
                           size="sm"
-                          className="flex-1 bg-white/10 hover:bg-primary hover:text-white text-white/90 border-0 shadow-lg hover:shadow-glow transition-all rounded-xl"
+                          className="flex-1 bg-white/10 hover:bg-primary hover:text-white text-white/90 border-0 shadow-lg hover:shadow-glow transition-all rounded-xl h-8 text-xs"
                           onClick={() => handlePlayGame(set)}
                         >
                           <GamepadIcon className="h-3 w-3 mr-1" />
@@ -1326,6 +1423,61 @@ export function FolderDetail() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Merge Dialog */}
+        <Dialog open={showMergeDialog} onOpenChange={setShowMergeDialog}>
+          <DialogContent className="max-w-md rounded-[2rem] border border-white/20 bg-black/80 backdrop-blur-xl shadow-[0_0_50px_rgba(168,85,247,0.2)] text-white">
+            <DialogHeader>
+              <DialogTitle>รวมชุดแฟลชการ์ด</DialogTitle>
+              <DialogDescription className="text-white/50">
+                ย้ายการ์ดทั้งหมดจาก "{setToMergeFrom?.title}" ไปยังชุดอื่น
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>เลือกโฟลเดอร์ปลายทาง</Label>
+                <Select value={targetMergeFolderId} onValueChange={setTargetMergeFolderId}>
+                  <SelectTrigger className="bg-white/10 border-white/10 text-white rounded-xl">
+                    <SelectValue placeholder="เลือกโฟลเดอร์..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10 text-white z-[60]">
+                    {allFolders.map(f => (
+                      <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>เลือกชุดปลายทาง</Label>
+                <Select value={targetMergeSetId} onValueChange={setTargetMergeSetId}>
+                  <SelectTrigger className="bg-white/10 border-white/10 text-white rounded-xl">
+                    <SelectValue placeholder="เลือกชุด..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10 text-white z-[60]">
+                    {mergeAvailableSets
+                      .filter(s => s.id !== setToMergeFrom?.id)
+                      .map(s => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.title} {s.cardCount > 0 ? `(${s.cardCount} ใบ)` : ''}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setShowMergeDialog(false)} className="rounded-xl text-white/60 hover:text-white">ยกเลิก</Button>
+              <Button
+                onClick={handleConfirmMerge}
+                disabled={!targetMergeSetId}
+                className="rounded-xl bg-purple-600 hover:bg-purple-500 text-white"
+              >
+                ยืนยันการรวม
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

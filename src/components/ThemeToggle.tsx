@@ -8,13 +8,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/contexts/ThemeContext";
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const { setTheme } = useTheme();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" className={className}>
           <Moon className="h-4 w-4" />
           <span className="sr-only">Toggle theme</span>
         </Button>

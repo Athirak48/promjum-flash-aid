@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { StudyGoal, CreateGoalInput } from '@/types/goals';
 import { calculateGoalRequirements } from '@/types/goals';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 
 export function useStudyGoals() {
     const [goals, setGoals] = useState<StudyGoal[]>([]);
@@ -24,8 +24,7 @@ export function useStudyGoals() {
         const regex = /^(.*?)__D(\d+)(?:__S(\d+))?(?:__K([a-zA-Z0-9-]+))?$/;
         const match = row.title.match(regex);
 
-        console.log("Unpacking goal title:", row.title);
-        console.log("Regex match result:", match);
+        // console.log("Unpacking goal title:", row.title);
 
         if (match) {
             name = match[1];
@@ -33,54 +32,46 @@ export function useStudyGoals() {
             if (match[3]) sessionsPerDay = parseInt(match[3]);
             if (match[4]) {
                 deckIds = [match[4]]; // Captures the UUID after __K
-                console.log("Extracted deck ID:", match[4]);
             }
         } else {
             // Fallback for simple titles or legacy format
             // Just take the title as name, assume defaults
             name = row.title;
-            console.warn("Failed to parse goal title, using defaults");
+            // console.warn("Failed to parse goal title, using defaults");
         }
 
         // Calculate dynamic properties
         const createdAt = row.created_at || new Date().toISOString();
 
-        // Calculate based on Progress (Flexible Pacing) instead of Calendar
-        // This ensures if a user misses a few days, they don't jump ahead to "Day 5" without doing the work.
-        const sessionsCompletedCalc = Math.floor(row.current_value / Math.max(1, Math.ceil(row.target_value / duration / Math.max(1, (sessionsPerDay || 1)))));
+        // CRITICAL FIX: Calendar-Based Day Calculation
+        // ... (comments retained)
 
-        // Use sessions_per_day to determine "Day"
-        // Day 1 = Sessions 0 to (sessionsPerDay-1)
-        // Day 2 = Sessions (sessionsPerDay) to (2*sessionsPerDay - 1)
-        const calculatedDay = Math.floor((sessionsCompletedCalc) / Math.max(1, sessionsPerDay)) + 1;
+        const goalStartDate = startOfDay(parseISO(createdAt));
+        const today = startOfDay(new Date());
+        const daysSinceStart = differenceInDays(today, goalStartDate);
 
-        const currentDay = Math.min(Math.max(1, calculatedDay), duration + 1); // +1 allows "Victory" day logic
+        // current_day = days since start + 1 (Day 1 on creation day)
+        // Capped at duration + 1 for "Victory" day
+        const currentDay = Math.min(Math.max(1, daysSinceStart + 1), duration + 1);
 
         // Infer sessions from target/duration if not saved
-        if (sessionsPerDay === 1 && row.target_value > 0) {
-            const wordsPerDay = Math.ceil(row.target_value / duration);
-            // Formula: min(20, (day/2) + 3)
-            const cap = Math.min(20, Math.floor((wordsPerDay / 2) + 3));
-            sessionsPerDay = Math.ceil(wordsPerDay / Math.max(1, cap));
-        }
+        // FIX: Naive division (Target / Duration) fails because it ignores Non-Learning Days (Tests/Consolidation).
+        // For a 7-day goal, we might only have 4-5 actual learning days.
+        // We apple a "Safety Buffer" of ~20% for overhead days to boost daily intensity.
+        const effectiveDuration = Math.max(1, Math.floor(duration * 0.8));
+        const wordsPerDay = Math.ceil(row.target_value / effectiveDuration);
 
-        const wordsPerDay = Math.ceil(row.target_value / duration);
         let sessionsCalc = sessionsPerDay;
 
-        // Recalculate to be sure (in case DB has old 'sessions' count but we want dynamic view)
-        // Actually, we should trust saved sessionsPerDay if it was explicit?
-        // But for "unpackGoal", we often rely on the 'S' tag.
-        // If 'S' tag exists, use it. If standard fallback, use logic.
-
-        const wordsPerSession = Math.ceil(wordsPerDay / sessionsPerDay);
+        // Recalculate 'words_per_session' dynamically
+        // Note: srs_per_day is loaded from Title (S tag) usually.
+        const wordsPerSession = Math.max(1, Math.ceil(wordsPerDay / sessionsPerDay));
 
         // Calculate sessions completed based on progress
         let sessionsCompleted = Math.floor(row.current_value / wordsPerSession);
 
         // FIX: For Day 1 (Pre-Test), if ANY progress is made (words learned > 0), 
         // we must count it as at least 1 session completed. 
-        // Otherwise, low scores (e.g. 9 words < 20 words/session) result in 0 sessions 
-        // and the "Start Pre-Test" button remains active.
         if (currentDay === 1 && row.current_value > 0) {
             sessionsCompleted = Math.max(1, sessionsCompleted);
         }
@@ -93,12 +84,13 @@ export function useStudyGoals() {
             duration_days: duration,
             words_per_session: wordsPerSession,
             sessions_per_day: sessionsPerDay,
-            is_active: !row.is_completed, // map generic is_completed to is_active logic
+            is_active: !row.is_completed,
             created_at: createdAt,
-            sessions_completed: sessionsCompleted, // Approx session count
+            sessions_completed: sessionsCompleted,
             words_learned: row.current_value,
+            current_value: row.current_value || 0,
             current_day: currentDay,
-            deck_ids: deckIds
+            deck_ids: deckIds.length > 0 ? deckIds : []
         };
     };
 
@@ -139,7 +131,7 @@ export function useStudyGoals() {
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, []); // Removed 'toast' dependency to stabilize reference
 
     // Create new goal
     const createGoal = useCallback(async (input: CreateGoalInput & { deckIds?: string[] }) => {
@@ -162,13 +154,16 @@ export function useStudyGoals() {
                 .update({ is_completed: true })
                 .eq('user_id', user.id)
                 .eq('goal_type', 'study_plan')
-                .eq('is_completed', false);
+                .eq('goal_type', 'study_plan');
+            // .eq('is_completed', false); // Removing this ensures even NULL or weird states are archived
 
             // Determine primary deck ID
             const primaryDeckId = input.deckIds?.[0] || input.deckId;
 
-            // Use SMART DURATION for persistence if available
-            const finalDuration = requirements.smartDuration || input.durationDays;
+            // FIX: If user explicit set duration (Duration Mode), we MUST respect it.
+            // verifying that 'smartDuration' suggests a safe buffer, but user authority is final.
+            const isDurationMode = input.planningMode === 'duration' || !input.planningMode;
+            const finalDuration = isDurationMode ? input.durationDays : (requirements.smartDuration || input.durationDays);
 
             const packedTitle = packTitle(
                 input.goalName,
@@ -271,9 +266,92 @@ export function useStudyGoals() {
         }
     }, [fetchGoals, toast]);
 
-    // Delete goal
+    // Delete goal (Cascade manually + SRS Deep Clean)
     const deleteGoal = useCallback(async (goalId: string) => {
         try {
+            console.log("Deleting goal:", goalId);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // 0. FETCH GOAL DETAILS for SRS RESET
+            const { data: goalRaw } = await supabase
+                .from('user_goals')
+                .select('*')
+                .eq('id', goalId)
+                .single();
+
+            if (goalRaw) {
+                const goal = unpackGoal(goalRaw);
+                const deckIds = goal.deck_ids;
+
+                if (deckIds && deckIds.length > 0) {
+                    console.log(`🧹 SRS Deep Clean: Resetting progress for decks: ${deckIds.join(',')}`);
+
+                    // 1. Fetch related card IDs
+                    // Check User Flashcards
+                    const { data: userCards } = await supabase
+                        .from('user_flashcards')
+                        .select('id')
+                        .in('flashcard_set_id', deckIds);
+                    const userCardIds = userCards?.map(c => c.id) || [];
+
+                    // Check System/Community Flashcards
+                    const { data: sysCards } = await supabase
+                        .from('flashcards')
+                        .select('id')
+                        .in('subdeck_id', deckIds);
+                    const sysCardIds = sysCards?.map(c => c.id) || [];
+
+                    const allCardIds = [...userCardIds, ...sysCardIds];
+
+                    if (allCardIds.length > 0) {
+                        // 2. DELETE PROGRESS (Hard Reset)
+                        // Delete by flashcard_id (System cards)
+                        if (sysCardIds.length > 0) {
+                            await supabase
+                                .from('user_flashcard_progress')
+                                .delete()
+                                .eq('user_id', user.id)
+                                .in('flashcard_id', sysCardIds);
+                        }
+
+                        // Delete by user_flashcard_id (User cards)
+                        if (userCardIds.length > 0) {
+                            await supabase
+                                .from('user_flashcard_progress')
+                                .delete()
+                                .eq('user_id', user.id)
+                                .in('user_flashcard_id', userCardIds);
+                        }
+
+                        console.log(`✨ Wiped SRS memory for ${allCardIds.length} cards.`);
+
+                        toast({
+                            title: 'Memory Reset 🧠',
+                            description: `Reset progress for ${allCardIds.length} words. Fresh start!`,
+                        });
+                    }
+                }
+            }
+
+            // 1. Delete dependent assessments
+            // @ts-ignore
+            const { error: assessError } = await supabase
+                .from('goal_assessments')
+                .delete()
+                .eq('goal_id', goalId);
+
+            if (assessError) console.warn("Error deleting assessments for goal:", assessError);
+
+            // 2. Delete dependent practice sessions
+            const { error: sessionError } = await supabase
+                .from('practice_sessions')
+                .delete()
+                .eq('goal_id', goalId);
+
+            if (sessionError) console.warn("Error deleting sessions for goal:", sessionError);
+
+            // 3. Delete the goal itself
             const { error } = await supabase
                 .from('user_goals')
                 .delete()
@@ -283,15 +361,18 @@ export function useStudyGoals() {
 
             toast({
                 title: 'ลบเป้าหมายแล้ว',
-                description: 'ลบเป้าหมายเรียบร้อยแล้ว'
+                description: 'ลบเป้าหมายและข้อมูลการจำทั้งหมดเรียบร้อยแล้ว'
             });
 
-            fetchGoals();
+            // Reset active goal immediately in local state
+            setActiveGoal(null);
+
+            await fetchGoals();
         } catch (error: any) {
             console.error('Error deleting goal:', error);
             toast({
                 title: 'เกิดข้อผิดพลาด',
-                description: 'ไม่สามารถลบเป้าหมายได้',
+                description: 'ไม่สามารถลบเป้าหมายได้: ' + (error.message || ''),
                 variant: 'destructive'
             });
         }
@@ -302,15 +383,37 @@ export function useStudyGoals() {
     }, [fetchGoals]);
 
     // Start Smart Session (Logic Engine)
-    const startSmartSession = useCallback(async (goal: StudyGoal, navigate: any, isBonus: boolean = false, bonusType: 'random' | 'weak' = 'random', customLimit?: number) => {
-        console.log("🚀 Starting Smart Session", goal, "Bonus Mode:", isBonus, "Type:", bonusType, "Limit:", customLimit);
+    const startSmartSession = useCallback(async (
+        goal: StudyGoal,
+        navigate: any,
+        isBonus: boolean = false,
+        bonusType: 'random' | 'weak' = 'random',
+        customLimit?: number,
+        goalConfig?: any // Added for Pacing Strategy
+    ) => {
+        console.log("🚀 ========== START SMART SESSION DEBUG ==========");
+        console.log("Goal object:", JSON.stringify(goal, null, 2));
         console.log("Goal deck_ids:", goal.deck_ids);
+        console.log("Bonus Mode:", isBonus, "Type:", bonusType, "Limit:", customLimit);
+
         try {
+            if (!goal) {
+                console.error("❌ CRITICAL: Goal is null or undefined!");
+                toast({
+                    title: 'ข้อผิดพลาด',
+                    description: 'ไม่พบข้อมูลเป้าหมาย กรุณาลองรีเฟรชหน้าเว็บ',
+                    variant: 'destructive'
+                });
+                return;
+            }
 
             setLoading(true);
             const currentDay = goal.current_day;
             const isPreTestDay = currentDay === 1;
             const isPostTestDay = currentDay === goal.duration_days;
+
+            console.log("📅 Current Day:", currentDay);
+            console.log("📝 Is Pre-Test Day:", isPreTestDay);
 
             // Logic for Interim Tests: "At least 2 times"
             let isInterimTestDay = false;
@@ -326,16 +429,50 @@ export function useStudyGoals() {
 
             // Pre-Test
             if (isPreTestDay && goal.sessions_completed === 0 && !isBonus) {
-                console.log("Triggering Pre-Test Page");
-                navigate('/pre-test', {
-                    state: {
+                // Fix: Check if Pre-Test is ACTUALLY done (via assessments table)
+                // because sessions_completed might be 0 if they learned 0 words (rare but possible)
+                console.log("Checking if Pre-Test is already completed...");
+                const { data: existingPreTest } = await supabase
+                    .from('goal_assessments')
+                    .select('id')
+                    .eq('goal_id', goal.id)
+                    .eq('assessment_type', 'pre-test')
+                    .maybeSingle();
+
+                if (!existingPreTest) {
+                    console.log("✅ Triggering Pre-Test Page");
+                    console.log("Navigation params:", {
                         goalId: goal.id,
                         deckIds: goal.deck_ids,
-                        totalWords: goal.target_words // Optional hint
+                        totalWords: goal.target_words
+                    });
+
+                    if (!goal.deck_ids || goal.deck_ids.length === 0) {
+                        console.error("❌ CRITICAL: deck_ids is empty or undefined!");
+                        toast({
+                            title: 'ข้อมูลเป้าหมายไม่สมบูรณ์ ⚠️',
+                            description: 'เป้าหมายนี้ไม่มีข้อมูล Deck\nกรุณาลบเป้าหมายแล้วสร้างใหม่อีกครั้ง',
+                            variant: 'destructive'
+                        });
+                        setLoading(false);
+                        return;
                     }
-                });
-                return;
+
+                    navigate('/pre-test', {
+                        state: {
+                            goalId: goal.id,
+                            deckIds: goal.deck_ids,
+                            totalWords: goal.target_words // Optional hint
+                        }
+                    });
+                    console.log("✅ Navigation to /pre-test executed");
+                    return;
+                } else {
+                    console.log("⚠️ Pre-Test found in history! Proceeding to Standard Session.");
+                }
             }
+
+            console.log("⏭️ Skipping Pre-Test (sessions_completed:", goal.sessions_completed, ")");
 
             // Post-Test
             if (isPostTestDay && goal.sessions_completed === 0 && !isBonus) {
@@ -364,11 +501,34 @@ export function useStudyGoals() {
                 return;
             }
 
+            // ---------------------------------------------------------
+            // 2. NORMAL SESSION: Navigate to Multi-Game Session Wrapper
+            // ---------------------------------------------------------
+            // We pass the "goal" context. The Session Page will use useOptimalCards to fetch cards.
+            console.log("🚀 Navigating to Multi-Game Session...");
+            navigate('/multi-game-session', {
+                state: {
+                    goalId: goal.id,
+                    mode: isBonus ? 'bonus' : 'start', // 'start' = Pacing logic, 'bonus' = Review logic
+                    bonusType: isBonus ? bonusType : undefined,
+                    goalName: goal.goal_name,
+                    customLimit: customLimit,
+                    goalConfig: goalConfig // New: Pass config for Pacing Strategy
+                }
+            });
+            return; // EXIT HERE to bypass legacy logic
+
             const primaryDeckId = goal.deck_ids?.[0];
             console.log("Primary Deck ID:", primaryDeckId);
+            console.log("All deck_ids:", goal.deck_ids);
 
-            if (!primaryDeckId) {
+            if (!primaryDeckId || !goal.deck_ids || goal.deck_ids.length === 0) {
                 console.error("Missing deck_ids in goal:", goal);
+                toast({
+                    title: 'ข้อมูลเป้าหมายไม่สมบูรณ์ ⚠️',
+                    description: 'ไม่พบข้อมูล Deck ในเป้าหมายนี้ กรุณาสร้างเป้าหมายใหม่',
+                    variant: 'destructive'
+                });
                 throw new Error('ไม่พบข้อมูล Deck ในเป้าหมาย กรุณาลองสร้างเป้าหมายใหม่');
             }
 

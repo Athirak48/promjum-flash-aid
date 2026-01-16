@@ -64,7 +64,7 @@ export function TimePicker({
                     )}>
                         <SelectValue placeholder="HH" />
                     </SelectTrigger>
-                    <SelectContent className="h-[200px] rounded-xl border-white/10 bg-[#1e293b] text-slate-200">
+                    <SelectContent portal={false} className="h-[200px] rounded-xl border-white/10 bg-[#1e293b] text-slate-200">
                         {hours.map((h) => (
                             <SelectItem
                                 key={h}
@@ -94,7 +94,7 @@ export function TimePicker({
                     )}>
                         <SelectValue placeholder="MM" />
                     </SelectTrigger>
-                    <SelectContent className="h-[200px] rounded-xl border-white/10 bg-[#1e293b] text-slate-200">
+                    <SelectContent portal={false} className="h-[200px] rounded-xl border-white/10 bg-[#1e293b] text-slate-200">
                         {minutes.map((m) => (
                             <SelectItem
                                 key={m}
