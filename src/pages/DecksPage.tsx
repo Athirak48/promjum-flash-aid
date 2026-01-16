@@ -555,15 +555,6 @@ export default function DecksPage() {
             />
           )}
 
-          <CreateCommunityDeckDialog
-            open={showCreateDialog}
-            onOpenChange={setShowCreateDialog}
-            onSuccess={() => {
-              // Refresh decks logic if needed (e.g. invalidate query)
-              window.location.reload(); // Simple refresh for now
-            }}
-          />
-
           {/* Community Deck Preview Dialog */}
           {selectedCommunityDeck && showCommunityPreview && (
             <FolderBundlePreview

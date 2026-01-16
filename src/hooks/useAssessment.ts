@@ -25,9 +25,13 @@ export function useAssessment() {
             // Calculate total questions based on percentage
             const total_questions = Math.round(total_words * (test_size_percentage / 100));
 
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
             const { data, error: insertError } = await supabase
                 .from('goal_assessments')
                 .insert({
+                    user_id: user.id,
                     goal_id,
                     assessment_type,
                     test_size_percentage,
@@ -37,7 +41,7 @@ export function useAssessment() {
                 .single();
 
             if (insertError) throw insertError;
-            return data;
+            return data as GoalAssessment;
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create assessment');
             return null;
@@ -47,36 +51,20 @@ export function useAssessment() {
     }, []);
 
     // Save assessment answer
+    // Note: assessment_answers table doesn't exist in the current schema
+    // This function is kept for API compatibility but will return false
     const saveAnswer = useCallback(async (
-        assessment_id: string,
-        flashcard_id: string,
-        question: string,
-        correct_answer: string,
-        user_answer: string | null,
-        is_correct: boolean,
-        time_taken_seconds: number
+        _assessment_id: string,
+        _flashcard_id: string,
+        _question: string,
+        _correct_answer: string,
+        _user_answer: string | null,
+        _is_correct: boolean,
+        _time_taken_seconds: number
     ): Promise<boolean> => {
-        try {
-            const { error: insertError } = await supabase
-                .from('assessment_answers')
-                .insert({
-                    assessment_id,
-                    flashcard_id,
-                    question,
-                    correct_answer,
-                    user_answer,
-                    is_correct,
-                    time_taken_seconds,
-                });
-
-            if (insertError) throw insertError;
-            return true;
-        } catch (err) {
-            console.error('Error saving answer:', err);
-            return false;
-        }
+        console.log('saveAnswer called but assessment_answers table not available');
+        return false;
     }, []);
-
     // Complete assessment
     const completeAssessment = useCallback(async (
         assessment_id: string,
@@ -117,28 +105,12 @@ export function useAssessment() {
 
             if (assessmentError) throw assessmentError;
 
-            // Get answers
-            const { data: answers, error: answersError } = await supabase
-                .from('assessment_answers')
-                .select('*')
-                .eq('assessment_id', assessment_id);
-
-            if (answersError) throw answersError;
-
-            // Separate weak and strong words
-            const weak_words = answers
-                .filter(a => !a.is_correct)
-                .map(a => a.flashcard_id);
-
-            const strong_words = answers
-                .filter(a => a.is_correct)
-                .map(a => a.flashcard_id);
-
+            // Note: assessment_answers table doesn't exist in the current schema
+            // Return assessment data without individual answers
             return {
-                assessment,
-                answers: answers || [],
-                weak_words,
-                strong_words,
+                assessment: assessment as GoalAssessment,
+                weak_words: [],
+                strong_words: [],
             };
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to get results');
