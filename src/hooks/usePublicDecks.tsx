@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -6,8 +6,6 @@ export interface PublicDeck {
   id: string;
   name: string;
   description: string;
-  deck_id: string; // parent deck id (decks.id)
-  folder_id: string; // unused for community decks
   creator_user_id: string;
   clone_count: number;
   tags: string[];
@@ -17,6 +15,14 @@ export interface PublicDeck {
   creator_nickname: string;
   creator_avatar: string | null;
   total_flashcards: number;
+  total_sets: number; // Number of subdecks
+}
+
+export interface PublicSubdeck {
+  id: string;
+  name: string;
+  card_count: number;
+  parent_deck_id: string;
 }
 
 export interface PublicDecksFilters {
@@ -31,33 +37,29 @@ export function usePublicDecks(filters?: PublicDecksFilters) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchPublicDecks = async () => {
+  const fetchPublicDecks = useCallback(async () => {
     try {
       setLoading(true);
 
-      // Community decks are stored in public.sub_decks (created via create_combined_community_deck)
+      // Query community decks from user_flashcard_sets
       let query = supabase
-        .from('sub_decks')
-        .select(
-          `
+        .from('user_flashcard_sets')
+        .select(`
           id,
-          name,
-          name_en,
+          title,
           description,
-          deck_id,
-          creator_user_id,
+          user_id,
           clone_count,
           tags,
           category,
           created_at,
           updated_at,
-          flashcard_count,
-          decks!inner(category)
-        `
-        )
-        .eq('decks.category', 'Community')
+          card_count,
+          is_public
+        `)
+        .eq('source', 'community')
         .eq('is_public', true)
-        .eq('is_published', true);
+        .is('parent_deck_id', null); // Only get parent decks
 
       if (filters?.category) {
         query = query.eq('category', filters.category);
@@ -66,12 +68,8 @@ export function usePublicDecks(filters?: PublicDecksFilters) {
       if (filters?.search) {
         const s = filters.search.trim();
         if (s) {
-          query = query.or(`name.ilike.%${s}%,name_en.ilike.%${s}%`);
+          query = query.ilike('title', `%${s}%`);
         }
-      }
-
-      if (filters?.tags?.length) {
-        query = query.contains('tags', filters.tags);
       }
 
       switch (filters?.sortBy) {
@@ -88,21 +86,60 @@ export function usePublicDecks(filters?: PublicDecksFilters) {
       const { data, error } = await query;
       if (error) throw error;
 
-      const transformed: PublicDeck[] = (data || []).map((sd: any) => ({
-        id: sd.id,
-        name: sd.name,
-        description: sd.description ?? '',
-        deck_id: sd.deck_id,
-        folder_id: '',
-        creator_user_id: sd.creator_user_id ?? '',
-        clone_count: sd.clone_count ?? 0,
-        tags: sd.tags ?? [],
-        category: sd.category ?? null,
-        created_at: sd.created_at,
-        updated_at: sd.updated_at,
-        creator_nickname: 'ผู้ใช้',
-        creator_avatar: null,
-        total_flashcards: sd.flashcard_count ?? 0,
+      // Get subdeck counts for each parent deck
+      const parentIds = (data || []).map(d => d.id);
+      
+      let subdeckCounts: Record<string, number> = {};
+      if (parentIds.length > 0) {
+        const { data: subdeckData } = await supabase
+          .from('user_flashcard_sets')
+          .select('parent_deck_id')
+          .in('parent_deck_id', parentIds);
+        
+        if (subdeckData) {
+          subdeckData.forEach(sd => {
+            const pid = sd.parent_deck_id;
+            if (pid) {
+              subdeckCounts[pid] = (subdeckCounts[pid] || 0) + 1;
+            }
+          });
+        }
+      }
+
+      // Get creator info
+      const userIds = [...new Set((data || []).map(d => d.user_id))];
+      let profiles: Record<string, { nickname: string; avatar_url: string | null }> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('user_id, nickname, avatar_url')
+          .in('user_id', userIds);
+        
+        if (profileData) {
+          profileData.forEach(p => {
+            profiles[p.user_id] = {
+              nickname: p.nickname || 'ผู้ใช้',
+              avatar_url: p.avatar_url
+            };
+          });
+        }
+      }
+
+      const transformed: PublicDeck[] = (data || []).map((d: any) => ({
+        id: d.id,
+        name: d.title,
+        description: d.description ?? '',
+        creator_user_id: d.user_id ?? '',
+        clone_count: d.clone_count ?? 0,
+        tags: d.tags ?? [],
+        category: d.category ?? null,
+        created_at: d.created_at,
+        updated_at: d.updated_at,
+        creator_nickname: profiles[d.user_id]?.nickname || 'ผู้ใช้',
+        creator_avatar: profiles[d.user_id]?.avatar_url || null,
+        total_flashcards: d.card_count ?? 0,
+        total_sets: subdeckCounts[d.id] || 0,
       }));
 
       setDecks(transformed);
@@ -116,12 +153,88 @@ export function usePublicDecks(filters?: PublicDecksFilters) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters?.search, filters?.category, filters?.sortBy, toast]);
 
   useEffect(() => {
     fetchPublicDecks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters?.search, filters?.category, filters?.sortBy, filters?.tags?.join(',')]);
+  }, [fetchPublicDecks]);
 
   return { decks, loading, refetch: fetchPublicDecks };
+}
+
+// Hook to fetch subdecks of a community deck
+export function useCommunitySubdecks(parentDeckId: string | null) {
+  const [subdecks, setSubdecks] = useState<PublicSubdeck[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!parentDeckId) {
+      setSubdecks([]);
+      return;
+    }
+
+    const fetchSubdecks = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('user_flashcard_sets')
+          .select('id, title, card_count, parent_deck_id')
+          .eq('parent_deck_id', parentDeckId)
+          .eq('source', 'community_subdeck');
+
+        if (error) throw error;
+
+        const formatted: PublicSubdeck[] = (data || []).map(d => ({
+          id: d.id,
+          name: d.title,
+          card_count: d.card_count || 0,
+          parent_deck_id: d.parent_deck_id || ''
+        }));
+
+        setSubdecks(formatted);
+      } catch (error) {
+        console.error('Error fetching subdecks:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubdecks();
+  }, [parentDeckId]);
+
+  return { subdecks, loading };
+}
+
+// Hook to fetch flashcards of a subdeck
+export function useSubdeckFlashcards(subdeckId: string | null) {
+  const [flashcards, setFlashcards] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!subdeckId) {
+      setFlashcards([]);
+      return;
+    }
+
+    const fetchFlashcards = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('user_flashcards')
+          .select('id, front_text, back_text, part_of_speech')
+          .eq('flashcard_set_id', subdeckId);
+
+        if (error) throw error;
+        setFlashcards(data || []);
+      } catch (error) {
+        console.error('Error fetching flashcards:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFlashcards();
+  }, [subdeckId]);
+
+  return { flashcards, loading };
 }

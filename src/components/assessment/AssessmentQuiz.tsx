@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { useAssessment } from "@/hooks/useAssessment";
-import { FlashcardQuizGame } from "@/components/FlashcardQuizGame";
-import type { Flashcard } from "@/types/flashcard";
-import type { GoalAssessment } from "@/types/assessment";
 import { Loader2 } from "lucide-react";
+
+interface AssessmentQuizCard {
+    id: string;
+    front_text: string;
+    back_text: string;
+}
 
 interface AssessmentQuizProps {
     assessmentId: string;
-    cards: Flashcard[];
+    cards: AssessmentQuizCard[];
     onComplete: (results: {
         correct: number;
         wrong: number;
@@ -20,32 +22,18 @@ export function AssessmentQuiz({
     cards,
     onComplete,
 }: AssessmentQuizProps) {
-    const { saveAnswer } = useAssessment();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [results, setResults] = useState({
         correct: 0,
         wrong: 0,
         startTime: Date.now(),
     });
+    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+    const [showResult, setShowResult] = useState(false);
 
-    const handleAnswer = async (
-        cardId: string,
-        question: string,
-        correctAnswer: string,
-        userAnswer: string,
-        isCorrect: boolean,
-        timeTaken: number
-    ) => {
-        // Save to database
-        await saveAnswer(
-            assessmentId,
-            cardId,
-            question,
-            correctAnswer,
-            userAnswer,
-            isCorrect,
-            timeTaken
-        );
+    const handleAnswer = (userAnswer: string, isCorrect: boolean) => {
+        setSelectedAnswer(userAnswer);
+        setShowResult(true);
 
         // Update local results
         setResults(prev => ({
@@ -54,18 +42,22 @@ export function AssessmentQuiz({
             wrong: prev.wrong + (isCorrect ? 0 : 1),
         }));
 
-        // Move to next question
-        if (currentIndex < cards.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-        } else {
-            // Quiz complete
-            const timeSpent = Math.round((Date.now() - results.startTime) / 1000);
-            onComplete({
-                correct: results.correct + (isCorrect ? 1 : 0),
-                wrong: results.wrong + (isCorrect ? 0 : 1),
-                timeSpent,
-            });
-        }
+        // Move to next question after delay
+        setTimeout(() => {
+            if (currentIndex < cards.length - 1) {
+                setCurrentIndex(prev => prev + 1);
+                setSelectedAnswer(null);
+                setShowResult(false);
+            } else {
+                // Quiz complete
+                const timeSpent = Math.round((Date.now() - results.startTime) / 1000);
+                onComplete({
+                    correct: results.correct + (isCorrect ? 1 : 0),
+                    wrong: results.wrong + (isCorrect ? 0 : 1),
+                    timeSpent,
+                });
+            }
+        }, 1000);
     };
 
     if (cards.length === 0) {
@@ -80,9 +72,23 @@ export function AssessmentQuiz({
     }
 
     const currentCard = cards[currentIndex];
+    
+    // Generate options (correct + 3 random wrong)
+    const generateOptions = () => {
+        const correctAnswer = currentCard.back_text;
+        const wrongAnswers = cards
+            .filter(c => c.id !== currentCard.id)
+            .map(c => c.back_text)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 3);
+        
+        return [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
+    };
+
+    const options = generateOptions();
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             {/* Progress */}
             <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>ข้อที่ {currentIndex + 1} / {cards.length}</span>
@@ -97,20 +103,35 @@ export function AssessmentQuiz({
                 />
             </div>
 
-            {/* Quiz Component */}
-            <FlashcardQuizGame
-                card={currentCard}
-                onAnswer={(isCorrect, userAnswer, timeTaken) => {
-                    handleAnswer(
-                        currentCard.id,
-                        currentCard.front_text,
-                        currentCard.back_text,
-                        userAnswer,
-                        isCorrect,
-                        timeTaken
+            {/* Question */}
+            <div className="text-center p-8 bg-card rounded-xl border">
+                <p className="text-2xl font-bold">{currentCard.front_text}</p>
+            </div>
+
+            {/* Options */}
+            <div className="grid grid-cols-2 gap-4">
+                {options.map((option, idx) => {
+                    const isCorrect = option === currentCard.back_text;
+                    const isSelected = selectedAnswer === option;
+                    
+                    let bgColor = 'bg-card hover:bg-accent';
+                    if (showResult) {
+                        if (isCorrect) bgColor = 'bg-green-500/20 border-green-500';
+                        else if (isSelected) bgColor = 'bg-red-500/20 border-red-500';
+                    }
+
+                    return (
+                        <button
+                            key={idx}
+                            onClick={() => !showResult && handleAnswer(option, isCorrect)}
+                            disabled={showResult}
+                            className={`p-4 rounded-lg border text-left transition-colors ${bgColor}`}
+                        >
+                            {option}
+                        </button>
                     );
-                }}
-            />
+                })}
+            </div>
         </div>
     );
 }

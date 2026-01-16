@@ -579,6 +579,56 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_assessments: {
+        Row: {
+          assessment_type: string
+          completed_at: string | null
+          correct_answers: number | null
+          created_at: string
+          goal_id: string
+          id: string
+          test_size_percentage: number | null
+          time_spent_seconds: number | null
+          total_questions: number | null
+          user_id: string
+          wrong_answers: number | null
+        }
+        Insert: {
+          assessment_type: string
+          completed_at?: string | null
+          correct_answers?: number | null
+          created_at?: string
+          goal_id: string
+          id?: string
+          test_size_percentage?: number | null
+          time_spent_seconds?: number | null
+          total_questions?: number | null
+          user_id: string
+          wrong_answers?: number | null
+        }
+        Update: {
+          assessment_type?: string
+          completed_at?: string | null
+          correct_answers?: number | null
+          created_at?: string
+          goal_id?: string
+          id?: string
+          test_size_percentage?: number | null
+          time_spent_seconds?: number | null
+          total_questions?: number | null
+          user_id?: string
+          wrong_answers?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_assessments_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "user_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       individual_challenge_vocab: {
         Row: {
           back: string
@@ -761,6 +811,7 @@ export type Database = {
           created_at: string
           deck_id: string | null
           duration_minutes: number | null
+          goal_id: string | null
           grammar_avg: number | null
           id: string
           naturalness_avg: number | null
@@ -780,6 +831,7 @@ export type Database = {
           created_at?: string
           deck_id?: string | null
           duration_minutes?: number | null
+          goal_id?: string | null
           grammar_avg?: number | null
           id?: string
           naturalness_avg?: number | null
@@ -799,6 +851,7 @@ export type Database = {
           created_at?: string
           deck_id?: string | null
           duration_minutes?: number | null
+          goal_id?: string | null
           grammar_avg?: number | null
           id?: string
           naturalness_avg?: number | null
@@ -818,6 +871,13 @@ export type Database = {
             columns: ["deck_id"]
             isOneToOne: false
             referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_sessions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "user_goals"
             referencedColumns: ["id"]
           },
           {
@@ -1611,39 +1671,57 @@ export type Database = {
       user_flashcard_sets: {
         Row: {
           card_count: number | null
+          category: string | null
+          clone_count: number | null
           created_at: string
+          description: string | null
           folder_id: string | null
           id: string
+          is_public: boolean | null
           last_reviewed: string | null
           next_review: string | null
+          parent_deck_id: string | null
           progress: number | null
           source: string
+          tags: string[] | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
           card_count?: number | null
+          category?: string | null
+          clone_count?: number | null
           created_at?: string
+          description?: string | null
           folder_id?: string | null
           id?: string
+          is_public?: boolean | null
           last_reviewed?: string | null
           next_review?: string | null
+          parent_deck_id?: string | null
           progress?: number | null
           source?: string
+          tags?: string[] | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
           card_count?: number | null
+          category?: string | null
+          clone_count?: number | null
           created_at?: string
+          description?: string | null
           folder_id?: string | null
           id?: string
+          is_public?: boolean | null
           last_reviewed?: string | null
           next_review?: string | null
+          parent_deck_id?: string | null
           progress?: number | null
           source?: string
+          tags?: string[] | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -1654,6 +1732,13 @@ export type Database = {
             columns: ["folder_id"]
             isOneToOne: false
             referencedRelation: "user_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_flashcard_sets_parent_deck_id_fkey"
+            columns: ["parent_deck_id"]
+            isOneToOne: false
+            referencedRelation: "user_flashcard_sets"
             referencedColumns: ["id"]
           },
         ]

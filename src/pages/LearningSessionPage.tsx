@@ -141,7 +141,7 @@ export default function LearningSessionPage() {
     const progress = ((currentPhaseIndex) / totalPhases) * 100;
 
     // Hooks
-    const { createAssessment, completeAssessment, saveAnswer } = useAssessment();
+    const { createAssessment, completeAssessment } = useAssessment();
     const { updateProgress, activeGoal } = useStudyGoals();
 
     // Local state for Intro Overlay
@@ -171,7 +171,7 @@ export default function LearningSessionPage() {
             // Pre-test Logic
             if (activeGoal) {
                 const wordsPerSession = activeGoal.words_per_session || 20;
-                const newProgress = (activeGoal.current_value || 0) + wordsPerSession;
+                const newProgress = (activeGoal.words_learned || 0) + wordsPerSession;
                 await updateProgress(activeGoal.id, 0, newProgress);
             }
             navigate('/dashboard');
@@ -184,7 +184,7 @@ export default function LearningSessionPage() {
                 // Ensure we haven't already updated for this session (idempotency check?)
                 // For now, straightforward increment
                 const wordsPerSession = activeGoal.words_per_session || 20;
-                const newProgress = (activeGoal.current_value || 0) + wordsPerSession;
+                const newProgress = (activeGoal.words_learned || 0) + wordsPerSession;
                 console.log(`[Session Complete] Updating Goal ${activeGoal.id} progress: ${newProgress}`);
                 await updateProgress(activeGoal.id, 0, newProgress);
             } else {
@@ -296,8 +296,8 @@ export default function LearningSessionPage() {
         // Default to false if not found (safeguard)
         const isUserCard = card?.isUserFlashcard ?? false;
 
-        // Calculate quality score (0-5)
-        const quality = getFlashcardReviewQuality(timeTaken, known);
+        // Calculate quality score (0-5) - first attempt, with timing
+        const quality = getFlashcardReviewQuality(known, 1, timeTaken);
 
         // Update Global SRS Database
         console.log(`[SRS Update] Card: ${cardId}, Quality: ${quality}, Known: ${known}, IsUser: ${isUserCard}`);
