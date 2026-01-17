@@ -727,25 +727,25 @@ function PublicDeckCard({
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
+      transition={{ delay: index * 0.05 }}
       className="group relative h-full"
     >
       {/* Glow effect on hover */}
-      <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-50 blur-lg transition duration-300" />
+      <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-50 blur-lg transition duration-300" />
 
-      {/* Main Card Content */}
-      <div className="relative h-full bg-slate-950/90 backdrop-blur-xl rounded-2xl border border-white/10 group-hover:border-white/20 p-4 flex flex-col overflow-hidden transition-all duration-300">
+      {/* Main Card Content - Smaller padding on mobile */}
+      <div className="relative h-full bg-slate-950/90 backdrop-blur-xl rounded-xl md:rounded-2xl border border-white/10 group-hover:border-white/20 p-2.5 md:p-4 flex flex-col overflow-hidden transition-all duration-300">
 
         {/* Top gradient bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 opacity-60" />
+        <div className="absolute top-0 left-0 right-0 h-0.5 md:h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 opacity-60" />
 
         {/* Delete Button for Owner - Always Visible */}
         {isOwner && (
-          <div className="absolute top-2 right-2 z-20">
+          <div className="absolute top-1.5 right-1.5 md:top-2 md:right-2 z-20">
             <Button
               variant="destructive"
               size="icon"
-              className="h-7 w-7 rounded-full bg-red-600/90 hover:bg-red-500 border border-red-400/30 shadow-lg shadow-red-900/50 transition-all"
+              className="h-6 w-6 md:h-7 md:w-7 rounded-full bg-red-600/90 hover:bg-red-500 border border-red-400/30 shadow-lg shadow-red-900/50 transition-all"
               onClick={(e) => {
                 e.stopPropagation();
                 if (window.confirm('คุณต้องการลบ Deck นี้ใช่หรือไม่?')) {
@@ -753,64 +753,64 @@ function PublicDeckCard({
                 }
               }}
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
             </Button>
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center shrink-0">
-            <BookOpen className="w-5 h-5 text-cyan-400" />
+        {/* Header - Smaller on mobile */}
+        <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center shrink-0">
+            <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-cyan-400" />
           </div>
           <div className="flex-1 min-w-0">
             {deck.category && (
-              <Badge className="mb-1 bg-blue-500/20 text-blue-300 border-0 text-[9px] px-1.5 py-0">
+              <Badge className="mb-0.5 md:mb-1 bg-blue-500/20 text-blue-300 border-0 text-[8px] md:text-[9px] px-1 md:px-1.5 py-0">
                 {deck.category}
               </Badge>
             )}
-            <h3 className="text-sm font-bold text-white leading-tight line-clamp-1 group-hover:text-cyan-400 transition-colors">
+            <h3 className="text-xs md:text-sm font-bold text-white leading-tight line-clamp-1 group-hover:text-cyan-400 transition-colors">
               {deck.name}
             </h3>
           </div>
         </div>
 
-        {/* Creator Info */}
-        <div className="flex items-center gap-1.5 mb-3">
-          <Avatar className="w-5 h-5 border border-slate-700">
+        {/* Creator Info - Smaller on mobile */}
+        <div className="flex items-center gap-1 md:gap-1.5 mb-2 md:mb-3">
+          <Avatar className="w-4 h-4 md:w-5 md:h-5 border border-slate-700">
             <AvatarImage src={deck.creator_avatar || undefined} />
-            <AvatarFallback className="bg-gradient-to-br from-cyan-500 to-blue-500 text-[8px] text-white">
+            <AvatarFallback className="bg-gradient-to-br from-cyan-500 to-blue-500 text-[6px] md:text-[8px] text-white">
               {deck.creator_nickname?.charAt(0)?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
-          <span className="text-[10px] font-medium text-slate-400 truncate">
+          <span className="text-[9px] md:text-[10px] font-medium text-slate-400 truncate">
             {deck.creator_nickname || 'Anonymous'}
           </span>
         </div>
 
-        {/* Description */}
-        <p className="text-[11px] text-slate-400 mb-3 line-clamp-2 leading-relaxed min-h-[2.2em]">
+        {/* Description - Hide on small mobile */}
+        <p className="hidden sm:block text-[10px] md:text-[11px] text-slate-400 mb-2 md:mb-3 line-clamp-2 leading-relaxed min-h-[2em]">
           {deck.description || 'No description provided.'}
         </p>
 
-        {/* Stats Grid - Compact */}
-        <div className="grid grid-cols-3 gap-1.5 mb-3">
-          <div className="bg-slate-900/50 rounded-lg p-1.5 border border-white/5 flex flex-col items-center">
-            <span className="text-[8px] text-slate-500 font-medium uppercase">Sets</span>
-            <span className="text-sm font-bold text-indigo-400">{deck.total_sets}</span>
+        {/* Stats Grid - More compact on mobile */}
+        <div className="grid grid-cols-3 gap-1 md:gap-1.5 mb-2 md:mb-3">
+          <div className="bg-slate-900/50 rounded-md md:rounded-lg p-1 md:p-1.5 border border-white/5 flex flex-col items-center">
+            <span className="text-[7px] md:text-[8px] text-slate-500 font-medium uppercase">Sets</span>
+            <span className="text-xs md:text-sm font-bold text-indigo-400">{deck.total_sets}</span>
           </div>
-          <div className="bg-slate-900/50 rounded-lg p-1.5 border border-white/5 flex flex-col items-center">
-            <span className="text-[8px] text-slate-500 font-medium uppercase">Vocab</span>
-            <span className="text-sm font-bold text-cyan-400">{deck.total_flashcards}</span>
+          <div className="bg-slate-900/50 rounded-md md:rounded-lg p-1 md:p-1.5 border border-white/5 flex flex-col items-center">
+            <span className="text-[7px] md:text-[8px] text-slate-500 font-medium uppercase">Vocab</span>
+            <span className="text-xs md:text-sm font-bold text-cyan-400">{deck.total_flashcards}</span>
           </div>
-          <div className="bg-slate-900/50 rounded-lg p-1.5 border border-white/5 flex flex-col items-center">
-            <span className="text-[8px] text-slate-500 font-medium uppercase">Clones</span>
-            <span className="text-sm font-bold text-pink-400">{deck.clone_count}</span>
+          <div className="bg-slate-900/50 rounded-md md:rounded-lg p-1 md:p-1.5 border border-white/5 flex flex-col items-center">
+            <span className="text-[7px] md:text-[8px] text-slate-500 font-medium uppercase">Clones</span>
+            <span className="text-xs md:text-sm font-bold text-pink-400">{deck.clone_count}</span>
           </div>
         </div>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1 mb-3 min-h-[20px]">
+        {/* Tags - Hidden on mobile for space */}
+        <div className="hidden md:flex flex-wrap gap-1 mb-3 min-h-[20px]">
           {deck.tags?.slice(0, 2).map(tag => (
             <span key={tag} className="text-[9px] font-medium text-slate-400 px-1.5 py-0.5 rounded bg-white/5 border border-white/5">
               #{tag}
@@ -818,12 +818,12 @@ function PublicDeckCard({
           ))}
         </div>
 
-        {/* Action Button */}
+        {/* Action Button - Smaller on mobile */}
         <Button
           onClick={onPreview}
-          className="w-full h-9 rounded-xl font-bold shadow-lg transition-all duration-300 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 text-white text-xs mt-auto"
+          className="w-full h-7 md:h-9 rounded-lg md:rounded-xl font-bold shadow-lg transition-all duration-300 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 text-white text-[10px] md:text-xs mt-auto"
         >
-          <Eye className="w-3.5 h-3.5 mr-1.5" /> ดูคำศัพท์ข้างใน
+          <Eye className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1" /> ดูคำศัพท์ข้างใน
         </Button>
       </div>
     </motion.div>
