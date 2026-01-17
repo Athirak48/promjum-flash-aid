@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -12,6 +12,19 @@ export interface UserStats {
     progressPercentage: number;
     timeSpentToday: number; // seconds
     ranking: number;
+}
+
+// Helper to get today's date string (YYYY-MM-DD) in local timezone
+function getTodayDateString(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+}
+
+// Helper to get yesterday's date string (YYYY-MM-DD) in local timezone
+function getYesterdayDateString(): string {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toISOString().split('T')[0];
 }
 
 export function useUserStats() {
@@ -29,6 +42,74 @@ export function useUserStats() {
     });
     const [loading, setLoading] = useState(true);
 
+    // Function to update streak when user does any activity
+    const updateStreak = useCallback(async () => {
+        if (!user) return;
+
+        try {
+            const todayStr = getTodayDateString();
+            const yesterdayStr = getYesterdayDateString();
+
+            // Fetch current profile data
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('current_streak, longest_streak, last_activity_date')
+                .eq('user_id', user.id)
+                .single();
+
+            if (!profile) return;
+
+            const lastActivity = profile.last_activity_date;
+            let newStreak = profile.current_streak || 0;
+            let newLongestStreak = profile.longest_streak || 0;
+
+            // If already active today, don't update
+            if (lastActivity === todayStr) {
+                return;
+            }
+
+            // If last activity was yesterday, increment streak
+            if (lastActivity === yesterdayStr) {
+                newStreak = newStreak + 1;
+            } 
+            // If last activity was before yesterday or never, reset to 1
+            else {
+                newStreak = 1;
+            }
+
+            // Update longest streak if current is higher
+            if (newStreak > newLongestStreak) {
+                newLongestStreak = newStreak;
+            }
+
+            // Update profile with new streak
+            await supabase
+                .from('profiles')
+                .update({
+                    current_streak: newStreak,
+                    longest_streak: newLongestStreak,
+                    last_activity_date: todayStr
+                })
+                .eq('user_id', user.id);
+
+            // Update local stats
+            setStats(prev => ({
+                ...prev,
+                streak: newStreak
+            }));
+
+        } catch (error) {
+            console.error('Error updating streak:', error);
+        }
+    }, [user]);
+
+    // Check and update streak on component mount (when user visits dashboard)
+    useEffect(() => {
+        if (user) {
+            updateStreak();
+        }
+    }, [user, updateStreak]);
+
     useEffect(() => {
         async function fetchStats() {
             if (!user) {
@@ -37,12 +118,29 @@ export function useUserStats() {
             }
 
             try {
+                const todayStr = getTodayDateString();
+                const yesterdayStr = getYesterdayDateString();
+
                 // 1. Fetch Profile Stats
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('total_xp, current_streak')
+                    .select('total_xp, current_streak, longest_streak, last_activity_date')
                     .eq('user_id', user.id)
                     .single();
+
+                // Calculate the actual streak based on last_activity_date
+                let currentStreak = profile?.current_streak || 0;
+                const lastActivity = profile?.last_activity_date;
+
+                // If last activity is neither today nor yesterday, streak should be 0
+                if (lastActivity && lastActivity !== todayStr && lastActivity !== yesterdayStr) {
+                    currentStreak = 0;
+                    // Also update in database
+                    await supabase
+                        .from('profiles')
+                        .update({ current_streak: 0 })
+                        .eq('user_id', user.id);
+                }
 
                 // 1.1 Calculate Total Words Learned (Correctly Count Only Level > 0)
                 const { count: totalWordsCount } = await supabase
@@ -98,7 +196,7 @@ export function useUserStats() {
                 const rank = (higherRankCount || 0) + 1;
 
                 setStats({
-                    streak: profile?.current_streak || 0,
+                    streak: currentStreak,
                     totalXP: profile?.total_xp || 0,
                     wordsLearnedToday: todayCount || 0,
                     wordsLearned: totalWordsCount || 0,
@@ -118,5 +216,5 @@ export function useUserStats() {
         fetchStats();
     }, [user]);
 
-    return { stats, loading };
+    return { stats, loading, updateStreak };
 }
