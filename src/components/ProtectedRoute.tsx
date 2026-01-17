@@ -36,8 +36,9 @@ export const ProtectedRoute = ({ children, skipOnboarding = false }: ProtectedRo
             .maybeSingle(),
           supabase
             .from('user_onboarding')
-            .select('id')
+            .select('id, completed_at')
             .eq('user_id', user.id)
+            .not('completed_at', 'is', null)
             .maybeSingle()
         ]);
 

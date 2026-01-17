@@ -312,11 +312,11 @@ export default function OnboardingFlow() {
 
             const { error } = await supabase
                 .from('user_onboarding')
-                .insert({
+                .upsert({
                     user_id: user.id,
                     ...finalAnswers,
                     completed_at: new Date().toISOString()
-                });
+                }, { onConflict: 'user_id' });
 
             if (error) throw error;
 
@@ -340,10 +340,10 @@ export default function OnboardingFlow() {
 
             toast.success('ยินดีต้อนรับ! 🎉');
 
-            // Navigate immediately to dashboard
+            // Navigate immediately to dashboard - use shorter delay for better UX
             setTimeout(() => {
-                navigate('/dashboard', { replace: true });
-            }, 1500);
+                window.location.href = '/dashboard';
+            }, 1000);
 
         } catch (error) {
             console.error('Onboarding error:', error);
