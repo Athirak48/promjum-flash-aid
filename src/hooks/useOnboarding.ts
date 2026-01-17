@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -9,27 +9,36 @@ export type OnboardingStep =
     | 'show_learning'
     | 'tutorial_complete';
 
+interface OnboardingState {
+    hasCompletedOnboarding: boolean | null;
+    isLoading: boolean;
+    currentStep: OnboardingStep | null;
+    isOnboarding: boolean;
+}
+
+const initialState: OnboardingState = {
+    hasCompletedOnboarding: null,
+    isLoading: true,
+    currentStep: null,
+    isOnboarding: false,
+};
+
 export function useOnboarding() {
     const { user } = useAuth();
-    const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [currentStep, setCurrentStep] = useState<OnboardingStep | null>(null);
-    const [isOnboarding, setIsOnboarding] = useState(false);
+    const [state, setState] = useState<OnboardingState>(initialState);
 
-    useEffect(() => {
-        checkOnboardingStatus();
-    }, [user]);
-
-    const checkOnboardingStatus = async () => {
+    const checkOnboardingStatus = useCallback(async () => {
         if (!user) {
-            setIsLoading(false);
-            setHasCompletedOnboarding(null);
-            setIsOnboarding(false);
+            setState({
+                hasCompletedOnboarding: null,
+                isLoading: false,
+                currentStep: null,
+                isOnboarding: false,
+            });
             return;
         }
 
         try {
-            // Check if user has completed onboarding in database
             const { data, error } = await supabase
                 .from('user_onboarding')
                 .select('*')
@@ -41,19 +50,28 @@ export function useOnboarding() {
             }
 
             const completed = !!data?.completed_at;
-            setHasCompletedOnboarding(completed);
-            setCurrentStep('welcome'); // Default step since current_step column doesn't exist
-            setIsOnboarding(!completed);
+            setState({
+                hasCompletedOnboarding: completed,
+                isLoading: false,
+                currentStep: 'welcome',
+                isOnboarding: !completed,
+            });
         } catch (err) {
             console.error('Onboarding check failed:', err);
-            setHasCompletedOnboarding(false);
-            setIsOnboarding(true);
-        } finally {
-            setIsLoading(false);
+            setState({
+                hasCompletedOnboarding: false,
+                isLoading: false,
+                currentStep: 'welcome',
+                isOnboarding: true,
+            });
         }
-    };
+    }, [user]);
 
-    const markStepComplete = async (step: OnboardingStep) => {
+    useEffect(() => {
+        checkOnboardingStatus();
+    }, [checkOnboardingStatus]);
+
+    const markStepComplete = useCallback(async (step: OnboardingStep) => {
         if (!user) return;
 
         try {
@@ -61,39 +79,38 @@ export function useOnboarding() {
                 .from('user_onboarding')
                 .upsert({
                     user_id: user.id,
-                    current_step: step,
-                    completed: step === 'tutorial_complete',
-                    updated_at: new Date().toISOString()
+                    completed_at: step === 'tutorial_complete' ? new Date().toISOString() : null,
                 }, {
                     onConflict: 'user_id'
                 });
 
-            setCurrentStep(step);
-            if (step === 'tutorial_complete') {
-                setHasCompletedOnboarding(true);
-                setIsOnboarding(false);
-            }
+            setState(prev => ({
+                ...prev,
+                currentStep: step,
+                hasCompletedOnboarding: step === 'tutorial_complete',
+                isOnboarding: step !== 'tutorial_complete',
+            }));
         } catch (err) {
             console.error('Error updating onboarding step:', err);
         }
-    };
+    }, [user]);
 
-    const completeOnboarding = async () => {
+    const completeOnboarding = useCallback(async () => {
         await markStepComplete('tutorial_complete');
-    };
+    }, [markStepComplete]);
 
-    const skipOnboarding = async () => {
+    const skipOnboarding = useCallback(async () => {
         await completeOnboarding();
-    };
+    }, [completeOnboarding]);
 
     return {
-        hasCompletedOnboarding,
-        isOnboarding,
-        currentStep,
-        isLoading,
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
+        isOnboarding: state.isOnboarding,
+        currentStep: state.currentStep,
+        isLoading: state.isLoading,
         markStepComplete,
         completeOnboarding,
         skipOnboarding,
-        refetch: checkOnboardingStatus
+        refetch: checkOnboardingStatus,
     };
 }
